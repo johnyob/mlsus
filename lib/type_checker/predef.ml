@@ -18,14 +18,15 @@ module Env = struct
   let int_uop = Type.(int @-> int)
   let int_comparator = Type.(int @-> int @-> bool)
 
-  let type_decl name ident =
+  let type_def name arity ident =
     { Adt.type_name = Type_name.create name
+    ; type_arity = arity
     ; type_ident = ident
     ; type_kind = Type_abstract
     }
   ;;
 
-  let t = [ "int", int_ident; "bool", bool_ident; "unit", unit_ident ]
+  let t = [ "int", 0, int_ident; "bool", 0, bool_ident; "unit", 0, unit_ident ]
 
   let v =
     [ "( || )", bool_bop
@@ -49,15 +50,13 @@ module Env = struct
     let open Or_error.Let_syntax in
     let env = Env.empty () in
     let env =
-      List.fold t ~init:env ~f:(fun env (type_str, type_ident) ->
-        Env.add_type_decl env (type_decl type_str type_ident))
+      List.fold t ~init:env ~f:(fun env (type_str, type_arity, type_ident) ->
+        Env.add_type_def env (type_def type_str type_arity type_ident))
     in
     let env, bindings =
       List.fold_map v ~init:env ~f:(fun env (var_str, type_) ->
-        let var = Var_name.create var_str in
-        let cvar = Var.create ~id_source:env.id_source ~name:var_str () in
-        let env = Env.add_var env ~var ~cvar in
-        env, (cvar, type_))
+        Env.rename_var env ~var:(Var_name.create var_str) ~in_:(fun env cvar ->
+          env, (cvar, type_)))
     in
     let%map c = k env in
     List.fold_right bindings ~init:c ~f:(fun (var, type_) in_ ->
