@@ -138,7 +138,7 @@ module S = struct
       (* [generalize] cannot generalize partial generics. See [partial_generalize] *)
       t
     | Partial ({ kind = Instance; instances; _ } as p) ->
-      (* [generalize] cannot generalize partial generics *or* partial instances 
+      (* [generalize] cannot generalize partial generics *or* partial instances
          that have instances. *)
       if_guarded
         ~and_:(List.is_empty instances)
@@ -325,11 +325,11 @@ module Generalization_tree : sig
   (** [generalize_region t rn ~f] generalizes [rn] (and all of its decsendants that are
       to be generalized). [f rn'] is called for each generalizable region [rn'].
 
-      Safety: [f rn] may update [t], but only provided none of the descendants of [rn] 
+      Safety: [f rn] may update [t], but only provided none of the descendants of [rn]
       stored in [t] are updated. *)
   val generalize_region : t -> Type.region_node -> f:(Type.region_node -> unit) -> unit
 
-  (** [num_zombie_regions t] returns the number of regions (previously visited and 
+  (** [num_zombie_regions t] returns the number of regions (previously visited and
       generalized) with the status [Zombie]. *)
   val num_zombie_regions : t -> int
 end = struct
@@ -599,20 +599,20 @@ let suspend ~state ~curr_region ({ matchee; case; closure } : Suspended_match.t)
       { run =
           (fun s ->
             let curr_region =
-              (* Safety: The list of region nodes are on a given path from 
-                         the root. 
-              
-                 This is because [matchee] and [closure.variables] are in the 
-                 same scope (when initially referenced), thus must be on a given 
+              (* Safety: The list of region nodes are on a given path from
+                 the root.
+
+                 This is because [matchee] and [closure.variables] are in the
+                 same scope (when initially referenced), thus must be on a given
                  path from the root. And since unification maintains the invariant:
                  {v
                     v1 in rn1 on path p1 && v2 in rn2 on path p2 
                       => unify(v1, v2) in nearest_common_ancestor(rn1, rn2)
                          on path longest_common_path(p1, p2)
-                 v} 
-                 We conclude that any type on a given path [p] must be on a 
-                 sub-path of [p]. So it follows that all the nodes are still 
-                 on a given path from the root when the [case] is scheduled. 
+                 v}
+                 We conclude that any type on a given path [p] must be on a
+                 sub-path of [p]. So it follows that all the nodes are still
+                 on a given path from the root when the [case] is scheduled.
                  The path in particular is defined by [Tree.Path.of_node curr_region]. *)
               Tree.unsafe_max_by_level
                 (Type.region_exn ~here:[%here] matchee
@@ -675,11 +675,11 @@ let update_types ~state (young_region : Young_region.t) =
       (* Visiting and updating region *)
       if Tree.Path.compare_node_by_level young_region.path r r' < 0
       then (
-        (* Safety: [visit_region ~state rn] only updates an ancestor of 
-                   [young_region] in the generalization tree
-                   
-           [r'.level] must be at most [young_region.level]. 
-           Given [r.level < r'.level], it follows that [r < young_region.level]. 
+        (* Safety: [visit_region ~state rn] only updates an ancestor of
+           [young_region] in the generalization tree
+
+           [r'.level] must be at most [young_region.level].
+           Given [r.level < r'.level], it follows that [r < young_region.level].
            Hence [r] must be an ancestor of [young_region] *)
         visit_region ~state r;
         Type.set_region type_ r;
@@ -721,9 +721,9 @@ let generalize_young_region ~state (young_region : Young_region.t) =
        then (
          [%log.global.debug "Type is not generic"];
          (* Register [type_] in the region [r] *)
-         (* Safety: [visit_region ~state rn] only updates an ancestor of 
-                    [young_region] in the generalization tree
-                    
+         (* Safety: [visit_region ~state rn] only updates an ancestor of
+            [young_region] in the generalization tree
+
             Since [r.level < young_region.level] *)
          visit_region ~state r;
          Region.(register_type (Tree.region r) type_);
@@ -754,10 +754,10 @@ let generalize_young_region ~state (young_region : Young_region.t) =
           (instance : Type.t)];
       (* The partial generic that links to [instance] has been fully generalized :) *)
       let curr_region = Type.region_exn ~here:[%here] instance in
-      (* Safety: [visit_region ~state rn] only updates an ancestor / sibling / 
-                 descendant of sibling of [young_region] in the generalization tree. 
-         
-         [instance] cannot be created in a descendant of [young_region] (due to scoping). 
+      (* Safety: [visit_region ~state rn] only updates an ancestor / sibling /
+         descendant of sibling of [young_region] in the generalization tree.
+
+         [instance] cannot be created in a descendant of [young_region] (due to scoping).
          Only in a sibling / a descendant of a sibling. *)
       visit_region ~state curr_region;
       (* Perform a partial copy on the generic to ensure the instance has the generalized
@@ -795,7 +795,7 @@ let update_and_generalize_young_region ~state young_region =
 
 let update_and_generalize ~state (curr_region : Type.region_node) =
   (* We run the scheduler at the beginning of generalization to ensure
-     that jobs added by previous generalizations are ran *before* generalizing 
+     that jobs added by previous generalizations are ran *before* generalizing
      the current region. *)
   [%log.global.debug
     "Begin generalization (pre scheduler)"

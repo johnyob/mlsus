@@ -19,7 +19,7 @@ let print_solve_result ?(log_level = `Info) cst =
 ;;
 
 let predef_ident =
-  let id_source = Identifier.create_source () in 
+  let id_source = Identifier.create_source () in
   fun name -> T.Ident.create ~id_source ~name ()
 ;;
 
