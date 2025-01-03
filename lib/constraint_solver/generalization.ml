@@ -696,7 +696,10 @@ let update_types ~state (young_region : Young_region.t) =
         (* [type_] is in current region *)
         Type.structure type_ |> S.iter ~f:(fun type_ -> loop type_ guards r)))
   in
-  List.iter young_region.region.types ~f:(fun type_ ->
+  young_region.region.types
+  |> List.sort
+       ~compare:(Comparable.lift Tree.Level.compare ~f:(Type.level_exn ~here:[%here]))
+  |> List.iter ~f:(fun type_ ->
     loop type_ (Type.guards type_) (Type.region_exn ~here:[%here] type_))
 ;;
 
