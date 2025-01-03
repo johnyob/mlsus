@@ -39,8 +39,8 @@ let%expect_test "Cannot unsuspend undetermined" =
     (num_zombie_regions(num_zombie_regions 1))
     ("Constraint is unsatisfiable"
      (cst
-      (Exists ((id 1) (name Type.Var))
-       (Match ((id 1) (name Type.Var)) ((type_vars (((id 1) (name Type.Var)))))
+      (Exists ((id 0) (name Type.Var))
+       (Match ((id 0) (name Type.Var)) ((type_vars (((id 0) (name Type.Var)))))
         <fun>)))
      (err
       ("Failed to solve constraint"
@@ -64,9 +64,9 @@ let%expect_test "Can unsuspend determined (pre)" =
     {|
     ("Constraint is satisfiable"
      (cst
-      (Exists ((id 2) (name Type.Var))
-       (Conj (Eq (Var ((id 2) (name Type.Var))) (Constr () int))
-        (Match ((id 2) (name Type.Var)) ((type_vars ())) <fun>)))))
+      (Exists ((id 0) (name Type.Var))
+       (Conj (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))
+        (Match ((id 0) (name Type.Var)) ((type_vars ())) <fun>)))))
     |}]
 ;;
 
@@ -86,9 +86,9 @@ let%expect_test "Can unsuspend determined (post)" =
     {|
     ("Constraint is satisfiable"
      (cst
-      (Exists ((id 3) (name Type.Var))
-       (Conj (Match ((id 3) (name Type.Var)) ((type_vars ())) <fun>)
-        (Eq (Var ((id 3) (name Type.Var))) (Constr () int))))))
+      (Exists ((id 0) (name Type.Var))
+       (Conj (Match ((id 0) (name Type.Var)) ((type_vars ())) <fun>)
+        (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))))))
     |}]
 ;;
 
@@ -109,12 +109,12 @@ let%expect_test "Cannot unsuspend circular dependencies" =
     (num_zombie_regions(num_zombie_regions 1))
     ("Constraint is unsatisfiable"
      (cst
-      (Exists ((id 4) (name Type.Var))
-       (Exists ((id 5) (name Type.Var))
+      (Exists ((id 0) (name Type.Var))
+       (Exists ((id 1) (name Type.Var))
         (Conj
-         (Match ((id 4) (name Type.Var)) ((type_vars (((id 5) (name Type.Var)))))
+         (Match ((id 0) (name Type.Var)) ((type_vars (((id 1) (name Type.Var)))))
           <fun>)
-         (Match ((id 5) (name Type.Var)) ((type_vars (((id 4) (name Type.Var)))))
+         (Match ((id 1) (name Type.Var)) ((type_vars (((id 0) (name Type.Var)))))
           <fun>)))))
      (err
       ("Failed to solve constraint"
@@ -139,13 +139,14 @@ let%expect_test "Can unsuspend topological dependencies" =
     {|
     ("Constraint is satisfiable"
      (cst
-      (Exists ((id 6) (name Type.Var))
-       (Exists ((id 7) (name Type.Var))
+      (Exists ((id 0) (name Type.Var))
+       (Exists ((id 1) (name Type.Var))
         (Conj
-         (Conj (Eq (Var ((id 6) (name Type.Var))) (Constr () int))
-          (Match ((id 6) (name Type.Var))
-           ((type_vars (((id 7) (name Type.Var))))) <fun>))
-         (Match ((id 7) (name Type.Var)) ((type_vars ())) <fun>))))))
+         (Conj
+          (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))
+          (Match ((id 0) (name Type.Var))
+           ((type_vars (((id 1) (name Type.Var))))) <fun>))
+         (Match ((id 1) (name Type.Var)) ((type_vars ())) <fun>))))))
     |}]
 ;;
 
@@ -188,31 +189,31 @@ let%expect_test "No suspended matches results in normal generalization" =
     {|
     ("Constraint is satisfiable"
      (cst
-      (Exists ((id 8) (name Type.Var))
-       (Let ((id 1) (name Constraint.Var))
-        ((type_vars (((id 9) (name Type.Var))))
+      (Exists ((id 0) (name Type.Var))
+       (Let ((id 6) (name Constraint.Var))
+        ((type_vars (((id 1) (name Type.Var))))
          (in_
-          (Exists ((id 10) (name Type.Var))
-           (Exists ((id 11) (name Type.Var))
+          (Exists ((id 2) (name Type.Var))
+           (Exists ((id 3) (name Type.Var))
             (Conj
-             (Eq (Var ((id 9) (name Type.Var)))
-              (Arrow (Var ((id 10) (name Type.Var)))
-               (Var ((id 11) (name Type.Var)))))
-             (Let ((id 2) (name Constraint.Var))
-              ((type_vars ()) (in_ True) (type_ (Var ((id 10) (name Type.Var)))))
-              (Instance ((id 2) (name Constraint.Var))
-               (Var ((id 11) (name Type.Var)))))))))
-         (type_ (Var ((id 9) (name Type.Var)))))
-        (Exists ((id 12) (name Type.Var))
-         (Exists ((id 13) (name Type.Var))
+             (Eq (Var ((id 1) (name Type.Var)))
+              (Arrow (Var ((id 2) (name Type.Var)))
+               (Var ((id 3) (name Type.Var)))))
+             (Let ((id 7) (name Constraint.Var))
+              ((type_vars ()) (in_ True) (type_ (Var ((id 2) (name Type.Var)))))
+              (Instance ((id 7) (name Constraint.Var))
+               (Var ((id 3) (name Type.Var)))))))))
+         (type_ (Var ((id 1) (name Type.Var)))))
+        (Exists ((id 4) (name Type.Var))
+         (Exists ((id 5) (name Type.Var))
           (Conj
            (Conj
-            (Instance ((id 1) (name Constraint.Var))
-             (Var ((id 12) (name Type.Var))))
-            (Eq (Var ((id 12) (name Type.Var)))
-             (Arrow (Var ((id 13) (name Type.Var)))
-              (Var ((id 8) (name Type.Var))))))
-           (Eq (Var ((id 13) (name Type.Var))) (Constr () int)))))))))
+            (Instance ((id 6) (name Constraint.Var))
+             (Var ((id 4) (name Type.Var))))
+            (Eq (Var ((id 4) (name Type.Var)))
+             (Arrow (Var ((id 5) (name Type.Var)))
+              (Var ((id 0) (name Type.Var))))))
+           (Eq (Var ((id 5) (name Type.Var))) (Constr () ((id 0) (name int)))))))))))
     |}]
 ;;
 
@@ -241,17 +242,19 @@ let%expect_test "Partial generic becomes instance" =
     (num_zombie_regions(num_zombie_regions 1))
     ("Constraint is unsatisfiable"
      (cst
-      (Exists ((id 14) (name Type.Var))
-       (Exists ((id 15) (name Type.Var))
+      (Exists ((id 0) (name Type.Var))
+       (Exists ((id 1) (name Type.Var))
         (Let ((id 3) (name Constraint.Var))
-         ((type_vars (((id 16) (name Type.Var))))
+         ((type_vars (((id 2) (name Type.Var))))
           (in_
-           (Match ((id 14) (name Type.Var))
-            ((type_vars (((id 15) (name Type.Var)) ((id 16) (name Type.Var)))))
+           (Match ((id 0) (name Type.Var))
+            ((type_vars (((id 1) (name Type.Var)) ((id 2) (name Type.Var)))))
             <fun>))
-          (type_ (Var ((id 16) (name Type.Var)))))
-         (Conj (Instance ((id 3) (name Constraint.Var)) (Constr () int))
-          (Eq (Var ((id 14) (name Type.Var))) (Constr () string)))))))
+          (type_ (Var ((id 2) (name Type.Var)))))
+         (Conj
+          (Instance ((id 3) (name Constraint.Var))
+           (Constr () ((id 0) (name int))))
+          (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 1) (name string)))))))))
      (err
       ("Failed to solve constraint"
        (exn (Mlsus_constraint_solver__Generalization.Cannot_unsuspend_generic)))))
@@ -285,20 +288,22 @@ let%expect_test "Partial generic becomes generic" =
     (num_zombie_regions(num_zombie_regions 2))
     ("Constraint is unsatisfiable"
      (cst
-      (Exists ((id 17) (name Type.Var))
-       (Let ((id 4) (name Constraint.Var))
-        ((type_vars (((id 18) (name Type.Var))))
+      (Exists ((id 0) (name Type.Var))
+       (Let ((id 3) (name Constraint.Var))
+        ((type_vars (((id 1) (name Type.Var))))
          (in_
-          (Match ((id 17) (name Type.Var))
-           ((type_vars (((id 18) (name Type.Var))))) <fun>))
-         (type_ (Var ((id 18) (name Type.Var)))))
+          (Match ((id 0) (name Type.Var))
+           ((type_vars (((id 1) (name Type.Var))))) <fun>))
+         (type_ (Var ((id 1) (name Type.Var)))))
         (Conj
          (Conj
-          (Instance ((id 4) (name Constraint.Var))
-           (Arrow (Constr () int) (Constr () int)))
-          (Instance ((id 4) (name Constraint.Var))
-           (Arrow (Constr () string) (Constr () string))))
-         (Eq (Var ((id 17) (name Type.Var))) (Constr () int))))))
+          (Instance ((id 3) (name Constraint.Var))
+           (Arrow (Constr () ((id 0) (name int)))
+            (Constr () ((id 0) (name int)))))
+          (Instance ((id 3) (name Constraint.Var))
+           (Arrow (Constr () ((id 1) (name string)))
+            (Constr () ((id 1) (name string))))))
+         (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))))))
      (err
       ("Failed to solve constraint"
        (exn (Mlsus_constraint_solver__Generalization.Cannot_unsuspend_generic)))))
