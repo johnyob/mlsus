@@ -1,14 +1,6 @@
 (executable
  (public_name mlsus)
- (name main)
- (libraries
-  core
-  async
-  core_unix.command_unix
-  mlsus.ast
-  mlsus.parser
-  mlsus.constraint
-  mlsus.type_checker
-  mlsus.constraint_solver)
+ (name mlsus)
+ (libraries core async mlsus.main)
  (preprocess
   (pps ppx_jane)))
