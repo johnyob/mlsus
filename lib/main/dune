@@ -1,0 +1,12 @@
+(library
+ (name mlsus_main)
+ (public_name mlsus.main)
+ (libraries
+  core
+  mlsus.ast
+  mlsus.parser
+  mlsus.constraint
+  mlsus.type_checker
+  mlsus.constraint_solver)
+ (preprocess
+  (pps ppx_jane)))

@@ -69,7 +69,7 @@ let match_type
   in
   match former with
   | Tuple gtypes ->
-    let env, type_vars= match_types ~env gtypes in
+    let env, type_vars = match_types ~env gtypes in
     env, Tuple type_vars
   | Arrow (gtype1, gtype2) ->
     let type_var1 = C.Type.Var.create ~id_source:state.id_source () in
