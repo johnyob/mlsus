@@ -4,15 +4,18 @@ open Ast
 open Constraint
 
 module Convert = struct
-  let type_name ~env (type_name : Type_name.t) : (Adt.Type_ident.t * int) Or_error.t =
+  let type_name ~env (type_name : Type_name.With_range.t)
+    : (Adt.Type_ident.t * int) Or_error.t
+    =
     let open Or_error.Let_syntax in
     let%map type_def =
       (* Disambiguate to the first type declaration *)
-      Env.find_type_def env type_name
+      Env.find_type_def env type_name.it
       |> List.hd
       |> Or_error.of_option
            ~error:
-             (Error.create_s [%message "Unbound type name" (type_name : Type_name.t)])
+             (Error.create_s
+                [%message "Unbound type name" (type_name : Type_name.With_range.t)])
     in
     type_def.type_ident, type_def.type_arity
   ;;
@@ -21,8 +24,8 @@ module Convert = struct
     let rec to_type_expr ~env (type_ : Ast.core_type) : Adt.type_expr Or_error.t =
       let open Adt in
       let open Or_error.Let_syntax in
-      match type_ with
-      | Type_var v -> return @@ Type_var v
+      match type_.it with
+      | Type_var v -> return @@ Type_var v.it
       | Type_arrow (type1, type2) ->
         let%map type_expr1 = to_type_expr ~env type1
         and type_expr2 = to_type_expr ~env type2 in
@@ -50,13 +53,14 @@ module Convert = struct
 
     let rec to_type ~env (type_ : Ast.core_type) : Type.t Or_error.t =
       let open Or_error.Let_syntax in
-      match type_ with
+      match type_.it with
       | Type_var v ->
         let%map v =
-          Env.find_type_var env v
+          Env.find_type_var env v.it
           |> Or_error.of_option
                ~error:
-                 (Error.create_s [%message "Unbound type variable" (v : Type_var_name.t)])
+                 (Error.create_s
+                    [%message "Unbound type variable" (v.it : Type_var_name.t)])
         in
         Type.var v
       | Type_arrow (type1, type2) ->
@@ -108,13 +112,15 @@ module Convert = struct
       Type.constr arg_types constr
   ;;
 
-  let core_scheme ~(env : Env.t) ({ scheme_quantifiers; scheme_body } : Ast.core_scheme)
+  let core_scheme ~(env : Env.t) (scheme : Ast.core_scheme)
     : (Type.Var.t list * Type.t) Or_error.t
     =
     let open Or_error.Let_syntax in
+    let { scheme_quantifiers; scheme_body } = scheme.it in
     let env, quantifiers =
       List.fold_map scheme_quantifiers ~init:env ~f:(fun env type_var ->
-        Env.rename_type_var env ~type_var ~in_:(fun env ctype_var -> env, ctype_var))
+        Env.rename_type_var env ~type_var:type_var.it ~in_:(fun env ctype_var ->
+          env, ctype_var))
     in
     let%map body = Core_type.to_type ~env scheme_body in
     quantifiers, body
@@ -172,7 +178,7 @@ let infer_constructor ~id_source constr_def constr_arg' constr_type' =
 
 let inst_constr
       ~(env : Env.t)
-      ~constr_name
+      ~(constr_name : Constructor_name.With_range.t)
       ~(constr_arity : Adt.constructor_arity)
       ~constr_type
       k
@@ -186,8 +192,10 @@ let inst_constr
   in
   let%bind c_type =
     (* Lookup constructor *)
-    match Env.find_constr env constr_name with
-    | [] -> error_s [%message "Unbound constructor" (constr_name : Constructor_name.t)]
+    match Env.find_constr env constr_name.it with
+    | [] ->
+      error_s
+        [%message "Unbound constructor" (constr_name : Constructor_name.With_range.t)]
     | [ constr_decl ] ->
       infer_constructor ~id_source:(Env.id_source env) constr_decl constr_arg constr_type
     | constr_defs ->
@@ -204,13 +212,13 @@ let inst_constr
           error_s
             [%message
               "No constructors with expected type ident"
-                (constr_name : Constructor_name.t)
+                (constr_name : Constructor_name.With_range.t)
                 (type_ident : Type_ident.t)]
         | constr_defs ->
           error_s
             [%message
               "Ambiguous constructors with expected type ident"
-                (constr_name : Constructor_name.t)
+                (constr_name : Constructor_name.With_range.t)
                 (constr_defs : constructor_definition list)
                 (type_ident : Type_ident.t)]
       in
@@ -270,15 +278,15 @@ module Pattern = struct
     result, exists a c
   ;;
 
-  let rec infer_pat ~env pat pat_type k =
+  let rec infer_pat ~env (pat : pattern) pat_type k =
     let open Or_error.Let_syntax in
-    match pat with
+    match pat.it with
     | Pat_any -> k (Fragment.empty, tt)
-    | Pat_var x -> k (Fragment.singleton x pat_type, tt)
+    | Pat_var x -> k (Fragment.singleton x.it pat_type, tt)
     | Pat_alias (pat, x) ->
       infer_pat ~env pat pat_type
       @@ fun (f, c) ->
-      let f = Fragment.extend f ~var:x ~type_:pat_type in
+      let f = Fragment.extend f ~var:x.it ~type_:pat_type in
       k (f, c)
     | Pat_const const -> k (Fragment.empty, pat_type =~ infer_constant const)
     | Pat_tuple pats ->
@@ -323,7 +331,14 @@ module Expression = struct
     exists a c
   ;;
 
-  let bind_pat ~env pat pat_type ~in_ =
+  let exists_many' ~id_source n f =
+    let open Or_error.Let_syntax in
+    let as_ = List.init n ~f:(fun _ -> Type.Var.create ~id_source ()) in
+    let%map c = f (List.map as_ ~f:Type.var) in
+    exists_many as_ c
+  ;;
+
+  let bind_pat ~env (pat : pattern) pat_type ~in_ =
     let open Or_error.Let_syntax in
     (Pattern.infer_pat ~env pat pat_type
      @@ fun (fragment, c) ->
@@ -341,25 +356,36 @@ module Expression = struct
     >>| snd
   ;;
 
-  let rec infer_exp ~(env : Env.t) exp exp_type =
+  let rec bind_pats ~env pat_and_types ~in_ =
+    match pat_and_types with
+    | [] -> in_ env
+    | (pat, pat_type) :: pat_and_types ->
+      bind_pat ~env pat pat_type ~in_:(fun env -> bind_pats ~env pat_and_types ~in_)
+  ;;
+
+  let rec infer_exp ~(env : Env.t) (exp : expression) exp_type =
     let open Or_error.Let_syntax in
     let id_source = Env.id_source env in
-    match exp with
+    match exp.it with
     | Exp_var var ->
       let%bind var =
-        Env.find_var env var
+        Env.find_var env var.it
         |> Or_error.of_option
-             ~error:(Error.create_s [%message "Unbound variable" (var : Var_name.t)])
+             ~error:
+               (Error.create_s
+                  [%message "Unbound variable" (var : Var_name.With_range.t)])
       in
       return @@ inst var exp_type
     | Exp_const const -> return @@ (exp_type =~ infer_constant const)
-    | Exp_fun (pat, exp) ->
-      exists' ~id_source
-      @@ fun a1 ->
+    | Exp_fun (pats, exp) ->
+      exists_many' ~id_source (List.length pats)
+      @@ fun as1 ->
       exists' ~id_source
       @@ fun a2 ->
-      let%map c = bind_pat ~env pat a1 ~in_:(fun env -> infer_exp ~env exp a2) in
-      Type.(exp_type =~ a1 @-> a2) &~ c
+      let pat_and_types = List.zip_exn pats as1 in
+      let%map c = bind_pats ~env pat_and_types ~in_:(fun env -> infer_exp ~env exp a2) in
+      let arr_type = List.fold_right as1 ~init:a2 ~f:(fun a1 arr -> Type.(a1 @-> arr)) in
+      exp_type =~ arr_type &~ c
     | Exp_app (exp1, exp2) ->
       exists' ~id_source
       @@ fun a1 ->
@@ -373,7 +399,8 @@ module Expression = struct
     | Exp_exists (type_vars, exp) ->
       let env, type_vars =
         List.fold_map type_vars ~init:env ~f:(fun env type_var ->
-          Env.rename_type_var env ~type_var ~in_:(fun env ctype_var -> env, ctype_var))
+          Env.rename_type_var env ~type_var:type_var.it ~in_:(fun env ctype_var ->
+            env, ctype_var))
       in
       let%map c = infer_exp ~env exp exp_type in
       exists_many type_vars c
@@ -440,29 +467,28 @@ module Expression = struct
     in
     all cs
 
-  and infer_case ~env { case_lhs = pat; case_rhs = exp } ~lhs_type ~rhs_type =
+  and infer_case ~env case ~lhs_type ~rhs_type =
+    let { case_lhs = pat; case_rhs = exp } = case.it in
     bind_pat ~env pat lhs_type ~in_:(fun env -> infer_exp ~env exp rhs_type)
 
-  and infer_value_binding
-        ~(env : Env.t)
-        { value_binding_var = var; value_binding_exp = exp }
-        k
-    =
+  and infer_value_binding ~(env : Env.t) value_binding k =
     let open Or_error.Let_syntax in
+    let { value_binding_var = var; value_binding_exp = exp } = value_binding.it in
     let exp_type_var = Type.Var.create ~id_source:(Env.id_source env) () in
     let exp_type = Type.var exp_type_var in
     let%bind c = infer_exp ~env exp exp_type in
-    Env.rename_var env ~var ~in_:(fun env cvar ->
+    Env.rename_var env ~var:var.it ~in_:(fun env cvar ->
       let%map c' = k env in
       let_ cvar#=(poly_scheme ([ exp_type_var ] @. c @=> exp_type)) ~in_:c')
   ;;
 end
 
 module Structure = struct
-  let infer_prim ~env value_desc k =
+  let infer_prim ~env (value_desc : value_description) k =
     let open Or_error.Let_syntax in
-    let%bind quantifiers, type_ = Convert.core_scheme ~env value_desc.value_type in
-    Env.rename_var env ~var:value_desc.value_name ~in_:(fun env cvar ->
+    let { value_type; value_name } = value_desc.it in
+    let%bind quantifiers, type_ = Convert.core_scheme ~env value_type in
+    Env.rename_var env ~var:value_name.it ~in_:(fun env cvar ->
       let%map c = k env in
       let_ cvar#=(poly_scheme (quantifiers @. tt @=> type_)) ~in_:c)
   ;;
@@ -472,10 +498,11 @@ module Structure = struct
         ~type_name
         ~type_arity
         ~type_ident
-        { type_decl_name; type_decl_params; type_decl_kind }
+        (type_decl : type_declaration)
     =
     let open Or_error.Let_syntax in
-    assert (Type_name.(type_name = type_decl_name));
+    let { type_decl_name; type_decl_params; type_decl_kind } = type_decl.it in
+    assert (Type_name.(type_name = type_decl_name.it));
     (* Convert the declaration kind *)
     let%map type_kind =
       match type_decl_kind with
@@ -483,7 +510,7 @@ module Structure = struct
       | Type_decl_variant constr_decls ->
         let constructor_type =
           Adt.Type_constr
-            ( List.map type_decl_params ~f:(fun type_var -> Adt.Type_var type_var)
+            ( List.map type_decl_params ~f:(fun type_var -> Adt.Type_var type_var.it)
             , type_ident )
         in
         let%map constr_decls =
@@ -491,7 +518,7 @@ module Structure = struct
             let constructor_ident =
               Adt.Constructor_ident.create
                 ~id_source:(Env.id_source env)
-                ~name:(constructor_name :> string)
+                ~name:(constructor_name.it :> string)
                 ()
             in
             let%map constructor_arg =
@@ -500,9 +527,9 @@ module Structure = struct
                    ~f:(fun arg -> Convert.Core_type.to_type_expr ~env arg >>| Option.some)
                    ~default:(return None)
             in
-            { Adt.constructor_name
+            { Adt.constructor_name = constructor_name.it
             ; constructor_ident
-            ; constructor_alphas = type_decl_params
+            ; constructor_alphas = List.map type_decl_params ~f:With_range.it
             ; constructor_type
             ; constructor_arg
             ; constructor_type_ident = type_ident
@@ -514,13 +541,12 @@ module Structure = struct
     { Adt.type_name; type_ident; type_arity; type_kind }
   ;;
 
-  let infer_type_decls ~env type_decls =
+  let infer_type_decls ~env (type_decls : type_declaration list) =
     let open Or_error.Let_syntax in
     let type_name_and_arities =
-      List.map
-        type_decls
-        ~f:(fun { type_decl_name; type_decl_params; type_decl_kind = _ } ->
-          type_decl_name, List.length type_decl_params)
+      List.map type_decls ~f:(fun type_decl ->
+        let { type_decl_name; type_decl_params; type_decl_kind = _ } = type_decl.it in
+        type_decl_name.it, List.length type_decl_params)
     in
     (* 1. Declare all the types *)
     Env.declare_types env type_name_and_arities ~in_:(fun env_with_decls type_idents ->
@@ -549,12 +575,12 @@ module Structure = struct
     let open Or_error.Let_syntax in
     match str with
     | [] -> return tt
-    | Str_type type_decls :: str ->
+    | { it = Str_type type_decls; range = _ } :: str ->
       let%bind env = infer_type_decls ~env type_decls in
       infer_str ~env str
-    | Str_primitive value_desc :: str ->
+    | { it = Str_primitive value_desc; range = _ } :: str ->
       infer_prim ~env value_desc @@ fun env -> infer_str ~env str
-    | Str_value value_binding :: str ->
+    | { it = Str_value value_binding; range = _ } :: str ->
       Expression.infer_value_binding ~env value_binding @@ fun env -> infer_str ~env str
   ;;
 end
