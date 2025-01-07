@@ -17,4 +17,4 @@
 
 (package
  (name mlsus)
- (depends ocaml dune core core_unix async ppx_jane fmt menhir))
+ (depends ocaml dune core core_unix async ppx_jane fmt menhir grace))
