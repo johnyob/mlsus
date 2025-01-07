@@ -1,4 +1,5 @@
 open Core
+open Grace
 
 module Token = struct
   include Token
@@ -105,10 +106,13 @@ module Parser = struct
     ;;
   end
 
-  type ('a, 'err) t = Lexing.lexbuf -> ('a, ([> Error.t ] as 'err)) result
+  type ('a, 'err) t =
+    ?source:Source.t -> Lexing.lexbuf -> ('a, ([> Error.t ] as 'err)) result
 
-  let parse ~f lexbuf =
+  let parse ~f ?source lexbuf =
     let open Result in
+    Mlsus_source.with_optional_source ?source
+    @@ fun () ->
     try_with (fun () -> f Lexer.read_token_exn lexbuf)
     |> map_error ~f:(function
       | Parser.Error -> `Parser_error
