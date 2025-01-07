@@ -14,6 +14,7 @@ depends: [
   "ppx_jane"
   "fmt"
   "menhir"
+  "grace"
   "odoc" {with-doc}
 ]
 build: [
@@ -31,3 +32,7 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/johnyob/mlsus.git"
+# NOTE: To be kept in sync with ocamlPackages in nix/overlay.nix
+pin-depends: [
+  [ "grace.0.2.0" "git+https://github.com/johnyob/grace.git#275adda398834612b804283fe9548708e570bfdf" ]
+]
