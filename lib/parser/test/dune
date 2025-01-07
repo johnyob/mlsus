@@ -1,6 +1,6 @@
 (library
  (name test_parser)
- (libraries core fmt mlsus.ast mlsus.parser)
+ (libraries core fmt grace mlsus.ast mlsus.source mlsus.parser)
  (inline_tests)
  (preprocess
   (pps ppx_jane -log-source-position)))
