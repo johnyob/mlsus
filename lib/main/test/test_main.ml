@@ -1,4 +1,5 @@
 open! Core
+open! Grace
 open Mlsus_main
 
 let () =
@@ -13,7 +14,12 @@ let type_check_and_print
       str
   =
   Async.Log.Global.set_level log_level;
-  type_check_and_print ~dump_ast ~dump_constraint (Lexing.from_string str)
+  let source = `String { Source.name = Some "expect_test.ml"; content = str } in
+  type_check_and_print
+    ~source
+    ~dump_ast
+    ~dump_constraint
+    (Lexing.from_string ~with_positions:true str)
 ;;
 
 let include_fix = "external fix : 'a 'b. (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b;;"
@@ -739,7 +745,20 @@ let%expect_test "" =
     |}
   in
   type_check_and_print str;
-  [%expect {| ("Unbound variable" (var y)) |}]
+  [%expect
+    {|
+    ("Unbound variable"
+     (var
+      ((it y)
+       (range
+        ((start 25) (stop 26)
+         (source
+          (String
+           ((name (expect_test.ml))
+            (content  "\
+                     \n      let id = fun x -> y ;;\
+                     \n    ")))))))))
+    |}]
 ;;
 
 let%expect_test "" =
