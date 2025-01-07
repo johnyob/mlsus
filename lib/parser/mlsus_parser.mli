@@ -1,4 +1,5 @@
 open Core
+open Grace
 open Mlsus_ast
 
 module Token : sig
@@ -30,7 +31,8 @@ module Parser : sig
     include Pretty_printer.S with type t := t
   end
 
-  type ('a, 'err) t = Lexing.lexbuf -> ('a, ([> Error.t ] as 'err)) result
+  type ('a, 'err) t =
+    ?source:Source.t -> Lexing.lexbuf -> ('a, ([> Error.t ] as 'err)) result
 
   val parse_core_type : (Ast.core_type, 'err) t
   val parse_expression : (Ast.expression, 'err) t

@@ -1,33 +1,37 @@
 %{
+open Grace
 open Mlsus_ast 
 open Ast_types
-open Ast_builder
+open Ast_builder.Default
 
 (* A set of predefined operator names *)
 module Predef_names = struct 
-  let or_ = var_name "( || )"
-  let and_ = var_name "( && )"
+  let or_ ~range = var_name ~range "( || )"
+  let and_ ~range = var_name ~range "( && )"
 
-  let equal = var_name "( = )"
-  let not_equal = var_name "( <> )"
-  let less_than = var_name "( < )"
-  let greater_than = var_name "( > )"
-  let less_than_equal = var_name "( <= )"
-  let greater_than_equal = var_name "( >= )"
+  let equal ~range = var_name ~range "( = )"
+  let not_equal ~range = var_name ~range "( <> )"
+  let less_than ~range = var_name ~range "( < )"
+  let greater_than ~range = var_name ~range "( > )"
+  let less_than_equal ~range = var_name ~range "( <= )"
+  let greater_than_equal ~range = var_name ~range "( >= )"
   
-  let add = var_name "( + )"
-  let sub = var_name "( - )"
-  let mul = var_name "( * )"
-  let div = var_name "( / )" 
+  let add ~range = var_name ~range "( + )"
+  let sub ~range = var_name ~range "( - )"
+  let mul ~range = var_name ~range "( * )"
+  let div ~range = var_name ~range "( / )" 
   
-  let neg = var_name "unary( - )"
+  let neg ~range = var_name ~range "unary( - )"
 end 
 
-let binary_op ~op ~exp1 ~exp2 =
-  Expression.(app (app (var op) exp1) exp2)
+let binary_op ~range ~op ~exp1 ~exp2 =
+  Expression.(app ~range (app ~range (var ~range op) exp1) exp2)
 
-let unary_op ~op ~exp = 
-  Expression.(app (var op) exp)
+let unary_op ~range ~op ~exp = 
+  Expression.(app ~range (var ~range op) exp)
+
+let range_of_lex lex = 
+  Range.of_lex ?source:(Mlsus_source.get ()) lex
 %}
 
 %nonassoc prec_below_SEMI
@@ -100,11 +104,11 @@ separated_nontrivial_list(sep, X):
 
 type_var_name:
   "'"; id = "<ident>"
-    { type_var_name id }
+    { type_var_name ~range:(range_of_lex $loc) id }
 
 type_name:
   id = "<ident>"
-    { type_name id }
+    { type_name ~range:(range_of_lex $loc) id }
 
 %inline core_type:
   type_ = arrow_type
@@ -116,13 +120,13 @@ arrow_type:
   | type1 = tuple_type
     ; "->"
     ; type2 = core_type
-      { Type.arrow type1 type2 }
+      { Type.arrow ~range:(range_of_lex $loc) type1 type2 }
 
 tuple_type:
     type_ = atom_type
       { type_ }
   | types = separated_nontrivial_list("*", atom_type)
-      { Type.tuple types }
+      { Type.tuple ~range:(range_of_lex $loc) types }
 
 atom_type:
     "("
@@ -130,10 +134,10 @@ atom_type:
     ; ")"
       { type_ }
   | type_var_name = type_var_name
-      { Type.var type_var_name }
+      { Type.var ~range:(range_of_lex $loc) type_var_name }
   | arg_types = type_argument_list
     ; type_name = type_name
-      { Type.constr arg_types type_name }
+      { Type.constr ~range:(range_of_lex $loc) arg_types type_name }
 
 %inline type_argument_list:
     (* empty *)   
@@ -189,11 +193,11 @@ atom_type:
 
 %inline var_name:
   id = "<ident>"
-    { var_name id }
+    { var_name ~range:(range_of_lex $loc) id }
 
 %inline constr_name:
   uid = "<upper_ident>"
-    { constr_name uid }
+    { constr_name ~range:(range_of_lex $loc) uid }
 
 constant:
     int = "<int>"
@@ -211,30 +215,30 @@ seq_expression:
   | exp1 = expression
     ; ";"
     ; exp2 = seq_expression
-      { Expression.sequence exp1 exp2 }
+      { Expression.sequence ~range:(range_of_lex $loc) exp1 exp2 }
 
 expression:
     exp = app_expression                                                                   
       { exp }
   | op = unary_op
     ; exp = expression %prec prec_unary_op
-      { unary_op ~op ~exp }
+      { unary_op ~range:(range_of_lex $loc) ~op ~exp }
   | exp1 = expression
     ; op = bin_op
     ; exp2 = expression
-      { binary_op ~op ~exp1 ~exp2 }
+      { binary_op ~range:(range_of_lex $loc) ~op ~exp1 ~exp2 }
   | "if"
     ; cond = expression
     ; "then"
     ; then_ = seq_expression
     ; "else"
     ; else_ = seq_expression
-      { Expression.if_ cond ~then_ ~else_ }
+      { Expression.if_ ~range:(range_of_lex $loc) cond ~then_ ~else_ }
   | "fun"
     ; pats = nonempty_list(atom_pattern)
     ; "->"
     ; exp = seq_expression 
-      { Expression.fun_many pats exp }
+      { Expression.fun_ ~range:(range_of_lex $loc) pats exp }
   | "exists"
     ; "("
     ; "type"
@@ -242,33 +246,33 @@ expression:
     ; ")"
     ; "->"
     ; exp = seq_expression
-      { Expression.exists type_var_names exp }
+      { Expression.exists ~range:(range_of_lex $loc) type_var_names exp }
   | "match" 
     ; exp = expression 
     ; "with" 
     ; cases = cases
-      { Expression.match_ exp ~with_:cases }
+      { Expression.match_ ~range:(range_of_lex $loc) exp ~with_:cases }
   | "let"
     ; value_binding = value_binding
     ; "in"
     ; exp = seq_expression
-      { Expression.let_ value_binding ~in_:exp }
+      { Expression.let_ ~range:(range_of_lex $loc) value_binding ~in_:exp }
 
 app_expression:
     exp = atom_expression
       { exp }
   | constr_name = constr_name 
     ; arg_exp = atom_expression
-      { Expression.constr constr_name (Some arg_exp) }
+      { Expression.constr ~range:(range_of_lex $loc) constr_name (Some arg_exp) }
   | exp1 = app_expression
     ; exp2 = atom_expression
-      { Expression.app exp1 exp2 }
+      { Expression.app ~range:(range_of_lex $loc) exp1 exp2 }
 
 value_binding:
   var_name = var_name 
   ; "="
   ; exp = seq_expression
-    { value_binding var_name exp }
+    { value_binding ~range:(range_of_lex $loc) var_name exp }
 
 cases:
   "("
@@ -280,26 +284,26 @@ case:
   pat = pattern
   ; "->"
   ; exp = seq_expression
-      { Expression.case ~lhs:pat ~rhs:exp }
+      { Expression.case ~range:(range_of_lex $loc) ~lhs:pat ~rhs:exp }
 
 
 atom_expression:
     const = constant 
-      { Expression.const const }
+      { Expression.const ~range:(range_of_lex $loc) const }
   | var_name = var_name
-      { Expression.var var_name }
+      { Expression.var ~range:(range_of_lex $loc) var_name }
   | constr_name = constr_name
-      { Expression.constr constr_name None }
+      { Expression.constr ~range:(range_of_lex $loc) constr_name None }
   | "("
     ; exps = separated_nontrivial_list(",", seq_expression)
     ; ")"
-      { Expression.tuple exps }
+      { Expression.tuple ~range:(range_of_lex $loc) exps }
   | "("
     ; exp = seq_expression
     ; ":"
     ; type_ = core_type
     ; ")"
-      { Expression.annot exp type_ }
+      { Expression.annot ~range:(range_of_lex $loc) exp type_ }
   | "("
     ; exp = seq_expression
     ; ")"
@@ -307,33 +311,33 @@ atom_expression:
 
 %inline unary_op:
   "-" 
-    { Predef_names.neg  }
+    { Predef_names.neg ~range:(range_of_lex $loc) }
 
 %inline bin_op:
     "+"
-      { Predef_names.add  }
+      { Predef_names.add ~range:(range_of_lex $loc) }
   | "-"
-      { Predef_names.sub  }
+      { Predef_names.sub ~range:(range_of_lex $loc) }
   | "/"
-      { Predef_names.div  }
+      { Predef_names.div ~range:(range_of_lex $loc) }
   | "*"
-      { Predef_names.mul  }
+      { Predef_names.mul ~range:(range_of_lex $loc) }
   | ">"
-      { Predef_names.greater_than  }  
+      { Predef_names.greater_than ~range:(range_of_lex $loc) }  
   | "<"
-      { Predef_names.less_than  }
+      { Predef_names.less_than ~range:(range_of_lex $loc) }
   | ">="
-      { Predef_names.greater_than_equal  }
+      { Predef_names.greater_than_equal ~range:(range_of_lex $loc) }
   | "<="
-      { Predef_names.less_than_equal  }
+      { Predef_names.less_than_equal ~range:(range_of_lex $loc) }
   | "="
-      { Predef_names.equal  }
+      { Predef_names.equal ~range:(range_of_lex $loc) }
   | "<>"
-      { Predef_names.not_equal  }
+      { Predef_names.not_equal ~range:(range_of_lex $loc) }
   | "&&"
-      { Predef_names.and_  }
+      { Predef_names.and_ ~range:(range_of_lex $loc) }
   | "||"
-      { Predef_names.or_  }
+      { Predef_names.or_ ~range:(range_of_lex $loc) }
 
 pattern:
     pat = construct_pattern
@@ -341,35 +345,34 @@ pattern:
   | pat = pattern
     ; "as"
     ; var_name = var_name
-      { Pattern.alias pat ~as_:var_name }
+      { Pattern.alias ~range:(range_of_lex $loc) pat ~as_:var_name }
 
 construct_pattern:
     pat = atom_pattern
       { pat }
   | constr_name = constr_name
     ; arg_pat = pattern
-      { Pattern.constr constr_name (Some arg_pat) }
+      { Pattern.constr ~range:(range_of_lex $loc) constr_name (Some arg_pat) }
  
-
 atom_pattern:
     const = constant
-      { Pattern.const const }
+      { Pattern.const ~range:(range_of_lex $loc) const }
   | "_"     
-      { Pattern.any }
+      { Pattern.any ~range:(range_of_lex $loc) }
   | var_name = var_name            
-      { Pattern.var var_name }
+      { Pattern.var ~range:(range_of_lex $loc) var_name }
   | constr_name = constr_name
-      { Pattern.constr constr_name None }
+      { Pattern.constr ~range:(range_of_lex $loc) constr_name None }
   | "("
     ; pats = separated_nontrivial_list(",", pattern)
     ; ")"
-      { Pattern.tuple pats }
+      { Pattern.tuple ~range:(range_of_lex $loc) pats }
   | "("
     ; pat = pattern
     ; ":"
     ; type_ = core_type
     ; ")"
-      { Pattern.annot pat type_ }
+      { Pattern.annot ~range:(range_of_lex $loc) pat type_ }
   | "("
     ; pat = pattern
     ; ")"
@@ -386,9 +389,9 @@ core_scheme:
     type_var_names = nonempty_list(type_var_name)
     ; "."
     ; type_ = core_type
-      { Type.scheme ~quantifiers:type_var_names type_ }
+      { Type.scheme ~range:(range_of_lex $loc) ~quantifiers:type_var_names type_ }
   | type_ = core_type
-      { Type.scheme type_ }
+      { Type.scheme ~range:(range_of_lex $loc) type_ }
 
 type_declarations:
   "type"
@@ -399,7 +402,7 @@ type_declaration:
   params = type_param_list 
   ; name = type_name 
   ; kind = type_decl_kind 
-      { Structure.type_decl ~name ~params kind }
+      { Structure.type_decl ~range:(range_of_lex $loc) ~name ~params kind }
 
 type_decl_kind:
     (* empty *)
@@ -428,17 +431,21 @@ constructor_declaration:
     ; ")"
       { type_var_names }
 
+value_description:
+    name = var_name 
+  ; ":"
+  ; scheme = core_scheme 
+      { Structure.value_desc ~range:(range_of_lex $loc) ~name ~type_:scheme }
+
 structure_item:
     "let"
     ; value_binding = value_binding
-      { Structure.value value_binding }
+      { Structure.value ~range:(range_of_lex $loc) value_binding }
   | "external"
-    ; name = var_name
-    ; ":"
-    ; scheme = core_scheme
-      { Structure.(primitive (value_desc ~name ~type_:scheme)) }
+    ; value_desc = value_description
+      { Structure.primitive ~range:(range_of_lex $loc) value_desc }
   | type_decls = type_declarations
-      { Structure.type_ type_decls }
+      { Structure.type_ ~range:(range_of_lex $loc) type_decls }
   
 terminated_structure_item:
   str_item = structure_item
