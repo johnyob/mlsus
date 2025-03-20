@@ -1,0 +1,32 @@
+% Restating theorems for the purpose of the proofs
+\usepackage{thmtools}
+\usepackage{thm-restate}
+
+%% Work-in-progress comments
+\ifcomments
+\newcommand{\todo}[1]{{\color{red} {\textsc{TODO:}} #1}}
+\newcommand{\draft}[1]{{\color{black!50} #1}}
+\newcommand{\outdated}[1]{{\color{black!50} {\textsc{OUTDATED:}} #1}}
+\newcommand{\jrc}[1]{{\color{red} {\textsc{JRC:}} #1}}
+\newcommand{\fe}[1]{{\color{red}  {\textsc{FE:}}  #1}}
+\newcommand{\sam}[1]{{\color{red} {\textsc{SL:}}  #1}}
+\newcommand{\js}[1]{{\color{red}  {\textsc{JS:}}  #1}}
+\else
+%% Use for the final version to make sure no comments are left in the paper
+\newcommand{\todo}[1]{}
+\newcommand{\draft}[1]{}
+\newcommand{\outdated}[1]{}
+\newcommand{\jrc}[1]{}
+\newcommand{\fe}[1]{}
+\newcommand{\sam}[1]{}
+\newcommand{\js}[1]{}
+\fi
+
+%% Easy way to redefine inline formatting of code
+\newcommand{\code}[1]{\lstinline{#1}}
+
+\declaretheorem[name=Theorem]{thm}
+\declaretheorem[name=Definition]{defn}
+\declaretheorem[name=Proposition]{prop}
+\declaretheorem[name=Lemma,sibling=thm]{lem}
+\declaretheorem[name=Remark]{remark}

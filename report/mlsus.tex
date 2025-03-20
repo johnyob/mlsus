@@ -1,0 +1,137 @@
+%% -*- fill-column: 80 -*-
+
+% Conditional compilations
+\newif\ifcomments\commentsfalse % Support for adding author comments
+\newif\iflegacydoc\legacydocfalse % Show contents of legacy-fmlx.tex?
+\newif\ifnewranksection\newranksectionfalse
+
+\documentclass[acmsmall,nonacm]{acmart}
+
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage[shortcuts]{extdash} % hyphenate "let-polymorphism" correctly
+\usepackage{xcolor}             % controlling colours in listings
+\usepackage{xspace}             % insert space correctly after commands
+\usepackage{mathpartir}         % mathpar environment for typesetting rules
+\usepackage{stmaryrd}
+\usepackage{placeins}           % float barrier, for draft purposes
+\usepackage{enumitem}           % use Roman numerals for enumerations
+\usepackage{cleveref}
+
+
+
+% \usepackage{tikz}
+% \usetikzlibrary{positioning}
+% \usetikzlibrary{calc}
+% \usetikzlibrary{arrows}
+% \usetikzlibrary{decorations.pathreplacing}
+
+
+\crefname{appendix}{Appendix}{Appendix}
+\Crefname{appendix}{Appendix}{Appendix}
+
+%% Rights management information.  This information is sent to you
+%% when you complete the rights form.  These commands have SAMPLE
+%% values in them; it is your responsibility as an author to replace
+%% the commands and values with those provided to you when you
+%% complete the rights form.
+% \setcopyright{licensed}
+% \copyrightyear{2022}
+% \acmYear{2022}
+% \acmDOI{XXXXXXX.XXXXXXX}
+
+%% These commands are for a JOURNAL article.
+%% \acmJournal{JACM}
+%% \acmVolume{37}
+%% \acmNumber{4}
+%% \acmArticle{111}
+%% \acmMonth{8}
+% \setcopyright{rightsretained}
+% \acmJournal{PACMPL}
+% \acmYear{2022}
+% \acmVolume{6}
+% \acmNumber{ICFP}
+% \acmArticle{111}
+% \acmMonth{8}
+% \acmPrice{}
+% \acmDOI{10.1145/3547642}
+
+
+% \begin{CCSXML}
+% <ccs2012>
+% <concept>
+% <concept_id>10011007.10011006.10011008.10011024.10011025</concept_id>
+% <concept_desc>Software and its engineering~Polymorphism</concept_desc>
+% <concept_significance>500</concept_significance>
+% </concept>
+% <concept>
+% <concept_id>10011007.10011006.10011008.10011009.10011012</concept_id>
+% <concept_desc>Software and its engineering~Functional languages</concept_desc>
+% <concept_significance>500</concept_significance>
+% </concept>
+% </ccs2012>
+% \end{CCSXML}
+
+\ccsdesc[500]{Software and its engineering~Polymorphism}
+\ccsdesc[500]{Software and its engineering~Functional languages}
+
+%%
+%% Submission ID.
+%% Use this when submitting an article to a sponsored event. You'll
+%% receive a unique submission ID from the organizers
+%% of the event, and this ID should be used as the parameter to this command.
+%%\acmSubmissionID{123-A56-BU3}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                               OUR COMMANDS                                 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{macros}
+
+%% Work-in-progress comments
+\ifcomments
+\newcommand{\note}[1]{{\color{red} {\textsc{NOTE:}} #1}}
+\else
+%% Use for the final version to make sure no comments are left in the paper
+\newcommand{\note}[1]{}
+\fi
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                             DOCUMENT BODY                                  %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\title{Constraint-based omnidirectional type inference and its applications}
+\author{Alistair O'Brien}
+\email{ajo41@cam.ac.uk}
+
+\affiliation{%
+  \institution{University of Cambridge}
+  \country{UK}
+}
+
+\renewcommand{\shortauthors}{O'Brien et al.}
+
+\begin{abstract}
+  \todo{Reference OCaml, bidir}
+\end{abstract}
+
+\keywords{type inference, constraints}
+\maketitle
+\bibliographystyle{ACM-Reference-Format}
+\citestyle{acmauthoryear}   %% For author/year citations
+
+\section{Introduction}
+
+\bibliographystyle{acm}
+\bibliography{mlsus}
+
+\newpage 
+\appendix 
+
+
+\end{document}
+
