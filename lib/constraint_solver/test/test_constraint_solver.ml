@@ -369,3 +369,41 @@ let%expect_test "Propagating changes during partial generalization" =
             ((type_vars (((id 0) (name Type.Var))))) <fun>))))))))
     |}]
 ;;
+
+let tapp_ident = predef_ident "app"
+let tapp t1 t2 = T.constr [ t1; t2 ] tapp_ident
+
+let%expect_test "loop" =
+  let open C in
+  let id_source = Identifier.create_source () in
+  let omega alpha =
+    match_ alpha ~closure:[] ~with_:(function
+      | Constr ([ t1; t2 ], constr) when T.Ident.(constr = tapp_ident) ->
+        T.(var t1 =~ tapp (var t1) (var t2))
+      | _ -> ff unsat_err)
+  in
+  let app e1 e2 alpha =
+    let alpha1 = T.Var.create ~id_source () in
+    let alpha2 = T.Var.create ~id_source () in
+    exists_many
+      [ alpha1; alpha2 ]
+      (e1 alpha1 &~ e2 alpha2 &~ T.(var alpha1 =~ tapp (var alpha2) (var alpha)))
+  in
+  let beta = T.Var.create ~id_source () in
+  let cst = exists beta @@ app omega omega beta in
+  print_solve_result cst;
+  [%expect {|
+    ("Constraint is satisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Exists ((id 1) (name Type.Var))
+        (Exists ((id 2) (name Type.Var))
+         (Conj
+          (Conj (Match ((id 1) (name Type.Var)) ((type_vars ())) <fun>)
+           (Match ((id 2) (name Type.Var)) ((type_vars ())) <fun>))
+          (Eq (Var ((id 1) (name Type.Var)))
+           (Constr
+            ((Var ((id 2) (name Type.Var))) (Var ((id 0) (name Type.Var))))
+            ((id 2) (name app))))))))))
+    |}]
+;;

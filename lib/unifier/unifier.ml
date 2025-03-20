@@ -60,7 +60,10 @@ module Make (S : Structure.Basic) = struct
       type t = (Type.t * Type.t) Stack.t
 
       let create () = Stack.create ()
-      let enqueue t type1 type2 = Stack.push t (type1, type2)
+
+      let enqueue t type1 type2 =
+        if not (phys_equal type1 type2) then Stack.push t (type1, type2)
+      ;;
 
       let run t ~f =
         let rec loop () =
