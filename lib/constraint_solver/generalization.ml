@@ -168,7 +168,6 @@ module S = struct
 
   exception Cannot_merge = Inner.Cannot_merge
 
-  let map t ~f = { t with inner = Inner.map t.inner ~f }
   let iter t ~f = Inner.iter t.inner ~f
   let fold t ~init ~f = Inner.fold t.inner ~init ~f
 
@@ -605,7 +604,7 @@ let partial_copy ~state ~curr_region type_ =
            | _ -> false
          in
          if should_copy_structure
-         then Type.set_inner copy (S.Inner.map structure.inner ~f:loop);
+         then Type.set_inner copy (S.Inner.copy structure.inner ~f:loop);
          copy)
   in
   loop ~root:true type_
@@ -928,7 +927,7 @@ let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
        | Not_found_s _ ->
          let copy = partial_instantiate ~state ~curr_region type_ in
          Hashtbl.set copies ~key:structure.id ~data:copy;
-         Type.set_inner copy (S.Inner.map structure.inner ~f:loop);
+         Type.set_inner copy (S.Inner.copy ~f:loop structure.inner);
          copy)
   in
   loop root

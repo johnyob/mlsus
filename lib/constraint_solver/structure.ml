@@ -29,6 +29,8 @@ module Former = struct
     | Constr (ts, constr) -> Constr (List.map ts ~f, constr)
   ;;
 
+  let copy t ~f = map t ~f
+
   let fold t ~f ~init =
     match t with
     | Arrow (t1, t2) -> f t2 (f t1 init)
@@ -110,16 +112,10 @@ module Suspended_first_order (S : S) = struct
     | Structure s -> S.fold s ~f ~init
   ;;
 
-  let map t ~f =
+  let copy t ~f =
     match t with
-    | Var var ->
-      (* FIXME(): [map] doesn't have the signature ['a t -> f:('a -> 'b) -> 'b t]
-
-         Because the ['a] in [Var] is in a negative position, making it
-         costly to map over. Additionally all of our uses of [map] in
-         [Generalization] are homomorphic. *)
-      Var var
-    | Structure s -> Structure (S.map s ~f)
+    | Var _ -> Var Empty
+    | Structure s -> Structure (S.copy s ~f)
   ;;
 
   let merge ~ctx ~create ~unify ~type1 ~type2 t1 t2 =

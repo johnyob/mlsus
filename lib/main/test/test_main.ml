@@ -874,3 +874,28 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect {| Well typed :) |}]
 ;;
+
+let%expect_test "" =
+  let str =
+    {|
+      type m = 
+        | L 
+      ;;
+
+      type n = 
+        | L 
+      ;; 
+
+      let bad = 
+        let f = fun x -> match x with (L -> 1) in 
+        f (L : m)
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect
+    {|
+    (num_partially_generalized_regions(num_partially_generalized_regions 2))
+    ("Failed to solve constraint" (err Cannot_resume_match_due_to_cycle))
+    |}]
+;;

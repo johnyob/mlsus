@@ -66,7 +66,14 @@ and scheme =
 let tt = True
 let ff err = False err
 let ( &~ ) t1 t2 = Conj (t1, t2)
-let all ts = List.fold ts ~init:tt ~f:( &~ )
+
+let all ts =
+  match ts with
+  | [] -> tt
+  | [ t ] -> t
+  | ts -> List.fold ts ~init:tt ~f:( &~ )
+;;
+
 let ( =~ ) type1 type2 = Eq (type1, type2)
 let exists type_var t = Exists (type_var, t)
 let exists_many vars in_ = List.fold_right vars ~init:in_ ~f:exists
