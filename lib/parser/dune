@@ -2,6 +2,8 @@
  (name mlsus_parser)
  (public_name mlsus.parser)
  (libraries core mlsus.ast fmt)
+ (flags
+  (:standard -w -unused-functor-parameter))
  (preprocess
   (pps ppx_jane)))
 

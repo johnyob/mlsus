@@ -14,6 +14,7 @@ depends: [
   "ppx_jane"
   "fmt"
   "menhir"
+  "grace"
   "odoc" {with-doc}
 ]
 build: [

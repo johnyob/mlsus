@@ -1,4 +1,5 @@
 open Core
+open Grace
 
 module Token = struct
   include Token
@@ -105,18 +106,47 @@ module Parser = struct
     ;;
   end
 
-  type ('a, 'err) t = Lexing.lexbuf -> ('a, ([> Error.t ] as 'err)) result
+  type ('a, 'err) t =
+    ?source:Source.t -> Lexing.lexbuf -> ('a, ([> Error.t ] as 'err)) result
 
-  let parse ~f lexbuf =
-    let open Result in
-    try_with (fun () -> f Lexer.read_token_exn lexbuf)
-    |> map_error ~f:(function
-      | Parser.Error -> `Parser_error
-      | Lexer.Error msg -> `Lexer_error msg
-      | exn -> raise exn)
+  module Make (Optional_source : sig
+      val v : Source.t option
+    end) =
+  struct
+    module Parser = Parser.Make (Optional_source)
+
+    let parse ~f lexbuf =
+      let open Result in
+      try_with (fun () -> f Lexer.read_token_exn lexbuf)
+      |> map_error ~f:(function
+        | Parser.Error -> `Parser_error
+        | Lexer.Error msg -> `Lexer_error msg
+        | exn -> raise exn)
+    ;;
+
+    let parse_core_type = parse ~f:Parser.parse_core_type
+    let parse_expression = parse ~f:Parser.parse_expression
+    let parse_structure = parse ~f:Parser.parse_structure
+  end
+
+  let parse_core_type ?source lexbuf =
+    let open Make (struct
+        let v = source
+      end) in
+    parse_core_type lexbuf
   ;;
 
-  let parse_core_type = parse ~f:Parser.parse_core_type
-  let parse_expression = parse ~f:Parser.parse_expression
-  let parse_structure = parse ~f:Parser.parse_structure
+  let parse_expression ?source lexbuf =
+    let open Make (struct
+        let v = source
+      end) in
+    parse_expression lexbuf
+  ;;
+
+  let parse_structure ?source lexbuf =
+    let open Make (struct
+        let v = source
+      end) in
+    parse_structure lexbuf
+  ;;
 end

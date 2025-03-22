@@ -1,6 +1,6 @@
 (library
  (name mlsus_ast)
  (public_name mlsus.ast)
- (libraries core)
+ (libraries core grace)
  (preprocess
   (pps ppx_jane)))
