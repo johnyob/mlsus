@@ -27,6 +27,8 @@
           ];
         };
 
+        mlsus = pkgs.callPackage ./nix/mlsus.nix {};
+
         fmt = treefmt.lib.evalModule pkgs {
           projectRootFile = "flake.nix";
 
@@ -36,13 +38,27 @@
             package = pkgs.ocamlformat_0_26_2;
           };
 
-          settings.global.excludes = ["result" ".direnv" "_build"];
+          settings.global.excludes = ["examples/*" "result" ".direnv" "_build"];
         };
       in {
+        packages = {
+          inherit mlsus;
+          default = mlsus;
+        };
+
+        checks = {
+          mlsus = self.packages.${system}.mlsus.overrideAttrs (old: {
+            name = "check-${old.name}";
+            doCheck = true;
+          });
+        };
+
         formatter = fmt.config.build.wrapper;
 
         devShells.default = pkgs.mkShell {
           name = "mlsus-dev-shell";
+
+          inputsFrom = [mlsus];
 
           buildInputs = with pkgs; [
             # Formatters
@@ -56,15 +72,6 @@
             ocamlPackages.merlin-lib
             ocamlPackages.ocaml
             ocamlPackages.dune
-
-            # Mlsus dependencies
-            ocamlPackages.core
-            ocamlPackages.core_unix
-            ocamlPackages.async
-            ocamlPackages.ppx_jane
-            ocamlPackages.grace
-            ocamlPackages.fmt
-            ocamlPackages.menhir
           ];
         };
       });
