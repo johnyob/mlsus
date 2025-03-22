@@ -392,7 +392,8 @@ let%expect_test "loop" =
   let beta = T.Var.create ~id_source () in
   let cst = exists beta @@ app omega omega beta in
   print_solve_result cst;
-  [%expect {|
+  [%expect
+    {|
     ("Constraint is satisfiable"
      (cst
       (Exists ((id 0) (name Type.Var))
