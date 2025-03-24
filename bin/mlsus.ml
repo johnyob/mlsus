@@ -36,7 +36,7 @@ module Command = struct
         +> anon ("filename" %: string)
         +> flag "-dump-ast" no_arg ~doc:"Dumps the parsed program (formatted as a sexp).")
       (fun filename dump_ast ->
-        open_with_lexbuf ~f:(constraint_gen_and_print ~dump_ast) filename)
+         open_with_lexbuf ~f:(constraint_gen_and_print ~dump_ast) filename)
   ;;
 
   let type_check =
@@ -52,9 +52,9 @@ module Command = struct
              ~doc:"Dumps the generated constraint (formatted as a sexp)."
         +> Async_log.Global.set_level_via_param ())
       (fun filename dump_ast dump_constraint () ->
-        open_with_lexbuf filename ~f:(fun lexbuf ->
-          let () = type_check_and_print ~dump_ast ~dump_constraint lexbuf in
-          Async_log.Global.flushed ()))
+         open_with_lexbuf filename ~f:(fun lexbuf ->
+           let () = type_check_and_print ~dump_ast ~dump_constraint lexbuf in
+           Async_log.Global.flushed ()))
   ;;
 
   let v =

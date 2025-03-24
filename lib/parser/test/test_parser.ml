@@ -20,41 +20,51 @@ let parse_and_print_core_type =
 ;;
 
 let%expect_test "variable : alphas" =
-  let exp = {|
+  let exp =
+    {|
       hello_world_var
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_var hello_world_var) |}]
 ;;
 
 let%expect_test "variable : alphanum" =
-  let exp = {|
+  let exp =
+    {|
       hello_world_var_123
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_var hello_world_var_123) |}]
 ;;
 
 let%expect_test "variable : prime" =
-  let exp = {|
+  let exp =
+    {|
       x'
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_var x') |}]
 ;;
 
 let%expect_test "constructor : alpha" =
-  let exp = {|
+  let exp =
+    {|
       Nil
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_constr Nil ()) |}]
 ;;
 
 let%expect_test "constructor : all" =
-  let exp = {|
+  let exp =
+    {|
       True_false_11'
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_constr True_false_11' ()) |}]
 ;;
@@ -72,9 +82,11 @@ let%expect_test "constant : int" =
 ;;
 
 let%expect_test "constant : int (prefixed)" =
-  let exp = {|
+  let exp =
+    {|
       -10
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_const (Const_int -10)) |}]
 ;;
@@ -135,9 +147,11 @@ let%expect_test "core_type : constr" =
 ;;
 
 let%expect_test "if" =
-  let exp = {|
+  let exp =
+    {|
       if true then 3 else 4
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect
     {|
@@ -190,9 +204,11 @@ let%expect_test "fun : map" =
 ;;
 
 let%expect_test "annotation : exists" =
-  let exp = {| exists (type 'a 'b) -> 
+  let exp =
+    {| exists (type 'a 'b) -> 
         fun (x : 'a) -> (x : 'b)
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect
     {|
@@ -260,25 +276,31 @@ let%expect_test "function - uncurry" =
 ;;
 
 let%expect_test "pattern : constant" =
-  let exp = {|
+  let exp =
+    {|
       fun 1 -> ()
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_fun (Pat_const (Const_int 1)) (Exp_const Const_unit)) |}]
 ;;
 
 let%expect_test "pattern : wildcard" =
-  let exp = {|
+  let exp =
+    {|
       fun _ -> ()
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_fun Pat_any (Exp_const Const_unit)) |}]
 ;;
 
 let%expect_test "pattern : constructor" =
-  let exp = {|
+  let exp =
+    {|
       fun (Cons (x, t)) -> x
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect
     {|
@@ -288,25 +310,31 @@ let%expect_test "pattern : constructor" =
 ;;
 
 let%expect_test "pattern : tuple" =
-  let exp = {|
+  let exp =
+    {|
       fun (x, _, _, _) -> x
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_fun (Pat_tuple ((Pat_var x) Pat_any Pat_any Pat_any)) (Exp_var x)) |}]
 ;;
 
 let%expect_test "pattern : annotation" =
-  let exp = {|
+  let exp =
+    {|
       fun (x : 'a) -> x
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect {| (Exp_fun (Pat_annot (Pat_var x) (Type_var a)) (Exp_var x)) |}]
 ;;
 
 let%expect_test "pattern : as" =
-  let exp = {|
+  let exp =
+    {|
       fun ((Cons (x as y, _)) as t) -> y
-    |} in
+    |}
+  in
   parse_and_print_expression exp;
   [%expect
     {|
@@ -389,9 +417,11 @@ let%expect_test "unterminated comment" =
 ;;
 
 let%expect_test "top level function definition" =
-  let str = {| 
+  let str =
+    {| 
       let smallest_integer = 0;;
-    |} in
+    |}
+  in
   parse_and_print_structure str;
   [%expect
     {|
@@ -425,10 +455,12 @@ let%expect_test "type definitions - ADTs" =
 ;;
 
 let%expect_test "type definition - abstract" =
-  let str = {|
+  let str =
+    {|
       type zero;;
       type 'n succ;;
-    |} in
+    |}
+  in
   parse_and_print_structure str;
   [%expect
     {|
@@ -596,9 +628,11 @@ let%expect_test "top level external definitions" =
 ;;
 
 let%expect_test "no trailing ;;" =
-  let str = {|
+  let str =
+    {|
       let valid_function = fun () -> 1
-    |} in
+    |}
+  in
   parse_and_print_structure str;
   [%expect {| Parser error |}]
 ;;
@@ -618,9 +652,11 @@ let%expect_test "type definition - empty case" =
 ;;
 
 let%expect_test "type definition - empty variant" =
-  let str = {|
+  let str =
+    {|
       type t = |;;
-    |} in
+    |}
+  in
   parse_and_print_structure str;
   [%expect {| Parser error |}]
 ;;

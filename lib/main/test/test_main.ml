@@ -7,10 +7,10 @@ let () =
 ;;
 
 let type_check_and_print
-  ?(dump_ast = false)
-  ?(dump_constraint = false)
-  ?(log_level = `Info)
-  str
+      ?(dump_ast = false)
+      ?(dump_constraint = false)
+      ?(log_level = `Info)
+      str
   =
   Async.Log.Global.set_level log_level;
   type_check_and_print ~dump_ast ~dump_constraint (Lexing.from_string str)
@@ -304,11 +304,14 @@ let%expect_test "" =
 ;;
 
 let%expect_test "" =
-  let str = include_option ^ {|
+  let str =
+    include_option
+    ^ {|
       let x = Some 1;;
 
       let y = None;;
-    |} in
+    |}
+  in
   type_check_and_print str;
   [%expect {| Well typed :) |}]
 ;;
@@ -730,9 +733,11 @@ let%expect_test "" =
 ;;
 
 let%expect_test "" =
-  let str = {|
+  let str =
+    {|
       let id = fun x -> y ;;
-    |} in
+    |}
+  in
   type_check_and_print str;
   [%expect {| ("Unbound variable" (var y)) |}]
 ;;
@@ -773,11 +778,13 @@ let%expect_test "" =
 ;;
 
 let%expect_test "" =
-  let str = {|
+  let str =
+    {|
       let x =
         (fun y z -> y z) ()
       ;;
-    |} in
+    |}
+  in
   type_check_and_print str;
   [%expect
     {|

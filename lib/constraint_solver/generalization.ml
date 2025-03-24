@@ -342,9 +342,9 @@ module Generalization_tree : sig
 end = struct
   type t =
     { entered_map : (Identifier.t, (Identifier.t, Type.region_node) Hashtbl.t) Hashtbl.t
-    (** Maps node identifiers to immediate entered descendants *)
+      (** Maps node identifiers to immediate entered descendants *)
     ; partially_generalized_regions : (Identifier.t, Type.region_node) Hashtbl.t
-    (** Tracks the partially generalized regions. If there are remaining
+      (** Tracks the partially generalized regions. If there are remaining
         partially generalized regions after generalizing the root region, it implies
         there exists suspended matches that were never scheduled (e.g. a cycle between matches). *)
     }
@@ -527,7 +527,7 @@ module Young_region = struct
     ; node : Type.region_node
     ; path : Type.region_path (** A path to the current region *)
     ; mem : Type.t -> bool
-    (** Returns [true] if given type is a member of the current region *)
+      (** Returns [true] if given type is a member of the current region *)
     }
   [@@deriving sexp_of]
 

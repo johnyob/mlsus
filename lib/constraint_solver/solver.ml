@@ -51,9 +51,9 @@ module Env = struct
   let exit_region ~state:_ t root = G.exit_region ~curr_region:t.curr_region root
 
   let of_gclosure
-    (gclosure : G.Suspended_match.closure)
-    ~(closure : C.Closure.t)
-    ~curr_region
+        (gclosure : G.Suspended_match.closure)
+        ~(closure : C.Closure.t)
+        ~curr_region
     =
     let type_vars =
       List.zip_exn (Set.to_list closure.type_vars) gclosure.variables

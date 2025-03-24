@@ -19,9 +19,9 @@ module Decoder = struct
   module State = struct
     type t =
       { id_source : Identifier.source
-      (** An identifier source used to allocate variables *)
+        (** An identifier source used to allocate variables *)
       ; variable_renaming : (Identifier.t, Var.t) Hashtbl.t
-      (** A mapping from variable structure identifiers to allocated variables *)
+        (** A mapping from variable structure identifiers to allocated variables *)
       }
 
     let create () =

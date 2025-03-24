@@ -4,19 +4,19 @@ open Adt
 
 type t =
   { id_source : Identifier.source
-  (** [id_source] is the identifier source for any constraint variables
+    (** [id_source] is the identifier source for any constraint variables
       created while generating constraints *)
   ; constrs : constructor_definition list Constructor_name.Map.t
-  (** [constrs] is a map from (user-defined) constructor names to
+    (** [constrs] is a map from (user-defined) constructor names to
       constructor_defition. Each definition has a unique [constr_ident]. *)
   ; types : type_definition list Type_name.Map.t
-  (** [types] is a map from (user-defined) type names to type definitions.
+    (** [types] is a map from (user-defined) type names to type definitions.
       Each definition has a unique [type_ident]. *)
   ; type_vars : Constraint.Type.Var.t Type_var_name.Map.t
-  (** [type_vars] is a renaming from (user-defined) type variables to
+    (** [type_vars] is a renaming from (user-defined) type variables to
       constraint type variables (unique). *)
   ; vars : Constraint.Var.t Var_name.Map.t
-  (** [vars] is a renaming from (user-defined) variable names to
+    (** [vars] is a renaming from (user-defined) variable names to
       constraint variables (unique). *)
   }
 
