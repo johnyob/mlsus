@@ -182,15 +182,14 @@ let%expect_test "No suspended matches results in normal generalization" =
   let cst =
     exists a1
     @@ let_
-         xid
-         #= (poly_scheme
-               ([ a2 ]
-                @. (exists a3
-                    @@ exists a4
-                    @@ (T.(var a2 =~ var a3 @-> var a4)
-                        &~ let_ xx #= (mono_scheme (T.var a3)) ~in_:(inst xx (T.var a4)))
-                   )
-                @=> T.var a2))
+         xid#=(poly_scheme
+                 ([ a2 ]
+                  @. (exists a3
+                      @@ exists a4
+                      @@ (T.(var a2 =~ var a3 @-> var a4)
+                          &~ let_ xx#=(mono_scheme (T.var a3)) ~in_:(inst xx (T.var a4)))
+                     )
+                  @=> T.var a2))
          ~in_:
            (exists a5
             @@ exists a6
@@ -242,12 +241,11 @@ let%expect_test "Partial generic becomes instance" =
     exists a1
     @@ exists a2
     @@ let_
-         x1
-         #= (poly_scheme
-               ([ a3 ]
-                @. match_ a1 ~closure:[ a3; a2 ] ~with_:(fun _ ->
-                  T.(var a3 =~ var a2) &~ T.(var a2 =~ tint))
-                @=> T.var a3))
+         x1#=(poly_scheme
+                ([ a3 ]
+                 @. match_ a1 ~closure:[ a3; a2 ] ~with_:(fun _ ->
+                   T.(var a3 =~ var a2) &~ T.(var a2 =~ tint))
+                 @=> T.var a3))
          ~in_:(inst x1 tint &~ T.(var a1 =~ tstring))
   in
   print_solve_result cst;
@@ -281,12 +279,11 @@ let%expect_test "Partial generic becomes generic" =
   let cst =
     exists a1
     @@ let_
-         x1
-         #= (poly_scheme
-               ([ a2 ]
-                @. match_ a1 ~closure:[ a2 ] ~with_:(fun _ ->
-                  exists a3 @@ T.(var a2 =~ var a3 @-> var a3))
-                @=> T.var a2))
+         x1#=(poly_scheme
+                ([ a2 ]
+                 @. match_ a1 ~closure:[ a2 ] ~with_:(fun _ ->
+                   exists a3 @@ T.(var a2 =~ var a3 @-> var a3))
+                 @=> T.var a2))
          ~in_:
            (inst x1 T.(tint @-> tint)
             &~ inst x1 T.(tstring @-> tstring)
@@ -327,16 +324,16 @@ let%expect_test "Propagating changes during partial generalization" =
   let cst =
     exists_many [ a1; a2 ]
     @@ let_
-         x1
-         #= (poly_scheme
-               ([ a3 ]
-                @. ((* This match forces [a3] to be partially generic *)
-                      match_ a1 ~closure:[ a3 ] ~with_:(fun _ -> tt)
-                    &~ (* This match is resolved after [a2] is unified with int.
+         x1#=(poly_scheme
+                ([ a3 ]
+                 @. ((* This match forces [a3] to be partially generic *)
+                     match_ a1 ~closure:[ a3 ] ~with_:(fun _ -> tt)
+                     &~
+                     (* This match is resolved after [a2] is unified with int.
                           But since [a3] is still partially generic, the structure of [a3] is
                           not propagated to [a4]. This causes a bug. *)
-                    match_ a2 ~closure:[ a3 ] ~with_:(fun _ -> T.(var a3 =~ tint)))
-                @=> T.var a3))
+                     match_ a2 ~closure:[ a3 ] ~with_:(fun _ -> T.(var a3 =~ tint)))
+                 @=> T.var a3))
          ~in_:
            (exists a4
             @@ (inst x1 (T.var a4)

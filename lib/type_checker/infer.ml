@@ -171,11 +171,11 @@ let infer_constructor ~id_source constr_def constr_arg' constr_type' =
 ;;
 
 let inst_constr
-  ~(env : Env.t)
-  ~constr_name
-  ~(constr_arity : Adt.constructor_arity)
-  ~constr_type
-  k
+      ~(env : Env.t)
+      ~constr_name
+      ~(constr_arity : Adt.constructor_arity)
+      ~constr_type
+      k
   =
   let open Or_error.Let_syntax in
   let constr_arg_var = Type.Var.create ~id_source:(Env.id_source env) () in
@@ -225,16 +225,16 @@ let inst_constr
               constr_type_var
               ~closure:[ constr_type_var; constr_arg_var ]
               ~with_:(function
-           | (Arrow _ | Tuple _) as matchee ->
-             ff
-               (Error.create_s
-                  [%message
-                    "Expected a constructor type, but got arrow/tuple"
-                      (matchee : Type.Matchee.t)])
-           | Constr (_, type_ident) ->
-             (match disambiguate_and_infer_constructor type_ident with
-              | Ok cst -> cst
-              | Error err -> ff err))
+              | (Arrow _ | Tuple _) as matchee ->
+                ff
+                  (Error.create_s
+                     [%message
+                       "Expected a constructor type, but got arrow/tuple"
+                         (matchee : Type.Matchee.t)])
+              | Constr (_, type_ident) ->
+                (match disambiguate_and_infer_constructor type_ident with
+                 | Ok cst -> cst
+                 | Error err -> ff err))
        | Constr (_, type_ident) -> disambiguate_and_infer_constructor type_ident
        | Arrow _ | Tuple _ ->
          error_s [%message "Expected variable or constructor type" (constr_type : Type.t)])
@@ -337,7 +337,7 @@ module Expression = struct
      ( ()
      , c
        &~ List.fold bindings ~init:in_ ~f:(fun in_ (cvar, type_) ->
-         let_ cvar #= (mono_scheme type_) ~in_) ))
+         let_ cvar#=(mono_scheme type_) ~in_) ))
     >>| snd
   ;;
 
@@ -444,9 +444,9 @@ module Expression = struct
     bind_pat ~env pat lhs_type ~in_:(fun env -> infer_exp ~env exp rhs_type)
 
   and infer_value_binding
-    ~(env : Env.t)
-    { value_binding_var = var; value_binding_exp = exp }
-    k
+        ~(env : Env.t)
+        { value_binding_var = var; value_binding_exp = exp }
+        k
     =
     let open Or_error.Let_syntax in
     let exp_type_var = Type.Var.create ~id_source:(Env.id_source env) () in
@@ -454,7 +454,7 @@ module Expression = struct
     let%bind c = infer_exp ~env exp exp_type in
     Env.rename_var env ~var ~in_:(fun env cvar ->
       let%map c' = k env in
-      let_ cvar #= (poly_scheme ([ exp_type_var ] @. c @=> exp_type)) ~in_:c')
+      let_ cvar#=(poly_scheme ([ exp_type_var ] @. c @=> exp_type)) ~in_:c')
   ;;
 end
 
@@ -464,15 +464,15 @@ module Structure = struct
     let%bind quantifiers, type_ = Convert.core_scheme ~env value_desc.value_type in
     Env.rename_var env ~var:value_desc.value_name ~in_:(fun env cvar ->
       let%map c = k env in
-      let_ cvar #= (poly_scheme (quantifiers @. tt @=> type_)) ~in_:c)
+      let_ cvar#=(poly_scheme (quantifiers @. tt @=> type_)) ~in_:c)
   ;;
 
   let infer_type_decl
-    ~(env : Env.t)
-    ~type_name
-    ~type_arity
-    ~type_ident
-    { type_decl_name; type_decl_params; type_decl_kind }
+        ~(env : Env.t)
+        ~type_name
+        ~type_arity
+        ~type_ident
+        { type_decl_name; type_decl_params; type_decl_kind }
     =
     let open Or_error.Let_syntax in
     assert (Type_name.(type_name = type_decl_name));

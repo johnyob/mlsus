@@ -12,7 +12,7 @@ end
 type 'a node =
   { id : Identifier.t (** Unique identifier of the node *)
   ; level : Level.t
-  (** The level of the node in the tree.
+    (** The level of the node in the tree.
       If [parent] is [None], then [level = Level.zero],
       otherwise [level = Level.succ parent.level]. *)
   ; value : 'a (** The region of the node *)
