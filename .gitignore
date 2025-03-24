@@ -30,3 +30,6 @@ _opam/
 
 # Nix output 
 result
+
+# Typst output 
+*.pdf
