@@ -11,30 +11,24 @@ module Token : sig
 end
 
 module Lexer : sig
-  module Error : sig
-    type t = [ `Lexer_error of string ]
+  (** [read_token ?source lexbuf] reads a token from the buffer [lexbuf]
 
-    include Pretty_printer.S with type t := t
-  end
+      @param source sets the source used for token ranges
+      @raise Mlsus_error.T *)
+  val read_token : ?source:Source.t -> Lexing.lexbuf -> Token.t
 
-  val read_token : Lexing.lexbuf -> (Token.t, [> Error.t ]) result
-  val read_tokens : ?keep_eof:bool -> Lexing.lexbuf -> (Token.t list, [> Error.t ]) result
+  (** [read_tokens ?source ?keep_eof lexbuf] reads all tokens from the buffer [lexbuf]
+
+      @param source sets the source used for token ranges
+      @param keep_eof if [true] the resultant token list ends with the EOF token
+      @raise Mlsus_error.T *)
+  val read_tokens : ?source:Source.t -> ?keep_eof:bool -> Lexing.lexbuf -> Token.t list
 end
 
 module Parser : sig
-  module Error : sig
-    type t =
-      [ Lexer.Error.t
-      | `Parser_error
-      ]
+  type 'a t = ?source:Source.t -> Lexing.lexbuf -> 'a
 
-    include Pretty_printer.S with type t := t
-  end
-
-  type ('a, 'err) t =
-    ?source:Source.t -> Lexing.lexbuf -> ('a, ([> Error.t ] as 'err)) result
-
-  val parse_core_type : (Ast.core_type, 'err) t
-  val parse_expression : (Ast.expression, 'err) t
-  val parse_structure : (Ast.structure, 'err) t
+  val parse_core_type : Ast.core_type t
+  val parse_expression : Ast.expression t
+  val parse_structure : Ast.structure t
 end

@@ -47,7 +47,6 @@ module Env = struct
   ;;
 
   let wrap k =
-    let open Or_error.Let_syntax in
     let env = Env.empty () in
     let env =
       List.fold t ~init:env ~f:(fun env (type_str, type_arity, type_ident) ->
@@ -58,7 +57,7 @@ module Env = struct
         Env.rename_var env ~var:(Var_name.create var_str) ~in_:(fun env cvar ->
           env, (cvar, type_)))
     in
-    let%map c = k env in
+    let c = k env in
     List.fold_right bindings ~init:c ~f:(fun (var, type_) in_ ->
       let_ var#=(mono_scheme type_) ~in_)
   ;;

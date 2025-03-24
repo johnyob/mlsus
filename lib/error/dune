@@ -1,0 +1,6 @@
+(library
+ (name mlsus_error)
+ (public_name mlsus.error)
+ (libraries core grace grace.ansi_renderer fmt mlsus.ast)
+ (preprocess
+  (pps ppx_jane)))

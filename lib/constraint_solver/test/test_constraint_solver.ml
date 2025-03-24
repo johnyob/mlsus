@@ -9,7 +9,7 @@ let () =
   For_testing.use_test_output ()
 ;;
 
-let unsat_err = Error.create_s [%message "Constraint is unsatisfiable"]
+let unsat_err = Mlsus_error.bug_s ~here:[%here] [%message "Constraint is unsatisfiable"]
 
 let print_solve_result ?(log_level = `Info) cst =
   Async.Log.Global.set_level log_level;
@@ -17,7 +17,11 @@ let print_solve_result ?(log_level = `Info) cst =
   match result with
   | Ok () -> print_s [%message "Constraint is satisfiable" (cst : Constraint.t)]
   | Error err ->
-    print_s [%message "Constraint is unsatisfiable" (cst : Constraint.t) (err : Error.t)]
+    print_s
+      [%message
+        "Constraint is unsatisfiable"
+          (cst : Constraint.t)
+          (err : Mlsus_constraint_solver.Error.t)]
 ;;
 
 let predef_ident =
@@ -42,7 +46,7 @@ let%expect_test "Cannot resume suspended generic" =
      (cst
       (Exists ((id 0) (name Type.Var))
        (Match ((id 0) (name Type.Var)) ((type_vars ())) <fun>)))
-     (err ("Failed to solve constraint" (err Cannot_resume_suspended_generic))))
+     (err Cannot_resume_suspended_generic))
     |}]
 ;;
 
@@ -60,7 +64,7 @@ let%expect_test "Cannot unsuspend undetermined" =
       (Exists ((id 0) (name Type.Var))
        (Match ((id 0) (name Type.Var)) ((type_vars (((id 0) (name Type.Var)))))
         <fun>)))
-     (err ("Failed to solve constraint" (err Cannot_resume_match_due_to_cycle))))
+     (err Cannot_resume_match_due_to_cycle))
     |}]
 ;;
 
@@ -132,7 +136,7 @@ let%expect_test "Cannot unsuspend circular dependencies" =
           <fun>)
          (Match ((id 1) (name Type.Var)) ((type_vars (((id 0) (name Type.Var)))))
           <fun>)))))
-     (err ("Failed to solve constraint" (err Cannot_resume_match_due_to_cycle))))
+     (err Cannot_resume_match_due_to_cycle))
     |}]
 ;;
 
