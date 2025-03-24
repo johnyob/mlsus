@@ -1,9 +1,8 @@
 
 {
 open Core
+open Grace
 open Token
- 
-exception Lexer_error of string
 
 let keywords = 
   [ "let", LET 
@@ -31,6 +30,10 @@ let find_keyword =
       Hashtbl.set keyword_tbl ~key:keyword ~data:token);
   Hashtbl.find keyword_tbl
 ;;
+
+let range_of_lexbuf lexbuf = 
+  Range.of_lexbuf ?source:(Mlsus_source.get ()) lexbuf
+;;
 }
 
 let upper = ['A' - 'Z']
@@ -48,7 +51,7 @@ let upper_id = upper id_char*
 let sign = '-'?
 let int = sign digit+
 
-rule read = 
+rule read  = 
   parse
   (* reserved operators *)
   | "->"                          
@@ -116,7 +119,7 @@ rule read =
       { CONST_INT (Int.of_string n) }
   
   | space+
-      { read lexbuf }
+      { read  lexbuf }
   | newline
       { Lexing.new_line lexbuf; read lexbuf }
 
@@ -132,17 +135,17 @@ rule read =
   | eof
       { EOF }
   | _ as c                            
-      { raise (Lexer_error [%string "Unexpected comment %{c#Char}"]) }
+      { Mlsus_error.(raise @@ unknown_start_of_token ~range:(range_of_lexbuf lexbuf) c) }
 
 (** Read a comment delimited by (* ... *)
     Nesting is not permitted. *)
-and read_comment = 
+and read_comment  = 
   parse
   | "*)"
       { read lexbuf }
   | newline 
       { Lexing.new_line lexbuf; read_comment lexbuf }
   | eof
-      { raise (Lexer_error "Unclosed comment") }
+      { Mlsus_error.(raise @@ unterminated_comment ~range:(range_of_lexbuf lexbuf)) }
   | _
       { read_comment lexbuf }

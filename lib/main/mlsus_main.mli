@@ -2,7 +2,7 @@ open Grace
 
 (** [lex_and_print lexbuf] reads the tokens in [lexbuf] and prints them.
     Any errors are additionally printed. *)
-val lex_and_print : Lexing.lexbuf -> unit
+val lex_and_print : ?source:Source.t -> Lexing.lexbuf -> unit
 
 (** [parse_and_print lexbuf] parses the [lexbuf] as a structure and prints it.
     Any errors are additionally printed. *)

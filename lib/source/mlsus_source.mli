@@ -1,7 +1,9 @@
 open Grace
 
 (** [with_source src f] runs [f] with the current source set to [src],
-    clearing it once [f] returns. *)
+    clearing it once [f] returns. 
+    
+    @raise Mlsus_error.T if the current source is already initialized *)
 val with_source : source:Source.t -> (unit -> 'a) -> 'a
 
 (** [with_optional_source] optionally sets the source and runs [f]. *)
@@ -11,7 +13,9 @@ val with_optional_source : ?source:Source.t -> (unit -> 'a) -> 'a
     Returns [None] if no source is set. *)
 val get : unit -> Source.t option
 
-(** [get_exn ()] returns the current source. *)
+(** [get_exn ()] returns the current source.
+
+    @raise T if the current source is not initialized *)
 val get_exn : unit -> Source.t
 
 module For_testing : sig

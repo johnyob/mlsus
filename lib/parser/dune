@@ -1,7 +1,7 @@
 (library
  (name mlsus_parser)
  (public_name mlsus.parser)
- (libraries core mlsus.ast mlsus.source fmt)
+ (libraries core mlsus.ast mlsus.error mlsus.source fmt)
  (preprocess
   (pps ppx_jane)))
 

@@ -7,12 +7,18 @@ let get () = !state
 let get_exn () =
   match !state with
   | Some src -> src
-  | None -> raise_s [%message "State is not initialized"]
+  | None ->
+    Mlsus_error.(raise @@ bug_s ~here:[%here] [%message "State is not initialized"])
 ;;
 
 let assert_state_is_empty () =
   if Option.is_some !state
-  then raise_s [%message "State is already initialized" (!state : Source.t option)]
+  then
+    Mlsus_error.(
+      raise
+      @@ bug_s
+           ~here:[%here]
+           [%message "State is already initialized" (!state : Source.t option)])
 ;;
 
 let init_optional src =

@@ -1,6 +1,6 @@
 (library
  (name mlsus_type_checker)
  (public_name mlsus.type_checker)
- (libraries core grace mlsus.std mlsus.ast mlsus.constraint)
+ (libraries core grace mlsus.std mlsus.ast mlsus.constraint mlsus.constraint_solver mlsus.error)
  (preprocess
   (pps ppx_jane)))

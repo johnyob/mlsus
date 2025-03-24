@@ -1,6 +1,6 @@
 (library
  (name mlsus_source)
  (public_name mlsus.source)
- (libraries core grace)
+ (libraries core grace mlsus.error)
  (preprocess
   (pps ppx_jane)))

@@ -3,8 +3,8 @@ open! Grace
 open Mlsus_main
 
 let () =
-  let open Async.Log.Global in
-  For_testing.use_test_output ()
+  Async.Log.Global.For_testing.use_test_output ();
+  Mlsus_error.For_testing.use_expect_test_config ()
 ;;
 
 let type_check_and_print
@@ -14,7 +14,7 @@ let type_check_and_print
       str
   =
   Async.Log.Global.set_level log_level;
-  let source = `String { Source.name = Some "expect_test.ml"; content = str } in
+  let source = Mlsus_source.For_testing.expect_test_source str in
   type_check_and_print
     ~source
     ~dump_ast
@@ -747,17 +747,10 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect
     {|
-    ("Unbound variable"
-     (var
-      ((it y)
-       (range
-        ((start 25) (stop 26)
-         (source
-          (String
-           ((name (expect_test.ml))
-            (content  "\
-                     \n      let id = fun x -> y ;;\
-                     \n    ")))))))))
+    error[E004]: cannot find value `y` in this scope
+        ┌─ expect_test.ml:2:25
+      2 │        let id = fun x -> y ;;
+        │                          ^ not found in this scope
     |}]
 ;;
 

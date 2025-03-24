@@ -6,7 +6,7 @@ module State = G.State
 
 module Error = struct
   type t =
-    | Unsatisfiable of Error.t
+    | Unsatisfiable of Mlsus_error.t
     | Unbound_type_var of C.Type.Var.t
     | Unbound_var of C.Var.t
     | Cannot_unify of Decoded_type.t * Decoded_type.t
@@ -215,11 +215,8 @@ and gscheme_of_scheme ~state ~env { type_vars; in_; type_ } =
   scheme
 ;;
 
-let solve : C.t -> unit Or_error.t =
+let solve : C.t -> (unit, Error.t) result =
   fun cst ->
-  let fail err =
-    Or_error.error_s [%message "Failed to solve constraint" (err : Error.t)]
-  in
   try
     let state = State.create () in
     let env = Env.empty (G.root_region ~state) in
@@ -242,8 +239,8 @@ let solve : C.t -> unit Or_error.t =
       raise (Error Cannot_resume_match_due_to_cycle));
     Ok ()
   with
-  | Error err -> fail err
-  | G.Cannot_resume_suspended_generic -> fail Error.Cannot_resume_suspended_generic
-  | exn ->
-    Or_error.error_s [%message "Unexpected error, failed to solve constraint" (exn : exn)]
+  (* Catch solver exceptions *)
+  | Error err -> Error err
+  (* Catch generalization exceptions *)
+  | G.Cannot_resume_suspended_generic -> Error Error.Cannot_resume_suspended_generic
 ;;

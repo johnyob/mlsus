@@ -48,7 +48,7 @@ end
 
 type t =
   | True
-  | False of Error.t
+  | False of Mlsus_error.t
   | Conj of t * t
   | Eq of Type.t * Type.t
   | Exists of Type.Var.t * t

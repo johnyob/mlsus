@@ -1,16 +1,26 @@
 open! Import
 
+let () = Mlsus_error.For_testing.use_expect_test_config ()
+
 let lex_and_print input =
+  Mlsus_error.handle_uncaught ~exit:false
+  @@ fun () ->
+  let source = Mlsus_source.For_testing.expect_test_source input in
   let lexbuf = Lexing.from_string input in
-  match Lexer.read_tokens lexbuf with
-  | Ok tokens -> Fmt.(pr "@[<v>%a@]@." (list Token.pp)) tokens
-  | Error err -> Fmt.pr "@[%a@]@." Lexer.Error.pp err
+  let tokens = Lexer.read_tokens ~source lexbuf in
+  Fmt.(pr "@[<v>%a@]@." (list Token.pp)) tokens
 ;;
 
 let%expect_test "unterminated comment" =
   let str = {| (* This is a very interesting comment |} in
   lex_and_print str;
-  [%expect {| Lexer error: "Unclosed comment" |}]
+  [%expect
+    {|
+    error[E001]: unterminated comment
+        ┌─ expect_test.ml:1:40
+      1 │   (* This is a very interesting comment
+        │                                         ^
+    |}]
 ;;
 
 let%expect_test "single-line comment" =

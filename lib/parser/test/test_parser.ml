@@ -1,11 +1,14 @@
 open! Import
 
+let () = Mlsus_error.For_testing.use_expect_test_config ()
+
 let parse_and_print ~parser sexp_of input =
+  Mlsus_error.handle_uncaught ~exit:false
+  @@ fun () ->
   let source = Mlsus_source.For_testing.expect_test_source input in
   let lexbuf = Lexing.from_string ~with_positions:true input in
-  match parser ?source:(Some source) lexbuf with
-  | Ok x -> Fmt.(pr "@[<v>%a@]@." Sexp.pp_hum) (sexp_of x)
-  | Error err -> Fmt.pr "@[%a@]@." Parser.Error.pp err
+  let x = parser ?source:(Some source) lexbuf in
+  Fmt.(pr "@[<v>%a@]@." Sexp.pp_hum) (sexp_of x)
 ;;
 
 let parse_and_print_structure =
@@ -2053,61 +2056,121 @@ let%expect_test "pattern : as" =
 let%expect_test "variable : doesn't begin w/ lower alpha" =
   let exp = {| _x |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:2
+      1 │   _x
+        │   ^
+    |}]
 ;;
 
 let%expect_test "core_type : unclosed tuple" =
   let exp = {| (x : int * ) |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:13
+      1 │   (x : int * )
+        │              ^
+    |}]
 ;;
 
 let%expect_test "core_type : trailing argument comma" =
   let exp = {| (x : ('a, ) list) |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:12
+      1 │   (x : ('a, ) list)
+        │             ^
+    |}]
 ;;
 
 let%expect_test "core_type : trailing arrow" =
   let exp = {| (x : int -> ) |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:14
+      1 │   (x : int -> )
+        │               ^
+    |}]
 ;;
 
 let%expect_test "let : no function syntax" =
   let exp = {| let fst (x, y) = x in () |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:10
+      1 │   let fst (x, y) = x in ()
+        │           ^
+    |}]
 ;;
 
 let%expect_test "let : trailing in" =
   let exp = {| let x = 1 |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:12
+      1 │   let x = 1
+        │             ^
+    |}]
 ;;
 
 let%expect_test "if : trailing else" =
   let exp = {| if true then 3 |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:17
+      1 │   if true then 3
+        │                  ^
+    |}]
 ;;
 
 let%expect_test "pattern : swap expr and pat" =
   let exp = {| fun (fun () -> a) -> _ |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:7
+      1 │   fun (fun () -> a) -> _
+        │        ^^^
+    |}]
 ;;
 
 let%expect_test "pattern : non-atomic pattern" =
   let exp = {| fun Cons x as t -> 1 |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:13
+      1 │   fun Cons x as t -> 1
+        │              ^^
+    |}]
 ;;
 
 let%expect_test "unclosed brackets" =
   let exp = {| ((1 + 1) + 2 |} in
   parse_and_print_expression exp;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:1:15
+      1 │   ((1 + 1) + 2
+        │                ^
+    |}]
 ;;
 
 let%expect_test "unterminated comment" =
@@ -2118,7 +2181,13 @@ let%expect_test "unterminated comment" =
     |}
   in
   parse_and_print_expression exp;
-  [%expect {| Lexer error: "Unclosed comment" |}]
+  [%expect
+    {|
+    error[E001]: unterminated comment
+        ┌─ expect_test.ml:4:5
+      4 │
+        │      ^
+    |}]
 ;;
 
 let%expect_test "top level function definition" =
@@ -4083,7 +4152,13 @@ let%expect_test "no trailing ;;" =
     |}
   in
   parse_and_print_structure str;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:3:5
+      3 │
+        │      ^
+    |}]
 ;;
 
 let%expect_test "type definition - empty case" =
@@ -4097,7 +4172,13 @@ let%expect_test "type definition - empty case" =
     |}
   in
   parse_and_print_structure str;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:4:9
+      4 │          | A of int
+        │          ^
+    |}]
 ;;
 
 let%expect_test "type definition - empty variant" =
@@ -4107,5 +4188,11 @@ let%expect_test "type definition - empty variant" =
     |}
   in
   parse_and_print_structure str;
-  [%expect {| Parser error |}]
+  [%expect
+    {|
+    error[E003]: syntax error
+        ┌─ expect_test.ml:2:17
+      2 │        type t = |;;
+        │                  ^^
+    |}]
 ;;

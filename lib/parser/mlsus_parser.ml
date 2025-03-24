@@ -64,60 +64,32 @@ module Token = struct
 end
 
 module Lexer = struct
-  exception Error = Lexer.Lexer_error
+  let raw_read_token = Lexer.read
 
-  module Error = struct
-    type t = [ `Lexer_error of string ]
-
-    let pp ppf (t : t) =
-      match t with
-      | `Lexer_error message -> Fmt.pf ppf "Lexer error: \"%s\"" message
-    ;;
-  end
-
-  let read_token_exn lexbuf = Lexer.read lexbuf
-
-  let read_token lexbuf =
-    try Ok (Lexer.read lexbuf) with
-    | Error msg -> Error (`Lexer_error msg)
+  let read_token ?source lexbuf =
+    Mlsus_source.with_optional_source ?source @@ fun () -> raw_read_token lexbuf
   ;;
 
-  let read_tokens ?(keep_eof = false) lexbuf =
+  let read_tokens ?source ?(keep_eof = false) lexbuf =
+    Mlsus_source.with_optional_source ?source
+    @@ fun () ->
     let rec loop acc =
-      let tok = Lexer.read lexbuf in
+      let tok = raw_read_token lexbuf in
       if Token.is_eof tok then if keep_eof then tok :: acc else acc else loop (tok :: acc)
     in
-    try Ok (loop [] |> List.rev) with
-    | Error msg -> Error (`Lexer_error msg)
+    loop [] |> List.rev
   ;;
 end
 
 module Parser = struct
-  module Error = struct
-    type t =
-      [ Lexer.Error.t
-      | `Parser_error
-      ]
-
-    let pp ppf t =
-      match t with
-      | `Parser_error -> Fmt.pf ppf "Parser error"
-      | #Lexer.Error.t as lexer_error -> Lexer.Error.pp ppf lexer_error
-    ;;
-  end
-
-  type ('a, 'err) t =
-    ?source:Source.t -> Lexing.lexbuf -> ('a, ([> Error.t ] as 'err)) result
+  type 'a t = ?source:Source.t -> Lexing.lexbuf -> 'a
 
   let parse ~f ?source lexbuf =
-    let open Result in
     Mlsus_source.with_optional_source ?source
     @@ fun () ->
-    try_with (fun () -> f Lexer.read_token_exn lexbuf)
-    |> map_error ~f:(function
-      | Parser.Error -> `Parser_error
-      | Lexer.Error msg -> `Lexer_error msg
-      | exn -> raise exn)
+    try f Lexer.raw_read_token lexbuf with
+    | Parser.Error ->
+      Mlsus_error.(raise @@ syntax_error ~range:(Range.of_lexbuf ?source lexbuf))
   ;;
 
   let parse_core_type = parse ~f:Parser.parse_core_type
