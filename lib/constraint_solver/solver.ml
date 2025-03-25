@@ -6,6 +6,11 @@ module State = G.State
 
 module Error = struct
   type t =
+    { it : desc
+    ; range : Range.t option
+    }
+
+  and desc =
     | Unsatisfiable of Mlsus_error.t
     | Unbound_type_var of C.Type.Var.t
     | Unbound_var of C.Var.t
@@ -13,20 +18,27 @@ module Error = struct
     | Cannot_resume_suspended_generic
     | Cannot_resume_match_due_to_cycle
   [@@deriving sexp]
-end
 
-exception Error of Error.t
+  exception T of t
+
+  let create ~range it = { it; range }
+  let raise ~range it = raise @@ T { it; range }
+end
 
 module Env = struct
   type t =
     { type_vars : Type.t C.Type.Var.Map.t
     ; expr_vars : Type.scheme C.Var.Map.t
     ; curr_region : G.Type.region_node
+    ; range : Range.t option
     }
   [@@deriving sexp_of]
 
-  let empty curr_region =
-    { type_vars = C.Type.Var.Map.empty; expr_vars = C.Var.Map.empty; curr_region }
+  let raise t err = Error.raise ~range:t.range err
+  let with_range t ~range = { t with range = Some range }
+
+  let empty ~range ~curr_region =
+    { type_vars = C.Type.Var.Map.empty; expr_vars = C.Var.Map.empty; curr_region; range }
   ;;
 
   let bind_type_var t ~var ~type_ =
@@ -39,12 +51,12 @@ module Env = struct
 
   let find_type_var t type_var =
     try Map.find_exn t.type_vars type_var with
-    | _ -> raise (Error (Unbound_type_var type_var))
+    | _ -> raise t @@ Unbound_type_var type_var
   ;;
 
   let find_var t expr_var =
     try Map.find_exn t.expr_vars expr_var with
-    | _ -> raise (Error (Unbound_var expr_var))
+    | _ -> raise t @@ Unbound_var expr_var
   ;;
 
   let enter_region ~state t = { t with curr_region = G.enter_region ~state t.curr_region }
@@ -53,13 +65,14 @@ module Env = struct
   let of_gclosure
         (gclosure : G.Suspended_match.closure)
         ~(closure : C.Closure.t)
+        ~range
         ~curr_region
     =
     let type_vars =
       List.zip_exn (Set.to_list closure.type_vars) gclosure.variables
       |> C.Type.Var.Map.of_alist_exn
     in
-    { (empty curr_region) with type_vars }
+    { (empty ~range ~curr_region) with type_vars }
   ;;
 end
 
@@ -123,7 +136,7 @@ let unify ~(state : State.t) ~(env : Env.t) gtype1 gtype2 =
   with
   | G.Unify.Unify (gtype1, gtype2) ->
     let decoder = Decoded_type.Decoder.create () in
-    raise (Error (Cannot_unify (decoder gtype1, decoder gtype2)))
+    Env.raise env @@ Cannot_unify (decoder gtype1, decoder gtype2)
 ;;
 
 let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
@@ -132,7 +145,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
   let self ~state ?(env = env) cst = solve ~state ~env cst in
   match cst with
   | True -> ()
-  | False err -> raise (Error (Unsatisfiable err))
+  | False err -> Env.raise env @@ Unsatisfiable err
   | Conj (cst1, cst2) ->
     [%log.global.debug "Solving conj lhs"];
     self ~state cst1;
@@ -177,7 +190,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     let case ~curr_region structure =
       [%log.global.debug "Entered match handler" (structure : Type.t Structure.Former.t)];
       (* Enter region and construct env *)
-      let env = Env.of_gclosure gclosure ~closure ~curr_region in
+      let env = Env.of_gclosure gclosure ~closure ~curr_region ~range:env.range in
       [%log.global.debug "Handler env" (env : Env.t)];
       [%log.global.debug "Handler state" (state : State.t)];
       (* Solve *)
@@ -192,6 +205,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     in
     [%log.global.debug "Suspending match..."];
     G.suspend ~state ~curr_region:env.curr_region { matchee; closure = gclosure; case }
+  | With_range (t, range) -> solve ~state ~env:(Env.with_range env ~range) t
 
 and gclosure_of_closure ~env closure : G.Suspended_match.closure =
   let variables =
@@ -215,11 +229,11 @@ and gscheme_of_scheme ~state ~env { type_vars; in_; type_ } =
   scheme
 ;;
 
-let solve : C.t -> (unit, Error.t) result =
-  fun cst ->
+let solve : ?range:Range.t -> C.t -> (unit, Error.t) result =
+  fun ?range cst ->
   try
     let state = State.create () in
-    let env = Env.empty (G.root_region ~state) in
+    let env = Env.empty ~curr_region:(G.root_region ~state) ~range in
     [%log.global.debug "Initial env and state" (state : State.t) (env : Env.t)];
     solve ~state ~env cst;
     [%log.global.debug "State" (state : State.t)];
@@ -236,11 +250,12 @@ let solve : C.t -> (unit, Error.t) result =
     then (
       [%log.global.error
         "num_partially_generalized_regions" (num_partially_generalized_regions : int)];
-      raise (Error Cannot_resume_match_due_to_cycle));
+      Error.raise ~range @@ Cannot_resume_match_due_to_cycle);
     Ok ()
   with
   (* Catch solver exceptions *)
-  | Error err -> Error err
+  | Error.T err -> Error err
   (* Catch generalization exceptions *)
-  | G.Cannot_resume_suspended_generic -> Error Error.Cannot_resume_suspended_generic
+  | G.Cannot_resume_suspended_generic ->
+    Error (Error.create ~range Cannot_resume_suspended_generic)
 ;;
