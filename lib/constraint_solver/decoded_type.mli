@@ -11,6 +11,8 @@ type t =
   | Mu of Var.t * t
 [@@deriving sexp]
 
+include Pretty_printer.S with type t := t
+
 module Decoder : sig
   (** A decoder is a function that converts a (graphical) type into a decoded type *)
   type nonrec t = G.Type.t -> t
