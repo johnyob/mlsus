@@ -1,5 +1,6 @@
 open Core
 open Mlsus_std
+open Grace
 
 module Type = struct
   (* TODO():
@@ -55,6 +56,7 @@ type t =
   | Let of Var.t * scheme * t
   | Instance of Var.t * Type.t
   | Match of Type.Var.t * Closure.t * (Type.Matchee.t -> t)
+  | With_range of t * Range.t
 
 and scheme =
   { type_vars : Type.Var.t list
@@ -85,3 +87,4 @@ let poly_scheme (type_vars, (in_, type_)) = { type_vars; in_; type_ }
 let let_ (x, scheme) ~in_ = Let (x, scheme, in_)
 let inst x type_ = Instance (x, type_)
 let match_ a ~closure ~with_ = Match (a, Closure.of_list closure, with_)
+let with_range t ~range = With_range (t, range)
