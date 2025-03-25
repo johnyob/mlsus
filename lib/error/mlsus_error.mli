@@ -47,12 +47,14 @@ val constructor_arity_mismatch
   -> Constructor_name.With_range.t
   -> t
 
-(** [mismatched_type ~range ~pp_type ~expected ~actual] creates a type mismatch
+(** [mismatched_type ~range ~pp_type type1 type2] creates a type mismatch
     error. The parameterization of types permits us to use many different
     representations for output types.
 
     @param pp_type is used to pretty-print the types. *)
-val mismatched_type : range:Range.t -> pp_type:'a Fmt.t -> expected:'a -> actual:'a -> t
+val mismatched_type : range:Range.t -> pp_type:'a Fmt.t -> 'a -> 'a -> t
+
+val ambiguous_constructor : range:Range.t -> t
 
 val constructor_disambiguation_mismatched_type
   :  range:Range.t

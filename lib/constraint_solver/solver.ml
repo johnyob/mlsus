@@ -136,7 +136,11 @@ let unify ~(state : State.t) ~(env : Env.t) gtype1 gtype2 =
   with
   | G.Unify.Unify (gtype1, gtype2) ->
     let decoder = Decoded_type.Decoder.create () in
-    Env.raise env @@ Cannot_unify (decoder gtype1, decoder gtype2)
+    (* The let bindings here are to used to ensure order. 
+       The first type will have the 'newest' allocated variables *)
+    let dtype1 = decoder gtype1 in
+    let dtype2 = decoder gtype2 in
+    Env.raise env @@ Cannot_unify (dtype1, dtype2)
 ;;
 
 let rec solve : state:State.t -> env:Env.t -> C.t -> unit =

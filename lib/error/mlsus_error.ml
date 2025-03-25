@@ -223,18 +223,18 @@ let constructor_arity_mismatch
     raise @@ bugf ~here:[%here] "expected actual_arity <> expected_arity"
 ;;
 
-let mismatched_type ~range ~pp_type ~expected ~actual =
+let mismatched_type ~range ~pp_type type1 type2 =
   let open Diagnostic in
   let pp_quoted_type = pp_quoted pp_type in
   Diagnostic.createf
     ~labels:
       [ Label.primaryf
           ~range
-          "expected %a, found %a"
+          "%a is not equal to %a"
           pp_quoted_type
-          expected
+          type1
           pp_quoted_type
-          actual
+          type2
       ]
     ~code:Code.Type_mismatch
     Error
@@ -253,6 +253,16 @@ let constructor_disambiguation_mismatched_type ~range ~type_head =
     ~code:Code.Type_mismatch
     Error
     "mismatched type"
+;;
+
+let ambiguous_constructor ~range =
+  let open Diagnostic in
+  Diagnostic.createf
+    ~labels:[ empty_primary_label ~range ]
+    ~notes:[ Message.createf "hint: add a type annotation" ]
+    ~code:Code.Ambiguous_constructor
+    Error
+    "ambiguous constructor"
 ;;
 
 module For_testing = struct
