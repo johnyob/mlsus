@@ -45,8 +45,12 @@ type t =
   | Exists of Type.Var.t * t (** [exists overline(a). C]*)
   | Let of Var.t * scheme * t (** [let x = sigma in C] *)
   | Instance of Var.t * Type.t (** [x <= tau] *)
-  | Match of Type.Var.t * Closure.t * (Type.Matchee.t -> t)
-  (** [match a with [overline(a)]f] *)
+  | Match of
+      { matchee : Type.Var.t
+      ; closure : Closure.t
+      ; case : Type.Matchee.t -> t
+      ; else_ : unit -> Mlsus_error.t
+      } (** [match a with [overline(a)]f] else err *)
   | With_range of t * Range.t (** [C^ell] *)
 
 (** [scheme] is a constrainted type scheme [overline(a). C => tau] *)
@@ -75,5 +79,12 @@ val mono_scheme : Type.t -> scheme
 val poly_scheme : quantified_scheme -> scheme
 val let_ : Var.t * scheme -> in_:t -> t
 val inst : Var.t -> Type.t -> t
-val match_ : Type.Var.t -> closure:Type.Var.t list -> with_:(Type.Matchee.t -> t) -> t
+
+val match_
+  :  Type.Var.t
+  -> closure:Type.Var.t list
+  -> with_:(Type.Matchee.t -> t)
+  -> else_:(unit -> Mlsus_error.t)
+  -> t
+
 val with_range : t -> range:Range.t -> t

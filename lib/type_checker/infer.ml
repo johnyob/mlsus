@@ -258,18 +258,19 @@ let inst_constr
            constr_type_var
            ~closure:[ constr_type_var; constr_arg_var ]
            ~with_:(function
-           | (Arrow _ | Tuple _) as matchee ->
-             let type_head =
-               match matchee with
-               | Arrow _ -> `Arrow
-               | Tuple _ -> `Tuple
-               | _ -> assert false
-             in
-             ff
-               (Mlsus_error.constructor_disambiguation_mismatched_type
-                  ~range:constr_name.range
-                  ~type_head)
-           | Constr (_, type_ident) -> disambiguate_and_infer_constructor type_ident)
+             | (Arrow _ | Tuple _) as matchee ->
+               let type_head =
+                 match matchee with
+                 | Arrow _ -> `Arrow
+                 | Tuple _ -> `Tuple
+                 | _ -> assert false
+               in
+               ff
+                 (Mlsus_error.constructor_disambiguation_mismatched_type
+                    ~range:constr_name.range
+                    ~type_head)
+             | Constr (_, type_ident) -> disambiguate_and_infer_constructor type_ident)
+           ~else_:(fun () -> Mlsus_error.ambiguous_constructor ~range:constr_name.range)
        | Constr (_, type_ident) -> disambiguate_and_infer_constructor type_ident
        | (Arrow _ | Tuple _) as constr_type ->
          let type_head =

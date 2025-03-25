@@ -63,7 +63,12 @@ module Suspended_first_order (S : S) = struct
       | Empty_one_or_more_handlers of 'a handler list
     [@@deriving sexp_of]
 
-    and 'a handler = { run : 'a S.t -> unit } [@@unboxed] [@@deriving sexp_of]
+    and 'a handler =
+      { run : 'a S.t -> unit
+      ; cancel : unit -> Mlsus_error.t
+        (** [cancel ()] is used to mark the handler as cancelled, returning a user-defined error s*)
+      }
+    [@@deriving sexp_of]
 
     let merge t1 t2 =
       match t1, t2 with
