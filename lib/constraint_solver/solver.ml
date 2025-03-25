@@ -15,8 +15,8 @@ module Error = struct
     | Unbound_type_var of C.Type.Var.t
     | Unbound_var of C.Var.t
     | Cannot_unify of Decoded_type.t * Decoded_type.t
-    | Cannot_resume_suspended_generic
-    | Cannot_resume_match_due_to_cycle
+    | Cannot_resume_suspended_generic of Mlsus_error.t list
+    | Cannot_resume_match_due_to_cycle of Mlsus_error.t list
   [@@deriving sexp]
 
   exception T of t
@@ -185,7 +185,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     [%log.global.debug "Updated env" (env : Env.t)];
     [%log.global.debug "Solving exist body"];
     self ~state ~env cst
-  | Match (matchee, closure, f) ->
+  | Match { matchee; closure; case = f; else_ } ->
     let matchee = Env.find_type_var env matchee in
     [%log.global.debug "Matchee type" (matchee : Type.t)];
     let gclosure = gclosure_of_closure ~env closure in
@@ -208,7 +208,14 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
       [%log.global.debug "Exiting case region"]
     in
     [%log.global.debug "Suspending match..."];
-    G.suspend ~state ~curr_region:env.curr_region { matchee; closure = gclosure; case }
+    G.suspend
+      ~state
+      ~curr_region:env.curr_region
+      { matchee
+      ; closure = gclosure
+      ; case
+      ; else_ = (fun () -> Env.raise env @@ Unsatisfiable (else_ ()))
+      }
   | With_range (t, range) -> solve ~state ~env:(Env.with_range env ~range) t
 
 and gclosure_of_closure ~env closure : G.Suspended_match.closure =
@@ -254,12 +261,15 @@ let solve : ?range:Range.t -> C.t -> (unit, Error.t) result =
     then (
       [%log.global.error
         "num_partially_generalized_regions" (num_partially_generalized_regions : int)];
-      Error.raise ~range @@ Cannot_resume_match_due_to_cycle);
+      Error.raise ~range:None
+      @@ Cannot_resume_match_due_to_cycle
+           (G.Generalization_tree.cancel_partially_generalized_regions
+              state.generalization_tree));
     Ok ()
   with
   (* Catch solver exceptions *)
   | Error.T err -> Error err
   (* Catch generalization exceptions *)
-  | G.Cannot_resume_suspended_generic ->
-    Error (Error.create ~range Cannot_resume_suspended_generic)
+  | G.Cannot_resume_suspended_generic errs ->
+    Error (Error.create ~range:None (Cannot_resume_suspended_generic errs))
 ;;

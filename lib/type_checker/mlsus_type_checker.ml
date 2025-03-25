@@ -56,12 +56,7 @@ let check cst =
               ~pp_type:Mlsus_constraint_solver.Decoded_type.pp
               type1
               type2)
-     (* FIXME: These errors should be better, but the solver doesn't provide enough information to
-       give an informative error *)
-     | Cannot_resume_match_due_to_cycle ->
-       Mlsus_error.(
-         raise @@ bug_s ~here:[%here] [%message "Cannot resume match due to cycle"])
-     | Cannot_resume_suspended_generic ->
-       Mlsus_error.(
-         raise @@ bug_s ~here:[%here] [%message "Cannot resume suspended generic"]))
+     | Cannot_resume_suspended_generic errs | Cannot_resume_match_due_to_cycle errs ->
+       (* FIXME: We don't have a way to compose many errors into one, so we just pick one for now :/ *)
+       Mlsus_error.raise @@ List.hd_exn errs)
 ;;
