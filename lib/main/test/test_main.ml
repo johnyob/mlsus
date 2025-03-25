@@ -778,16 +778,10 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect
     {|
-    ("Failed to solve constraint"
-     (err
-      ((it
-        (Cannot_unify
-         (Arrow (Var ((id 3) (name Decoded_type.Var)))
-          (Var ((id 2) (name Decoded_type.Var))))
-         (Tuple
-          ((Var ((id 0) (name Decoded_type.Var)))
-           (Var ((id 1) (name Decoded_type.Var)))))))
-       (range ()))))
+    error[E011]: mismatched type
+        ┌─ expect_test.ml:3:9
+      3 │          (x, x) (fun y -> y)
+        │          ^^^^^^ `'a -> 'b` is not equal to `'c * 'd`
     |}]
 ;;
 
@@ -802,14 +796,10 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect
     {|
-    ("Failed to solve constraint"
-     (err
-      ((it
-        (Cannot_unify
-         (Arrow (Var ((id 1) (name Decoded_type.Var)))
-          (Var ((id 0) (name Decoded_type.Var))))
-         (Constr () ((id 2) (name Stdlib.unit)))))
-       (range ()))))
+    error[E011]: mismatched type
+        ┌─ expect_test.ml:3:26
+      3 │          (fun y z -> y z) ()
+        │                           ^^ `'a -> 'b` is not equal to `unit`
     |}]
 ;;
 
@@ -850,8 +840,7 @@ let%expect_test "" =
   [%expect
     {|
     (num_partially_generalized_regions(num_partially_generalized_regions 1))
-    ("Failed to solve constraint"
-     (err ((it Cannot_resume_match_due_to_cycle) (range ()))))
+    bug[E???]: lib/type_checker/mlsus_type_checker.ml:63:30: "Cannot resume match due to cycle"
     |}]
 ;;
 
@@ -920,7 +909,6 @@ let%expect_test "" =
   [%expect
     {|
     (num_partially_generalized_regions(num_partially_generalized_regions 2))
-    ("Failed to solve constraint"
-     (err ((it Cannot_resume_match_due_to_cycle) (range ()))))
+    bug[E???]: lib/type_checker/mlsus_type_checker.ml:63:30: "Cannot resume match due to cycle"
     |}]
 ;;
