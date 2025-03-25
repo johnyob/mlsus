@@ -314,7 +314,11 @@ module Pattern = struct
     result, exists a c
   ;;
 
+  let with_range' (result, c) ~range = result, with_range ~range c
+
   let rec infer_pat ~env (pat : pattern) pat_type k =
+    with_range' ~range:pat.range
+    @@
     match pat.it with
     | Pat_any -> k (Fragment.empty, tt)
     | Pat_var x -> k (Fragment.singleton x.it pat_type, tt)
@@ -399,6 +403,8 @@ module Expression = struct
 
   let rec infer_exp ~(env : Env.t) (exp : expression) exp_type =
     let id_source = Env.id_source env in
+    with_range ~range:exp.range
+    @@
     match exp.it with
     | Exp_var var ->
       (match Env.find_var env var.it with
@@ -585,12 +591,14 @@ module Structure = struct
   let rec infer_str ~env (str : Ast.structure) =
     match str with
     | [] -> tt
-    | { it = Str_type type_decls; range = _ } :: str ->
+    | { it = Str_type type_decls; range } :: str ->
       let env = infer_type_decls ~env type_decls in
-      infer_str ~env str
-    | { it = Str_primitive value_desc; range = _ } :: str ->
-      infer_prim ~env value_desc @@ fun env -> infer_str ~env str
-    | { it = Str_value value_binding; range = _ } :: str ->
-      Expression.infer_value_binding ~env value_binding @@ fun env -> infer_str ~env str
+      with_range ~range @@ infer_str ~env str
+    | { it = Str_primitive value_desc; range } :: str ->
+      with_range ~range @@ infer_prim ~env value_desc @@ fun env -> infer_str ~env str
+    | { it = Str_value value_binding; range } :: str ->
+      with_range ~range
+      @@ Expression.infer_value_binding ~env value_binding
+      @@ fun env -> infer_str ~env str
   ;;
 end

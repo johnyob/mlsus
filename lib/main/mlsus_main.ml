@@ -37,11 +37,6 @@ let type_check_and_print ?source lexbuf ~dump_ast ~dump_constraint =
   @@ fun () ->
   let cst = constraint_gen ?source lexbuf ~dump_ast in
   if dump_constraint then Fmt.pr "Generated constraint:@.%a@." pp_constraint cst;
-  match Mlsus_constraint_solver.solve cst with
-  | Ok () -> Fmt.pr "Well typed :)@."
-  | Error err ->
-    Fmt.pr
-      "@[%a@]@."
-      Sexp.pp_hum
-      [%message "Failed to solve constraint" (err : Mlsus_constraint_solver.Error.t)]
+  Mlsus_type_checker.check cst;
+  Fmt.pr "Well typed :)@."
 ;;
