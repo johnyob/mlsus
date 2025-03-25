@@ -840,7 +840,11 @@ let%expect_test "" =
   [%expect
     {|
     (num_partially_generalized_regions(num_partially_generalized_regions 1))
-    bug[E???]: lib/type_checker/mlsus_type_checker.ml:63:30: "Cannot resume match due to cycle"
+    error[E010]: ambiguous constructor
+        ┌─ expect_test.ml:10:15
+     10 │        let z = A ;;
+        │                ^
+        = hint: add a type annotation
     |}]
 ;;
 
@@ -909,6 +913,10 @@ let%expect_test "" =
   [%expect
     {|
     (num_partially_generalized_regions(num_partially_generalized_regions 2))
-    bug[E???]: lib/type_checker/mlsus_type_checker.ml:63:30: "Cannot resume match due to cycle"
+    error[E010]: ambiguous constructor
+        ┌─ expect_test.ml:11:40
+     11 │          let f = fun x -> match x with (L -> 1) in
+        │                                         ^
+        = hint: add a type annotation
     |}]
 ;;
