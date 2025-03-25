@@ -1,6 +1,6 @@
 (library
  (name mlsus_constraint_solver)
  (public_name mlsus.constraint_solver)
- (libraries core async mlsus.std mlsus.unifier mlsus.constraint mlsus.error)
+ (libraries core async grace mlsus.std mlsus.unifier mlsus.constraint mlsus.error)
  (preprocess
   (pps ppx_jane)))

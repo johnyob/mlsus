@@ -46,7 +46,7 @@ let%expect_test "Cannot resume suspended generic" =
      (cst
       (Exists ((id 0) (name Type.Var))
        (Match ((id 0) (name Type.Var)) ((type_vars ())) <fun>)))
-     (err Cannot_resume_suspended_generic))
+     (err ((it Cannot_resume_suspended_generic) (range ()))))
     |}]
 ;;
 
@@ -64,7 +64,7 @@ let%expect_test "Cannot unsuspend undetermined" =
       (Exists ((id 0) (name Type.Var))
        (Match ((id 0) (name Type.Var)) ((type_vars (((id 0) (name Type.Var)))))
         <fun>)))
-     (err Cannot_resume_match_due_to_cycle))
+     (err ((it Cannot_resume_match_due_to_cycle) (range ()))))
     |}]
 ;;
 
@@ -136,7 +136,7 @@ let%expect_test "Cannot unsuspend circular dependencies" =
           <fun>)
          (Match ((id 1) (name Type.Var)) ((type_vars (((id 0) (name Type.Var)))))
           <fun>)))))
-     (err Cannot_resume_match_due_to_cycle))
+     (err ((it Cannot_resume_match_due_to_cycle) (range ()))))
     |}]
 ;;
 

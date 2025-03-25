@@ -780,12 +780,14 @@ let%expect_test "" =
     {|
     ("Failed to solve constraint"
      (err
-      (Cannot_unify
-       (Arrow (Var ((id 3) (name Decoded_type.Var)))
-        (Var ((id 2) (name Decoded_type.Var))))
-       (Tuple
-        ((Var ((id 0) (name Decoded_type.Var)))
-         (Var ((id 1) (name Decoded_type.Var))))))))
+      ((it
+        (Cannot_unify
+         (Arrow (Var ((id 3) (name Decoded_type.Var)))
+          (Var ((id 2) (name Decoded_type.Var))))
+         (Tuple
+          ((Var ((id 0) (name Decoded_type.Var)))
+           (Var ((id 1) (name Decoded_type.Var)))))))
+       (range ()))))
     |}]
 ;;
 
@@ -802,10 +804,12 @@ let%expect_test "" =
     {|
     ("Failed to solve constraint"
      (err
-      (Cannot_unify
-       (Arrow (Var ((id 1) (name Decoded_type.Var)))
-        (Var ((id 0) (name Decoded_type.Var))))
-       (Constr () ((id 2) (name Stdlib.unit))))))
+      ((it
+        (Cannot_unify
+         (Arrow (Var ((id 1) (name Decoded_type.Var)))
+          (Var ((id 0) (name Decoded_type.Var))))
+         (Constr () ((id 2) (name Stdlib.unit)))))
+       (range ()))))
     |}]
 ;;
 
@@ -846,7 +850,8 @@ let%expect_test "" =
   [%expect
     {|
     (num_partially_generalized_regions(num_partially_generalized_regions 1))
-    ("Failed to solve constraint" (err Cannot_resume_match_due_to_cycle))
+    ("Failed to solve constraint"
+     (err ((it Cannot_resume_match_due_to_cycle) (range ()))))
     |}]
 ;;
 
@@ -915,6 +920,7 @@ let%expect_test "" =
   [%expect
     {|
     (num_partially_generalized_regions(num_partially_generalized_regions 2))
-    ("Failed to solve constraint" (err Cannot_resume_match_due_to_cycle))
+    ("Failed to solve constraint"
+     (err ((it Cannot_resume_match_due_to_cycle) (range ()))))
     |}]
 ;;
