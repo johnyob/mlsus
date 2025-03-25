@@ -296,6 +296,7 @@ module Suspended_match = struct
     { matchee : Type.t
     ; closure : closure
     ; case : curr_region:Type.region_node -> Type.t Structure.Former.t -> unit
+    ; else_ : unit -> Mlsus_error.t
     }
   [@@deriving sexp_of]
 
@@ -339,6 +340,8 @@ module Generalization_tree : sig
   (** [num_partially_generalized_regions t] returns the number of regions
       (previously visited and generalized) with the status [Partially_generalized]. *)
   val num_partially_generalized_regions : t -> int
+
+  val cancel_partially_generalized_regions : t -> Mlsus_error.t list
 end = struct
   type t =
     { entered_map : (Identifier.t, (Identifier.t, Type.region_node) Hashtbl.t) Hashtbl.t
@@ -359,6 +362,20 @@ end = struct
   ;;
 
   let num_partially_generalized_regions t = Hashtbl.length t.partially_generalized_regions
+
+  let cancel_partially_generalized_regions t =
+    (* Not particularly efficient, but only called in the case of errors *)
+    Hashtbl.fold
+      t.partially_generalized_regions
+      ~init:[]
+      ~f:(fun ~key:_ ~data:region_node acc ->
+        let types = (Region.Tree.region region_node).types in
+        List.fold types ~init:acc ~f:(fun acc type_ ->
+          match Type.inner type_ with
+          | Var (Empty_one_or_more_handlers handlers) ->
+            acc @ List.map handlers ~f:(fun handler -> handler.cancel ())
+          | _ -> acc))
+  ;;
 
   let create () =
     { entered_map = Hashtbl.create (module Identifier)
@@ -610,7 +627,7 @@ let partial_copy ~state ~curr_region type_ =
   loop ~root:true type_
 ;;
 
-exception Cannot_resume_suspended_generic
+exception Cannot_resume_suspended_generic of Mlsus_error.t list
 
 let remove_guard ~state t guard =
   let visited = Hash_set.create (module Identifier) in
@@ -633,7 +650,7 @@ let remove_guard ~state t guard =
   loop t
 ;;
 
-let suspend ~state ~curr_region ({ matchee; case; closure } : Suspended_match.t) =
+let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_match.t) =
   match Type.inner matchee with
   | Var _ ->
     let guard = Identifier.create state.id_source in
@@ -671,6 +688,7 @@ let suspend ~state ~curr_region ({ matchee; case; closure } : Suspended_match.t)
             [%log.global.debug
               "Generalization tree after solving case"
                 (state.generalization_tree : Generalization_tree.t)])
+      ; cancel = else_
       };
     (* Add guards for each variable in closure *)
     List.iter closure.variables ~f:(fun type_ -> Type.add_guard type_ guard)
@@ -787,8 +805,10 @@ let generalize_young_region ~state (young_region : Young_region.t) =
          Type.generalize type_;
          (* Cannot generalize unresolved svar *)
          (match Type.status type_, Type.inner type_ with
-          | Generic, Var (Empty_one_or_more_handlers _) ->
-            raise Cannot_resume_suspended_generic
+          | Generic, Var (Empty_one_or_more_handlers handlers) ->
+            raise
+              (Cannot_resume_suspended_generic
+                 (List.map handlers ~f:(fun handler -> handler.cancel ())))
           | _ -> ());
          true)))
   in
