@@ -60,10 +60,7 @@ module Make (S : Structure.Basic) = struct
       type t = (Type.t * Type.t) Stack.t
 
       let create () = Stack.create ()
-
-      let enqueue t type1 type2 =
-        if not (phys_equal type1 type2) then Stack.push t (type1, type2)
-      ;;
+      let enqueue t type1 type2 = Stack.push t (type1, type2)
 
       let run t ~f =
         let rec loop () =
@@ -94,9 +91,11 @@ module Make (S : Structure.Basic) = struct
     ;;
 
     let rec unify_exn ~ctx ~work_queue type1 type2 =
-      let desc = unify_desc ~ctx ~work_queue type1 type2 in
-      Union_find.union type1 type2;
-      Union_find.set type1 desc;
+      if not (Union_find.same_class type1 type2)
+      then (
+        let desc = unify_desc ~ctx ~work_queue type1 type2 in
+        Union_find.union type1 type2;
+        Union_find.set type1 desc);
       Work_queue.run work_queue ~f:(unify_exn ~ctx ~work_queue)
     ;;
 
