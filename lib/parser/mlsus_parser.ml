@@ -37,6 +37,7 @@ module Token = struct
     | FUN -> Fmt.pf ppf "Fun"
     | EXTERNAL -> Fmt.pf ppf "External"
     | EXISTS -> Fmt.pf ppf "Exists"
+    | FORALL -> Fmt.pf ppf "Forall"
     | EQUAL -> Fmt.pf ppf "Equal"
     | EOF -> Fmt.pf ppf "Eof"
     | ELSE -> Fmt.pf ppf "Else"

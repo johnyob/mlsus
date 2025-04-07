@@ -442,6 +442,20 @@ module Expression = struct
       in
       let c = infer_exp ~env exp exp_type in
       exists_many type_vars c
+    | Exp_forall (type_vars, exp) ->
+      let env, rigid_type_vars =
+        List.fold_map type_vars ~init:env ~f:(fun env type_var ->
+          Env.rename_type_var env ~type_var:type_var.it ~in_:(fun env ctype_var ->
+            env, (Rigid, ctype_var)))
+      in
+      let exp_type_var' = Type.Var.create ~id_source:(Env.id_source env) () in
+      let exp_type' = Type.var exp_type_var' in
+      let c = infer_exp ~env exp exp_type' in
+      let x = Var.create ~id_source:(Env.id_source env) () in
+      let_
+        x#=(poly_scheme
+              (((Flexible, exp_type_var') :: rigid_type_vars) @. c @=> exp_type'))
+        ~in_:(inst x exp_type)
     | Exp_annot (exp, annot) ->
       let annot = Convert.Core_type.to_type ~env annot in
       let c = infer_exp ~env exp exp_type in

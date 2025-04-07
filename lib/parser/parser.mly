@@ -247,6 +247,14 @@ expression:
     ; "->"
     ; exp = seq_expression
       { Expression.exists ~range:(range_of_lex $loc) type_var_names exp }
+  | "forall"
+    ; "("
+    ; "type"
+    ; type_var_names = nonempty_list(type_var_name)
+    ; ")"
+    ; "->"
+    ; exp = seq_expression
+        { Expression.forall ~range:(range_of_lex $loc) type_var_names exp }
   | "match" 
     ; exp = expression 
     ; "with" 

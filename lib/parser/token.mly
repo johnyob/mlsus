@@ -12,6 +12,7 @@
 %token MATCH "match"
 %token WITH "with"
 %token EXISTS "exists"
+%token FORALL "forall"
 %token TYPE "type"
 %token AS "as"
 %token OF "of"
