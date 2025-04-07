@@ -56,6 +56,43 @@ module Former = struct
   ;;
 end
 
+module Rigid (S : S) = struct
+  type 'a t =
+    | Rigid_var
+    | Structure of 'a S.t
+  [@@deriving sexp_of]
+
+  type 'a ctx = 'a S.ctx
+
+  exception Cannot_merge = S.Cannot_merge
+
+  let iter t ~f =
+    match t with
+    | Rigid_var -> ()
+    | Structure s -> S.iter s ~f
+  ;;
+
+  let copy t ~f =
+    match t with
+    | Rigid_var -> Rigid_var
+    | Structure s -> Structure (S.copy s ~f)
+  ;;
+
+  let fold t ~f ~init =
+    match t with
+    | Rigid_var -> init
+    | Structure s -> S.fold s ~f ~init
+  ;;
+
+  let merge ~ctx ~create ~unify ~type1 ~type2 t1 t2 =
+    match t1, t2 with
+    | Rigid_var, _ | _, Rigid_var -> raise Cannot_merge
+    | Structure s1, Structure s2 ->
+      Structure
+        (S.merge ~ctx ~create:(fun s -> create (Structure s)) ~unify ~type1 ~type2 s1 s2)
+  ;;
+end
+
 module Suspended_first_order (S : S) = struct
   module Var = struct
     type 'a t =

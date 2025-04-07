@@ -936,7 +936,7 @@ let%expect_test "" =
     Generated constraint:
     (With_range
      (Let ((id 4) (name id))
-      ((type_vars (((id 0) (name Type.Var))))
+      ((type_vars ((Flexible ((id 0) (name Type.Var)))))
        (in_
         (With_range
          (Exists ((id 1) (name Type.Var))

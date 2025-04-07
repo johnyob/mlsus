@@ -243,7 +243,7 @@ let%expect_test "No suspended matches results in normal generalization" =
     exists a1
     @@ let_
          xid#=(poly_scheme
-                 ([ a2 ]
+                 ([ Flexible, a2 ]
                   @. (exists a3
                       @@ exists a4
                       @@ (T.(var a2 =~ var a3 @-> var a4)
@@ -264,7 +264,7 @@ let%expect_test "No suspended matches results in normal generalization" =
      (cst
       (Exists ((id 0) (name Type.Var))
        (Let ((id 6) (name Constraint.Var))
-        ((type_vars (((id 1) (name Type.Var))))
+        ((type_vars ((Flexible ((id 1) (name Type.Var)))))
          (in_
           (Exists ((id 2) (name Type.Var))
            (Exists ((id 3) (name Type.Var))
@@ -302,7 +302,7 @@ let%expect_test "Partial generic becomes instance" =
     @@ exists a2
     @@ let_
          x1#=(poly_scheme
-                ([ a3 ]
+                ([ Flexible, a3 ]
                  @. match_
                       a1
                       ~closure:[ a3; a2 ]
@@ -319,7 +319,7 @@ let%expect_test "Partial generic becomes instance" =
       (Exists ((id 0) (name Type.Var))
        (Exists ((id 1) (name Type.Var))
         (Let ((id 3) (name Constraint.Var))
-         ((type_vars (((id 2) (name Type.Var))))
+         ((type_vars ((Flexible ((id 2) (name Type.Var)))))
           (in_
            (Match (matchee ((id 0) (name Type.Var)))
             (closure
@@ -344,7 +344,7 @@ let%expect_test "Partial generic becomes generic" =
     exists a1
     @@ let_
          x1#=(poly_scheme
-                ([ a2 ]
+                ([ Flexible, a2 ]
                  @. match_
                       a1
                       ~closure:[ a2 ]
@@ -363,7 +363,7 @@ let%expect_test "Partial generic becomes generic" =
      (cst
       (Exists ((id 0) (name Type.Var))
        (Let ((id 3) (name Constraint.Var))
-        ((type_vars (((id 1) (name Type.Var))))
+        ((type_vars ((Flexible ((id 1) (name Type.Var)))))
          (in_
           (Match (matchee ((id 0) (name Type.Var)))
            (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
@@ -393,7 +393,7 @@ let%expect_test "Propagating changes during partial generalization" =
     exists_many [ a1; a2 ]
     @@ let_
          x1#=(poly_scheme
-                ([ a3 ]
+                ([ Flexible, a3 ]
                  @. ((* This match forces [a3] to be partially generic *)
                      match_ a1 ~closure:[ a3 ] ~with_:(fun _ -> tt) ~else_:else_unsat_err
                      &~
@@ -424,7 +424,7 @@ let%expect_test "Propagating changes during partial generalization" =
       (Exists ((id 0) (name Type.Var))
        (Exists ((id 1) (name Type.Var))
         (Let ((id 4) (name Constraint.Var))
-         ((type_vars (((id 2) (name Type.Var))))
+         ((type_vars ((Flexible ((id 2) (name Type.Var)))))
           (in_
            (Conj
             (Match (matchee ((id 0) (name Type.Var)))

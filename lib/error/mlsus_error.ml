@@ -17,6 +17,7 @@ module Code = struct
     | Constructor_arity_mismatch
     | Ambiguous_constructor
     | Type_mismatch
+    | Rigid_variable_escape
     | Unknown
   [@@deriving sexp]
 
@@ -32,6 +33,7 @@ module Code = struct
     | Constructor_arity_mismatch -> "E009"
     | Ambiguous_constructor -> "E010"
     | Type_mismatch -> "E011"
+    | Rigid_variable_escape -> "E012"
     | Unknown -> "E???"
   ;;
 end
@@ -247,6 +249,7 @@ let constructor_disambiguation_mismatched_type ~range ~type_head =
     match type_head with
     | `Tuple -> "tuple"
     | `Arrow -> "function type"
+    | `Rigid_var -> "polymorphic variable"
   in
   Diagnostic.createf
     ~labels:[ Label.primaryf ~range "expected a type constructor, found a %s" head_name ]
@@ -263,6 +266,14 @@ let ambiguous_constructor ~range =
     ~code:Code.Ambiguous_constructor
     Error
     "ambiguous constructor"
+;;
+
+let rigid_variable_escape ~range =
+  Diagnostic.createf
+    ~labels:[ empty_primary_label ~range ]
+    ~code:Code.Rigid_variable_escape
+    Error
+    "generic type variable escapes its scope"
 ;;
 
 module For_testing = struct

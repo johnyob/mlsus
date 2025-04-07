@@ -21,6 +21,7 @@ module Type = struct
       | Arrow of Var.t * Var.t
       | Tuple of Var.t list
       | Constr of Var.t list * Ident.t
+      | Rigid_var
     [@@deriving sexp]
   end
 
@@ -64,10 +65,14 @@ type t =
   | With_range of t * Range.t
 
 and scheme =
-  { type_vars : Type.Var.t list
+  { type_vars : (flexibility * Type.Var.t) list
   ; in_ : t
   ; type_ : Type.t
   }
+
+and flexibility =
+  | Flexible
+  | Rigid
 [@@deriving sexp]
 
 let tt = True
