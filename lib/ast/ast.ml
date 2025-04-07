@@ -42,6 +42,7 @@ and expression_desc =
   | Exp_app of expression * expression
   | Exp_let of value_binding * expression
   | Exp_exists of Type_var_name.With_range.t list * expression
+  | Exp_forall of Type_var_name.With_range.t list * expression
   | Exp_annot of expression * core_type
   | Exp_constr of Constructor_name.With_range.t * expression option
   | Exp_tuple of expression list

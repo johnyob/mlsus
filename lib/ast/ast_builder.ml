@@ -49,6 +49,9 @@ module type S = sig
     val exists
       : (Type_var_name.With_range.t list -> expression -> expression) with_range_fn
 
+    val forall
+      : (Type_var_name.With_range.t list -> expression -> expression) with_range_fn
+
     val annot : (expression -> core_type -> expression) with_range_fn
 
     val constr
@@ -138,6 +141,10 @@ module Default : S with type 'a with_range_fn := range:Range.t -> 'a = struct
       With_range.create ~range @@ Exp_exists (type_var_names, exp)
     ;;
 
+    let forall ~range type_var_names exp =
+      With_range.create ~range @@ Exp_forall (type_var_names, exp)
+    ;;
+
     let annot ~range exp type_ = With_range.create ~range @@ Exp_annot (exp, type_)
 
     let constr ~range constr_name arg_exp =
@@ -214,6 +221,7 @@ module Make (R : Range) : S with type 'a with_range_fn := 'a = struct
     let fun_ = Expression.fun_ ~range:R.v
     let app = Expression.app ~range:R.v
     let let_ = Expression.let_ ~range:R.v
+    let forall = Expression.forall ~range:R.v
     let exists = Expression.exists ~range:R.v
     let annot = Expression.annot ~range:R.v
     let constr = Expression.constr ~range:R.v

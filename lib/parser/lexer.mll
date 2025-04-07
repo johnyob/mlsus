@@ -17,6 +17,7 @@ let keywords =
   ; "match", MATCH 
   ; "with", WITH 
   ; "exists", EXISTS 
+  ; "forall", FORALL
   ; "type", TYPE 
   ; "as", AS 
   ; "of", OF 
