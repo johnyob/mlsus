@@ -13,7 +13,12 @@ val parse_and_print : ?source:Source.t -> Lexing.lexbuf -> unit
 
     If [dump_ast] is [true], then the parsed structure is printed.
     Any errors are additionally printed. *)
-val constraint_gen_and_print : ?source:Source.t -> Lexing.lexbuf -> dump_ast:bool -> unit
+val constraint_gen_and_print
+  :  ?source:Source.t
+  -> Lexing.lexbuf
+  -> dump_ast:bool
+  -> with_stdlib:bool
+  -> unit
 
 (** [type_check_and_print lexbuf ~dump_ast ~dump_constraint] parses the [lexbuf] as a structure,
     generates a well-typedness constraint, solves the constraint and prints the result.
@@ -26,4 +31,5 @@ val type_check_and_print
   -> Lexing.lexbuf
   -> dump_ast:bool
   -> dump_constraint:bool
+  -> with_stdlib:bool
   -> unit

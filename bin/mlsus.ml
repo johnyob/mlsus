@@ -12,6 +12,25 @@ let open_with_lexbuf ~f filename () =
     ~finally:(fun () -> In_channel.close in_)
 ;;
 
+module Params = struct
+  open Command.Spec
+
+  let dump_ast =
+    flag "-dump-ast" no_arg ~doc:"Dumps the parsed program (formatted as a sexp)."
+  ;;
+
+  let dump_constraint =
+    flag
+      "-dump-constraint"
+      no_arg
+      ~doc:"Dumps the generated constraint (formatted as a sexp)."
+  ;;
+
+  let disable_stdlib =
+    flag "-disable-stdlib" no_arg ~doc:"Disables the inclusion of the standard library"
+  ;;
+end
+
 module Command = struct
   let lex =
     Command.basic_spec
@@ -32,11 +51,11 @@ module Command = struct
       ~summary:
         "Parses [filename] and prints the generated constraint (formatted as a sexp)."
       Command.Spec.(
-        empty
-        +> anon ("filename" %: string)
-        +> flag "-dump-ast" no_arg ~doc:"Dumps the parsed program (formatted as a sexp).")
-      (fun filename dump_ast ->
-         open_with_lexbuf ~f:(constraint_gen_and_print ~dump_ast) filename)
+        empty +> anon ("filename" %: string) +> Params.dump_ast +> Params.disable_stdlib)
+      (fun filename dump_ast without_stdlib ->
+         open_with_lexbuf
+           ~f:(constraint_gen_and_print ~dump_ast ~with_stdlib:(not without_stdlib))
+           filename)
   ;;
 
   let type_check =
@@ -45,15 +64,19 @@ module Command = struct
       Command.Spec.(
         empty
         +> anon ("filename" %: string)
-        +> flag "-dump-ast" no_arg ~doc:"Dumps the parsed program (formatted as a sexp)."
-        +> flag
-             "-dump-constraint"
-             no_arg
-             ~doc:"Dumps the generated constraint (formatted as a sexp)."
+        +> Params.dump_ast
+        +> Params.dump_constraint
+        +> Params.disable_stdlib
         +> Async_log.Global.set_level_via_param ())
-      (fun filename dump_ast dump_constraint () ->
+      (fun filename dump_ast dump_constraint without_stdlib () ->
          open_with_lexbuf filename ~f:(fun lexbuf ->
-           let () = type_check_and_print ~dump_ast ~dump_constraint lexbuf in
+           let () =
+             type_check_and_print
+               ~dump_ast
+               ~dump_constraint
+               ~with_stdlib:(not without_stdlib)
+               lexbuf
+           in
            Async_log.Global.flushed ()))
   ;;
 
