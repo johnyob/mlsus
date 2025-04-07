@@ -972,3 +972,100 @@ let%expect_test "" =
     Well typed :)
     |}]
 ;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let magic = 
+        forall (type 'a 'b) -> 
+          (fun x -> x : 'a -> 'b)
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect
+    {|
+    error[E011]: mismatched type
+        ┌─ expect_test.ml:4:21
+      4 │            (fun x -> x : 'a -> 'b)
+        │                      ^ `'a` is not equal to `'b`
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let escape = fun f -> 
+        forall (type 'a) -> 
+          (f : 'a -> 'a)
+      ;; 
+    |}
+    |> Dedent.string
+  in
+  type_check_and_print str;
+  (* NOTE():
+     error message looks off due to bug in Grace[^1]
+
+     [1]: https://github.com/johnyob/grace/issues/42 *)
+  [%expect
+    {|
+    error[E012]: generic type variable escapes its scope
+        ┌─ expect_test.ml:2:3
+      1 │    let escape = fun f ->
+      2 │ ╭    forall (type 'a) ->
+      3 │ │      (f : 'a -> 'a)
+        │ ╰──
+      4 │    ;;
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let escape = fun x ->
+        forall (type 'a) -> 
+          (x : 'a)
+      ;;
+    |}
+    |> Dedent.string
+  in
+  type_check_and_print str;
+  (* NOTE():
+     error message looks off due to bug in Grace[^1]
+
+     [1]: https://github.com/johnyob/grace/issues/42 *)
+  [%expect
+    {|
+    error[E012]: generic type variable escapes its scope
+        ┌─ expect_test.ml:2:3
+      1 │    let escape = fun x ->
+      2 │ ╭    forall (type 'a) ->
+      3 │ │      (x : 'a)
+        │ ╰──
+      4 │    ;;
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let x = 
+        (forall (type 'a) -> fun (x : 'a) -> (x : 'a)) ()
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let x = 
+        (forall (type 'a) -> ((fun x -> fun y -> y) (fun x -> x) : 'a -> 'a))
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;

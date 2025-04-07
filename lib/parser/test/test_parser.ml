@@ -1179,6 +1179,109 @@ let%expect_test "annotation : exists" =
     |}]
 ;;
 
+let%expect_test "annotation : forall" =
+  let exp =
+    {| forall (type 'a) -> 
+        fun (x : 'a) -> (x : 'a)
+    |}
+  in
+  parse_and_print_expression exp;
+  [%expect
+    {|
+    ((it
+      (Exp_forall
+       (((it a)
+         (range
+          ((start 14) (stop 16)
+           (source
+            (Reader
+             ((id 0) (name (expect_test.ml)) (length 59) (unsafe_get <fun>))))))))
+       ((it
+         (Exp_fun
+          (((it
+             (Pat_annot
+              ((it
+                (Pat_var
+                 ((it x)
+                  (range
+                   ((start 35) (stop 36)
+                    (source
+                     (Reader
+                      ((id 0) (name (expect_test.ml)) (length 59)
+                       (unsafe_get <fun>)))))))))
+               (range
+                ((start 35) (stop 36)
+                 (source
+                  (Reader
+                   ((id 0) (name (expect_test.ml)) (length 59)
+                    (unsafe_get <fun>)))))))
+              ((it
+                (Type_var
+                 ((it a)
+                  (range
+                   ((start 39) (stop 41)
+                    (source
+                     (Reader
+                      ((id 0) (name (expect_test.ml)) (length 59)
+                       (unsafe_get <fun>)))))))))
+               (range
+                ((start 39) (stop 41)
+                 (source
+                  (Reader
+                   ((id 0) (name (expect_test.ml)) (length 59)
+                    (unsafe_get <fun>)))))))))
+            (range
+             ((start 34) (stop 42)
+              (source
+               (Reader
+                ((id 0) (name (expect_test.ml)) (length 59) (unsafe_get <fun>))))))))
+          ((it
+            (Exp_annot
+             ((it
+               (Exp_var
+                ((it x)
+                 (range
+                  ((start 47) (stop 48)
+                   (source
+                    (Reader
+                     ((id 0) (name (expect_test.ml)) (length 59)
+                      (unsafe_get <fun>)))))))))
+              (range
+               ((start 47) (stop 48)
+                (source
+                 (Reader
+                  ((id 0) (name (expect_test.ml)) (length 59) (unsafe_get <fun>)))))))
+             ((it
+               (Type_var
+                ((it a)
+                 (range
+                  ((start 51) (stop 53)
+                   (source
+                    (Reader
+                     ((id 0) (name (expect_test.ml)) (length 59)
+                      (unsafe_get <fun>)))))))))
+              (range
+               ((start 51) (stop 53)
+                (source
+                 (Reader
+                  ((id 0) (name (expect_test.ml)) (length 59) (unsafe_get <fun>)))))))))
+           (range
+            ((start 46) (stop 54)
+             (source
+              (Reader
+               ((id 0) (name (expect_test.ml)) (length 59) (unsafe_get <fun>)))))))))
+        (range
+         ((start 30) (stop 54)
+          (source
+           (Reader
+            ((id 0) (name (expect_test.ml)) (length 59) (unsafe_get <fun>)))))))))
+     (range
+      ((start 1) (stop 54)
+       (source
+        (Reader ((id 0) (name (expect_test.ml)) (length 59) (unsafe_get <fun>)))))))
+    |}]
+;;
+
 let%expect_test "let : fact" =
   let exp =
     {| let fact = fix (fun fact n -> 
