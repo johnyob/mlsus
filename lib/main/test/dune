@@ -1,6 +1,6 @@
 (library
  (name test_main)
- (libraries core grace async fmt mlsus.main)
+ (libraries core grace async dedent fmt mlsus.main)
  (inline_tests)
  (preprocess
   (pps ppx_jane -log-source-position)))
