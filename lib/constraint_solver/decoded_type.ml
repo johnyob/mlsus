@@ -116,6 +116,10 @@ module Decoder = struct
       and decode_first_order_structure ~id structure =
         match structure with
         | Var _ -> Var (State.rename_var state id)
+        | Structure s -> decode_rigid_structure ~id s
+      and decode_rigid_structure ~id structure =
+        match structure with
+        | Rigid_var -> Var (State.rename_var state id)
         | Structure former -> decode_former former
       and decode_former former =
         match former with

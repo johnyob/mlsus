@@ -1,5 +1,6 @@
 open! Import
 module F = Structure.Former
+module R = Structure.Rigid (F)
 
 module Region = struct
   (** The [Generalization] module manages the generalisation of graphical types.
@@ -9,6 +10,8 @@ module Region = struct
   type 'a t =
     { mutable status : status
     ; mutable types : 'a list
+    ; mutable rigid_vars : 'a list
+    ; raise_scope_escape : 'a -> unit
     }
   [@@deriving sexp_of]
 
@@ -18,8 +21,12 @@ module Region = struct
     | Fully_generalized (** A region that is ('fully') generalized *)
   [@@deriving sexp_of]
 
-  let create () = { types = []; status = Not_generalized }
+  let create ~raise_scope_escape () =
+    { raise_scope_escape; types = []; rigid_vars = []; status = Not_generalized }
+  ;;
+
   let register_type t type_ = t.types <- type_ :: t.types
+  let register_rigid_var t rigid_var = t.rigid_vars <- rigid_var :: t.rigid_vars
 
   module Tree = struct
     type 'a node = 'a t Tree.node [@@deriving sexp_of]
@@ -106,10 +113,16 @@ module Status = struct
     | Partially_generalized -> Partial { region_node; instances = []; kind = Instance }
     | Fully_generalized -> assert false
   ;;
+
+  let is_generic t =
+    match t with
+    | Generic -> true
+    | Partial _ | Instance _ -> false
+  ;;
 end
 
 module S = struct
-  module Inner = Structure.Suspended_first_order (F)
+  module Inner = Structure.Suspended_first_order (R)
 
   type 'a t =
     { id : Identifier.t
@@ -127,28 +140,34 @@ module S = struct
     }
   ;;
 
+  let flexize t =
+    match t.inner with
+    | Structure Rigid_var -> { t with inner = Var Empty }
+    | _ -> t
+  ;;
+
   let generalize t =
-    let if_guarded ~and_ ~then_ ~else_ =
-      let status = if not (Set.is_empty t.guards && and_) then then_ else else_ in
-      { t with status }
+    let if_unguarded_then_generalize ~else_ =
+      if not (Set.is_empty t.guards)
+      then { t with status = else_ }
+      else
+        (* flexize the generic *)
+        flexize { t with status = Generic }
     in
     match t.status with
     | Generic -> assert false
     | Partial { kind = Generic; _ } ->
       (* [generalize] cannot generalize partial generics. See [partial_generalize] *)
       t
-    | Partial ({ kind = Instance; instances; _ } as p) ->
-      (* [generalize] cannot generalize partial generics *or* partial instances
-         that have instances. *)
-      if_guarded
-        ~and_:(List.is_empty instances)
-        ~then_:(Partial { p with kind = Generic })
-        ~else_:Generic
+    | Partial ({ kind = Instance; instances = _ :: _; _ } as ps) ->
+      (* [generalize] cannot generalize partial instances with instances. See [partial_generalize] *)
+      { t with status = Partial { ps with kind = Generic } }
+    | Partial ({ kind = Instance; instances = []; _ } as p) ->
+      (* If a partial instance has no instances nor guards, then it can safely be generalized *)
+      if_unguarded_then_generalize ~else_:(Partial { p with kind = Generic })
     | Instance region_node ->
-      if_guarded
-        ~and_:true
-        ~then_:(Partial { region_node; instances = []; kind = Generic })
-        ~else_:Generic
+      if_unguarded_then_generalize
+        ~else_:(Partial { region_node; instances = []; kind = Generic })
   ;;
 
   let partial_generalize t ~f =
@@ -196,6 +215,7 @@ module S = struct
   let add_guard t guard = { t with guards = Set.add t.guards guard }
   let add_guards t guards = { t with guards = Set.union t.guards guards }
   let remove_guard t guard = { t with guards = Set.remove t.guards guard }
+  let is_generic t = Status.is_generic t.status
 end
 
 module Scheme = struct
@@ -289,13 +309,15 @@ module Type = struct
       set_inner t (Var svar)
     | Structure _ -> assert false
   ;;
+
+  let is_generic t = S.is_generic (structure t)
 end
 
 module Suspended_match = struct
   type t =
     { matchee : Type.t
     ; closure : closure
-    ; case : curr_region:Type.region_node -> Type.t Structure.Former.t -> unit
+    ; case : curr_region:Type.region_node -> Type.t R.t -> unit
     ; else_ : unit -> Mlsus_error.t
     }
   [@@deriving sexp_of]
@@ -570,14 +592,26 @@ open State
 let visit_region ~state rn = Generalization_tree.visit_region state.generalization_tree rn
 
 let root_region ~state =
-  let rn = Tree.create ~id_source:state.id_source (Region.create ()) |> Tree.root in
+  let rn =
+    Tree.create
+      ~id_source:state.id_source
+      (Region.create
+         ~raise_scope_escape:(fun _ ->
+           (* The root region should *not* bind rigid variables *)
+           assert false)
+         ())
+    |> Tree.root
+  in
   visit_region ~state rn;
   rn
 ;;
 
-let enter_region ~state curr_region =
+let enter_region ~state ~raise_scope_escape curr_region =
   let rn =
-    Tree.create_node ~id_source:state.id_source ~parent:curr_region (Region.create ())
+    Tree.create_node
+      ~id_source:state.id_source
+      ~parent:curr_region
+      (Region.create ~raise_scope_escape ())
   in
   visit_region ~state rn;
   rn
@@ -596,8 +630,14 @@ let create_var ~state ~curr_region ?guards () =
   create_type ~state ~curr_region ?guards (Var Empty)
 ;;
 
+let create_rigid_var ~state ~curr_region ?guards () =
+  let rigid_var = create_type ~state ~curr_region ?guards (Structure Rigid_var) in
+  Region.(register_rigid_var (Tree.region curr_region) rigid_var);
+  rigid_var
+;;
+
 let create_former ~state ~curr_region ?guards former =
-  create_type ~state ~curr_region ?guards (Structure former)
+  create_type ~state ~curr_region ?guards (Structure (Structure former))
 ;;
 
 let partial_copy ~state ~curr_region type_ =
@@ -769,6 +809,23 @@ let update_types ~state (young_region : Young_region.t) =
     loop type_ (Type.guards type_) (Type.region_exn ~here:[%here] type_))
 ;;
 
+exception Rigid_variable_escape of (Range.t * Type.t)
+
+let scope_check_young_region ~state:_ (young_region : Young_region.t) =
+  [%log.global.debug "Scope check young region" (young_region : Young_region.t)];
+  (* Iterate over rigid variables, if the level of the rigid variable is 
+     less than the young region level, then the rigid variable has escaped 
+     it's scope *)
+  let young_level = young_region.node.level in
+  let { Region.rigid_vars; raise_scope_escape; _ } = young_region.region in
+  match
+    List.find rigid_vars ~f:(fun var ->
+      Tree.Level.(Type.level_exn ~here:[%here] var < young_level))
+  with
+  | None -> ()
+  | Some var -> raise_scope_escape var
+;;
+
 let generalize_young_region ~state (young_region : Young_region.t) =
   [%log.global.debug "Generalizing young region" (young_region : Young_region.t)];
   assert (
@@ -813,6 +870,12 @@ let generalize_young_region ~state (young_region : Young_region.t) =
          true)))
   in
   [%log.global.debug "Generics for young region" (generics : Type.t list)];
+  (* Generalizing a rigid variable flexizes it. We remove the variable 
+     from [young_region.region.rigid_vars] to avoid unnecessary checks *)
+  [%log.global.debug "Remove rigid vars from young region"];
+  young_region.region.rigid_vars
+  <- List.filter young_region.region.rigid_vars ~f:(fun type_ ->
+       not (Type.is_generic type_));
   (* Propagate structures to partial instances *)
   [%log.global.debug "Propagating structure to partial instances"];
   List.iter generics ~f:(fun generic ->
@@ -875,6 +938,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
 
 let update_and_generalize_young_region ~state young_region =
   update_types ~state young_region;
+  scope_check_young_region ~state young_region;
   generalize_young_region ~state young_region
 ;;
 

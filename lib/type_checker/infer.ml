@@ -105,12 +105,14 @@ module Convert = struct
       Type.constr arg_types constr
   ;;
 
-  let core_scheme ~(env : Env.t) (scheme : Ast.core_scheme) : Type.Var.t list * Type.t =
+  let core_scheme ~(env : Env.t) (scheme : Ast.core_scheme)
+    : (flexibility * Type.Var.t) list * Type.t
+    =
     let { scheme_quantifiers; scheme_body } = scheme.it in
     let env, quantifiers =
       List.fold_map scheme_quantifiers ~init:env ~f:(fun env type_var ->
         Env.rename_type_var env ~type_var:type_var.it ~in_:(fun env ctype_var ->
-          env, ctype_var))
+          env, (Flexible, ctype_var)))
     in
     let body = Core_type.to_type ~env scheme_body in
     quantifiers, body
@@ -258,11 +260,12 @@ let inst_constr
            constr_type_var
            ~closure:[ constr_type_var; constr_arg_var ]
            ~with_:(function
-             | (Arrow _ | Tuple _) as matchee ->
+             | (Arrow _ | Tuple _ | Rigid_var) as matchee ->
                let type_head =
                  match matchee with
                  | Arrow _ -> `Arrow
                  | Tuple _ -> `Tuple
+                 | Rigid_var -> `Rigid_var
                  | _ -> assert false
                in
                ff
@@ -505,7 +508,7 @@ module Expression = struct
     let c = infer_exp ~env exp exp_type in
     Env.rename_var env ~var:var.it ~in_:(fun env cvar ->
       let c' = k env in
-      let_ cvar#=(poly_scheme ([ exp_type_var ] @. c @=> exp_type)) ~in_:c')
+      let_ cvar#=(poly_scheme ([ Flexible, exp_type_var ] @. c @=> exp_type)) ~in_:c')
   ;;
 end
 

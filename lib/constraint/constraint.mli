@@ -13,6 +13,7 @@ module Type : sig
       | Arrow of Var.t * Var.t
       | Tuple of Var.t list
       | Constr of Var.t list * Ident.t
+      | Rigid_var
     [@@deriving sexp]
   end
 
@@ -55,10 +56,14 @@ type t =
 
 (** [scheme] is a constrainted type scheme [overline(a). C => tau] *)
 and scheme =
-  { type_vars : Type.Var.t list
+  { type_vars : (flexibility * Type.Var.t) list
   ; in_ : t
   ; type_ : Type.t
   }
+
+and flexibility =
+  | Flexible
+  | Rigid
 [@@deriving sexp]
 
 val tt : t
@@ -71,10 +76,10 @@ val exists_many : Type.Var.t list -> t -> t
 val ( #= ) : Var.t -> scheme -> Var.t * scheme
 
 type unquantified_scheme := t * Type.t
-type quantified_scheme := Type.Var.t list * unquantified_scheme
+type quantified_scheme := (flexibility * Type.Var.t) list * unquantified_scheme
 
 val ( @=> ) : t -> Type.t -> unquantified_scheme
-val ( @. ) : Type.Var.t list -> unquantified_scheme -> quantified_scheme
+val ( @. ) : (flexibility * Type.Var.t) list -> unquantified_scheme -> quantified_scheme
 val mono_scheme : Type.t -> scheme
 val poly_scheme : quantified_scheme -> scheme
 val let_ : Var.t * scheme -> in_:t -> t

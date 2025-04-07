@@ -58,8 +58,10 @@ val ambiguous_constructor : range:Range.t -> t
 
 val constructor_disambiguation_mismatched_type
   :  range:Range.t
-  -> type_head:[ `Tuple | `Arrow ]
+  -> type_head:[ `Tuple | `Arrow | `Rigid_var ]
   -> t
+
+val rigid_variable_escape : range:Range.t -> t
 
 module For_testing : sig
   val use_expect_test_config : unit -> unit

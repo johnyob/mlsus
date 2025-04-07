@@ -14,6 +14,7 @@ module Error = struct
     | Unsatisfiable of Mlsus_error.t
     | Unbound_type_var of C.Type.Var.t
     | Unbound_var of C.Var.t
+    | Rigid_variable_escape
     | Cannot_unify of Decoded_type.t * Decoded_type.t
     | Cannot_resume_suspended_generic of Mlsus_error.t list
     | Cannot_resume_match_due_to_cycle of Mlsus_error.t list
@@ -59,7 +60,14 @@ module Env = struct
     | _ -> raise t @@ Unbound_var expr_var
   ;;
 
-  let enter_region ~state t = { t with curr_region = G.enter_region ~state t.curr_region }
+  let enter_region ~state t =
+    { t with
+      curr_region =
+        G.enter_region ~state t.curr_region ~raise_scope_escape:(fun _type ->
+          raise t @@ Rigid_variable_escape)
+    }
+  ;;
+
   let exit_region ~state:_ t root = G.exit_region ~curr_region:t.curr_region root
 
   let of_gclosure
@@ -92,9 +100,7 @@ let rec gtype_of_type : state:State.t -> env:Env.t -> C.Type.t -> G.Type.t =
       (Constr (List.map args ~f:self, constr))
 ;;
 
-let match_type
-  : state:State.t -> env:Env.t -> G.Type.t Structure.Former.t -> Env.t * C.Type.Matchee.t
-  =
+let match_type : state:State.t -> env:Env.t -> G.Type.t G.R.t -> Env.t * C.Type.Matchee.t =
   fun ~state ~env former ->
   let match_types ~env gtypes =
     List.fold_map gtypes ~init:env ~f:(fun env gtype ->
@@ -102,10 +108,11 @@ let match_type
       Env.bind_type_var env ~var:type_var ~type_:gtype, type_var)
   in
   match former with
-  | Tuple gtypes ->
+  | Rigid_var -> env, Rigid_var
+  | Structure (Tuple gtypes) ->
     let env, type_vars = match_types ~env gtypes in
     env, Tuple type_vars
-  | Arrow (gtype1, gtype2) ->
+  | Structure (Arrow (gtype1, gtype2)) ->
     let type_var1 = C.Type.Var.create ~id_source:state.id_source () in
     let type_var2 = C.Type.Var.create ~id_source:state.id_source () in
     let env =
@@ -114,9 +121,16 @@ let match_type
       |> Env.bind_type_var ~var:type_var2 ~type_:gtype2
     in
     env, Arrow (type_var1, type_var2)
-  | Constr (gtypes, constr) ->
+  | Structure (Constr (gtypes, constr)) ->
     let env, type_vars = match_types ~env gtypes in
     env, Constr (type_vars, constr)
+;;
+
+let forall ~(state : State.t) ~env ~type_var =
+  Env.bind_type_var
+    env
+    ~var:type_var
+    ~type_:(G.create_rigid_var ~state ~curr_region:env.curr_region ())
 ;;
 
 let exists ~(state : State.t) ~env ~type_var =
@@ -192,7 +206,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     [%log.global.debug
       "Closure of suspended match" (gclosure : G.Suspended_match.closure)];
     let case ~curr_region structure =
-      [%log.global.debug "Entered match handler" (structure : Type.t Structure.Former.t)];
+      [%log.global.debug "Entered match handler" (structure : Type.t G.R.t)];
       (* Enter region and construct env *)
       let env = Env.of_gclosure gclosure ~closure ~curr_region ~range:env.range in
       [%log.global.debug "Handler env" (env : Env.t)];
@@ -228,9 +242,13 @@ and gscheme_of_scheme ~state ~env { type_vars; in_; type_ } =
   let env = Env.enter_region ~state env in
   [%log.global.debug "Entered new region" (env : Env.t)];
   let env =
-    List.fold type_vars ~init:env ~f:(fun env type_var -> exists ~state ~env ~type_var)
+    List.fold type_vars ~init:env ~f:(fun env (flex, type_var) ->
+      match flex with
+      | Flexible -> exists ~state ~env ~type_var
+      | Rigid -> forall ~state ~env ~type_var)
   in
-  [%log.global.debug "Bound type vars" (type_vars : C.Type.Var.t list) (env : Env.t)];
+  [%log.global.debug
+    "Bound type vars" (type_vars : (C.flexibility * C.Type.Var.t) list) (env : Env.t)];
   let type_ = gtype_of_type ~state ~env type_ in
   [%log.global.debug "Solving scheme's constraint"];
   solve ~state ~env in_;
