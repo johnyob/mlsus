@@ -1,15 +1,23 @@
 open! Import
 open Constraint
 
-let infer_exp exp =
-  Predef.Env.wrap
+let empty_env_wrapper f = f (Env.empty ())
+
+let stdlib_wrapper ?(with_stdlib = true) f =
+  if with_stdlib then Predef.Env.wrap f else empty_env_wrapper f
+;;
+
+let infer_exp ?with_stdlib exp =
+  stdlib_wrapper ?with_stdlib
   @@ fun env ->
   let exp_type = Type.Var.create ~id_source:(Env.id_source env) ~name:"exp_type0" () in
   let c = Infer.Expression.infer_exp ~env exp (Type.var exp_type) in
   exists exp_type c
 ;;
 
-let infer_str str = Predef.Env.wrap @@ fun env -> Infer.Structure.infer_str ~env str
+let infer_str ?with_stdlib str =
+  stdlib_wrapper ?with_stdlib @@ fun env -> Infer.Structure.infer_str ~env str
+;;
 
 let check cst =
   match Mlsus_constraint_solver.solve cst with

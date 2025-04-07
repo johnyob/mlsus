@@ -10,6 +10,7 @@ let () =
 let type_check_and_print
       ?(dump_ast = false)
       ?(dump_constraint = false)
+      ?(with_stdlib = true)
       ?(log_level = `Info)
       str
   =
@@ -19,6 +20,7 @@ let type_check_and_print
     ~source
     ~dump_ast
     ~dump_constraint
+    ~with_stdlib
     (Lexing.from_string ~with_positions:true str)
 ;;
 
@@ -918,5 +920,55 @@ let%expect_test "" =
      11 │          let f = fun x -> match x with (L -> 1) in
         │                                         ^
         = hint: add a type annotation
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;; 
+    |}
+  in
+  (* Show that stdlib is not added to generated constraint *)
+  type_check_and_print ~with_stdlib:false ~dump_constraint:true str;
+  [%expect
+    {|
+    Generated constraint:
+    (With_range
+     (Let ((id 4) (name id))
+      ((type_vars (((id 0) (name Type.Var))))
+       (in_
+        (With_range
+         (Exists ((id 1) (name Type.Var))
+          (Exists ((id 2) (name Type.Var))
+           (Conj
+            (Eq (Var ((id 0) (name Type.Var)))
+             (Arrow (Var ((id 1) (name Type.Var)))
+              (Var ((id 2) (name Type.Var)))))
+            (With_range
+             (Conj True
+              (Let ((id 3) (name x))
+               ((type_vars ()) (in_ True) (type_ (Var ((id 1) (name Type.Var)))))
+               (With_range
+                (Instance ((id 3) (name x)) (Var ((id 2) (name Type.Var))))
+                ((start 25) (stop 26)
+                 (source
+                  (Reader
+                   ((id 0) (name (expect_test.ml)) (length 35)
+                    (unsafe_get <fun>))))))))
+             ((start 20) (stop 21)
+              (source
+               (Reader
+                ((id 0) (name (expect_test.ml)) (length 35) (unsafe_get <fun>)))))))))
+         ((start 16) (stop 26)
+          (source
+           (Reader
+            ((id 0) (name (expect_test.ml)) (length 35) (unsafe_get <fun>)))))))
+       (type_ (Var ((id 0) (name Type.Var)))))
+      True)
+     ((start 7) (stop 26)
+      (source
+       (Reader ((id 0) (name (expect_test.ml)) (length 35) (unsafe_get <fun>))))))
+    Well typed :)
     |}]
 ;;
