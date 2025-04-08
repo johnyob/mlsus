@@ -25,12 +25,12 @@ type type_definition =
 
 and type_def_kind =
   | Type_variant of constructor_definition list
+  | Type_record of label_definition list
   | Type_abstract
 [@@deriving sexp_of]
 
 and constructor_definition =
   { constructor_name : Constructor_name.t (** The user-defined name of the constructor. *)
-  ; constructor_ident : Constructor_ident.t (** The unique name of the constructor. *)
   ; constructor_alphas : Type_var_name.t list
   ; constructor_arg : type_expr option
   ; constructor_type : type_expr
@@ -40,4 +40,12 @@ and constructor_definition =
 and constructor_arity =
   | Zero
   | One
+
+and label_definition =
+  { label_name : Label_name.t
+  ; label_alphas : Type_var_name.t list
+  ; label_arg : type_expr
+  ; label_type : type_expr
+  ; label_type_ident : Type_ident.t
+  }
 [@@deriving sexp_of]

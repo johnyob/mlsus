@@ -18,6 +18,7 @@ module Token = struct
     | SEMI_SEMI_COLON -> Fmt.pf ppf "Semi_semi_colon"
     | SEMI_COLON -> Fmt.pf ppf "Semi_colon"
     | RIGHT_PAREN -> Fmt.pf ppf "Right_paren"
+    | RIGHT_BRACE -> Fmt.pf ppf "Right_brace"
     | RIGHT_ARROW -> Fmt.pf ppf "Right_arrow"
     | QUOTE -> Fmt.pf ppf "Quote"
     | PLUS -> Fmt.pf ppf "Plus"
@@ -29,6 +30,7 @@ module Token = struct
     | LESS_EQUAL -> Fmt.pf ppf "Less_equal"
     | LESS -> Fmt.pf ppf "Less"
     | LEFT_PAREN -> Fmt.pf ppf "Left_paren"
+    | LEFT_BRACE -> Fmt.pf ppf "Left_brace"
     | IN -> Fmt.pf ppf "In"
     | IF -> Fmt.pf ppf "If"
     | IDENT ident -> Fmt.pf ppf "Ident(%s)" ident

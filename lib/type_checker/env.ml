@@ -9,6 +9,7 @@ type t =
   ; constrs : constructor_definition list Constructor_name.Map.t
     (** [constrs] is a map from (user-defined) constructor names to
       constructor_defition. Each definition has a unique [constr_ident]. *)
+  ; labels : label_definition list Label_name.Map.t
   ; types : type_definition list Type_name.Map.t
     (** [types] is a map from (user-defined) type names to type definitions.
       Each definition has a unique [type_ident]. *)
@@ -23,6 +24,7 @@ type t =
 let empty ?(id_source = Identifier.create_source ()) () =
   { id_source
   ; constrs = Constructor_name.Map.empty
+  ; labels = Label_name.Map.empty
   ; type_vars = Type_var_name.Map.empty
   ; types = Type_name.Map.empty
   ; vars = Var_name.Map.empty
@@ -37,12 +39,17 @@ let add_constr_def t (constr_def : constructor_definition) =
   }
 ;;
 
+let add_label_def t (label_def : label_definition) =
+  { t with labels = Map.add_multi t.labels ~key:label_def.label_name ~data:label_def }
+;;
+
 let add_type_def t type_def =
   let t =
     { t with types = Map.add_multi t.types ~key:type_def.type_name ~data:type_def }
   in
   match type_def.type_kind with
   | Type_variant constr_decls -> List.fold_left constr_decls ~init:t ~f:add_constr_def
+  | Type_record label_defs -> List.fold_left label_defs ~init:t ~f:add_label_def
   | Type_abstract -> t
 ;;
 
@@ -73,6 +80,7 @@ let declare_types t types ~in_ =
 ;;
 
 let find_constr t constr = Map.find_multi t.constrs constr
+let find_label t label = Map.find_multi t.labels label
 let find_type_def t type_name = Map.find_multi t.types type_name
 let find_type_var t type_var = Map.find t.type_vars type_var
 let find_var t var = Map.find t.vars var

@@ -148,7 +148,6 @@ let infer_constructor
       ; constructor_arg
       ; constructor_type
       ; constructor_name = _
-      ; constructor_ident = _
       ; constructor_type_ident = _
       }
     =
@@ -187,78 +186,83 @@ let infer_constructor
   exists_many constr_vars @@ (constr_type' =~ constr_type &~ c_constr_arg)
 ;;
 
-let inst_constr
-      ~(env : Env.t)
-      ~(constr_name : Constructor_name.With_range.t)
-      ~(constr_arity : Adt.constructor_arity With_range.t)
-      ~constr_type
-      k
-  =
-  let constr_arg_range = constr_arity.range in
-  let constr_arg_var = Type.Var.create ~id_source:(Env.id_source env) () in
-  let constr_arg =
-    match constr_arity.it with
-    | Zero -> None
-    | One -> Some (Type.var constr_arg_var)
+let infer_label ~id_source ~label_def label_arg' label_type' =
+  let { Adt.label_alphas; label_arg; label_type; label_name = _; label_type_ident = _ } =
+    label_def
   in
-  let c_type =
-    (* Lookup constructor *)
-    match Env.find_constr env constr_name.it with
-    | [] ->
-      Mlsus_error.(raise @@ unbound_constructor ~range:constr_name.range constr_name.it)
-    | [ constr_decl ] ->
-      infer_constructor
-        ~id_source:(Env.id_source env)
-        ~constr_name
-        ~constr_arg_range
-        constr_decl
-        constr_arg
-        constr_type
-    | constr_defs ->
+  let env, label_vars =
+    List.fold_map label_alphas ~init:(Env.empty ~id_source ()) ~f:(fun env type_var ->
+      Env.rename_type_var env ~type_var ~in_:(fun env cvar -> env, cvar))
+  in
+  let label_arg = Convert.type_expr ~env label_arg in
+  let label_type = Convert.type_expr ~env label_type in
+  exists_many label_vars @@ (label_type' =~ label_type &~ (label_arg' =~ label_arg))
+;;
+
+module Make_adt_inst (X : sig
+    type name [@@deriving sexp_of]
+    type def [@@deriving sexp_of]
+    type arg_type [@@deriving sexp_of]
+    type infer_ctx [@@deriving sexp_of]
+
+    val find : Env.t -> name -> def list
+    val unbound : range:Range.t -> name -> Mlsus_error.t
+    val ambiguous : range:Range.t -> Mlsus_error.t
+    val ident : def -> Type.Ident.t
+
+    val infer
+      :  def
+      -> id_source:Identifier.source
+      -> ctx:infer_ctx
+      -> arg:arg_type
+      -> ret:Type.t
+      -> Constraint.t
+
+    val arg_closure : arg_type -> Type.Var.t list
+  end) =
+struct
+  let inst ~env ~(name : X.name With_range.t) ~infer_ctx ~arg ~(ret : Type.t) =
+    match X.find env name.it with
+    | [] -> Mlsus_error.(raise @@ X.unbound ~range:name.range name.it)
+    | [ def ] ->
+      (* The definition is unambiguous. Just infer immediately *)
+      X.infer def ~id_source:(Env.id_source env) ~ctx:infer_ctx ~arg ~ret
+    | defs ->
       (* Type-based disambiguation, filter the constructor definition in the environment with
          the type identifiers. *)
-      let disambiguate_constr_defs_by_type_ident type_ident =
+      let disambiguate_defs_by_type_ident type_ident =
         let open Adt in
-        match
-          List.filter constr_defs ~f:(fun constr_def ->
-            Type_ident.(constr_def.constructor_type_ident = type_ident))
-        with
-        | [ constr_def ] -> constr_def
+        match List.filter defs ~f:(fun def -> Type_ident.(X.ident def = type_ident)) with
+        | [ def ] -> def
         | [] ->
           Mlsus_error.(
             raise
             @@ bug_s
                  ~here:[%here]
                  [%message
-                   "No constructors with expected type ident"
-                     (constr_name : Constructor_name.With_range.t)
+                   "No definitions with expected type ident"
+                     (name : X.name With_range.t)
                      (type_ident : Type_ident.t)])
-        | constr_defs ->
+        | defs ->
           Mlsus_error.(
             raise
             @@ bug_s
                  ~here:[%here]
                  [%message
-                   "Ambiguous constructors with expected type ident"
-                     (constr_name : Constructor_name.With_range.t)
-                     (constr_defs : constructor_definition list)
+                   "Ambiguous definitions with expected type ident"
+                     (name : X.name With_range.t)
+                     (defs : X.def list)
                      (type_ident : Type_ident.t)])
       in
-      let disambiguate_and_infer_constructor type_ident =
-        let constr_def = disambiguate_constr_defs_by_type_ident type_ident in
-        infer_constructor
-          ~id_source:(Env.id_source env)
-          ~constr_name
-          ~constr_arg_range
-          constr_def
-          constr_arg
-          constr_type
+      let disambiguate_and_infer type_ident =
+        let def = disambiguate_defs_by_type_ident type_ident in
+        X.infer def ~id_source:(Env.id_source env) ~ctx:infer_ctx ~arg ~ret
       in
-      (match constr_type with
-       | Var constr_type_var ->
+      (match ret with
+       | Var type_var ->
          match_
-           constr_type_var
-           ~closure:[ constr_type_var; constr_arg_var ]
+           type_var
+           ~closure:([ type_var ] @ X.arg_closure arg)
            ~with_:(function
              | (Arrow _ | Tuple _ | Rigid_var) as matchee ->
                let type_head =
@@ -269,12 +273,10 @@ let inst_constr
                  | _ -> assert false
                in
                ff
-                 (Mlsus_error.constructor_disambiguation_mismatched_type
-                    ~range:constr_name.range
-                    ~type_head)
-             | Constr (_, type_ident) -> disambiguate_and_infer_constructor type_ident)
-           ~else_:(fun () -> Mlsus_error.ambiguous_constructor ~range:constr_name.range)
-       | Constr (_, type_ident) -> disambiguate_and_infer_constructor type_ident
+                 (Mlsus_error.disambiguation_mismatched_type ~range:name.range ~type_head)
+             | Constr (_, type_ident) -> disambiguate_and_infer type_ident)
+           ~else_:(fun () -> X.ambiguous ~range:name.range)
+       | Constr (_, type_ident) -> disambiguate_and_infer type_ident
        | (Arrow _ | Tuple _) as constr_type ->
          let type_head =
            match constr_type with
@@ -283,13 +285,94 @@ let inst_constr
            | _ -> assert false
          in
          Mlsus_error.(
-           raise
-           @@ constructor_disambiguation_mismatched_type
-                ~range:constr_name.range
-                ~type_head))
+           raise @@ disambiguation_mismatched_type ~range:name.range ~type_head))
+  ;;
+end
+
+module Constructor_inst = Make_adt_inst (struct
+    type name = Constructor_name.t [@@deriving sexp_of]
+    type def = Adt.constructor_definition [@@deriving sexp_of]
+    type arg_type = Type.Var.t option [@@deriving sexp_of]
+    type infer_ctx = Constructor_name.With_range.t * Range.t [@@deriving sexp_of]
+
+    let find env name = Env.find_constr env name
+    let unbound ~range name = Mlsus_error.unbound_constructor ~range name
+    let ambiguous ~range = Mlsus_error.ambiguous_constructor ~range
+    let ident def = def.Adt.constructor_type_ident
+
+    let infer def ~id_source ~ctx:(constr_name, constr_arg_range) ~arg ~ret =
+      infer_constructor
+        ~id_source
+        ~constr_name
+        ~constr_arg_range
+        def
+        (Option.map arg ~f:Type.var)
+        ret
+    ;;
+
+    let arg_closure arg =
+      match arg with
+      | None -> []
+      | Some arg -> [ arg ]
+    ;;
+  end)
+
+module Label_inst = Make_adt_inst (struct
+    type name = Label_name.t [@@deriving sexp_of]
+    type def = Adt.label_definition [@@deriving sexp_of]
+    type arg_type = Type.Var.t [@@deriving sexp_of]
+    type infer_ctx = unit [@@deriving sexp_of]
+
+    let find env name = Env.find_label env name
+    let unbound ~range name = Mlsus_error.unbound_label ~range name
+    let ambiguous ~range = Mlsus_error.ambiguous_label ~range
+    let ident def = def.Adt.label_type_ident
+
+    let infer def ~id_source ~ctx:() ~arg ~ret =
+      infer_label ~id_source ~label_def:def (Type.var arg) ret
+    ;;
+
+    let arg_closure arg = [ arg ]
+  end)
+
+let exists_opt opt_var cst =
+  match opt_var with
+  | None -> cst
+  | Some var -> exists var cst
+;;
+
+let inst_constr
+      ~(env : Env.t)
+      ~(constr_name : Constructor_name.With_range.t)
+      ~(constr_arity : Adt.constructor_arity With_range.t)
+      ~constr_type
+      k
+  =
+  let constr_arg_range = constr_arity.range in
+  let constr_arg =
+    match constr_arity.it with
+    | Zero -> None
+    | One -> Some (Type.Var.create ~id_source:(Env.id_source env) ())
   in
-  let result, c_arg = k constr_arg in
-  result, exists constr_arg_var (c_arg &~ c_type)
+  let c_type =
+    Constructor_inst.inst
+      ~env
+      ~name:constr_name
+      ~infer_ctx:(constr_name, constr_arg_range)
+      ~arg:constr_arg
+      ~ret:constr_type
+  in
+  let result, c_arg = k (Option.map constr_arg ~f:Type.var) in
+  result, exists_opt constr_arg (c_arg &~ c_type)
+;;
+
+let inst_label ~(env : Env.t) ~(label_name : Label_name.With_range.t) ~label_type k =
+  let label_arg = Type.Var.create ~id_source:(Env.id_source env) () in
+  let c_type =
+    Label_inst.inst ~env ~name:label_name ~infer_ctx:() ~arg:label_arg ~ret:label_type
+  in
+  let result, c_arg = k (Type.var label_arg) in
+  result, exists label_arg (c_arg &~ c_type)
 ;;
 
 module Pattern = struct
@@ -352,6 +435,7 @@ module Pattern = struct
            @@ bug_s
                 ~here:[%here]
                 [%message "Constructor argument mistmatch in pattern" (pat : Ast.pattern)]))
+    | Pat_record label_pats -> infer_label_pats ~env ~record_type:pat_type label_pats k
     | Pat_annot (pat, annot) ->
       let type_ = Convert.Core_type.to_type ~env annot in
       infer_pat ~env pat pat_type @@ fun (f, c) -> k (f, pat_type =~ type_ &~ c)
@@ -367,6 +451,19 @@ module Pattern = struct
       infer_pats ~env pats
       @@ fun (f', pat_types, c2) ->
       k (Fragment.merge f f', pat_type :: pat_types, c1 &~ c2)
+
+  and infer_label_pats ~env ~record_type label_pats k =
+    match label_pats with
+    | [] -> k (Fragment.empty, tt)
+    | (label_name, arg_pat) :: label_pats ->
+      infer_label_pat ~env ~label_type:record_type label_name arg_pat
+      @@ fun (f, c1) ->
+      infer_label_pats ~env ~record_type label_pats
+      @@ fun (f', c2) -> k (Fragment.merge f f', c1 &~ c2)
+
+  and infer_label_pat ~env ~label_type label_name arg_pat k =
+    inst_label ~env ~label_name ~label_type
+    @@ fun arg_type -> infer_pat ~env arg_pat arg_type k
   ;;
 end
 
@@ -480,7 +577,7 @@ module Expression = struct
          ~constr_type:exp_type
        @@ fun arg_type ->
        match arg_exp, arg_type with
-       | Some arg_exp, Some arg_type -> infer_exp ~env arg_exp arg_type |> fun c -> (), c
+       | Some arg_exp, Some arg_type -> (), infer_exp ~env arg_exp arg_type
        | None, None -> (), tt
        | _ ->
          Mlsus_error.(
@@ -497,6 +594,16 @@ module Expression = struct
       let c1 = infer_exp ~env match_exp match_exp_type in
       let c2 = infer_cases ~env cases ~lhs_type:match_exp_type ~rhs_type:exp_type in
       c1 &~ c2
+    | Exp_record label_exps -> infer_label_exps ~env ~record_type:exp_type label_exps
+    | Exp_field (exp, label_name) ->
+      exists' ~id_source
+      @@ fun record_type ->
+      let c1 = infer_exp ~env exp record_type in
+      let (), c2 =
+        inst_label ~env ~label_name ~label_type:record_type
+        @@ fun arg_type -> (), exp_type =~ arg_type
+      in
+      c1 &~ c2
 
   and infer_exps ~env exps k =
     match exps with
@@ -506,6 +613,19 @@ module Expression = struct
       @@ fun exp_type ->
       let c1 = infer_exp ~env exp exp_type in
       infer_exps ~env exps @@ fun (exp_types, c2) -> k (exp_type :: exp_types, c1 &~ c2)
+
+  and infer_label_exps ~env ~record_type label_exps =
+    let cs =
+      label_exps
+      |> List.map ~f:(fun (label_name, arg_exp) ->
+        infer_label_exp ~env ~label_type:record_type label_name arg_exp)
+    in
+    all cs
+
+  and infer_label_exp ~env ~label_type label_name arg_exp =
+    (inst_label ~env ~label_name ~label_type
+     @@ fun arg_type -> (), infer_exp ~env arg_exp arg_type)
+    |> snd
 
   and infer_cases ~env cases ~lhs_type ~rhs_type =
     let cs = cases |> List.map ~f:(infer_case ~env ~lhs_type ~rhs_type) in
@@ -556,17 +676,10 @@ module Structure = struct
         in
         let constr_decls =
           List.map constr_decls ~f:(fun { constructor_name; constructor_arg } ->
-            let constructor_ident =
-              Adt.Constructor_ident.create
-                ~id_source:(Env.id_source env)
-                ~name:(constructor_name.it :> string)
-                ()
-            in
             let constructor_arg =
               Option.map constructor_arg ~f:(Convert.Core_type.to_type_expr ~env)
             in
             { Adt.constructor_name = constructor_name.it
-            ; constructor_ident
             ; constructor_alphas = List.map type_decl_params ~f:With_range.it
             ; constructor_type
             ; constructor_arg
@@ -574,6 +687,23 @@ module Structure = struct
             })
         in
         Adt.Type_variant constr_decls
+      | Type_decl_record label_decls ->
+        let label_type =
+          Adt.Type_constr
+            ( List.map type_decl_params ~f:(fun type_var -> Adt.Type_var type_var.it)
+            , type_ident )
+        in
+        let label_defs =
+          List.map label_decls ~f:(fun { label_name; label_arg } ->
+            let label_arg = Convert.Core_type.to_type_expr ~env label_arg in
+            { Adt.label_name = label_name.it
+            ; label_alphas = List.map type_decl_params ~f:With_range.it
+            ; label_arg
+            ; label_type
+            ; label_type_ident = type_ident
+            })
+        in
+        Adt.Type_record label_defs
     in
     { Adt.type_name; type_ident; type_arity; type_kind }
   ;;

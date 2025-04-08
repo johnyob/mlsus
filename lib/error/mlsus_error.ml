@@ -18,6 +18,7 @@ module Code = struct
     | Ambiguous_constructor
     | Type_mismatch
     | Rigid_variable_escape
+    | Ambiguous_label
     | Unknown
   [@@deriving sexp]
 
@@ -34,6 +35,7 @@ module Code = struct
     | Ambiguous_constructor -> "E010"
     | Type_mismatch -> "E011"
     | Rigid_variable_escape -> "E012"
+    | Ambiguous_label -> "E013"
     | Unknown -> "E???"
   ;;
 end
@@ -148,6 +150,16 @@ let unbound_constructor ~range (constr_name : Constructor_name.t) : t =
     (constr_name :> string)
 ;;
 
+let unbound_label ~range (label_name : Label_name.t) : t =
+  Diagnostic.createf
+    ~labels:[ not_found_in_this_scope_label ~range ]
+    ~code:Code.Unbound_constructor
+    Error
+    "cannot find label %a in this scope"
+    pp_quoted_s
+    (label_name :> string)
+;;
+
 let type_constructor_arity_mismatch
       ~args_range
       ~actual_arity
@@ -243,7 +255,7 @@ let mismatched_type ~range ~pp_type type1 type2 =
     "mismatched type"
 ;;
 
-let constructor_disambiguation_mismatched_type ~range ~type_head =
+let disambiguation_mismatched_type ~range ~type_head =
   let open Diagnostic in
   let head_name =
     match type_head with
@@ -274,6 +286,16 @@ let rigid_variable_escape ~range =
     ~code:Code.Rigid_variable_escape
     Error
     "generic type variable escapes its scope"
+;;
+
+let ambiguous_label ~range =
+  let open Diagnostic in
+  Diagnostic.createf
+    ~labels:[ empty_primary_label ~range ]
+    ~notes:[ Message.createf "hint: add a type annotation" ]
+    ~code:Code.Ambiguous_label
+    Error
+    "ambiguous label"
 ;;
 
 module For_testing = struct

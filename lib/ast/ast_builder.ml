@@ -36,6 +36,7 @@ module type S = sig
     val constr
       : (Constructor_name.With_range.t -> pattern option -> pattern) with_range_fn
 
+    val record : ((Label_name.With_range.t * pattern) list -> pattern) with_range_fn
     val annot : (pattern -> core_type -> pattern) with_range_fn
   end
 
@@ -57,6 +58,8 @@ module type S = sig
     val constr
       : (Constructor_name.With_range.t -> expression option -> expression) with_range_fn
 
+    val record : ((Label_name.With_range.t * expression) list -> expression) with_range_fn
+    val field : (expression -> Label_name.With_range.t -> expression) with_range_fn
     val tuple : (expression list -> expression) with_range_fn
     val match_ : (expression -> with_:case list -> expression) with_range_fn
 
@@ -89,6 +92,8 @@ module type S = sig
       :  name:Constructor_name.With_range.t
       -> arg:core_type option
       -> constructor_declaration
+
+    val label_decl : name:Label_name.With_range.t -> arg:core_type -> label_declaration
   end
 end
 
@@ -124,6 +129,7 @@ module Default : S with type 'a with_range_fn := range:Range.t -> 'a = struct
       With_range.create ~range @@ Pat_constr (constr_name, arg_pat)
     ;;
 
+    let record ~range label_pats = With_range.create ~range @@ Pat_record label_pats
     let annot ~range pat type_ = With_range.create ~range @@ Pat_annot (pat, type_)
   end
 
@@ -151,6 +157,8 @@ module Default : S with type 'a with_range_fn := range:Range.t -> 'a = struct
       With_range.create ~range @@ Exp_constr (constr_name, arg_exp)
     ;;
 
+    let record ~range label_exps = With_range.create ~range @@ Exp_record label_exps
+    let field ~range exp label = With_range.create ~range @@ Exp_field (exp, label)
     let tuple ~range exps = With_range.create ~range @@ Exp_tuple exps
     let match_ ~range exp ~with_ = With_range.create ~range @@ Exp_match (exp, with_)
 
@@ -185,6 +193,7 @@ module Default : S with type 'a with_range_fn := range:Range.t -> 'a = struct
     ;;
 
     let constr_decl ~name ~arg = { constructor_name = name; constructor_arg = arg }
+    let label_decl ~name ~arg = { label_name = name; label_arg = arg }
   end
 end
 
@@ -212,6 +221,7 @@ module Make (R : Range) : S with type 'a with_range_fn := 'a = struct
     let const = Pattern.const ~range:R.v
     let tuple = Pattern.tuple ~range:R.v
     let constr = Pattern.constr ~range:R.v
+    let record = Pattern.record ~range:R.v
     let annot = Pattern.annot ~range:R.v
   end
 
@@ -225,6 +235,8 @@ module Make (R : Range) : S with type 'a with_range_fn := 'a = struct
     let exists = Expression.exists ~range:R.v
     let annot = Expression.annot ~range:R.v
     let constr = Expression.constr ~range:R.v
+    let record = Expression.record ~range:R.v
+    let field = Expression.field ~range:R.v
     let tuple = Expression.tuple ~range:R.v
     let match_ = Expression.match_ ~range:R.v
     let if_ = Expression.if_ ~range:R.v
@@ -241,5 +253,6 @@ module Make (R : Range) : S with type 'a with_range_fn := 'a = struct
     let type_decl = Structure.type_decl ~range:R.v
     let value_desc = Structure.value_desc ~range:R.v
     let constr_decl = Structure.constr_decl
+    let label_decl = Structure.label_decl
   end
 end

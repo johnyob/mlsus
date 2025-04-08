@@ -24,6 +24,18 @@ let type_check_and_print
     (Lexing.from_string ~with_positions:true str)
 ;;
 
+let include_ref =
+  {|
+    type 'a ref;;
+    type 'a ref_repr = { contents : 'a };;
+
+    external create_ref : 'a. 'a -> 'a ref;;
+    external get_ref : 'a. 'a ref -> 'a;;
+    external set_ref : 'a. 'a ref -> 'a -> unit;;
+    external ref_repr : 'a. 'a ref -> 'a ref_repr;;
+  |}
+;;
+
 let include_fix = "external fix : 'a 'b. (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b;;"
 
 let include_list =
@@ -973,6 +985,13 @@ let%expect_test "" =
     |}]
 ;;
 
+let include_mr_ms_records =
+  {|
+    type mr = { lbl : int };; 
+    type ms = { lbl : bool };;
+  |}
+;;
+
 let%expect_test "" =
   let str =
     {|
@@ -1051,6 +1070,27 @@ let%expect_test "" =
     {|
       let x = 
         (forall (type 'a) -> fun (x : 'a) -> (x : 'a)) ()
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_records
+    ^ {|
+      let before_a = ({ lbl = 3 } : mr);; 
+      
+      let a = 
+        let x = ({ lbl = 3 } : mr) in 
+        x.lbl 
+      ;; 
+
+      let after_a = 
+        let x = ({ lbl = 3 } : mr) in
+        ({ lbl = x.lbl } : mr)
       ;;
     |}
   in
@@ -1064,6 +1104,320 @@ let%expect_test "" =
       let x = 
         (forall (type 'a) -> ((fun x -> fun y -> y) (fun x -> x) : 'a -> 'a))
       ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_records
+    ^ include_ref
+    ^ {|
+      let b = 
+        let x = (create_ref { lbl = 3 } : mr ref) in 
+        set_ref x { lbl = 4 }
+      ;; 
+
+      let c = 
+        let x = (create_ref { lbl = 3 } : mr ref) in 
+        (get_ref x).lbl
+      ;; 
+
+      let f = 
+        let x = (create_ref { lbl = 3 } : mr ref) in
+        (ref_repr x).contents.lbl
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_records
+    ^ include_ref
+    ^ {|
+      let g = fun (x : mr) -> 
+        match x with ( { lbl = 1 } -> () )
+      ;; 
+
+      let h = fun x -> 
+        match x with (
+        | (_ : mr) -> () 
+        | { lbl = 1 } -> ()
+        )
+      ;; 
+
+      let i = fun x ->
+        match x with (
+        | { lbl = 1 } -> () 
+        | (_ : mr) -> ()
+        )
+      ;;
+
+      let l = fun (x : mr ref) -> 
+        match (ref_repr x) with 
+        ( { contents = { lbl = 1 } } -> () )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_records
+    ^ include_ref
+    ^ {|
+      let m = fun x -> 
+        match x with 
+        ( { contents = { lbl = _ } } -> () )
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect
+    {|
+    (num_partially_generalized_regions(num_partially_generalized_regions 1))
+    error[E013]: ambiguous label
+        ┌─ expect_test.ml:15:26
+     15 │          ( { contents = { lbl = _ } } -> () )
+        │                           ^^^
+        = hint: add a type annotation
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_records
+    ^ include_ref
+    ^ {|
+      let n = fun x -> 
+        match x with 
+        ( (_ : mr ref_repr) -> ()
+        | { contents = { lbl = _ } } -> () 
+        )
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_records
+    ^ include_ref
+    ^ {|
+      let o = fun x -> 
+        match x with 
+        ( (_ : mr ref_repr) -> ()
+        | { contents = { lbl = _ } } -> () 
+        )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_records
+    ^ include_ref
+    ^ {|
+      let r = fun arg -> 
+        match arg with ( (x : mr ref) -> (get_ref x).lbl )
+      ;; 
+
+      let s = fun arg -> 
+        match arg with ( 
+          (x : mr ref) -> set_ref x { lbl = 4 }
+        )
+      ;; 
+
+      let t = fun arg -> 
+        match (ref_repr arg) with 
+        ( ({ contents = { lbl = _ } } : mr ref_repr) -> 
+            set_ref arg { lbl = 4 } 
+        )
+      ;;
+
+      let u = fun arg -> 
+        match (ref_repr arg) with 
+        ( ({ contents = { lbl = _ } } : mr ref_repr) -> 
+            (get_ref arg).lbl
+        )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let include_mr_ms_constrs =
+  {|
+    type mr = 
+      | A 
+      | B 
+    ;; 
+
+    type ms = 
+      | A 
+      | B 
+    ;;
+  |}
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_constrs
+    ^ include_ref
+    ^ {|
+      let before_a = (A : mr);; 
+      
+      let a = 
+        let x = (A : mr) in 
+        x
+      ;; 
+
+      let b = 
+        let x = (create_ref A : mr ref) in
+        set_ref x B
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_constrs
+    ^ include_ref
+    ^ {|
+      let g = fun (x : mr) -> 
+        match x with 
+        ( A -> () 
+        | B -> ()
+        )
+      ;;
+
+      let h = fun x -> 
+        match x with 
+        ( (A : mr) -> () 
+        | B -> ()
+        )
+      ;;
+
+      let i = fun x -> 
+        match x with 
+        ( A -> () 
+        | (B : mr) -> ()
+        )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_constrs
+    ^ include_ref
+    ^ {|
+      let l = fun (x : mr ref) -> 
+        match (ref_repr x) with 
+        ( { contents = A } -> () 
+        | { contents = B } -> ()
+        )
+      ;;
+  |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_constrs
+    ^ include_ref
+    ^ {|
+      let m = fun x -> 
+        match (ref_repr x) with 
+        ( { contents = A } -> () 
+        | { contents = B } -> ()
+        )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect
+    {|
+    (num_partially_generalized_regions(num_partially_generalized_regions 1))
+    error[E010]: ambiguous constructor
+        ┌─ expect_test.ml:23:24
+     23 │          | { contents = B } -> ()
+        │                         ^
+        = hint: add a type annotation
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_constrs
+    ^ include_ref
+    ^ {|
+      let n = fun x -> 
+        match (ref_repr x) with 
+        ( (_ : mr ref_repr) -> () 
+        | { contents = A } -> ()
+        )
+      ;;
+
+      let o = fun x -> 
+        match (ref_repr x) with 
+        ( (_ : mr ref_repr) -> () 
+        | { contents = A } -> ()
+        )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_constrs
+    ^ include_ref
+    ^ {|
+      let s = fun arg -> 
+        match arg with 
+        ( (_ : mr ref) -> set_ref arg A )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_mr_ms_constrs
+    ^ include_ref
+    ^ {|
+      let t = fun arg -> 
+        match (ref_repr arg) with 
+        ( ({ contents = A } : mr ref_repr) -> 
+            set_ref arg B
+        )
+      ;;
     |}
   in
   type_check_and_print str;
