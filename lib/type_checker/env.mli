@@ -36,6 +36,11 @@ val add_type_def : t -> type_definition -> t
     then the empty list is returned. *)
 val find_constr : t -> Constructor_name.t -> constructor_definition list
 
+(** [find_label t label_name] returns a list of label definitions with
+    the name [label_name]. If no label definitions with [label_name] exist,
+    then the empty list is returned. *)
+val find_label : t -> Label_name.t -> label_definition list
+
 (** [find_type_def t type_name] returns a list of type definitions with the
     name [type_name]. If no type definition with [type_name] exist, then the
     empty list is returned. *)

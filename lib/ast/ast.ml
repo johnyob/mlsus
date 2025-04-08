@@ -30,6 +30,7 @@ and pattern_desc =
   | Pat_const of constant
   | Pat_tuple of pattern list
   | Pat_constr of Constructor_name.With_range.t * pattern option
+  | Pat_record of (Label_name.With_range.t * pattern) list
   | Pat_annot of pattern * core_type
 [@@deriving sexp_of]
 
@@ -45,6 +46,8 @@ and expression_desc =
   | Exp_forall of Type_var_name.With_range.t list * expression
   | Exp_annot of expression * core_type
   | Exp_constr of Constructor_name.With_range.t * expression option
+  | Exp_record of (Label_name.With_range.t * expression) list
+  | Exp_field of expression * Label_name.With_range.t
   | Exp_tuple of expression list
   | Exp_match of expression * case list
   | Exp_if_then_else of expression * expression * expression
@@ -86,11 +89,17 @@ and type_declaration_desc =
 
 and type_decl_kind =
   | Type_decl_variant of constructor_declaration list
+  | Type_decl_record of label_declaration list
   | Type_decl_abstract
 
 and constructor_declaration =
   { constructor_name : Constructor_name.With_range.t
   ; constructor_arg : core_type option
+  }
+
+and label_declaration =
+  { label_name : Label_name.With_range.t
+  ; label_arg : core_type
   }
 [@@deriving sexp_of]
 

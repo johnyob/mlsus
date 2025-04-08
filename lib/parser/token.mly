@@ -54,5 +54,7 @@
 // parens
 %token LEFT_PAREN "("
 %token RIGHT_PAREN ")"
+%token LEFT_BRACE "{" 
+%token RIGHT_BRACE "}"
 
 %%

@@ -32,6 +32,7 @@ val unbound_variable : range:Range.t -> Var_name.t -> t
 val unbound_type : range:Range.t -> Type_name.t -> t
 val unbound_type_variable : range:Range.t -> Type_var_name.t -> t
 val unbound_constructor : range:Range.t -> Constructor_name.t -> t
+val unbound_label : range:Range.t -> Label_name.t -> t
 
 val type_constructor_arity_mismatch
   :  args_range:Range.t
@@ -56,11 +57,12 @@ val mismatched_type : range:Range.t -> pp_type:'a Fmt.t -> 'a -> 'a -> t
 
 val ambiguous_constructor : range:Range.t -> t
 
-val constructor_disambiguation_mismatched_type
+val disambiguation_mismatched_type
   :  range:Range.t
   -> type_head:[ `Tuple | `Arrow | `Rigid_var ]
   -> t
 
+val ambiguous_label : range:Range.t -> t
 val rigid_variable_escape : range:Range.t -> t
 
 module For_testing : sig

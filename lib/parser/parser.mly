@@ -199,6 +199,10 @@ atom_type:
   uid = "<upper_ident>"
     { constr_name ~range:(range_of_lex $loc) uid }
 
+%inline label_name:
+  id = "<ident>"
+    { label_name ~range:(range_of_lex $loc) id }
+
 constant:
     int = "<int>"
       { Const_int int }
@@ -292,8 +296,13 @@ case:
   pat = pattern
   ; "->"
   ; exp = seq_expression
-      { Expression.case ~range:(range_of_lex $loc) ~lhs:pat ~rhs:exp }
+    { Expression.case ~range:(range_of_lex $loc) ~lhs:pat ~rhs:exp }
 
+record_assignment(X):
+  label_name = label_name
+  ; "="
+  ; x = X 
+    { (label_name, x) }    
 
 atom_expression:
     const = constant 
@@ -306,6 +315,14 @@ atom_expression:
     ; exps = separated_nontrivial_list(",", seq_expression)
     ; ")"
       { Expression.tuple ~range:(range_of_lex $loc) exps }
+  | "{" 
+    ; label_exps = separated_nonempty_list(";", record_assignment(expression))
+    ; "}"
+      { Expression.record ~range:(range_of_lex $loc) label_exps }
+  | exp = atom_expression 
+    ; "."  
+    ; label_name = label_name
+      { Expression.field ~range:(range_of_lex $loc) exp label_name }
   | "("
     ; exp = seq_expression
     ; ":"
@@ -375,6 +392,10 @@ atom_pattern:
     ; pats = separated_nontrivial_list(",", pattern)
     ; ")"
       { Pattern.tuple ~range:(range_of_lex $loc) pats }
+  | "{"
+    ; label_pats = separated_nonempty_list(";", record_assignment(pattern))
+    ; "}"
+      { Pattern.record ~range:(range_of_lex $loc) label_pats }
   | "("
     ; pat = pattern
     ; ":"
@@ -418,11 +439,22 @@ type_decl_kind:
   | "="
     ; constr_decls = preceded_or_separated_nonempty_list("|", constructor_declaration)
       { Type_decl_variant constr_decls }
+  | "="
+    ; "{"
+    ; label_decls = separated_nonempty_list(";", label_declaration)
+    ; "}"
+      { Type_decl_record label_decls }
 
 constructor_declaration:
   name = constr_name
   ; arg = option(constructor_argument)
     { Structure.constr_decl ~name ~arg }
+
+label_declaration: 
+  name = label_name 
+  ; ":"
+  ; arg = core_type 
+    { Structure.label_decl ~name ~arg }
 
 %inline constructor_argument:
   "of"
