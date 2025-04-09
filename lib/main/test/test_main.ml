@@ -853,7 +853,6 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect
     {|
-    (num_partially_generalized_regions(num_partially_generalized_regions 1))
     error[E010]: ambiguous constructor
         ┌─ expect_test.ml:10:15
      10 │        let z = A ;;
@@ -926,7 +925,6 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect
     {|
-    (num_partially_generalized_regions(num_partially_generalized_regions 2))
     error[E010]: ambiguous constructor
         ┌─ expect_test.ml:11:40
      11 │          let f = fun x -> match x with (L -> 1) in
@@ -1182,7 +1180,6 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect
     {|
-    (num_partially_generalized_regions(num_partially_generalized_regions 1))
     error[E013]: ambiguous label
         ┌─ expect_test.ml:15:26
      15 │          ( { contents = { lbl = _ } } -> () )
@@ -1359,7 +1356,6 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect
     {|
-    (num_partially_generalized_regions(num_partially_generalized_regions 1))
     error[E010]: ambiguous constructor
         ┌─ expect_test.ml:23:24
      23 │          | { contents = B } -> ()

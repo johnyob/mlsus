@@ -225,11 +225,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     G.suspend
       ~state
       ~curr_region:env.curr_region
-      { matchee
-      ; closure = gclosure
-      ; case
-      ; else_ = (fun () -> Env.raise env @@ Unsatisfiable (else_ ()))
-      }
+      { matchee; closure = gclosure; case; else_ }
   | With_range (t, range) -> solve ~state ~env:(Env.with_range env ~range) t
 
 and gclosure_of_closure ~env closure : G.Suspended_match.closure =
@@ -272,17 +268,19 @@ let solve : ?range:Range.t -> C.t -> (unit, Error.t) result =
     [%log.global.debug "End state" (state : State.t)];
     (* No more regions to generalize *)
     assert (G.Generalization_tree.is_empty state.generalization_tree);
+    (* No partial regions are left *)
     let num_partially_generalized_regions =
       G.Generalization_tree.num_partially_generalized_regions state.generalization_tree
     in
-    if num_partially_generalized_regions > 0
-    then (
-      [%log.global.error
-        "num_partially_generalized_regions" (num_partially_generalized_regions : int)];
-      Error.raise ~range:None
-      @@ Cannot_resume_match_due_to_cycle
-           (G.Generalization_tree.cancel_partially_generalized_regions
-              state.generalization_tree));
+    (if num_partially_generalized_regions > 0
+     then
+       Mlsus_error.(
+         raise
+         @@ bug_s
+              ~here:[%here]
+              [%message
+                "There are still partially generalized regions"
+                  (num_partially_generalized_regions : int)]));
     Ok ()
   with
   (* Catch solver exceptions *)
