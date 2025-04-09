@@ -56,11 +56,11 @@ let%expect_test "Cannot resume suspended generic" =
         (case <fun>) (else_ <fun>))))
      (err
       ((it
-        (Unsatisfiable
-         ((severity Bug)
-          (message
-           "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
-          (code (Unknown)) (labels ()) (notes ()))))
+        (Cannot_resume_suspended_generic
+         (((severity Bug)
+           (message
+            "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
+           (code (Unknown)) (labels ()) (notes ())))))
        (range ()))))
     |}]
 ;;
@@ -76,7 +76,6 @@ let%expect_test "Cannot unsuspend undetermined" =
   print_solve_result cst;
   [%expect
     {|
-    (num_partially_generalized_regions(num_partially_generalized_regions 1))
     ("Constraint is unsatisfiable"
      (cst
       (Exists ((id 0) (name Type.Var))
@@ -85,11 +84,11 @@ let%expect_test "Cannot unsuspend undetermined" =
         (else_ <fun>))))
      (err
       ((it
-        (Unsatisfiable
-         ((severity Bug)
-          (message
-           "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
-          (code (Unknown)) (labels ()) (notes ()))))
+        (Cannot_resume_suspended_generic
+         (((severity Bug)
+           (message
+            "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
+           (code (Unknown)) (labels ()) (notes ())))))
        (range ()))))
     |}]
 ;;
@@ -167,7 +166,6 @@ let%expect_test "Cannot unsuspend circular dependencies" =
   print_solve_result cst;
   [%expect
     {|
-    (num_partially_generalized_regions(num_partially_generalized_regions 1))
     ("Constraint is unsatisfiable"
      (cst
       (Exists ((id 0) (name Type.Var))
@@ -181,11 +179,11 @@ let%expect_test "Cannot unsuspend circular dependencies" =
           (else_ <fun>))))))
      (err
       ((it
-        (Unsatisfiable
-         ((severity Bug)
-          (message
-           "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
-          (code (Unknown)) (labels ()) (notes ()))))
+        (Cannot_resume_suspended_generic
+         (((severity Bug)
+           (message
+            "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
+           (code (Unknown)) (labels ()) (notes ())))))
        (range ()))))
     |}]
 ;;
@@ -489,5 +487,236 @@ let%expect_test "loop" =
            (Constr
             ((Var ((id 2) (name Type.Var))) (Var ((id 0) (name Type.Var))))
             ((id 2) (name app))))))))))
+    |}]
+;;
+
+let%expect_test "Partial ungeneralization (Partial<>Instance)" =
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let a3 = T.Var.create ~id_source () in
+  let x1 = Var.create ~id_source () in
+  let cst =
+    exists a1
+    @@ exists a2
+    @@ let_
+         x1#=(poly_scheme
+                ([ Flexible, a3 ]
+                 @. match_
+                      a1
+                      ~closure:[ a3; a2 ]
+                      ~with_:(fun _ -> T.(var a3 =~ var a2))
+                      ~else_:else_unsat_err
+                 @=> T.var a3))
+         ~in_:(inst x1 tint &~ T.(var a2 =~ tstring) &~ T.(var a1 =~ tint))
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is unsatisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Exists ((id 1) (name Type.Var))
+        (Let ((id 3) (name Constraint.Var))
+         ((type_vars ((Flexible ((id 2) (name Type.Var)))))
+          (in_
+           (Match (matchee ((id 0) (name Type.Var)))
+            (closure
+             ((type_vars (((id 1) (name Type.Var)) ((id 2) (name Type.Var))))))
+            (case <fun>) (else_ <fun>)))
+          (type_ (Var ((id 2) (name Type.Var)))))
+         (Conj
+          (Conj
+           (Instance ((id 3) (name Constraint.Var))
+            (Constr () ((id 0) (name int))))
+           (Eq (Var ((id 1) (name Type.Var))) (Constr () ((id 1) (name string)))))
+          (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int)))))))))
+     (err
+      ((it
+        (Cannot_unify (Constr () ((id 1) (name string)))
+         (Constr () ((id 1) (name string)))))
+       (range ()))))
+    |}]
+;;
+
+let%expect_test "Partial ungeneralization (Partial<>Partial)" =
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let a3 = T.Var.create ~id_source () in
+  let a4 = T.Var.create ~id_source () in
+  let x1 = Var.create ~id_source () in
+  let x2 = Var.create ~id_source () in
+  let cst =
+    exists a1
+    @@ exists a2
+    @@ let_
+         x1#=(poly_scheme
+                ([ Flexible, a3 ]
+                 @. let_
+                      x2#=(poly_scheme
+                             ([ Flexible, a4 ]
+                              @. match_
+                                   a1
+                                   ~closure:[ a4; a3 ]
+                                   ~with_:(fun _ -> T.(var a4 =~ var a3))
+                                   ~else_:else_unsat_err
+                              @=> T.var a4))
+                      ~in_:(inst x2 tint &~ inst x2 tstring)
+                 @=> T.var a3))
+         ~in_:T.(var a1 =~ tstring)
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is unsatisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Exists ((id 1) (name Type.Var))
+        (Let ((id 4) (name Constraint.Var))
+         ((type_vars ((Flexible ((id 2) (name Type.Var)))))
+          (in_
+           (Let ((id 5) (name Constraint.Var))
+            ((type_vars ((Flexible ((id 3) (name Type.Var)))))
+             (in_
+              (Match (matchee ((id 0) (name Type.Var)))
+               (closure
+                ((type_vars (((id 2) (name Type.Var)) ((id 3) (name Type.Var))))))
+               (case <fun>) (else_ <fun>)))
+             (type_ (Var ((id 3) (name Type.Var)))))
+            (Conj
+             (Instance ((id 5) (name Constraint.Var))
+              (Constr () ((id 0) (name int))))
+             (Instance ((id 5) (name Constraint.Var))
+              (Constr () ((id 1) (name string)))))))
+          (type_ (Var ((id 2) (name Type.Var)))))
+         (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 1) (name string))))))))
+     (err
+      ((it
+        (Cannot_unify (Constr () ((id 1) (name string)))
+         (Constr () ((id 1) (name string)))))
+       (range ()))))
+    |}]
+;;
+
+let%expect_test "Partials propagate to same instance group" =
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let a3 = T.Var.create ~id_source () in
+  let a4 = T.Var.create ~id_source () in
+  let a5 = T.Var.create ~id_source () in
+  let x1 = Var.create ~id_source () in
+  let cst =
+    exists a1
+    @@ let_
+         x1#=(poly_scheme
+                ([ Flexible, a2; Flexible, a3 ]
+                 @. match_
+                      a1
+                      ~closure:[ a2; a3 ]
+                      ~with_:(fun _ -> T.(var a2 =~ var a3))
+                      ~else_:else_unsat_err
+                 @=> T.(var a3 @-> var a2)))
+         ~in_:
+           (exists_many [ a4; a5 ]
+            @@ (inst x1 T.(var a4 @-> var a5)
+                &~ T.(var a4 =~ tint)
+                &~ T.(var a5 =~ tstring)
+                &~ T.(var a1 =~ tint)))
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is unsatisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Let ((id 5) (name Constraint.Var))
+        ((type_vars
+          ((Flexible ((id 1) (name Type.Var)))
+           (Flexible ((id 2) (name Type.Var)))))
+         (in_
+          (Match (matchee ((id 0) (name Type.Var)))
+           (closure
+            ((type_vars (((id 1) (name Type.Var)) ((id 2) (name Type.Var))))))
+           (case <fun>) (else_ <fun>)))
+         (type_
+          (Arrow (Var ((id 2) (name Type.Var))) (Var ((id 1) (name Type.Var))))))
+        (Exists ((id 3) (name Type.Var))
+         (Exists ((id 4) (name Type.Var))
+          (Conj
+           (Conj
+            (Conj
+             (Instance ((id 5) (name Constraint.Var))
+              (Arrow (Var ((id 3) (name Type.Var)))
+               (Var ((id 4) (name Type.Var)))))
+             (Eq (Var ((id 3) (name Type.Var))) (Constr () ((id 0) (name int)))))
+            (Eq (Var ((id 4) (name Type.Var)))
+             (Constr () ((id 1) (name string)))))
+           (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))))))))
+     (err
+      ((it
+        (Cannot_unify (Var ((id 0) (name Decoded_type.Var)))
+         (Var ((id 0) (name Decoded_type.Var)))))
+       (range ()))))
+    |}]
+;;
+
+let%expect_test "Detect SCC cycle accross regions" =
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let a3 = T.Var.create ~id_source () in
+  let x1 = Var.create ~id_source () in
+  let cst =
+    exists a1
+    @@ let_
+         x1#=(poly_scheme
+                ([ Flexible, a2; Flexible, a3 ]
+                 @. (match_ a2 ~closure:[ a3 ] ~with_:(fun _ -> tt) ~else_:else_unsat_err
+                     &~ match_
+                          a3
+                          ~closure:[ a2 ]
+                          ~with_:(fun _ -> tt)
+                          ~else_:else_unsat_err
+                     &~ T.(var a2 =~ var a1))
+                 @=> T.(var a2 @-> var a3)))
+         ~in_:tt
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is unsatisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Let ((id 3) (name Constraint.Var))
+        ((type_vars
+          ((Flexible ((id 1) (name Type.Var)))
+           (Flexible ((id 2) (name Type.Var)))))
+         (in_
+          (Conj
+           (Conj
+            (Match (matchee ((id 1) (name Type.Var)))
+             (closure ((type_vars (((id 2) (name Type.Var)))))) (case <fun>)
+             (else_ <fun>))
+            (Match (matchee ((id 2) (name Type.Var)))
+             (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
+             (else_ <fun>)))
+           (Eq (Var ((id 1) (name Type.Var))) (Var ((id 0) (name Type.Var))))))
+         (type_
+          (Arrow (Var ((id 1) (name Type.Var))) (Var ((id 2) (name Type.Var))))))
+        True)))
+     (err
+      ((it
+        (Cannot_resume_suspended_generic
+         (((severity Bug)
+           (message
+            "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
+           (code (Unknown)) (labels ()) (notes ())))))
+       (range ()))))
     |}]
 ;;
