@@ -555,7 +555,7 @@ end = struct
     | Some anc -> Hashtbl.remove (Hashtbl.find_exn t.entered_map anc.id) rn.id
   ;;
 
-  let generalize_region t rn ~f ~finally =
+  let generalize_region t (rn : Type.region_node) ~f ~finally =
     let rec visit : Type.region_node -> unit =
       fun rn ->
       match Hashtbl.find t.entered_map rn.id with
@@ -602,7 +602,13 @@ end = struct
            point the tree is in a valid state. *)
         finally ()
     in
-    visit rn
+    (* Note when [rn] is the root of the traversal and it gets revisited 
+       by [finally ()], we need to regeneralize the region. In the nested case, this 
+       is ensured by the [loop ()] function that iterates over immediate descendants. 
+       But at the root, we need to ensure this with this while loop.  *)
+    while Hashtbl.mem t.entered_map rn.id do 
+      visit rn
+    done
   ;;
 end
 
@@ -914,7 +920,11 @@ let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_m
       ; default =
           (fun () ->
             let curr_region = curr_region_of_closure () in
-            else_ ~curr_region)
+            else_ ~curr_region;
+            [%log.global.debug
+              "Generalization tree running default handler"
+                (state.generalization_tree : Generalization_tree.t)]
+            )
       };
     (* Add guards for each variable in closure *)
     List.iter closure.variables ~f:(fun type_ ->
@@ -1169,7 +1179,8 @@ let force_generalization ~state region_node =
         "End generalization, Running scheduler" (state.scheduler : Scheduler.t)];
       Scheduler.run state.scheduler;
       [%log.global.debug
-        "End generalization, Finished running scheduler" (state.scheduler : Scheduler.t)])
+        "End generalization, Finished running scheduler" (state.scheduler : Scheduler.t)]); 
+  [%log.global.debug "Finished (forced) generalization" (region_node : Type.sexp_identifier_region_node)]
 ;;
 
 let exit_region ~curr_region root = create_scheme root curr_region
