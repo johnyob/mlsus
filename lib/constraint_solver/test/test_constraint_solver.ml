@@ -48,7 +48,8 @@ let%expect_test "Cannot resume suspended generic" =
     exists a1 @@ match_ a1 ~closure:[] ~with_:(fun _ -> tt) ~else_:else_unsat_err
   in
   print_solve_result cst;
-  [%expect {|
+  [%expect
+    {|
     ("Constraint is unsatisfiable"
      (cst
       (Exists ((id 0) (name Type.Var))
