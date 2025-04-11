@@ -64,12 +64,11 @@ module Make (S : Structure.Basic) = struct
 
       let run t ~f =
         let rec loop () =
-          try
-            let type1, type2 = Stack.pop_exn t in
+          match Stack.pop t with
+          | None -> ()
+          | Some (type1, type2) ->
             f type1 type2;
             loop ()
-          with
-          | _ -> ()
         in
         loop ()
       ;;
