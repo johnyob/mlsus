@@ -606,7 +606,7 @@ end = struct
        by [finally ()], we need to regeneralize the region. In the nested case, this 
        is ensured by the [loop ()] function that iterates over immediate descendants. 
        But at the root, we need to ensure this with this while loop.  *)
-    while Hashtbl.mem t.entered_map rn.id do 
+    while Hashtbl.mem t.entered_map rn.id do
       visit rn
     done
   ;;
@@ -923,8 +923,7 @@ let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_m
             else_ ~curr_region;
             [%log.global.debug
               "Generalization tree running default handler"
-                (state.generalization_tree : Generalization_tree.t)]
-            )
+                (state.generalization_tree : Generalization_tree.t)])
       };
     (* Add guards for each variable in closure *)
     List.iter closure.variables ~f:(fun type_ ->
@@ -1179,8 +1178,9 @@ let force_generalization ~state region_node =
         "End generalization, Running scheduler" (state.scheduler : Scheduler.t)];
       Scheduler.run state.scheduler;
       [%log.global.debug
-        "End generalization, Finished running scheduler" (state.scheduler : Scheduler.t)]); 
-  [%log.global.debug "Finished (forced) generalization" (region_node : Type.sexp_identifier_region_node)]
+        "End generalization, Finished running scheduler" (state.scheduler : Scheduler.t)]);
+  [%log.global.debug
+    "Finished (forced) generalization" (region_node : Type.sexp_identifier_region_node)]
 ;;
 
 let exit_region ~curr_region root = create_scheme root curr_region

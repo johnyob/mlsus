@@ -207,7 +207,6 @@ module Make_adt_inst (X : sig
 
     val find : Env.t -> name -> def list
     val unbound : range:Range.t -> name -> Mlsus_error.t
-    val ambiguous : range:Range.t -> Mlsus_error.t
     val ident : def -> Type.Ident.t
 
     val infer
@@ -275,7 +274,7 @@ struct
                ff
                  (Mlsus_error.disambiguation_mismatched_type ~range:name.range ~type_head)
              | Constr (_, type_ident) -> disambiguate_and_infer type_ident)
-           ~else_:(fun () -> ff @@ X.ambiguous ~range:name.range)
+           ~else_:(fun () -> disambiguate_and_infer (X.ident (List.hd_exn defs)))
        | Constr (_, type_ident) -> disambiguate_and_infer type_ident
        | (Arrow _ | Tuple _) as constr_type ->
          let type_head =
@@ -297,7 +296,6 @@ module Constructor_inst = Make_adt_inst (struct
 
     let find env name = Env.find_constr env name
     let unbound ~range name = Mlsus_error.unbound_constructor ~range name
-    let ambiguous ~range = Mlsus_error.ambiguous_constructor ~range
     let ident def = def.Adt.constructor_type_ident
 
     let infer def ~id_source ~ctx:(constr_name, constr_arg_range) ~arg ~ret =
@@ -325,7 +323,6 @@ module Label_inst = Make_adt_inst (struct
 
     let find env name = Env.find_label env name
     let unbound ~range name = Mlsus_error.unbound_label ~range name
-    let ambiguous ~range = Mlsus_error.ambiguous_label ~range
     let ident def = def.Adt.label_type_ident
 
     let infer def ~id_source ~ctx:() ~arg ~ret =

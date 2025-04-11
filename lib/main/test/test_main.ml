@@ -851,14 +851,7 @@ let%expect_test "" =
   |}
   in
   type_check_and_print str;
-  [%expect
-    {|
-    error[E010]: ambiguous constructor
-        ┌─ expect_test.ml:10:15
-     10 │        let z = A ;;
-        │                ^
-        = hint: add a type annotation
-    |}]
+  [%expect {| Well typed :) |}]
 ;;
 
 let%expect_test "" =
@@ -925,11 +918,10 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect
     {|
-    error[E010]: ambiguous constructor
-        ┌─ expect_test.ml:11:40
-     11 │          let f = fun x -> match x with (L -> 1) in
-        │                                         ^
-        = hint: add a type annotation
+    error[E011]: mismatched type
+        ┌─ expect_test.ml:12:11
+     12 │          f (L : m)
+        │            ^^^^^^^ `n` is not equal to `m`
     |}]
 ;;
 
@@ -1178,14 +1170,7 @@ let%expect_test "" =
     |}
   in
   type_check_and_print str;
-  [%expect
-    {|
-    error[E013]: ambiguous label
-        ┌─ expect_test.ml:15:26
-     15 │          ( { contents = { lbl = _ } } -> () )
-        │                           ^^^
-        = hint: add a type annotation
-    |}]
+  [%expect {| Well typed :) |}]
 ;;
 
 let%expect_test "" =
@@ -1354,14 +1339,7 @@ let%expect_test "" =
     |}
   in
   type_check_and_print str;
-  [%expect
-    {|
-    error[E010]: ambiguous constructor
-        ┌─ expect_test.ml:23:24
-     23 │          | { contents = B } -> ()
-        │                         ^
-        = hint: add a type annotation
-    |}]
+  [%expect {| Well typed :) |}]
 ;;
 
 let%expect_test "" =

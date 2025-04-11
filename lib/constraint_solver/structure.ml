@@ -102,8 +102,7 @@ module Suspended_first_order (S : S) = struct
 
     and 'a handler =
       { run : 'a S.t -> unit
-      ; default : unit -> unit
-        (** [default ()] is used to fill the variable (or fail) *)
+      ; default : unit -> unit (** [default ()] is used to fill the variable (or fail) *)
       }
     [@@deriving sexp_of]
 
