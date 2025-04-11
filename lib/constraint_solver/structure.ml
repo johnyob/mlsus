@@ -102,8 +102,8 @@ module Suspended_first_order (S : S) = struct
 
     and 'a handler =
       { run : 'a S.t -> unit
-      ; cancel : unit -> Mlsus_error.t
-        (** [cancel ()] is used to mark the handler as cancelled, returning a user-defined error s*)
+      ; default : unit -> unit
+        (** [default ()] is used to fill the variable (or fail) *)
       }
     [@@deriving sexp_of]
 

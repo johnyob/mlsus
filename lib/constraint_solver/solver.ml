@@ -221,6 +221,17 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
       [%log.global.debug "Solved generated constraint" (cst : C.t)];
       [%log.global.debug "Exiting case region"]
     in
+    let else_ ~curr_region =
+      [%log.global.debug "Entered match default handler"];
+      let env = Env.of_gclosure gclosure ~curr_region ~closure ~range:env.range in
+      [%log.global.debug "Handler env" (env : Env.t)];
+      [%log.global.debug "Handler state" (state : State.t)];
+      let cst = else_ () in
+      [%log.global.debug "Generated constraint from else" (cst : C.t)];
+      solve ~state ~env cst;
+      [%log.global.debug "Solved generated constraint" (cst : C.t)];
+      [%log.global.debug "Exiting else region"]
+    in
     [%log.global.debug "Suspending match..."];
     G.suspend
       ~state

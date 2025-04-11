@@ -50,8 +50,8 @@ type t =
       { matchee : Type.Var.t
       ; closure : Closure.t
       ; case : Type.Matchee.t -> t
-      ; else_ : unit -> Mlsus_error.t
-      } (** [match a with [overline(a)]f] else err *)
+      ; else_ : unit -> t
+      } (** [match a with [overline(a)]f] else default *)
   | With_range of t * Range.t (** [C^ell] *)
 
 (** [scheme] is a constrainted type scheme [overline(a). C => tau] *)
@@ -89,7 +89,7 @@ val match_
   :  Type.Var.t
   -> closure:Type.Var.t list
   -> with_:(Type.Matchee.t -> t)
-  -> else_:(unit -> Mlsus_error.t)
+  -> else_:(unit -> t)
   -> t
 
 val with_range : t -> range:Range.t -> t
