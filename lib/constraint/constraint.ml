@@ -60,7 +60,7 @@ type t =
       { matchee : Type.Var.t
       ; closure : Closure.t
       ; case : Type.Matchee.t -> t
-      ; else_ : unit -> Mlsus_error.t
+      ; else_ : unit -> t
       }
   | With_range of t * Range.t
 

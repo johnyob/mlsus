@@ -275,7 +275,7 @@ struct
                ff
                  (Mlsus_error.disambiguation_mismatched_type ~range:name.range ~type_head)
              | Constr (_, type_ident) -> disambiguate_and_infer type_ident)
-           ~else_:(fun () -> X.ambiguous ~range:name.range)
+           ~else_:(fun () -> ff @@ X.ambiguous ~range:name.range)
        | Constr (_, type_ident) -> disambiguate_and_infer type_ident
        | (Arrow _ | Tuple _) as constr_type ->
          let type_head =

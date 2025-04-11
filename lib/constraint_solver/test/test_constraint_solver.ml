@@ -12,8 +12,9 @@ let () =
 let unsat_err = Mlsus_error.bug_s ~here:[%here] [%message "Constraint is unsatisfiable"]
 
 let else_unsat_err =
+  let open C in
   fun () ->
-  Mlsus_error.bug_s ~here:[%here] [%message "Cannot resume due to generic/cycle"]
+    ff (Mlsus_error.bug_s ~here:[%here] [%message "Cannot resume due to generic/cycle"])
 ;;
 
 let print_solve_result ?(log_level = `Info) cst =
@@ -47,8 +48,7 @@ let%expect_test "Cannot resume suspended generic" =
     exists a1 @@ match_ a1 ~closure:[] ~with_:(fun _ -> tt) ~else_:else_unsat_err
   in
   print_solve_result cst;
-  [%expect
-    {|
+  [%expect {|
     ("Constraint is unsatisfiable"
      (cst
       (Exists ((id 0) (name Type.Var))
@@ -56,11 +56,11 @@ let%expect_test "Cannot resume suspended generic" =
         (case <fun>) (else_ <fun>))))
      (err
       ((it
-        (Cannot_resume_suspended_generic
-         (((severity Bug)
-           (message
-            "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
-           (code (Unknown)) (labels ()) (notes ())))))
+        (Unsatisfiable
+         ((severity Bug)
+          (message
+           "lib/constraint_solver/test/test_constraint_solver.ml:17:32: \"Cannot resume due to generic/cycle\"")
+          (code (Unknown)) (labels ()) (notes ()))))
        (range ()))))
     |}]
 ;;
@@ -84,11 +84,11 @@ let%expect_test "Cannot unsuspend undetermined" =
         (else_ <fun>))))
      (err
       ((it
-        (Cannot_resume_suspended_generic
-         (((severity Bug)
-           (message
-            "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
-           (code (Unknown)) (labels ()) (notes ())))))
+        (Unsatisfiable
+         ((severity Bug)
+          (message
+           "lib/constraint_solver/test/test_constraint_solver.ml:17:32: \"Cannot resume due to generic/cycle\"")
+          (code (Unknown)) (labels ()) (notes ()))))
        (range ()))))
     |}]
 ;;
@@ -179,11 +179,11 @@ let%expect_test "Cannot unsuspend circular dependencies" =
           (else_ <fun>))))))
      (err
       ((it
-        (Cannot_resume_suspended_generic
-         (((severity Bug)
-           (message
-            "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
-           (code (Unknown)) (labels ()) (notes ())))))
+        (Unsatisfiable
+         ((severity Bug)
+          (message
+           "lib/constraint_solver/test/test_constraint_solver.ml:17:32: \"Cannot resume due to generic/cycle\"")
+          (code (Unknown)) (labels ()) (notes ()))))
        (range ()))))
     |}]
 ;;
@@ -712,11 +712,11 @@ let%expect_test "Detect SCC cycle accross regions" =
         True)))
      (err
       ((it
-        (Cannot_resume_suspended_generic
-         (((severity Bug)
-           (message
-            "lib/constraint_solver/test/test_constraint_solver.ml:16:26: \"Cannot resume due to generic/cycle\"")
-           (code (Unknown)) (labels ()) (notes ())))))
+        (Unsatisfiable
+         ((severity Bug)
+          (message
+           "lib/constraint_solver/test/test_constraint_solver.ml:17:32: \"Cannot resume due to generic/cycle\"")
+          (code (Unknown)) (labels ()) (notes ()))))
        (range ()))))
     |}]
 ;;
