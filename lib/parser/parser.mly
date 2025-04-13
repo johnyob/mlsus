@@ -281,10 +281,17 @@ app_expression:
       { Expression.app ~range:(range_of_lex $loc) exp1 exp2 }
 
 value_binding:
-  var_name = var_name 
+    over_flag = over_flag 
+  ; var_name = var_name 
   ; "="
   ; exp = seq_expression
-    { value_binding ~range:(range_of_lex $loc) var_name exp }
+    { value_binding ~range:(range_of_lex $loc) ~over_flag var_name exp }
+
+over_flag:
+    "over" 
+      { Overloaded }
+  | (* empty *)
+      { Non_overloaded }
 
 cases:
   "("

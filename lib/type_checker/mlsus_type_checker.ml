@@ -64,6 +64,8 @@ let check cst =
               ~pp_type:Mlsus_constraint_solver.Decoded_type.pp
               type1
               type2)
+     | Cannot_resolve_overloading ->
+       Mlsus_error.(raise @@ ambiguous_overloading ~range:(get_range range))
      | Rigid_variable_escape ->
        Mlsus_error.(raise @@ rigid_variable_escape ~range:(get_range range))
      | Cannot_resume_suspended_generic errs | Cannot_resume_match_due_to_cycle errs ->

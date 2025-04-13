@@ -765,6 +765,7 @@ let%expect_test "fun : map" =
               (source
                (Reader
                 ((id 0) (name (expect_test.ml)) (length 146) (unsafe_get <fun>))))))))
+          (value_binding_over_flag Non_overloaded)
           (value_binding_exp
            ((it
              (Exp_app
@@ -1053,7 +1054,7 @@ let%expect_test "fun : map" =
                (Reader
                 ((id 0) (name (expect_test.ml)) (length 146) (unsafe_get <fun>))))))))))
         (range
-         ((start 6) (stop 127)
+         ((start 5) (stop 127)
           (source
            (Reader
             ((id 0) (name (expect_test.ml)) (length 146) (unsafe_get <fun>)))))))
@@ -1302,6 +1303,7 @@ let%expect_test "let : fact" =
               (source
                (Reader
                 ((id 0) (name (expect_test.ml)) (length 97) (unsafe_get <fun>))))))))
+          (value_binding_over_flag Non_overloaded)
           (value_binding_exp
            ((it
              (Exp_app
@@ -1554,7 +1556,7 @@ let%expect_test "let : fact" =
                (Reader
                 ((id 0) (name (expect_test.ml)) (length 97) (unsafe_get <fun>))))))))))
         (range
-         ((start 5) (stop 79)
+         ((start 4) (stop 79)
           (source
            (Reader
             ((id 0) (name (expect_test.ml)) (length 97) (unsafe_get <fun>)))))))
@@ -2312,6 +2314,7 @@ let%expect_test "top level function definition" =
                (source
                 (Reader
                  ((id 0) (name (expect_test.ml)) (length 39) (unsafe_get <fun>))))))))
+           (value_binding_over_flag Non_overloaded)
            (value_binding_exp
             ((it (Exp_const (Const_int 0)))
              (range
@@ -2320,7 +2323,7 @@ let%expect_test "top level function definition" =
                 (Reader
                  ((id 0) (name (expect_test.ml)) (length 39) (unsafe_get <fun>))))))))))
          (range
-          ((start 12) (stop 32)
+          ((start 11) (stop 32)
            (source
             (Reader
              ((id 0) (name (expect_test.ml)) (length 39) (unsafe_get <fun>)))))))))
@@ -2821,6 +2824,7 @@ let%expect_test "eval example" =
                (source
                 (Reader
                  ((id 0) (name (expect_test.ml)) (length 806) (unsafe_get <fun>))))))))
+           (value_binding_over_flag Non_overloaded)
            (value_binding_exp
             ((it
               (Exp_fun
@@ -3070,7 +3074,7 @@ let%expect_test "eval example" =
                 (Reader
                  ((id 0) (name (expect_test.ml)) (length 806) (unsafe_get <fun>))))))))))
          (range
-          ((start 204) (stop 316)
+          ((start 203) (stop 316)
            (source
             (Reader
              ((id 0) (name (expect_test.ml)) (length 806) (unsafe_get <fun>)))))))))
@@ -3089,6 +3093,7 @@ let%expect_test "eval example" =
                (source
                 (Reader
                  ((id 0) (name (expect_test.ml)) (length 806) (unsafe_get <fun>))))))))
+           (value_binding_over_flag Non_overloaded)
            (value_binding_exp
             ((it
               (Exp_app
@@ -3392,6 +3397,7 @@ let%expect_test "eval example" =
                                      (Reader
                                       ((id 0) (name (expect_test.ml))
                                        (length 806) (unsafe_get <fun>))))))))
+                                (value_binding_over_flag Non_overloaded)
                                 (value_binding_exp
                                  ((it
                                    (Exp_app
@@ -3629,7 +3635,7 @@ let%expect_test "eval example" =
                                       ((id 0) (name (expect_test.ml))
                                        (length 806) (unsafe_get <fun>))))))))))
                               (range
-                               ((start 496) (stop 602)
+                               ((start 495) (stop 602)
                                 (source
                                  (Reader
                                   ((id 0) (name (expect_test.ml)) (length 806)
@@ -3789,6 +3795,7 @@ let%expect_test "eval example" =
                                      (Reader
                                       ((id 0) (name (expect_test.ml))
                                        (length 806) (unsafe_get <fun>))))))))
+                                (value_binding_over_flag Non_overloaded)
                                 (value_binding_exp
                                  ((it
                                    (Exp_app
@@ -3852,7 +3859,7 @@ let%expect_test "eval example" =
                                       ((id 0) (name (expect_test.ml))
                                        (length 806) (unsafe_get <fun>))))))))))
                               (range
-                               ((start 692) (stop 710)
+                               ((start 691) (stop 710)
                                 (source
                                  (Reader
                                   ((id 0) (name (expect_test.ml)) (length 806)
@@ -3868,6 +3875,7 @@ let%expect_test "eval example" =
                                         (Reader
                                          ((id 0) (name (expect_test.ml))
                                           (length 806) (unsafe_get <fun>))))))))
+                                   (value_binding_over_flag Non_overloaded)
                                    (value_binding_exp
                                     ((it
                                       (Exp_app
@@ -3933,7 +3941,7 @@ let%expect_test "eval example" =
                                          ((id 0) (name (expect_test.ml))
                                           (length 806) (unsafe_get <fun>))))))))))
                                  (range
-                                  ((start 728) (stop 747)
+                                  ((start 727) (stop 747)
                                    (source
                                     (Reader
                                      ((id 0) (name (expect_test.ml)) (length 806)
@@ -4060,7 +4068,7 @@ let%expect_test "eval example" =
                 (Reader
                  ((id 0) (name (expect_test.ml)) (length 806) (unsafe_get <fun>))))))))))
          (range
-          ((start 338) (stop 799)
+          ((start 337) (stop 799)
            (source
             (Reader
              ((id 0) (name (expect_test.ml)) (length 806) (unsafe_get <fun>)))))))))

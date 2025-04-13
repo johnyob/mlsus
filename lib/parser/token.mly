@@ -18,6 +18,7 @@
 %token OF "of"
 %token EXTERNAL "external"
 %token SEMI_SEMI_COLON ";;"
+%token OVER "over"
 
 // operators
 %token RIGHT_ARROW "->"

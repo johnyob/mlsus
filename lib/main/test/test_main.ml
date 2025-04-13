@@ -44,6 +44,16 @@ let include_list =
       | Nil
       | Cons of 'a * 'a list
     ;;
+
+    external map_list : 'a 'b. ('a -> 'b) -> 'a list -> 'b list;;
+  |}
+;;
+
+let include_array =
+  {|
+    type 'a array;; 
+
+    external map_array : 'a 'b. ('a -> 'b) -> 'a array -> 'b array;;
   |}
 ;;
 
@@ -1392,6 +1402,188 @@ let%expect_test "" =
             set_ref arg B
         )
       ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let include_float =
+  {|
+    type float;; 
+
+    external add_float : float -> float -> float;;
+    external sub_float : float -> float -> float;;
+    external div_float : float -> float -> float;;
+    external mul_float : float -> float -> float;;
+
+    external compare_float : float -> float -> int;;
+
+    external float_of_int : int -> float;;
+
+    let zero_float = float_of_int 0;;
+    let neg_float = fun n -> sub_float zero_float n;;
+  |}
+;;
+
+let include_string =
+  {|
+    type string;;
+
+    external empty_string : string;;
+    external concat_string : string -> string -> string;;
+    external length_string : string -> int;;
+  |}
+;;
+
+let%expect_test "" =
+  let str =
+    include_string
+    ^ {|
+      let x = 1;; 
+      let y = true;; 
+      let z = empty_string;;
+
+      let f = 
+        let a = x in 
+        let over a = y in 
+        let over a = z in 
+        (a : int)
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_float
+    ^ include_array
+    ^ include_list
+    ^ {|
+      let add = fun x y -> x + y;; 
+      let over add = add_float;; 
+
+      let mul = fun x y -> x * y;;
+      let over mul = mul_float;;
+
+      let compare = fun x y -> 
+        if x < y then -1
+        else if x > y then 1
+        else 0
+      ;; 
+      let over compare = compare_float;;
+
+      let zero = 0;; 
+      let over zero = zero_float;; 
+
+      let one = 1;; 
+      let over one = float_of_int one;;
+
+      let two = 2;;
+      let over two = float_of_int two;;  
+
+      let three = 3;;
+      let over three = float_of_int three;;
+
+      let four = 4;;
+      let over four = float_of_int four;;
+
+      let fourty_two = 42;;
+      let over fourty_two = float_of_int fourty_two;;
+
+      let ex1 = fun (x : int) (y : int) -> add x y;;
+      let ex2 = fun (x : float) (y : float) -> add x y;;
+
+      let ex3 = (zero : int);; 
+
+      let ex4 = fun (x : int) -> add x zero;; 
+      let ex5 = fun (x : float) -> add x zero;;
+      
+      let ex6 = 
+        (add (add three four) (add one (add zero two)) : float)
+      ;; 
+
+      let ex7 = 
+        (add (add three four) (add one (add zero two)) : int)
+      ;; 
+
+      let ex8 = fun (x : float) ->
+        if (compare x zero < 0) then 
+          add zero one 
+        else 
+          mul two x 
+      ;;
+      
+      let exlet1 = fun (f : int -> int) (g : int -> int) (x : int) -> 
+        (add (f (add x fourty_two)) (g (add (mul two x) fourty_two)) : int)
+      ;; 
+
+      let exlet1' = fun (f : float -> float) (g : float -> float) x -> 
+        add (f (add x fourty_two)) (g (add (mul two x) fourty_two))
+      ;;
+
+      let exlet1'' = fun (f : float -> float) g x -> 
+        add (f (add x fourty_two)) (g (add (mul two x) fourty_two))
+      ;;
+
+      let exlet2 = fun (f : int -> int) (g : int -> int) (x : int) -> 
+        (* annotation required since application sites do not influence types 
+           of generics. *)
+        let op = fun (n : int) -> add n fourty_two in 
+        (add (f (op x)) (g (op (mul two x))) : int)
+      ;; 
+
+      let exlet2' = fun (f : float -> float) (g : float -> float) x -> 
+        let op = fun (n : float) -> add n fourty_two in 
+        add (f (op x)) (g (op (mul two x)))
+      ;; 
+
+      let map = map_list;;
+      let over map = map_array;;
+
+      external d : float array;; 
+
+      let ex12 = 
+        map (fun x -> add (mul two x) one) d
+      ;; 
+
+      let example_success =
+        let x = (zero : float) in 
+        let y = add one x in 
+        let z = (two : float) in 
+        let t = (add (add three y) (add four z) : float) in 
+        add (add four z) one 
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_string
+    ^ {|
+      let add = fun x y -> x + y;; 
+      let concat = (concat_string : string -> string -> string);; 
+
+      let g0 = fun x -> 
+        let f = add in 
+        let over f = concat in
+        f 1 x 
+      ;;
+
+      let g1 = fun (x : int) -> 
+        let f = add in 
+        let over f = concat in
+        let fx = f x in 
+        let a = 1 in 
+        let over a = empty_string in 
+        let z = (f : int -> int -> int) a in 
+        (fx, z)
+      ;; 
     |}
   in
   type_check_and_print str;

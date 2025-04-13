@@ -58,6 +58,7 @@ and value_binding = value_binding_desc With_range.t
 
 and value_binding_desc =
   { value_binding_var : Var_name.With_range.t
+  ; value_binding_over_flag : over_flag
   ; value_binding_exp : expression
   }
 [@@deriving sexp_of]

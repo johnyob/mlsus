@@ -18,6 +18,7 @@ module Error = struct
     | Cannot_unify of Decoded_type.t * Decoded_type.t
     | Cannot_resume_suspended_generic of Mlsus_error.t list
     | Cannot_resume_match_due_to_cycle of Mlsus_error.t list
+    | Cannot_resolve_overloading
   [@@deriving sexp]
 
   exception T of t
@@ -29,7 +30,7 @@ end
 module Env = struct
   type t =
     { type_vars : Type.t C.Type.Var.Map.t
-    ; expr_vars : Type.scheme C.Var.Map.t
+    ; expr_vars : Type.scheme list C.Var.Map.t
     ; curr_region : G.Type.region_node
     ; range : Range.t option
     }
@@ -47,7 +48,11 @@ module Env = struct
   ;;
 
   let bind_var t ~var ~type_ =
-    { t with expr_vars = Map.set t.expr_vars ~key:var ~data:type_ }
+    { t with expr_vars = Map.set t.expr_vars ~key:var ~data:[ type_ ] }
+  ;;
+
+  let bind_var_over t ~var ~type_ =
+    { t with expr_vars = Map.add_multi t.expr_vars ~key:var ~data:type_ }
   ;;
 
   let find_type_var t type_var =
@@ -184,13 +189,28 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     let env = Env.bind_var env ~var ~type_:gscheme in
     [%log.global.debug "Solving let body"];
     self ~state ~env in_
+  | Let_over (var, scheme, in_) ->
+    [%log.global.debug "Solving let_over scheme"];
+    let gscheme = gscheme_of_scheme ~state ~env scheme in
+    [%log.global.debug "Binding var to scheme" (var : C.Var.t) (gscheme : Type.scheme)];
+    let env = Env.bind_var_over env ~var ~type_:gscheme in
+    [%log.global.debug "Solving let body"];
+    self ~state ~env in_
   | Instance (var, expected_type) ->
     [%log.global.debug "Decoding expected_type" (expected_type : C.Type.t)];
     let expected_gtype = gtype_of_type ~state ~env expected_type in
     [%log.global.debug "Decoded expected_type" (expected_gtype : Type.t)];
-    let var_gscheme = Env.find_var env var in
-    [%log.global.debug "Instantiating scheme" (var : C.Var.t) (var_gscheme : Type.scheme)];
-    let actual_gtype = G.instantiate ~state ~curr_region:env.curr_region var_gscheme in
+    let var_gschemes = Env.find_var env var in
+    [%log.global.debug
+      "Instantiating scheme" (var : C.Var.t) (var_gschemes : Type.scheme list)];
+    let actual_gtype =
+      G.instantiate_many
+        ~state
+        ~curr_region:env.curr_region
+        ~else_unresolved:(fun ~curr_region:_ ->
+          Env.(raise env @@ Cannot_resolve_overloading))
+        var_gschemes
+    in
     [%log.global.debug "Scheme instance" (actual_gtype : Type.t)];
     unify ~state ~env actual_gtype expected_gtype
   | Exists (type_var, cst) ->

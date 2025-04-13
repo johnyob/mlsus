@@ -64,6 +64,7 @@ val disambiguation_mismatched_type
 
 val ambiguous_label : range:Range.t -> t
 val rigid_variable_escape : range:Range.t -> t
+val ambiguous_overloading : range:Range.t -> t
 
 module For_testing : sig
   val use_expect_test_config : unit -> unit
