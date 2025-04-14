@@ -15,6 +15,15 @@ module Type = struct
       let module_name = "Type.Var"
     end)
 
+  module Head = struct
+    (** [t] is the head of a type *)
+    type t =
+      | Arrow
+      | Tuple of int
+      | Constr of Ident.t
+    [@@deriving sexp]
+  end
+
   module Matchee = struct
     (** [t] is a matchee, a partial (shallow) type that is matched on. *)
     type t =
@@ -22,6 +31,8 @@ module Type = struct
       | Tuple of Var.t list
       | Constr of Var.t list * Ident.t
       | Rigid_var
+      | Head of Head.t
+      | Partial_app of Var.t
     [@@deriving sexp]
   end
 
@@ -30,12 +41,14 @@ module Type = struct
     | Tuple of t list
     | Constr of t list * Ident.t
     | Var of Var.t
+    | Head of t
   [@@deriving sexp]
 
   let var v = Var v
   let ( @-> ) t1 t2 = Arrow (t1, t2)
   let constr ts constr = Constr (ts, constr)
   let tuple ts = Tuple ts
+  let hd t = Head t
 end
 
 module Var = Var.Make (struct

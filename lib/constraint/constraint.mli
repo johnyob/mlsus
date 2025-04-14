@@ -7,6 +7,15 @@ module Type : sig
   module Ident : Var.S
   module Var : Var.S
 
+  module Head : sig
+    (** [t] is the head of a type *)
+    type t =
+      | Arrow
+      | Tuple of int
+      | Constr of Ident.t
+    [@@deriving sexp]
+  end
+
   module Matchee : sig
     (** [t] is a matchee, a partial (shallow) type that is matched on. *)
     type t =
@@ -14,6 +23,8 @@ module Type : sig
       | Tuple of Var.t list
       | Constr of Var.t list * Ident.t
       | Rigid_var
+      | Head of Head.t
+      | Partial_app of Var.t
     [@@deriving sexp]
   end
 
@@ -23,12 +34,14 @@ module Type : sig
     | Tuple of t list (** [tau1 * ... * taun] *)
     | Constr of t list * Ident.t (** [(tau1, ..., taun) F] *)
     | Var of Var.t (** [ɑ] *)
+    | Head of t (** [hd(tau)] *)
   [@@deriving sexp]
 
   val var : Var.t -> t
   val ( @-> ) : t -> t -> t
   val constr : t list -> Ident.t -> t
   val tuple : t list -> t
+  val hd : t -> t
 end
 
 module Var : Var.S

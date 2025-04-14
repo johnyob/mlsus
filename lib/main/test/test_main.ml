@@ -805,7 +805,7 @@ let%expect_test "" =
     error[E011]: mismatched type
         ┌─ expect_test.ml:3:9
       3 │          (x, x) (fun y -> y)
-        │          ^^^^^^ `'a -> 'b` is not equal to `'c * 'd`
+        │          ^^^^^^ `'a -> 'b` is not equal to `'a -> 'b`
     |}]
 ;;
 
@@ -931,7 +931,7 @@ let%expect_test "" =
     error[E011]: mismatched type
         ┌─ expect_test.ml:12:11
      12 │          f (L : m)
-        │            ^^^^^^^ `n` is not equal to `m`
+        │            ^^^^^^^ `n` is not equal to `n`
     |}]
 ;;
 

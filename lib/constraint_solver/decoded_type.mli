@@ -3,13 +3,7 @@ module G := Generalization
 module Var : Var.S
 module Ident = Constraint.Type.Ident
 
-type t =
-  | Var of Var.t
-  | Arrow of t * t
-  | Tuple of t list
-  | Constr of t list * Ident.t
-  | Mu of Var.t * t
-[@@deriving sexp]
+type t [@@deriving sexp]
 
 include Pretty_printer.S with type t := t
 

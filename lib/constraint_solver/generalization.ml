@@ -433,6 +433,14 @@ module Type = struct
   ;;
 
   let is_generic t = S.is_generic (structure t)
+
+  let rec head t =
+    match inner t with
+    | Var _ | Structure Rigid_var -> raise_s [%message "Failed to get head" (t : Type.t)]
+    | Structure (Structure f) ->
+      (* Guarenteed to terminate by kinding *)
+      F.head f ~f:head
+  ;;
 end
 
 module Suspended_match = struct
@@ -842,6 +850,11 @@ let partial_copy ~state ~curr_region type_ =
            ||
            match structure.status with
            | Generic -> true
+           | Partial { instances; kind = Generic; _ } ->
+             (* No instances associated with it.
+               FIXME: This isn't complete! Only handles case when partial generic doesn't have associated 
+                      instances.  *)
+             Map.is_empty instances
            | _ -> false
          in
          if should_copy_structure
@@ -1071,7 +1084,8 @@ let generalize_young_region ~state (young_region : Young_region.t) =
   <- List.filter young_region.region.rigid_vars ~f:(fun type_ ->
        not (Type.is_generic type_));
   (* Propagate structures to partial instances *)
-  [%log.global.debug "Propagating structure to partial instances"];
+  [%log.global.debug
+    "Propagating structure to partial instances" (propagate_work_list : Type.t Queue.t)];
   Queue.iter propagate_work_list ~f:(fun partial_generic ->
     match Type.status partial_generic with
     | Instance _ | Partial { kind = Instance; _ } | Generic -> assert false
@@ -1249,70 +1263,142 @@ let delayed_over ~state ~curr_region ~else_unresolved rtype1 rtype2 =
       | _, _ -> anti_disjoint ~curr_region type1 type2)
   and anti_rigid ~curr_region ~type1 ~type2 r1 r2 =
     match r1, r2 with
-    | R.Rigid_var, R.Rigid_var when Type.same_class type1 type2 -> type1
     | Structure f1, Structure f2 -> anti_former ~curr_region ~type1 ~type2 f1 f2
-    | _, _ -> anti_disjoint ~curr_region type1 type2
+    | R.Rigid_var, _ | _, R.Rigid_var ->
+      (* Cannot anti-unify with a rigid *)
+      assert false
   and anti_former ~curr_region ~type1 ~type2 f1 f2 =
     match f1, f2 with
-    | Tuple ts1, Tuple ts2 ->
+    | Head h1, Head h2 when F.Head.(h1 = h2) -> type1
+    | Partial_app t1, Partial_app t2 ->
+      create_former ~state ~curr_region @@ Partial_app (anti_head ~curr_region t1 t2)
+    | App (ts1, t1), Partial_app t2 ->
+      let ts2 = List.map ts1 ~f:(fun _ -> create_var ~state ~curr_region ()) in
+      create_former ~state ~curr_region
+      @@ App
+           ( List.map2_exn ts1 ts2 ~f:(anti_type ~curr_region)
+           , anti_head ~curr_region t1 t2 )
+    | Partial_app t1, App (ts2, t2) ->
+      let ts1 = List.map ts2 ~f:(fun _ -> create_var ~state ~curr_region ()) in
+      create_former ~state ~curr_region
+      @@ App
+           ( List.map2_exn ts1 ts2 ~f:(anti_type ~curr_region)
+           , anti_head ~curr_region t1 t2 )
+    | App (ts1, t1), App (ts2, t2) ->
       (match List.zip ts1 ts2 with
        | Ok ts ->
          create_former ~state ~curr_region
-         @@ Tuple (List.map ts ~f:(fun (t1, t2) -> anti_type ~curr_region t1 t2))
+         @@ App
+              ( List.map ts ~f:(fun (t1, t2) -> anti_type ~curr_region t1 t2)
+              , anti_head ~curr_region t1 t2 )
        | Unequal_lengths -> anti_disjoint ~curr_region type1 type2)
-    | Arrow (t1, t2), Arrow (t3, t4) ->
-      create_former ~state ~curr_region
-      @@ Arrow (anti_type ~curr_region t1 t3, anti_type ~curr_region t2 t4)
-    | Constr (ts1, constr1), Constr (ts2, constr2) ->
-      if Type_ident.(constr1 = constr2)
-      then
-        create_former ~state ~curr_region
-        @@ Constr (List.map2_exn ts1 ts2 ~f:(anti_type ~curr_region), constr1)
-      else anti_disjoint ~curr_region type1 type2
     | _, _ -> anti_disjoint ~curr_region type1 type2
-  and anti_disjoint ~curr_region type1 type2 =
-    let var = create_var ~state ~curr_region () in
+  and anti_head ~curr_region type1 type2 =
+    if Type.same_class type1 type2
+    then type1
+    else (
+      match Type.inner type1, Type.inner type2 with
+      | Structure (Structure (F.Head h1)), Structure (Structure (F.Head h2))
+        when F.Head.(h1 = h2) -> type1
+      | _, _ -> anti_disjoint_head ~curr_region type1 type2)
+  and anti_disjoint_head ~curr_region type1 type2 =
+    let hd = create_var ~state ~curr_region () in
     suspend
       ~state
       ~curr_region
-      { matchee = var
+      { matchee = hd
       ; case =
-          (fun ~curr_region s ->
-            let filter_former f f' =
-              match f, f' with
-              | F.Arrow _, F.Arrow _ -> true
-              | Constr (_, constr), Constr (_, constr') when Type_ident.(constr = constr')
-                -> true
-              | Tuple ts, Tuple ts' when List.length ts = List.length ts' -> true
-              | _ -> false
+          (fun ~curr_region h ->
+            [%log.global.debug "Anti-disjoint handler (head)" (h : Type.t R.t)];
+            let h =
+              match h with
+              | Structure (Head h) -> h
+              | _ ->
+                (* Kind error *)
+                assert false
+            in
+            let filter_var t =
+              unify ~state ~curr_region t hd;
+              true
+            in
+            let filter_head h' =
+              match Type.inner h' with
+              | Var _ -> filter_var h'
+              | Structure (Structure (Head h')) -> F.Head.(h = h')
+              | _ ->
+                (* Kind error *)
+                assert false
+            in
+            match filter_head type1, filter_head type2 with
+            | false, false ->
+              (* Make no restrictions on the type *)
+              ()
+            | false, _ -> unify ~state ~curr_region rvar rtype2
+            | _, false -> unify ~state ~curr_region rvar rtype1
+            | true, true -> ())
+      ; closure = { variables = [ hd; type1; type2; rvar; rtype1; rtype2 ] }
+      ; else_ = else_unresolved
+      };
+    hd
+  and anti_disjoint ~curr_region type1 type2 =
+    let hd = create_var ~state ~curr_region () in
+    let var = create_former ~state ~curr_region (Partial_app hd) in
+    suspend
+      ~state
+      ~curr_region
+      { matchee = hd
+      ; case =
+          (fun ~curr_region h ->
+            [%log.global.debug "Anti-disjoint handler" (h : Type.t R.t)];
+            let h =
+              match h with
+              | Structure (Head h) -> h
+              | _ ->
+                (* Kind error *)
+                assert false
+            in
+            let filter_var t =
+              let partial_hd = create_former ~state ~curr_region (Partial_app hd) in
+              unify ~state ~curr_region t partial_hd;
+              true
+            in
+            let filter_head h' =
+              match Type.inner h' with
+              | Var _ -> filter_var h'
+              | Structure (Structure (Head h')) -> F.Head.(h = h')
+              | _ ->
+                (* Kind error *)
+                assert false
+            in
+            let filter_former f =
+              match f with
+              | F.Partial_app h' -> filter_head h'
+              | App (_, h') -> filter_head h'
+              | Head _ ->
+                (* Kind error *)
+                assert false
+            in
+            let filter_rigid r =
+              match r with
+              | R.Rigid_var ->
+                (* Cannot anti-unify with rigid variables *)
+                assert false
+              | Structure f -> filter_former f
             in
             let filter t =
               match Type.inner t with
-              | Var _ ->
-                let copy = R.copy s ~f:(fun _ -> create_var ~state ~curr_region ()) in
-                unify
-                  ~state
-                  ~curr_region
-                  (create_type ~state ~curr_region (Structure copy))
-                  t;
-                Some copy
-              | Structure s' ->
-                (match s, s' with
-                 | Rigid_var, Rigid_var when Type.same_class var t -> Some s
-                 | Structure f, Structure f' when filter_former f f' -> Some s
-                 | _ -> None)
+              | Var _ -> filter_var t
+              | Structure r -> filter_rigid r
             in
             match filter type1, filter type2 with
-            | None, None ->
+            | false, false ->
               (* Make no restrictions on the type *)
               ()
-            | None, _ -> unify ~state ~curr_region rvar rtype2
-            | _, None -> unify ~state ~curr_region rvar rtype1
-            | Some r1, Some r2 ->
-              (* Head constructors match *)
-              let r' = anti_rigid ~curr_region ~type1 ~type2 r1 r2 in
-              unify ~state ~curr_region r' (create_type ~state ~curr_region (Structure s)))
-      ; closure = { variables = [ type1; type2; rvar; rtype1; rtype2 ] }
+            | false, _ -> unify ~state ~curr_region rvar rtype2
+            | _, false -> unify ~state ~curr_region rvar rtype1
+            | true, true ->
+              unify ~state ~curr_region var (anti_type ~curr_region type1 type2))
+      ; closure = { variables = [ var; hd; type1; type2; rvar; rtype1; rtype2 ] }
       ; else_ = else_unresolved
       };
     var

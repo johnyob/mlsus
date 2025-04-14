@@ -3,10 +3,23 @@ open! Import
 module type S = Mlsus_unifier.Structure.S
 
 module Former = struct
+  module Head = struct
+    module T = struct
+      type t =
+        | Arrow
+        | Tuple of int
+        | Constr of Type_ident.t
+      [@@deriving equal, compare, sexp]
+    end
+
+    include T
+    include Comparable.Make (T)
+  end
+
   type 'a t =
-    | Arrow of 'a * 'a
-    | Tuple of 'a list
-    | Constr of 'a list * Type_ident.t
+    | Head of Head.t
+    | Partial_app of 'a (** represents unificand [hd(tau) = h] *)
+    | App of 'a list * 'a
   [@@deriving sexp]
 
   type 'a ctx = unit
@@ -15,44 +28,52 @@ module Former = struct
 
   let iter t ~f =
     match t with
-    | Arrow (t1, t2) ->
-      f t1;
-      f t2
-    | Tuple ts -> List.iter ts ~f
-    | Constr (ts, _) -> List.iter ts ~f
+    | Head _ -> ()
+    | Partial_app t -> f t
+    | App (ts, t) ->
+      f t;
+      List.iter ts ~f
   ;;
 
   let map t ~f =
     match t with
-    | Arrow (t1, t2) -> Arrow (f t1, f t2)
-    | Tuple ts -> Tuple (List.map ts ~f)
-    | Constr (ts, constr) -> Constr (List.map ts ~f, constr)
+    | Head h -> Head h
+    | Partial_app t -> Partial_app (f t)
+    | App (ts, t) -> App (List.map ts ~f, f t)
   ;;
 
   let copy t ~f = map t ~f
 
   let fold t ~f ~init =
     match t with
-    | Arrow (t1, t2) -> f t2 (f t1 init)
-    | Tuple ts -> List.fold_right ts ~f ~init
-    | Constr (ts, _) -> List.fold_right ts ~f ~init
+    | Head _ -> init
+    | Partial_app t -> f t init
+    | App (ts, t) -> List.fold_right ts ~init ~f |> f t
   ;;
 
   let merge ~ctx:() ~create:_ ~unify ~type1:_ ~type2:_ t1 t2 =
     match t1, t2 with
-    | Arrow (t11, t12), Arrow (t21, t22) ->
-      unify t11 t21;
-      unify t12 t22;
+    | Head hd1, Head hd2 -> if Head.(hd1 = hd2) then t1 else raise Cannot_merge
+    | Partial_app hd1, Partial_app hd2 ->
+      unify hd1 hd2;
       t1
-    | Tuple ts1, Tuple ts2 ->
+    | App (ts, hd1), Partial_app hd2 | Partial_app hd2, App (ts, hd1) ->
+      unify hd1 hd2;
+      App (ts, hd1)
+    | App (ts1, hd1), App (ts2, hd2) ->
+      unify hd1 hd2;
       (match List.iter2 ts1 ts2 ~f:unify with
-       | Ok () -> t1
-       | Unequal_lengths -> raise Cannot_merge)
-    | Constr (ts1, constr1), Constr (ts2, constr2) when Type_ident.(constr1 = constr2) ->
-      (match List.iter2 ts1 ts2 ~f:unify with
-       | Ok () -> t1
-       | Unequal_lengths -> raise Cannot_merge)
+       | Ok () -> ()
+       | Unequal_lengths -> raise Cannot_merge);
+      t1
     | _ -> raise Cannot_merge
+  ;;
+
+  let head t ~f =
+    match t with
+    | Head h -> h
+    | Partial_app t -> f t
+    | App (_, t) -> f t
   ;;
 end
 

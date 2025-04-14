@@ -535,8 +535,8 @@ let%expect_test "Partial ungeneralization (Partial<>Instance)" =
           (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int)))))))))
      (err
       ((it
-        (Cannot_unify (Constr () ((id 1) (name string)))
-         (Constr () ((id 1) (name string)))))
+        (Cannot_unify (App () (Head (Constr ((id 1) (name string)))))
+         (App () (Head (Constr ((id 1) (name string)))))))
        (range ()))))
     |}]
 ;;
@@ -596,8 +596,8 @@ let%expect_test "Partial ungeneralization (Partial<>Partial)" =
          (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 1) (name string))))))))
      (err
       ((it
-        (Cannot_unify (Constr () ((id 1) (name string)))
-         (Constr () ((id 1) (name string)))))
+        (Cannot_unify (App () (Head (Constr ((id 1) (name string)))))
+         (App () (Head (Constr ((id 1) (name string)))))))
        (range ()))))
     |}]
 ;;

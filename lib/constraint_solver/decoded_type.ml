@@ -6,12 +6,13 @@ module Var = Var.Make (struct
   end)
 
 module Ident = Constraint.Type.Ident
+module Head = Constraint.Type.Head
 
 type t =
   | Var of Var.t
-  | Arrow of t * t
-  | Tuple of t list
-  | Constr of t list * Ident.t
+  | Head of Head.t
+  | Partial_app of t
+  | App of t list * t
   | Mu of Var.t * t
 [@@deriving sexp]
 
@@ -31,25 +32,34 @@ let pp ppf t =
     | t -> pp_arrow ppf t
   and pp_arrow ppf t =
     match t with
-    | Arrow (t1, t2) -> Fmt.pf ppf "@[%a ->@ %a@]" pp_tuple t1 pp_arrow t2
+    | App ([ t1; t2 ], Head Arrow) -> Fmt.pf ppf "@[%a ->@ %a@]" pp_tuple t1 pp_arrow t2
     | t -> pp_tuple ppf t
   and pp_tuple ppf t =
     match t with
-    | Tuple ts -> Fmt.(pf ppf "@[<0>%a@]" (list ~sep:(any " *@ ") pp_atom) ts)
+    | App (ts, Head (Tuple _)) ->
+      Fmt.(pf ppf "@[<0>%a@]" (list ~sep:(any " *@ ") pp_atom) ts)
     | t -> pp_atom ppf t
   and pp_atom ppf t =
     match t with
     | Var var -> pp_var ppf var
-    | Constr (ts, constr) ->
-      let pp_args ppf ts =
-        match ts with
-        | [] -> ()
-        | [ t ] -> Fmt.pf ppf "%a@ " pp_atom t
-        | ts -> Fmt.(pf ppf "@[(%a)@ @]" (list ~sep:comma pp_mu) ts)
-      in
+    | Head head -> Fmt.pf ppf "%a" pp_head head
+    | Partial_app t -> Fmt.pf ppf "@[(_) %a@]" pp_mu t
+    | App (ts, Head (Constr constr)) ->
       Fmt.(pf ppf "@[%a%s@]" pp_args ts (ident_to_name constr))
-    | Arrow _ | Mu _ | Tuple _ -> Fmt.(parens pp_mu ppf t)
-  and pp_var ppf (var : Var.t) = Fmt.pf ppf "'%s" (var_to_name var) in
+    | App (_, Head (Arrow | Tuple _)) | Mu _ -> Fmt.(parens pp_mu ppf t)
+    | App (ts, t) -> Fmt.(pf ppf "@[%a%a@]" pp_args ts pp_mu t)
+  and pp_var ppf (var : Var.t) = Fmt.pf ppf "'%s" (var_to_name var)
+  and pp_args ppf ts =
+    match ts with
+    | [] -> ()
+    | [ t ] -> Fmt.pf ppf "%a@ " pp_atom t
+    | ts -> Fmt.(pf ppf "@[(%a)@ @]" (list ~sep:comma pp_mu) ts)
+  and pp_head ppf hd =
+    match hd with
+    | Arrow -> Fmt.string ppf "(->)"
+    | Tuple n -> Fmt.pf ppf "Pi^%d" n
+    | Constr constr -> Fmt.pf ppf "%s" (ident_to_name constr)
+  in
   pp_mu ppf t
 ;;
 
@@ -123,14 +133,17 @@ module Decoder = struct
         | Structure former -> decode_former former
       and decode_former former =
         match former with
-        | Arrow (gtype1, gtype2) ->
-          (* The let bindings here are to ensure evaluation order, 
-             which corresponds to allocating fresh variables from left to right *)
-          let dtype1 = decode gtype1 in
-          let dtype2 = decode gtype2 in
-          Arrow (dtype1, dtype2)
-        | Tuple gtypes -> Tuple (List.map gtypes ~f:decode)
-        | Constr (gtypes, constr_ident) -> Constr (List.map gtypes ~f:decode, constr_ident)
+        | Head h -> Head (decode_head h)
+        | Partial_app t -> Partial_app (decode t)
+        | App (ts, t) ->
+          let ts = List.map ts ~f:decode in
+          let t = decode t in
+          App (ts, t)
+      and decode_head hd =
+        match hd with
+        | Arrow -> Arrow
+        | Tuple n -> Tuple n
+        | Constr constr_ident -> Constr constr_ident
       in
       decode gtype
   ;;

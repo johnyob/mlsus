@@ -263,7 +263,7 @@ struct
            type_var
            ~closure:([ type_var ] @ X.arg_closure arg)
            ~with_:(function
-             | (Arrow _ | Tuple _ | Rigid_var) as matchee ->
+             | (Arrow _ | Tuple _ | Rigid_var | Head _ | Partial_app _) as matchee ->
                let type_head =
                  match matchee with
                  | Arrow _ -> `Arrow
@@ -276,7 +276,7 @@ struct
              | Constr (_, type_ident) -> disambiguate_and_infer type_ident)
            ~else_:(fun () -> disambiguate_and_infer (X.ident (List.hd_exn defs)))
        | Constr (_, type_ident) -> disambiguate_and_infer type_ident
-       | (Arrow _ | Tuple _) as constr_type ->
+       | (Arrow _ | Tuple _ | Head _) as constr_type ->
          let type_head =
            match constr_type with
            | Arrow _ -> `Arrow

@@ -19,6 +19,7 @@ module Error = struct
     | Cannot_resume_suspended_generic of Mlsus_error.t list
     | Cannot_resume_match_due_to_cycle of Mlsus_error.t list
     | Cannot_resolve_overloading
+    | Ill_kinded_type
   [@@deriving sexp]
 
   exception T of t
@@ -89,48 +90,6 @@ module Env = struct
   ;;
 end
 
-let rec gtype_of_type : state:State.t -> env:Env.t -> C.Type.t -> G.Type.t =
-  fun ~state ~env type_ ->
-  let self = gtype_of_type ~state ~env in
-  match type_ with
-  | Var type_var -> Env.find_type_var env type_var
-  | Arrow (type1, type2) ->
-    G.create_former ~state ~curr_region:env.curr_region (Arrow (self type1, self type2))
-  | Tuple types ->
-    G.create_former ~state ~curr_region:env.curr_region (Tuple (List.map types ~f:self))
-  | Constr (args, constr) ->
-    G.create_former
-      ~state
-      ~curr_region:env.curr_region
-      (Constr (List.map args ~f:self, constr))
-;;
-
-let match_type : state:State.t -> env:Env.t -> G.Type.t G.R.t -> Env.t * C.Type.Matchee.t =
-  fun ~state ~env former ->
-  let match_types ~env gtypes =
-    List.fold_map gtypes ~init:env ~f:(fun env gtype ->
-      let type_var = C.Type.Var.create ~id_source:state.id_source () in
-      Env.bind_type_var env ~var:type_var ~type_:gtype, type_var)
-  in
-  match former with
-  | Rigid_var -> env, Rigid_var
-  | Structure (Tuple gtypes) ->
-    let env, type_vars = match_types ~env gtypes in
-    env, Tuple type_vars
-  | Structure (Arrow (gtype1, gtype2)) ->
-    let type_var1 = C.Type.Var.create ~id_source:state.id_source () in
-    let type_var2 = C.Type.Var.create ~id_source:state.id_source () in
-    let env =
-      env
-      |> Env.bind_type_var ~var:type_var1 ~type_:gtype1
-      |> Env.bind_type_var ~var:type_var2 ~type_:gtype2
-    in
-    env, Arrow (type_var1, type_var2)
-  | Structure (Constr (gtypes, constr)) ->
-    let env, type_vars = match_types ~env gtypes in
-    env, Constr (type_vars, constr)
-;;
-
 let forall ~(state : State.t) ~env ~type_var =
   Env.bind_type_var
     env
@@ -160,6 +119,67 @@ let unify ~(state : State.t) ~(env : Env.t) gtype1 gtype2 =
     let dtype1 = decoder gtype1 in
     let dtype2 = decoder gtype2 in
     Env.raise env @@ Cannot_unify (dtype1, dtype2)
+;;
+
+let rec gtype_of_type : state:State.t -> env:Env.t -> C.Type.t -> G.Type.t =
+  fun ~state ~env type_ ->
+  let self = gtype_of_type ~state ~env in
+  let create_head h = G.create_former ~state ~curr_region:env.curr_region (Head h) in
+  match type_ with
+  | Var type_var -> Env.find_type_var env type_var
+  | Arrow (type1, type2) ->
+    G.create_former
+      ~state
+      ~curr_region:env.curr_region
+      (App ([ self type1; self type2 ], create_head Arrow))
+  | Tuple types ->
+    G.create_former
+      ~state
+      ~curr_region:env.curr_region
+      (App (List.map types ~f:self, create_head (Tuple (List.length types))))
+  | Constr (args, constr) ->
+    G.create_former
+      ~state
+      ~curr_region:env.curr_region
+      (App (List.map args ~f:self, create_head (Constr constr)))
+  | Head type_ ->
+    let hd = G.create_var ~state ~curr_region:env.curr_region () in
+    let ghd_app = G.create_former ~state ~curr_region:env.curr_region (Partial_app hd) in
+    let gtype = self type_ in
+    unify ~state ~env ghd_app gtype;
+    hd
+;;
+
+let match_type : state:State.t -> env:Env.t -> G.Type.t G.R.t -> Env.t * C.Type.Matchee.t =
+  fun ~state ~env former ->
+  let match_types ~env gtypes =
+    List.fold_map gtypes ~init:env ~f:(fun env gtype ->
+      let type_var = C.Type.Var.create ~id_source:state.id_source () in
+      Env.bind_type_var env ~var:type_var ~type_:gtype, type_var)
+  in
+  let match_head : G.F.Head.t -> C.Type.Head.t =
+    fun ghd ->
+    match ghd with
+    | Arrow -> Arrow
+    | Tuple n -> Tuple n
+    | Constr constr_ident -> Constr constr_ident
+  in
+  match former with
+  | Rigid_var -> env, Rigid_var
+  | Structure (Head h) -> env, Head (match_head h)
+  | Structure (Partial_app gtype) ->
+    let type_var = C.Type.Var.create ~id_source:state.id_source () in
+    let env = Env.bind_type_var env ~var:type_var ~type_:gtype in
+    env, Partial_app type_var
+  | Structure (App (gtypes, hd)) ->
+    [%log.global.debug "Decoding app" (gtypes : G.Type.t list)];
+    [%log.global.debug "Decoding head" (hd : G.Type.t)];
+    let env, type_vars = match_types ~env gtypes in
+    (match Type.head hd, type_vars with
+     | Tuple _, type_vars -> env, Tuple type_vars
+     | Arrow, [ type_var1; type_var2 ] -> env, Arrow (type_var1, type_var2)
+     | Arrow, _ -> Env.(raise env @@ Ill_kinded_type)
+     | Constr constr, type_vars -> env, Constr (type_vars, constr))
 ;;
 
 let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
