@@ -1515,6 +1515,13 @@ let%expect_test "" =
         else 
           mul two x 
       ;;
+
+      let ex9 = 
+        let x = zero in 
+        let y = two in 
+        let z = add x y in 
+        add (add two x) (three : int)
+      ;;
       
       let exlet1 = fun (f : int -> int) (g : int -> int) (x : int) -> 
         (add (f (add x fourty_two)) (g (add (mul two x) fourty_two)) : int)
@@ -1529,14 +1536,12 @@ let%expect_test "" =
       ;;
 
       let exlet2 = fun (f : int -> int) (g : int -> int) (x : int) -> 
-        (* annotation required since application sites do not influence types 
-           of generics. *)
-        let op = fun (n : int) -> add n fourty_two in 
-        (add (f (op x)) (g (op (mul two x))) : int)
+        let op = fun n -> add n fourty_two in 
+        (add (f (op x)) (g (op (mul two x))))
       ;; 
 
       let exlet2' = fun (f : float -> float) (g : float -> float) x -> 
-        let op = fun (n : float) -> add n fourty_two in 
+        let op = fun n -> add n fourty_two in 
         add (f (op x)) (g (op (mul two x)))
       ;; 
 
@@ -1559,6 +1564,28 @@ let%expect_test "" =
     |}
   in
   type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      type float;; 
+      type int;; 
+
+      external succ_int : int -> int -> int;;
+      external succ_float : float -> float -> float;;
+      
+      let succ = succ_int;;
+      let over succ = succ_float;;
+
+      let exlet2 = fun (x : int) -> 
+        let op = fun n -> succ n n in 
+        op x
+      ;;  
+    |}
+  in
+  type_check_and_print ~with_stdlib:false str;
   [%expect {| Well typed :) |}]
 ;;
 

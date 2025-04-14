@@ -83,11 +83,13 @@ module Guard = struct
     val empty : 'a t
     val singleton : ('a, 'v) key -> 'v -> 'a t
     val is_empty : 'a t -> bool
+    val is_match_empty : 'a t -> bool
     val mem : 'a t -> ('a, _) key -> bool
     val add : 'a t -> key:('a, 'v) key -> data:'v -> 'a t
     val remove : 'a t -> ('a, _) key -> 'a t
     val merge : 'a t -> 'a t -> 'a t
     val iter_match : 'a t -> f:(key:Match_identifier.t -> data:'a -> unit) -> unit
+    val is_subset : 'a t -> of_:'a t -> bool
   end = struct
     type ('a, 'v) key = ('a, 'v) t
 
@@ -106,6 +108,12 @@ module Guard = struct
     ;;
 
     let is_empty t = Map.is_empty t.match_map && Set.is_empty t.inst_set
+    let is_match_empty t = Map.is_empty t.match_map
+
+    let is_subset t1 ~of_:t2 =
+      Set.is_subset (Map.key_set t1.match_map) ~of_:(Map.key_set t2.match_map)
+      && Set.is_subset t1.inst_set ~of_:t2.inst_set
+    ;;
 
     let mem (type a v) (t : a t) (key : (a, v) key) =
       match key with
@@ -279,7 +287,7 @@ module S = struct
     | Partial { kind = Generic; instances; region_node = _ } when is_generalizable t ->
       (* An unguarded partial generic can be generalized. [f] can be used to notify instances *)
       Map.iteri instances ~f:(fun ~key ~data -> f key data);
-      { t with status = Generic }
+      flexize { t with status = Generic }
     | _ -> t
   ;;
 
@@ -979,15 +987,17 @@ let update_types ~state (young_region : Young_region.t) =
     [%log.global.debug "Region of type_" (r' : Type.sexp_identifier_region_node)];
     assert (Tree.Path.mem young_region.path r');
     let id = Type.id type_ in
-    if Hash_set.mem visited id
+    if Hash_set.mem visited id && Guard.Map.is_subset guards ~of_:(Type.guards type_)
     then (
       [%log.global.debug "Already visited" (id : Identifier.t)];
+      assert (Guard.Map.is_subset guards ~of_:(Type.guards type_));
       assert (Tree.Level.(r'.level <= r.level)))
     else (
       [%log.global.debug "Not previously visited" (id : Identifier.t)];
       Hash_set.add visited id;
+      [%log.global.debug "Marked as visited"];
+      [%log.global.debug "Adding guards"];
       Type.add_guards type_ guards;
-      [%log.global.debug "Marked as visited and added guards"];
       (* Visiting and updating region *)
       if Tree.Path.compare_node_by_level young_region.path r r' < 0
       then (
@@ -1121,7 +1131,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
       let structure = Type.structure type_ in
       match structure.status, structure.inner with
       | _, Var (Empty_one_or_more_handlers _) -> true
-      | Partial _, _ -> not (Guard.Map.is_empty structure.guards)
+      | Partial _, _ -> not (Guard.Map.is_match_empty structure.guards)
       | _ -> false)
   in
   [%log.global.debug
@@ -1252,6 +1262,14 @@ let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
   loop root
 ;;
 
+let prev_region ~state ~(curr_region : Type.region_node) =
+  match curr_region.parent with
+  | None -> curr_region
+  | Some prev_region ->
+    visit_region ~state prev_region;
+    prev_region
+;;
+
 let delayed_over ~state ~curr_region ~else_unresolved rtype1 rtype2 =
   let rvar = create_var ~state ~curr_region () in
   let rec anti_type ~curr_region type1 type2 =
@@ -1302,14 +1320,18 @@ let delayed_over ~state ~curr_region ~else_unresolved rtype1 rtype2 =
         when F.Head.(h1 = h2) -> type1
       | _, _ -> anti_disjoint_head ~curr_region type1 type2)
   and anti_disjoint_head ~curr_region type1 type2 =
-    let hd = create_var ~state ~curr_region () in
+    let hd = create_var ~state ~curr_region:(prev_region ~state ~curr_region) () in
     suspend
       ~state
       ~curr_region
       { matchee = hd
       ; case =
           (fun ~curr_region h ->
-            [%log.global.debug "Anti-disjoint handler (head)" (h : Type.t R.t)];
+            [%log.global.debug
+              "Anti-disjoint handler (head)"
+                (h : Type.t R.t)
+                (type1 : Type.t)
+                (type2 : Type.t)];
             let h =
               match h with
               | Structure (Head h) -> h
@@ -1318,6 +1340,7 @@ let delayed_over ~state ~curr_region ~else_unresolved rtype1 rtype2 =
                 assert false
             in
             let filter_var t =
+              [%log.global.debug "Filter var" (t : Type.t)];
               unify ~state ~curr_region t hd;
               true
             in
@@ -1333,15 +1356,19 @@ let delayed_over ~state ~curr_region ~else_unresolved rtype1 rtype2 =
             | false, false ->
               (* Make no restrictions on the type *)
               ()
-            | false, _ -> unify ~state ~curr_region rvar rtype2
-            | _, false -> unify ~state ~curr_region rvar rtype1
+            | false, _ ->
+              [%log.global.debug "Unifying" (rvar : Type.t) (rtype2 : Type.t)];
+              unify ~state ~curr_region rvar rtype2
+            | _, false ->
+              [%log.global.debug "Unifying" (rvar : Type.t) (rtype1 : Type.t)];
+              unify ~state ~curr_region rvar rtype1
             | true, true -> ())
       ; closure = { variables = [ hd; type1; type2; rvar; rtype1; rtype2 ] }
       ; else_ = else_unresolved
       };
     hd
   and anti_disjoint ~curr_region type1 type2 =
-    let hd = create_var ~state ~curr_region () in
+    let hd = create_var ~state ~curr_region:(prev_region ~state ~curr_region) () in
     let var = create_former ~state ~curr_region (Partial_app hd) in
     suspend
       ~state
