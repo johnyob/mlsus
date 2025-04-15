@@ -1589,3 +1589,76 @@ let%expect_test "" =
   type_check_and_print str;
   [%expect {| Well typed :) |}]
 ;;
+
+let%expect_test "" =
+  let str =
+    include_float
+    ^ {|
+      let zero = 0;; 
+      let over zero = zero_float;; 
+      
+      type not_int_or_float;;
+      let foo = 
+        (zero : not_int_or_float)
+      ;; 
+    |}
+  in
+  type_check_and_print str;
+  (* NOT supposed to be well-typed *)
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    include_float
+    ^ include_string
+    ^ {|
+      let x = 1;;
+      let over x = empty_string;;
+
+      let y = float_of_int 1;;
+      let over y = 1;;
+
+      let add = fun x y -> x + y;;
+      let over add = add_float;;
+
+      let z = add x y;;
+    |}
+  in
+  (* should succeed, there is a unique type for z (namely int) *)
+  type_check_and_print str;
+  [%expect {|
+    error[E???]: ambiguous overloading
+        ┌─ expect_test.ml:31:19
+     31 │        let z = add x y;;
+        │                    ^
+        = hint: add a type annotation
+    |}]
+;;
+
+
+let%expect_test "" = 
+  let str = 
+    {|
+      type t;; 
+      type s;;
+      type r;;
+
+      external foo : t -> s -> r;;
+      external bar : r -> r -> r;;
+    
+      let foo_bar = foo;;
+      let over foo_bar = bar;;
+
+      let z = fun x -> foo_bar x x;;
+    |}
+  in 
+  (* should succeed, there is a unique type for x (namely r) *)
+  type_check_and_print str; 
+  [%expect {|
+    error[E???]: ambiguous overloading
+        ┌─ expect_test.ml:12:24
+     12 │        let z = fun x -> foo_bar x x;;
+        │                         ^^^^^^^
+        = hint: add a type annotation
+    |}]
