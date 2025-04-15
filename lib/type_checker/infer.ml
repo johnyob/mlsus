@@ -499,15 +499,18 @@ module Expression = struct
       bind_pat ~env pat pat_type ~in_:(fun env -> bind_pats ~env pat_and_types ~in_)
   ;;
 
+  let infer_exp_var ~env (var : Var_name.With_range.t) exp_type =
+    match Env.find_var env var.it with
+    | Some var -> inst var exp_type
+    | None -> Mlsus_error.(raise @@ unbound_variable ~range:var.range var.it)
+  ;;
+
   let rec infer_exp ~(env : Env.t) (exp : expression) exp_type =
     let id_source = Env.id_source env in
     with_range ~range:exp.range
     @@
     match exp.it with
-    | Exp_var var ->
-      (match Env.find_var env var.it with
-       | Some var -> inst var exp_type
-       | None -> Mlsus_error.(raise @@ unbound_variable ~range:var.range var.it))
+    | Exp_var var -> infer_exp_var ~env var exp_type
     | Exp_const const -> exp_type =~ infer_constant const
     | Exp_fun (pats, exp) ->
       exists_many' ~id_source (List.length pats)
@@ -632,14 +635,30 @@ module Expression = struct
     let { case_lhs = pat; case_rhs = exp } = case.it in
     bind_pat ~env pat lhs_type ~in_:(fun env -> infer_exp ~env exp rhs_type)
 
-  and infer_value_binding ~(env : Env.t) value_binding k =
-    let { value_binding_var = var; value_binding_exp = exp } = value_binding.it in
+  and infer_value_binding ~(env : Env.t) (value_binding : value_binding) k =
+    let { value_binding_var = var
+        ; value_binding_over_flag = over_flag
+        ; value_binding_exp = exp
+        }
+      =
+      value_binding.it
+    in
     let exp_type_var = Type.Var.create ~id_source:(Env.id_source env) () in
     let exp_type = Type.var exp_type_var in
     let c = infer_exp ~env exp exp_type in
-    Env.rename_var env ~var:var.it ~in_:(fun env cvar ->
-      let c' = k env in
-      let_ cvar#=(poly_scheme ([ Flexible, exp_type_var ] @. c @=> exp_type)) ~in_:c')
+    match over_flag with
+    | Non_overloaded ->
+      Env.rename_var env ~var:var.it ~in_:(fun env cvar ->
+        let c' = k env in
+        let_ cvar#=(poly_scheme ([ Flexible, exp_type_var ] @. c @=> exp_type)) ~in_:c')
+    | Overloaded ->
+      (match Env.find_var env var.it with
+       | None -> Mlsus_error.(raise @@ unbound_variable ~range:var.range var.it)
+       | Some cvar ->
+         let c' = k env in
+         let_over
+           cvar#=(poly_scheme ([ Flexible, exp_type_var ] @. c @=> exp_type))
+           ~in_:c')
   ;;
 end
 

@@ -70,7 +70,9 @@ module type S = sig
     val case : (lhs:pattern -> rhs:expression -> case) with_range_fn
   end
 
-  val value_binding : (Var_name.With_range.t -> expression -> value_binding) with_range_fn
+  val value_binding
+    : (?over_flag:over_flag -> Var_name.With_range.t -> expression -> value_binding)
+        with_range_fn
 
   module Structure : sig
     val value : (value_binding -> structure_item) with_range_fn
@@ -173,8 +175,13 @@ module Default : S with type 'a with_range_fn := range:Range.t -> 'a = struct
     ;;
   end
 
-  let value_binding ~range var exp =
-    With_range.create ~range { value_binding_exp = exp; value_binding_var = var }
+  let value_binding ~range ?(over_flag = Non_overloaded) var exp =
+    With_range.create
+      ~range
+      { value_binding_exp = exp
+      ; value_binding_over_flag = over_flag
+      ; value_binding_var = var
+      }
   ;;
 
   module Structure = struct

@@ -9,6 +9,11 @@ type constant =
   | Const_unit
 [@@deriving sexp_of]
 
+type over_flag =
+  | Overloaded
+  | Non_overloaded
+[@@deriving sexp_of]
+
 module With_range = struct
   type 'a t =
     { it : 'a

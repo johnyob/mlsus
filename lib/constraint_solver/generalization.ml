@@ -1237,3 +1237,98 @@ let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
   in
   loop root
 ;;
+
+let delayed_over ~state ~curr_region ~else_unresolved rtype1 rtype2 =
+  let rvar = create_var ~state ~curr_region () in
+  let rec anti_type ~curr_region type1 type2 =
+    if Type.same_class type1 type2
+    then type1
+    else (
+      match Type.inner type1, Type.inner type2 with
+      | Structure r1, Structure r2 -> anti_rigid ~curr_region ~type1 ~type2 r1 r2
+      | _, _ -> anti_disjoint ~curr_region type1 type2)
+  and anti_rigid ~curr_region ~type1 ~type2 r1 r2 =
+    match r1, r2 with
+    | R.Rigid_var, R.Rigid_var when Type.same_class type1 type2 -> type1
+    | Structure f1, Structure f2 -> anti_former ~curr_region ~type1 ~type2 f1 f2
+    | _, _ -> anti_disjoint ~curr_region type1 type2
+  and anti_former ~curr_region ~type1 ~type2 f1 f2 =
+    match f1, f2 with
+    | Tuple ts1, Tuple ts2 ->
+      (match List.zip ts1 ts2 with
+       | Ok ts ->
+         create_former ~state ~curr_region
+         @@ Tuple (List.map ts ~f:(fun (t1, t2) -> anti_type ~curr_region t1 t2))
+       | Unequal_lengths -> anti_disjoint ~curr_region type1 type2)
+    | Arrow (t1, t2), Arrow (t3, t4) ->
+      create_former ~state ~curr_region
+      @@ Arrow (anti_type ~curr_region t1 t3, anti_type ~curr_region t2 t4)
+    | Constr (ts1, constr1), Constr (ts2, constr2) ->
+      if Type_ident.(constr1 = constr2)
+      then
+        create_former ~state ~curr_region
+        @@ Constr (List.map2_exn ts1 ts2 ~f:(anti_type ~curr_region), constr1)
+      else anti_disjoint ~curr_region type1 type2
+    | _, _ -> anti_disjoint ~curr_region type1 type2
+  and anti_disjoint ~curr_region type1 type2 =
+    let var = create_var ~state ~curr_region () in
+    suspend
+      ~state
+      ~curr_region
+      { matchee = var
+      ; case =
+          (fun ~curr_region s ->
+            let filter_former f f' =
+              match f, f' with
+              | F.Arrow _, F.Arrow _ -> true
+              | Constr (_, constr), Constr (_, constr') when Type_ident.(constr = constr')
+                -> true
+              | Tuple ts, Tuple ts' when List.length ts = List.length ts' -> true
+              | _ -> false
+            in
+            let filter t =
+              match Type.inner t with
+              | Var _ ->
+                let copy = R.copy s ~f:(fun _ -> create_var ~state ~curr_region ()) in
+                unify
+                  ~state
+                  ~curr_region
+                  (create_type ~state ~curr_region (Structure copy))
+                  t;
+                Some copy
+              | Structure s' ->
+                (match s, s' with
+                 | Rigid_var, Rigid_var when Type.same_class var t -> Some s
+                 | Structure f, Structure f' when filter_former f f' -> Some s
+                 | _ -> None)
+            in
+            match filter type1, filter type2 with
+            | None, None ->
+              (* Make no restrictions on the type *)
+              ()
+            | None, _ -> unify ~state ~curr_region rvar rtype2
+            | _, None -> unify ~state ~curr_region rvar rtype1
+            | Some r1, Some r2 ->
+              (* Head constructors match *)
+              let r' = anti_rigid ~curr_region ~type1 ~type2 r1 r2 in
+              unify ~state ~curr_region r' (create_type ~state ~curr_region (Structure s)))
+      ; closure = { variables = [ type1; type2; rvar; rtype1; rtype2 ] }
+      ; else_ = else_unresolved
+      };
+    var
+  in
+  unify ~state ~curr_region rvar (anti_type ~curr_region rtype1 rtype2);
+  rvar
+;;
+
+let instantiate_many ~state ~curr_region schemes ~else_unresolved =
+  match schemes with
+  | [] -> assert false
+  | [ scheme ] -> instantiate ~state ~curr_region scheme
+  | scheme :: schemes ->
+    let first = instantiate ~state ~curr_region scheme in
+    List.fold schemes ~init:first ~f:(fun acc scheme ->
+      (* [copy] has no overloading constructs with it :) *)
+      let copy = instantiate ~state ~curr_region scheme in
+      delayed_over ~state ~curr_region ~else_unresolved acc copy)
+;;

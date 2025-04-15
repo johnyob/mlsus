@@ -45,6 +45,7 @@ type t =
   | Eq of Type.t * Type.t (** [tau1 = tau2] *)
   | Exists of Type.Var.t * t (** [exists overline(a). C]*)
   | Let of Var.t * scheme * t (** [let x = sigma in C] *)
+  | Let_over of Var.t * scheme * t (** [let over x = sigma in C] *)
   | Instance of Var.t * Type.t (** [x <= tau] *)
   | Match of
       { matchee : Type.Var.t
@@ -83,6 +84,7 @@ val ( @. ) : (flexibility * Type.Var.t) list -> unquantified_scheme -> quantifie
 val mono_scheme : Type.t -> scheme
 val poly_scheme : quantified_scheme -> scheme
 val let_ : Var.t * scheme -> in_:t -> t
+val let_over : Var.t * scheme -> in_:t -> t
 val inst : Var.t -> Type.t -> t
 
 val match_

@@ -16,6 +16,9 @@ module type S = sig
 
     (** [is_representative t] returns whether [t] is the representative of it's equivalence class. *)
     val is_representative : t -> bool
+
+    (** [same_class t1 t2] returns whether [t1] and [t2] are in the same equivalence class. *)
+    val same_class : t -> t -> bool
   end
 
   module Make_unify (M : Structure.Merge with type 'a t := 'a structure) : sig

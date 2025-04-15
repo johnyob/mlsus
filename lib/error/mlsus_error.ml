@@ -19,6 +19,7 @@ module Code = struct
     | Type_mismatch
     | Rigid_variable_escape
     | Ambiguous_label
+    | Ambiguous_overloading
     | Unknown
   [@@deriving sexp]
 
@@ -36,6 +37,7 @@ module Code = struct
     | Type_mismatch -> "E011"
     | Rigid_variable_escape -> "E012"
     | Ambiguous_label -> "E013"
+    | Ambiguous_overloading -> "E014"
     | Unknown -> "E???"
   ;;
 end
@@ -296,6 +298,16 @@ let ambiguous_label ~range =
     ~code:Code.Ambiguous_label
     Error
     "ambiguous label"
+;;
+
+let ambiguous_overloading ~range =
+  let open Diagnostic in
+  Diagnostic.createf
+    ~labels:[ empty_primary_label ~range ]
+    ~notes:[ Message.createf "hint: add a type annotation" ]
+    ~code:Code.Unknown
+    Error
+    "ambiguous overloading"
 ;;
 
 module For_testing = struct

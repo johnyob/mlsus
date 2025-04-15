@@ -19,6 +19,9 @@ module type S = sig
 
     (** [is_representative t] returns whether [t] is the representative of it's equivalence class. *)
     val is_representative : t -> bool
+
+    (** [same_class t1 t2] returns whether [t1] and [t2] are in the same equivalence class. *)
+    val same_class : t -> t -> bool
   end
 
   module Make_unify (M : Structure.Merge with type 'a t := 'a structure) : sig
@@ -41,6 +44,7 @@ module Make (S : Structure.Basic) = struct
     let structure t = (Union_find.get t).structure
     let set_structure t structure = Union_find.set t { structure }
     let is_representative t = Union_find.is_root t
+    let same_class = Union_find.same_class
   end
 
   open Type
