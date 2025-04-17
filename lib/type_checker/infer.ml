@@ -262,6 +262,7 @@ struct
       let spine_type = Type.Var.create ~id_source:(Env.id_source env) () in
       exists_many [ hd_type; spine_type ]
       @@ (Type.(var ret =~ var spine_type @% var hd_type)
+          &~ lower hd_type
           &~ match_
                hd_type
                ~closure:([ ret ] @ X.arg_closure arg)
