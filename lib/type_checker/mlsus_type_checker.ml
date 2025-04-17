@@ -11,7 +11,7 @@ let infer_exp ?with_stdlib exp =
   stdlib_wrapper ?with_stdlib
   @@ fun env ->
   let exp_type = Type.Var.create ~id_source:(Env.id_source env) ~name:"exp_type0" () in
-  let c = Infer.Expression.infer_exp ~env exp (Type.var exp_type) in
+  let c = Infer.Expression.infer_exp ~env exp exp_type in
   exists exp_type c
 ;;
 
