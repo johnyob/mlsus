@@ -853,9 +853,11 @@ let%expect_test "" =
              (Conj
               (Instance ((id 7) (name Constraint.Var))
                (Var ((id 5) (name Type.Var))))
-              (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int)))))
+              (Eq (Var ((id 0) (name Type.Var)))
+               (App (Spine ()) (Head (Constr ((id 0) (name int)))))))
              (Instance ((id 7) (name Constraint.Var))
               (Var ((id 6) (name Type.Var)))))
-            (Eq (Var ((id 4) (name Type.Var))) (Constr () ((id 0) (name int))))))))))))
+            (Eq (Var ((id 4) (name Type.Var)))
+             (App (Spine ()) (Head (Constr ((id 0) (name int))))))))))))))
     |}]
 ;;

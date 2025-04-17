@@ -909,20 +909,14 @@ let%expect_test "" =
         | L 
       ;; 
 
-      let bad = 
+      let good = 
         let f = fun x -> match x with (L -> 1) in 
         f (L : m)
       ;; 
     |}
   in
   type_check_and_print str;
-  [%expect
-    {|
-    error[E011]: mismatched type
-        ┌─ expect_test.ml:12:11
-     12 │          f (L : m)
-        │            ^^^^^^^ `n` is not equal to `m`
-    |}]
+  [%expect {| Well typed :) |}]
 ;;
 
 let%expect_test "" =
