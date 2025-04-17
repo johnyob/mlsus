@@ -868,8 +868,6 @@ let partial_copy ~state ~curr_region ~instance_id type_ =
   loop ~root:true type_
 ;;
 
-exception Cannot_resume_suspended_generic of Mlsus_error.t list
-
 let remove_guard (type a) ~state t (guard : a Type.guard) =
   let visited = Hash_set.create (module Identifier) in
   [%log.global.debug "Removing guard" (Packed guard : Type.packed_guard)];

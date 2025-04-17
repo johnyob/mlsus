@@ -65,8 +65,5 @@ let check cst =
               type1
               type2)
      | Rigid_variable_escape ->
-       Mlsus_error.(raise @@ rigid_variable_escape ~range:(get_range range))
-     | Cannot_resume_suspended_generic errs | Cannot_resume_match_due_to_cycle errs ->
-       (* FIXME: We don't have a way to compose many errors into one, so we just pick one for now :/ *)
-       Mlsus_error.raise @@ List.hd_exn errs)
+       Mlsus_error.(raise @@ rigid_variable_escape ~range:(get_range range)))
 ;;
