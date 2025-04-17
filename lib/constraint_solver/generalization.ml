@@ -83,6 +83,7 @@ module Guard = struct
     val empty : 'a t
     val singleton : ('a, 'v) key -> 'v -> 'a t
     val is_empty : 'a t -> bool
+    val is_subset : 'a t -> of_:'a t -> bool
     val mem : 'a t -> ('a, _) key -> bool
     val add : 'a t -> key:('a, 'v) key -> data:'v -> 'a t
     val remove : 'a t -> ('a, _) key -> 'a t
@@ -106,6 +107,11 @@ module Guard = struct
     ;;
 
     let is_empty t = Map.is_empty t.match_map && Set.is_empty t.inst_set
+
+    let is_subset t1 ~of_:t2 =
+      Set.is_subset (Map.key_set t1.match_map) ~of_:(Map.key_set t2.match_map)
+      && Set.is_subset t1.inst_set ~of_:t2.inst_set
+    ;;
 
     let mem (type a v) (t : a t) (key : (a, v) key) =
       match key with
@@ -279,7 +285,7 @@ module S = struct
     | Partial { kind = Generic; instances; region_node = _ } when is_generalizable t ->
       (* An unguarded partial generic can be generalized. [f] can be used to notify instances *)
       Map.iteri instances ~f:(fun ~key ~data -> f key data);
-      { t with status = Generic }
+      flexize { t with status = Generic }
     | _ -> t
   ;;
 
@@ -966,7 +972,7 @@ let update_types ~state (young_region : Young_region.t) =
     [%log.global.debug "Region of type_" (r' : Type.sexp_identifier_region_node)];
     assert (Tree.Path.mem young_region.path r');
     let id = Type.id type_ in
-    if Hash_set.mem visited id
+    if Hash_set.mem visited id && Guard.Map.is_subset guards ~of_:(Type.guards type_)
     then (
       [%log.global.debug "Already visited" (id : Identifier.t)];
       assert (Tree.Level.(r'.level <= r.level)))
