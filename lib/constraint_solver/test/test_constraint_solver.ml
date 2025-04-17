@@ -535,7 +535,7 @@ let%expect_test "Partial ungeneralization (Partial<>Instance)" =
           (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int)))))))))
      (err
       ((it
-        (Cannot_unify (Constr () ((id 1) (name string)))
+        (Cannot_unify (Var ((id 0) (name Decoded_type.Var)))
          (Constr () ((id 1) (name string)))))
        (range ()))))
     |}]
@@ -596,8 +596,8 @@ let%expect_test "Partial ungeneralization (Partial<>Partial)" =
          (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 1) (name string))))))))
      (err
       ((it
-        (Cannot_unify (Constr () ((id 1) (name string)))
-         (Constr () ((id 1) (name string)))))
+        (Cannot_unify (Var ((id 0) (name Decoded_type.Var)))
+         (Var ((id 1) (name Decoded_type.Var)))))
        (range ()))))
     |}]
 ;;
@@ -661,7 +661,7 @@ let%expect_test "Partials propagate to same instance group" =
      (err
       ((it
         (Cannot_unify (Var ((id 0) (name Decoded_type.Var)))
-         (Var ((id 0) (name Decoded_type.Var)))))
+         (Var ((id 1) (name Decoded_type.Var)))))
        (range ()))))
     |}]
 ;;

@@ -38,3 +38,13 @@ val same_class : 'a t -> 'a t -> bool
 
 (** [is_root t] returns true if [t] is the root of an equivalence class *)
 val is_root : 'a t -> bool
+
+module Transaction : sig
+  (** [try_or_rollback ~f] performs [f ()] in a transaction on the transactional store 
+      the union-find data structure uses. If [f ()] raises an exception, then the 
+      transaction is aborted, and all union-find updates performed by [f] are 
+      rolled back. If [f ()] successfully returns, then the updates are committed.
+      
+      Safety: [f ()] cannot call [try_or_rollback]. *)
+  val try_or_rollback : f:(unit -> 'a) -> 'a
+end

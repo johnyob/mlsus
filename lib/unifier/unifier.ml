@@ -102,7 +102,10 @@ module Make (S : Structure.Basic) = struct
 
     let unify ~ctx t1 t2 =
       let work_queue = Work_queue.create () in
-      try unify_exn ~ctx ~work_queue t1 t2 with
+      try
+        Union_find.Transaction.try_or_rollback ~f:(fun () ->
+          unify_exn ~ctx ~work_queue t1 t2)
+      with
       | M.Cannot_merge -> raise (Unify (t1, t2))
     ;;
   end
