@@ -16,8 +16,6 @@ module Error = struct
     | Unbound_var of C.Var.t
     | Rigid_variable_escape
     | Cannot_unify of Decoded_type.t * Decoded_type.t
-    | Cannot_resume_suspended_generic of Mlsus_error.t list
-    | Cannot_resume_match_due_to_cycle of Mlsus_error.t list
   [@@deriving sexp]
 
   exception T of t
@@ -296,7 +294,4 @@ let solve : ?range:Range.t -> C.t -> (unit, Error.t) result =
   with
   (* Catch solver exceptions *)
   | Error.T err -> Error err
-  (* Catch generalization exceptions *)
-  | G.Cannot_resume_suspended_generic errs ->
-    Error (Error.create ~range:None (Cannot_resume_suspended_generic errs))
 ;;
