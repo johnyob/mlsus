@@ -465,7 +465,7 @@ module Generalization_tree : sig
   type t [@@deriving sexp_of]
 
   (** [create ()] returns an empty generalization tree. *)
-  val create : unit -> t
+  val create : root:Type.region_node -> t
 
   (** [is_empty t] returns whether the tree is empty (i.e. no more regions to generalize). *)
   val is_empty : t -> bool
@@ -498,6 +498,7 @@ end = struct
       (** Tracks the partially generalized regions. If there are remaining
         partially generalized regions after generalizing the root region, it implies
         there exists suspended matches that were never scheduled (e.g. a cycle between matches). *)
+    ; root : Type.region_node
     }
   [@@deriving sexp_of]
 
@@ -511,10 +512,11 @@ end = struct
 
   let num_partially_generalized_regions t = t.num_partially_generalized_regions
 
-  let create () =
-    { entered_map = Hashtbl.create (module Identifier)
-    ; num_partially_generalized_regions = 0
-    }
+  let create ~(root : Type.region_node) =
+    (* Initialize the root region + visit it *)
+    let entered_map = Hashtbl.create (module Identifier) in
+    Hashtbl.set entered_map ~key:root.id ~data:(Hashtbl.create (module Identifier));
+    { entered_map; num_partially_generalized_regions = 0; root }
   ;;
 
   let is_empty t = Hashtbl.is_empty t.entered_map
@@ -528,14 +530,22 @@ end = struct
       else find_closest_entered_ancestor t parent
   ;;
 
+  let find_closest_entered_ancestor_or_root t node =
+    match find_closest_entered_ancestor t node with
+    | None when Identifier.(t.root.id <> node.id) ->
+      Hashtbl.set t.entered_map ~key:t.root.id ~data:(Hashtbl.create (module Identifier));
+      Some t.root
+    | result -> result
+  ;;
+
   let visit_region t (rn : Type.region_node) =
     if not (Hashtbl.mem t.entered_map rn.id)
     then (
       (* Enter [rn] *)
       let imm_descendants = Hashtbl.create (module Identifier) in
       Hashtbl.set t.entered_map ~key:rn.id ~data:imm_descendants;
-      match find_closest_entered_ancestor t rn with
-      | None -> ()
+      match find_closest_entered_ancestor_or_root t rn with
+      | None -> assert (Identifier.(rn.id = t.root.id))
       | Some anc ->
         (* TODO: optimisation, if we know [rn] is a new region, then we can ignore this *)
         (* Reparent decendents of [rn] *)
@@ -555,9 +565,10 @@ end = struct
   ;;
 
   let remove_region t (rn : Type.region_node) =
+    assert (Hashtbl.is_empty (Hashtbl.find_exn t.entered_map rn.id));
     Hashtbl.remove t.entered_map rn.id;
     match find_closest_entered_ancestor t rn with
-    | None -> ()
+    | None -> assert (Identifier.(t.root.id = rn.id))
     | Some anc -> Hashtbl.remove (Hashtbl.find_exn t.entered_map anc.id) rn.id
   ;;
 
@@ -668,11 +679,20 @@ module State = struct
     }
   [@@deriving sexp_of]
 
-  let create () =
-    { id_source = Identifier.create_source ()
-    ; generalization_tree = Generalization_tree.create ()
-    ; scheduler = Scheduler.create ()
-    }
+  let create_with_root_region () =
+    let id_source = Identifier.create_source () in
+    let rn =
+      Tree.create
+        ~id_source
+        (Region.create
+           ~raise_scope_escape:(fun _ ->
+             (* The root region should *not* bind rigid variables *)
+             assert false)
+           ())
+      |> Tree.root
+    in
+    let generalization_tree = Generalization_tree.create ~root:rn in
+    { id_source; generalization_tree; scheduler = Scheduler.create () }, rn
   ;;
 end
 
@@ -780,21 +800,6 @@ end
 open State
 
 let visit_region ~state rn = Generalization_tree.visit_region state.generalization_tree rn
-
-let root_region ~state =
-  let rn =
-    Tree.create
-      ~id_source:state.id_source
-      (Region.create
-         ~raise_scope_escape:(fun _ ->
-           (* The root region should *not* bind rigid variables *)
-           assert false)
-         ())
-    |> Tree.root
-  in
-  visit_region ~state rn;
-  rn
-;;
 
 let enter_region ~state ~raise_scope_escape curr_region =
   let rn =
