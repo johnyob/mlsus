@@ -79,6 +79,12 @@ module Env = struct
     in
     { (empty ~range ~curr_region) with type_vars }
   ;;
+
+  let prev_region t =
+    match t.curr_region.parent with
+    | None -> t.curr_region
+    | Some parent -> parent
+  ;;
 end
 
 let rec gtype_of_type : state:State.t -> env:Env.t -> C.Type.t -> G.Type.t =
@@ -190,6 +196,12 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     [%log.global.debug "Updated env" (env : Env.t)];
     [%log.global.debug "Solving exist body"];
     self ~state ~env cst
+  | Lower type_var ->
+    let gtype = Env.find_type_var env type_var in
+    [%log.global.debug "Type to be lowered" (gtype : Type.t)];
+    let prev_region = Env.prev_region env in
+    [%log.global.debug "Prev region" (prev_region : Type.sexp_identifier_region_node)];
+    Type.set_region gtype prev_region
   | Match { matchee; closure; case = f; else_ } ->
     let matchee = Env.find_type_var env matchee in
     [%log.global.debug "Matchee type" (matchee : Type.t)];
