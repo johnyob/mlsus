@@ -830,7 +830,7 @@ let create_former ~state ~curr_region ?guards former =
   create_type ~state ~curr_region ?guards (Structure (Structure former))
 ;;
 
-let partial_copy ~state ~curr_region type_ =
+let partial_copy ~state ~curr_region ~instance_id type_ =
   (* Copy generics fully, partial generics are shallowly copied (only fresh vars) *)
   let copies = Hashtbl.create (module Identifier) in
   let rec loop ?(root = false) type_ =
@@ -848,6 +848,17 @@ let partial_copy ~state ~curr_region type_ =
            ||
            match structure.status with
            | Generic -> true
+           | Partial ({ kind = Generic; instances; region_node = _ } as ps)
+             when not (Map.mem instances instance_id) ->
+             Type.add_guard copy ~guard:(Instance instance_id) ~data:();
+             Type.set_structure
+               type_
+               { structure with
+                 status =
+                   Partial
+                     { ps with instances = Map.set instances ~key:instance_id ~data:copy }
+               };
+             true
            | _ -> false
          in
          if should_copy_structure
@@ -1093,7 +1104,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
         visit_region ~state curr_region;
         (* Perform a partial copy on the generic to ensure the instance has the generalized
            structure and then unify *)
-        let copy = partial_copy ~state ~curr_region partial_generic in
+        let copy = partial_copy ~state ~curr_region ~instance_id partial_generic in
         (* NOTE: Scheduler jobs that are queued by [unify] and [remove_guard] only visit siblings or parents. *)
         unify ~state ~curr_region copy instance));
   (* Generalize partial generics that can be generalized to (full) generics *)
