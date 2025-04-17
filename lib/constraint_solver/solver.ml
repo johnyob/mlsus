@@ -266,8 +266,8 @@ and gscheme_of_scheme ~state ~env { type_vars; in_; type_ } =
 let solve : ?range:Range.t -> C.t -> (unit, Error.t) result =
   fun ?range cst ->
   try
-    let state = State.create () in
-    let env = Env.empty ~curr_region:(G.root_region ~state) ~range in
+    let state, root_region = State.create_with_root_region () in
+    let env = Env.empty ~curr_region:root_region ~range in
     [%log.global.debug "Initial env and state" (state : State.t) (env : Env.t)];
     solve ~state ~env cst;
     [%log.global.debug "State" (state : State.t)];
