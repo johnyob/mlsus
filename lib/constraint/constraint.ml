@@ -50,6 +50,7 @@ module Type = struct
   let tuple ts = App (Spine ts, Head (Tuple (List.length ts)))
   let spine ts = Spine ts
   let ( @% ) t1 t2 = App (t1, t2)
+  let hd h = Head h
 end
 
 module Var = Var.Make (struct
