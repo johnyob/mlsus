@@ -1,3 +1,4 @@
+open Core
 open Mlsus_std
 open Grace
 
@@ -7,21 +8,32 @@ module Type : sig
   module Ident : Var.S
   module Var : Var.S
 
+  module Head : sig
+    (** [t] is the head of a type *)
+    type t =
+      | Arrow
+      | Tuple of int
+      | Constr of Ident.t
+    [@@deriving sexp]
+
+    include Comparable.S with type t := t
+  end
+
   module Matchee : sig
     (** [t] is a matchee, a partial (shallow) type that is matched on. *)
     type t =
-      | Arrow of Var.t * Var.t
-      | Tuple of Var.t list
-      | Constr of Var.t list * Ident.t
+      | App of Var.t * Var.t
+      | Head of Head.t
+      | Spine of Var.t list
       | Rigid_var
     [@@deriving sexp]
   end
 
   (** [t] represents the type [tau]. *)
   type t =
-    | Arrow of t * t (** [tau -> tau] *)
-    | Tuple of t list (** [tau1 * ... * taun] *)
-    | Constr of t list * Ident.t (** [(tau1, ..., taun) F] *)
+    | Head of Head.t (** [F] *)
+    | App of t * t (** [tau1 tau2] where [tau1] is a spine and [tau2] is a head *)
+    | Spine of t list (** [(tau1, ..., taun)] is a spine *)
     | Var of Var.t (** [ɑ] *)
   [@@deriving sexp]
 
@@ -29,6 +41,8 @@ module Type : sig
   val ( @-> ) : t -> t -> t
   val constr : t list -> Ident.t -> t
   val tuple : t list -> t
+  val spine : t list -> t
+  val ( @% ) : t -> t -> t
 end
 
 module Var : Var.S

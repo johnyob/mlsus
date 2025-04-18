@@ -945,8 +945,10 @@ let%expect_test "" =
           (Exists ((id 2) (name Type.Var))
            (Conj
             (Eq (Var ((id 0) (name Type.Var)))
-             (Arrow (Var ((id 1) (name Type.Var)))
-              (Var ((id 2) (name Type.Var)))))
+             (App
+              (Spine
+               ((Var ((id 1) (name Type.Var))) (Var ((id 2) (name Type.Var)))))
+              (Head Arrow)))
             (With_range
              (Conj True
               (Let ((id 3) (name x))

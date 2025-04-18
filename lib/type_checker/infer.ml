@@ -258,21 +258,29 @@ struct
         let def = disambiguate_defs_by_type_ident type_ident in
         X.infer def ~id_source:(Env.id_source env) ~ctx:infer_ctx ~arg ~ret
       in
-      match_
-        ret
-        ~closure:([ ret ] @ X.arg_closure arg)
-        ~with_:(function
-          | (Arrow _ | Tuple _ | Rigid_var) as matchee ->
-            let type_head =
-              match matchee with
-              | Arrow _ -> `Arrow
-              | Tuple _ -> `Tuple
-              | Rigid_var -> `Rigid_var
-              | _ -> assert false
-            in
-            ff (Mlsus_error.disambiguation_mismatched_type ~range:name.range ~type_head)
-          | Constr (_, type_ident) -> disambiguate_and_infer type_ident)
-        ~else_:(fun () -> disambiguate_and_infer (X.ident (List.hd_exn defs)))
+      let hd_type = Type.Var.create ~id_source:(Env.id_source env) () in
+      let spine_type = Type.Var.create ~id_source:(Env.id_source env) () in
+      exists_many [ hd_type; spine_type ]
+      @@ (Type.(var ret =~ var spine_type @% var hd_type)
+          &~ match_
+               hd_type
+               ~closure:([ ret ] @ X.arg_closure arg)
+               ~with_:(function
+                 | App _ | Spine _ -> assert false
+                 | (Head (Arrow | Tuple _) | Rigid_var) as matchee ->
+                   let type_head =
+                     match matchee with
+                     | Head Arrow -> `Arrow
+                     | Head (Tuple _) -> `Tuple
+                     | Rigid_var -> `Rigid_var
+                     | _ -> assert false
+                   in
+                   ff
+                     (Mlsus_error.disambiguation_mismatched_type
+                        ~range:name.range
+                        ~type_head)
+                 | Head (Constr type_ident) -> disambiguate_and_infer type_ident)
+               ~else_:(fun () -> disambiguate_and_infer (X.ident (List.hd_exn defs))))
   ;;
 end
 
