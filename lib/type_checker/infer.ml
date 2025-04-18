@@ -265,7 +265,7 @@ struct
           &~ lower hd_type
           &~ match_
                hd_type
-               ~closure:([ ret ] @ X.arg_closure arg)
+               ~closure:([ ret; hd_type ] @ X.arg_closure arg)
                ~with_:(function
                  | App _ | Spine _ -> assert false
                  | (Head (Arrow | Tuple _) | Rigid_var) as matchee ->
@@ -281,7 +281,9 @@ struct
                         ~range:name.range
                         ~type_head)
                  | Head (Constr type_ident) -> disambiguate_and_infer type_ident)
-               ~else_:(fun () -> disambiguate_and_infer (X.ident (List.hd_exn defs))))
+               ~else_:(fun () ->
+                 let default_type_ident = X.ident (List.hd_exn defs) in
+                 Type.(var hd_type =~ hd (Constr default_type_ident))))
   ;;
 end
 

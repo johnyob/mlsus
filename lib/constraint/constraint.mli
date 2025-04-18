@@ -43,6 +43,7 @@ module Type : sig
   val tuple : t list -> t
   val spine : t list -> t
   val ( @% ) : t -> t -> t
+  val hd : Head.t -> t
 end
 
 module Var : Var.S
