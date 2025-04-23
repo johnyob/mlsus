@@ -122,38 +122,16 @@ module Guard = struct
     val empty : _ t
     val singleton : 'a Key.t -> ('s, 'a) Data.t -> 's t
     val is_empty : _ t -> bool
-    val is_subset : 's t -> of_:'s t -> bool
     val mem : _ t -> _ Key.t -> bool
     val add : 's t -> key:'a Key.t -> data:('s, 'a) Data.t -> [ `Ok of 's t | `Duplicate ]
     val set : 's t -> key:'a Key.t -> data:('s, 'a) Data.t -> 's t
     val remove : 's t -> 'a Key.t -> 's t
     val merge_skewed : 's t -> 's t -> 's t
-    val key_set : _ t -> Packed.Set.t
+    val is_subset : 's t -> of_:'s t -> bool
 
     module Match : sig
       val iter : 's t -> f:(key:Match_identifier.t -> data:'s -> unit) -> unit
     end
-
-    module Diff : sig
-      type 's map := 's t
-      type 's t [@@deriving sexp_of]
-
-      val empty : _ t
-
-      val add
-        :  's t
-        -> key:'a Key.t
-        -> data:('s, 'a) Data.t
-        -> [ `Ok of 's t | `Duplicate ]
-
-      val set : 's t -> key:'a Key.t -> data:('s, 'a) Data.t -> 's t
-      val remove : 's t -> 'a Key.t -> 's t
-      val merge : 's t -> 's t -> 's t
-      val is_empty : _ t -> bool
-      val is_noop : 's t -> wrt:'s map -> bool
-    end
-
-    val apply_diff : 's t -> 's Diff.t -> 's t
   end = struct
     module Key = T
 
@@ -175,12 +153,6 @@ module Guard = struct
         (Map.key_set t.match_map, t.inst_set)
     ;;
 
-    let key_set t =
-      Set.union
-        (Packed.Set.map (Map.key_set t.match_map) ~f:(fun mid -> pack (Match mid)))
-        (Packed.Set.map t.inst_set ~f:(fun iid -> pack (Instance iid)))
-    ;;
-
     let empty =
       { match_map = Match_identifier.Map.empty; inst_set = Instance_identifier.Set.empty }
     ;;
@@ -188,8 +160,9 @@ module Guard = struct
     let is_empty t = Map.is_empty t.match_map && Set.is_empty t.inst_set
 
     let is_subset t1 ~of_:t2 =
-      Set.is_subset (Map.key_set t1.match_map) ~of_:(Map.key_set t2.match_map)
-      && Set.is_subset t1.inst_set ~of_:t2.inst_set
+      is_empty t1
+      || (Set.is_subset (Map.key_set t1.match_map) ~of_:(Map.key_set t2.match_map)
+          && Set.is_subset t1.inst_set ~of_:t2.inst_set)
     ;;
 
     let mem (type s a) (t : s t) (key : a Key.t) =
@@ -234,63 +207,6 @@ module Guard = struct
     module Match = struct
       let iter t ~f = Map.iteri t.match_map ~f
     end
-
-    module Diff = struct
-      (** ['s t] is a diff to a guard map 
-      
-          INVARIANT: [key_set additions # removals] *)
-      type nonrec 's t =
-        { additions : 's t (** Additions to the guards *)
-        ; removals : Packed.Set.t (** Removals from the guards *)
-        }
-      [@@deriving sexp_of]
-
-      let empty = { additions = empty; removals = Packed.Set.empty }
-
-      let merge t1 t2 =
-        let removals = Set.union t1.removals t2.removals in
-        let additions = merge_skewed t1.additions t2.additions in
-        (* Maintain the invariant of [key_set additions # removals] *)
-        let additions =
-          Set.symmetric_diff t1.removals t2.removals
-          |> Sequence.fold ~init:additions ~f:(fun additions sym_diff_elt ->
-            match sym_diff_elt with
-            | First (T guard) -> remove additions guard
-            | Second (T guard) -> remove additions guard)
-        in
-        { removals; additions }
-      ;;
-
-      let remove { additions; removals } key =
-        { additions = remove additions key; removals = Set.add removals (pack key) }
-      ;;
-
-      let add { removals; additions } ~key ~data =
-        let removals = Set.remove removals (pack key) in
-        match add additions ~key ~data with
-        | `Ok additions -> `Ok { removals; additions }
-        | `Duplicate -> `Duplicate
-      ;;
-
-      let set { removals; additions } ~key ~data =
-        { removals = Set.remove removals (pack key)
-        ; additions = set additions ~key ~data
-        }
-      ;;
-
-      let is_empty t = is_empty t.additions && Set.is_empty t.removals
-
-      let is_noop t ~wrt =
-        is_empty t
-        || (is_subset t.additions ~of_:wrt && Set.are_disjoint t.removals (key_set wrt))
-      ;;
-    end
-
-    let apply_diff (t : _ t) (diff : _ Diff.t) =
-      let t = merge_skewed t diff.additions in
-      let t = Set.fold diff.removals ~init:t ~f:(fun t (T key) -> remove t key) in
-      t
-    ;;
   end
 end
 
@@ -377,16 +293,14 @@ module S = struct
     { id : Identifier.t
     ; inner : 'a Inner.t
     ; guards : 'a Guard.Map.t
-    ; guards_diff : 'a Guard.Map.Diff.t
     ; status : 'a Status.t
     }
   [@@deriving sexp_of]
 
-  let create ~id_source ~region_node ?(guards = Guard.Map.empty) inner =
+  let create ~id_source ~region_node inner =
     { id = Identifier.create id_source
     ; status = Status.of_region_node region_node
-    ; guards
-    ; guards_diff = Guard.Map.Diff.empty
+    ; guards = Guard.Map.empty
     ; inner
     }
   ;;
@@ -398,12 +312,13 @@ module S = struct
   ;;
 
   let is_generalizable t =
-    let has_handler =
+    let has_no_handlers =
       match t.inner with
-      | Var (Empty_one_or_more_handlers _) -> true
-      | _ -> false
+      | Var (Empty_one_or_more_handlers _) -> false
+      | _ -> true
     in
-    Guard.Map.is_empty t.guards && not has_handler
+    let is_unguarded = Guard.Map.is_empty t.guards in
+    is_unguarded && has_no_handlers
   ;;
 
   let generalize t =
@@ -480,38 +395,17 @@ module S = struct
       Inner.merge ~ctx:ctx.super ~create ~unify ~type1 ~type2 t1.inner t2.inner
     in
     let guards = Guard.Map.merge_skewed t1.guards t2.guards in
-    let guards_diff = Guard.Map.Diff.merge t1.guards_diff t2.guards_diff in
-    { id = t1.id; status; inner; guards; guards_diff }
+    { id = t1.id; status; inner; guards }
   ;;
 
   let is_generic t = Status.is_generic t.status
 
   let add_guard t ~guard ~data =
-    { t with guards_diff = Guard.Map.Diff.set t.guards_diff ~key:guard ~data }
+    { t with guards = Guard.Map.set t.guards ~key:guard ~data }
   ;;
 
-  let remove_guard t guard =
-    { t with guards_diff = Guard.Map.Diff.remove t.guards_diff guard }
-  ;;
-
-  let get_and_reset_guards_diff t =
-    { t with guards_diff = Guard.Map.Diff.empty }, t.guards_diff
-  ;;
-
-  let apply_guards_diff t diff =
-    assert (Guard.Map.Diff.is_empty t.guards_diff);
-    { t with guards = Guard.Map.apply_diff t.guards diff }
-  ;;
-
-  let is_guards_diff_noop t diff =
-    assert (Guard.Map.Diff.is_empty t.guards_diff);
-    Guard.Map.Diff.is_noop diff ~wrt:t.guards
-  ;;
-
-  let set_guards_diff t diff =
-    assert (Guard.Map.Diff.is_empty t.guards_diff);
-    { t with guards_diff = diff }
-  ;;
+  let remove_guard t guard = { t with guards = Guard.Map.remove t.guards guard }
+  let add_guards t guards = { t with guards = Guard.Map.merge_skewed t.guards guards }
 end
 
 module Scheme = struct
@@ -582,7 +476,6 @@ module Type = struct
   ;;
 
   let partial_ungeneralize t ~f = S.partial_ungeneralize (structure t) ~f
-  let guards t = (structure t).guards
 
   let add_guard t ~guard ~data =
     let structure = structure t in
@@ -603,25 +496,12 @@ module Type = struct
   ;;
 
   let is_generic t = S.is_generic (structure t)
+  let guards t = (structure t).guards
 
-  let get_and_reset_guards_diff t =
+  let add_guards t guards =
     let structure = structure t in
-    let structure, guards_diff = S.get_and_reset_guards_diff structure in
-    set_structure t structure;
-    guards_diff
+    set_structure t (S.add_guards structure guards)
   ;;
-
-  let set_guards_diff t diff =
-    let structure = structure t in
-    set_structure t (S.set_guards_diff structure diff)
-  ;;
-
-  let apply_guards_diff t guards_diff =
-    let structure = structure t in
-    set_structure t (S.apply_guards_diff structure guards_diff)
-  ;;
-
-  let is_guards_diff_noop t guards_diff = S.is_guards_diff_noop (structure t) guards_diff
 end
 
 module Suspended_match = struct
@@ -995,27 +875,24 @@ let enter_region ~state ~raise_scope_escape curr_region =
   rn
 ;;
 
-let create_type ~state ~curr_region ?guards inner =
+let create_type ~state ~curr_region inner =
   let type_ =
-    Type.create
-      (S.create ~id_source:state.id_source ~region_node:curr_region ?guards inner)
+    Type.create (S.create ~id_source:state.id_source ~region_node:curr_region inner)
   in
   Region.(register_type (Tree.region curr_region) type_);
   type_
 ;;
 
-let create_var ~state ~curr_region ?guards () =
-  create_type ~state ~curr_region ?guards (Var Empty)
-;;
+let create_var ~state ~curr_region () = create_type ~state ~curr_region (Var Empty)
 
-let create_rigid_var ~state ~curr_region ?guards () =
-  let rigid_var = create_type ~state ~curr_region ?guards (Structure Rigid_var) in
+let create_rigid_var ~state ~curr_region () =
+  let rigid_var = create_type ~state ~curr_region (Structure Rigid_var) in
   Region.(register_rigid_var (Tree.region curr_region) rigid_var);
   rigid_var
 ;;
 
-let create_former ~state ~curr_region ?guards former =
-  create_type ~state ~curr_region ?guards (Structure (Structure former))
+let create_former ~state ~curr_region former =
+  create_type ~state ~curr_region (Structure (Structure former))
 ;;
 
 let partial_copy ~state ~curr_region ~instance_id type_ =
@@ -1056,6 +933,28 @@ let partial_copy ~state ~curr_region ~instance_id type_ =
   loop ~root:true type_
 ;;
 
+let remove_guard (type a) ~state t (guard : a Guard.t) =
+  let visited = Hash_set.create (module Identifier) in
+  [%log.global.debug "Removing guard" (T guard : Guard.Packed.t)];
+  let rec loop t =
+    [%log.global.debug "Visiting" (t : Type.t)];
+    let structure = Type.structure t in
+    let id = structure.id in
+    if Hash_set.mem visited id
+    then assert (not (Guard.Map.mem structure.guards guard))
+    else (
+      Hash_set.add visited id;
+      if Guard.Map.mem structure.guards guard
+      then (
+        [%log.global.debug "Visiting children" (t : Type.t)];
+        let region = Type.region_exn ~here:[%here] t in
+        visit_region ~state region;
+        Type.remove_guard t guard;
+        S.iter structure ~f:loop))
+  in
+  loop t
+;;
+
 let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_match.t) =
   match Type.inner matchee with
   | Var _ ->
@@ -1094,7 +993,7 @@ let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_m
             (* Solve case *)
             case ~curr_region s;
             (* Remove guards for each variable in closure *)
-            List.iter closure.variables ~f:(fun type_ -> Type.remove_guard type_ guard);
+            List.iter closure.variables ~f:(fun type_ -> remove_guard ~state type_ guard);
             [%log.global.debug
               "Generalization tree after solving case"
                 (state.generalization_tree : Generalization_tree.t)])
@@ -1119,7 +1018,7 @@ let unify ~state ~curr_region type1 type2 =
     Scheduler.schedule state.scheduler (fun () -> handler.run s)
   in
   let schedule_remove_instance_guard inst instance_id =
-    Type.remove_guard inst (Instance instance_id)
+    remove_guard ~state inst (Instance instance_id)
   in
   let unifier_ctx : _ S.ctx =
     { id_source = state.id_source
@@ -1175,24 +1074,24 @@ let update_type_levels ~state (young_region : Young_region.t) =
 
 let update_type_guards (young_region : Young_region.t) =
   [%log.global.debug "Updating type guards" (young_region : Young_region.t)];
-  let rec loop type_ guards_diff =
-    let guards_diff' = Type.get_and_reset_guards_diff type_ in
-    let guards_diff = Guard.Map.Diff.merge guards_diff guards_diff' in
-    (* TODO(@johnyob): 
-       Is is possible to get a diff that is a noop but affects the children? *)
-    if not (Type.is_guards_diff_noop type_ guards_diff)
-    then (
-      [%log.global.debug
-        "Visiting" (type_ : Type.t) (guards_diff : Type.t Guard.Map.Diff.t)];
-      Type.apply_guards_diff type_ guards_diff;
-      [%log.global.debug "Added guards"];
+  let visited = Hash_set.create (module Identifier) in
+  let rec loop type_ parent_guards =
+    let structure = Type.structure type_ in
+    let id = structure.id in
+    let guards = structure.guards in
+    if Hash_set.mem visited id && Guard.Map.is_subset parent_guards ~of_:guards
+    then ()
+    else (
+      [%log.global.debug "Visiting" (type_ : Type.t) (parent_guards : Type.t Guard.Map.t)];
+      Hash_set.add visited id;
+      Type.add_guards type_ parent_guards;
       if young_region.mem type_
       then (
         [%log.global.debug "Type in young region, visiting children"];
-        Type.structure type_ |> S.iter ~f:(fun type_ -> loop type_ guards_diff))
-      else Type.set_guards_diff type_ guards_diff)
+        let parent_guards = Guard.Map.merge_skewed parent_guards guards in
+        S.Inner.iter structure.inner ~f:(fun type_ -> loop type_ parent_guards)))
   in
-  young_region.region.types |> List.iter ~f:(fun type_ -> loop type_ Guard.Map.Diff.empty)
+  young_region.region.types |> List.iter ~f:(fun type_ -> loop type_ (Type.guards type_))
 ;;
 
 exception Rigid_variable_escape of (Range.t * Type.t)
@@ -1242,7 +1141,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
            let curr_region = Type.region_exn ~here:[%here] instance in
            visit_region ~state curr_region;
            unify ~state ~curr_region type_ instance;
-           Type.remove_guard instance (Instance instance_id));
+           remove_guard ~state instance (Instance instance_id));
          (* Filter the type from the result list *)
          false)
        else (
@@ -1294,7 +1193,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
          (* The partial generic associated with the instance [(guard, instance)] has
             been fully generalized.*)
          (* Remove the guard *)
-         Type.remove_guard instance (Instance instance_id)));
+         remove_guard ~state instance (Instance instance_id)));
   [%log.global.debug "Changes" (generics : Type.t list)];
   (* Schedule default handlers *)
   let roots_and_guarded_partial_generics =
@@ -1383,31 +1282,26 @@ let exit_region ~curr_region root = create_scheme root curr_region
 
 let partial_instantiate ~state ~curr_region ~instance_id type_ =
   let structure = Type.structure type_ in
-  match structure.status with
-  | Partial { kind = Generic; instances; region_node } ->
-    let copy =
-      create_var
-        ~state
-        ~curr_region
-        ~guards:(Guard.Map.singleton (Instance instance_id) Instance)
-        ()
-    in
-    (* Register the instance on the type we're instantiating *)
-    Type.set_structure
-      type_
-      { structure with
-        status =
-          Partial
-            { kind = Generic
-            ; region_node
-            ; instances = Map.set instances ~key:instance_id ~data:copy
-            }
-      };
-    copy
-  | Generic -> create_var ~state ~curr_region ()
-  | Instance _ | Partial { kind = Instance; _ } ->
-    (* Cannot instantiate instances *)
-    assert false
+  let copy = create_var ~state ~curr_region () in
+  (match structure.status with
+   | Partial { kind = Generic; instances; region_node } ->
+     (* Register the instance on the type we're instantiating *)
+     Type.add_guard copy ~guard:(Instance instance_id) ~data:Instance;
+     Type.set_structure
+       type_
+       { structure with
+         status =
+           Partial
+             { kind = Generic
+             ; region_node
+             ; instances = Map.set instances ~key:instance_id ~data:copy
+             }
+       }
+   | Generic -> ()
+   | Instance _ | Partial { kind = Instance; _ } ->
+     (* Cannot instantiate instances *)
+     assert false);
+  copy
 ;;
 
 let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
