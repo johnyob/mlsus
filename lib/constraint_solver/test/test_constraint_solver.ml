@@ -721,3 +721,81 @@ let%expect_test "Detect SCC cycle accross regions" =
        (range ()))))
     |}]
 ;;
+
+let%expect_test "" =
+  (*
+     Tests for a regression introduced here: https://github.com/johnyob/mlsus/pull/54
+  
+    1. Create partial generic ['a]
+    2. Update the variable to ['a = 'b -> 'c] but the variables ['b, 'c] get generalized
+    3. Try unify ['b, 'c] with [int]. This will try unify something with generic variables, 
+       causing an [assert false]!
+  *)
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let a3 = T.Var.create ~id_source () in
+  let a4 = T.Var.create ~id_source () in
+  let a5 = T.Var.create ~id_source () in
+  let a6 = T.Var.create ~id_source () in
+  let a7 = T.Var.create ~id_source () in
+  let x1 = Var.create ~id_source () in
+  let cst =
+    exists_many [ a1; a5; a6; a7 ]
+    @@ let_
+         x1#=(poly_scheme
+                ([ Flexible, a2 ]
+                 @. (match_
+                       a1
+                       ~closure:[ a2 ]
+                       ~with_:(fun _ ->
+                         exists_many [ a3; a4 ] @@ T.(var a2 =~ var a3 @-> var a4))
+                       ~else_:else_unsat_err
+                     &~ match_
+                          a5
+                          ~closure:[ a2 ]
+                          ~with_:(fun _ -> T.(var a2 =~ tint @-> tint))
+                          ~else_:else_unsat_err)
+                 @=> T.(var a2)))
+         ~in_:
+           ((* 1. Forces the generalization of x1's region *)
+            inst x1 (T.var a6)
+            (* 2. Schedule the first match handler, causes [a2] to be unified to [a3 -> a4] *)
+            &~ T.(var a1 =~ tint)
+            (* 3. Forces the re-generalization of x1's region *)
+            &~ inst x1 (T.var a7)
+            (* 4. Schedule the second match handler, causes [a2] to be unified to [int -> int] *)
+            &~ T.(var a5 =~ tint))
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is satisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Exists ((id 4) (name Type.Var))
+        (Exists ((id 5) (name Type.Var))
+         (Exists ((id 6) (name Type.Var))
+          (Let ((id 7) (name Constraint.Var))
+           ((type_vars ((Flexible ((id 1) (name Type.Var)))))
+            (in_
+             (Conj
+              (Match (matchee ((id 0) (name Type.Var)))
+               (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
+               (else_ <fun>))
+              (Match (matchee ((id 4) (name Type.Var)))
+               (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
+               (else_ <fun>))))
+            (type_ (Var ((id 1) (name Type.Var)))))
+           (Conj
+            (Conj
+             (Conj
+              (Instance ((id 7) (name Constraint.Var))
+               (Var ((id 5) (name Type.Var))))
+              (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int)))))
+             (Instance ((id 7) (name Constraint.Var))
+              (Var ((id 6) (name Type.Var)))))
+            (Eq (Var ((id 4) (name Type.Var))) (Constr () ((id 0) (name int))))))))))))
+    |}]
+;;
