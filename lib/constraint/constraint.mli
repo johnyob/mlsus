@@ -34,7 +34,7 @@ end
 module Var : Var.S
 
 module Closure : sig
-  type t = { type_vars : Type.Var.Set.t } [@@unboxed] [@@deriving sexp]
+  type t = { type_vars : Type.Var.t list } [@@unboxed] [@@deriving sexp]
 end
 
 (** [t] is a constraint *)

@@ -43,9 +43,9 @@ module Var = Var.Make (struct
   end)
 
 module Closure = struct
-  type t = { type_vars : Type.Var.Set.t } [@@unboxed] [@@deriving sexp]
+  type t = { type_vars : Type.Var.t list } [@@unboxed] [@@deriving sexp]
 
-  let of_list type_vars = { type_vars = Type.Var.Set.of_list type_vars }
+  let of_list type_vars = { type_vars }
 end
 
 type t =

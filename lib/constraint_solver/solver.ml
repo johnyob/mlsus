@@ -75,8 +75,7 @@ module Env = struct
         ~curr_region
     =
     let type_vars =
-      List.zip_exn (Set.to_list closure.type_vars) gclosure.variables
-      |> C.Type.Var.Map.of_alist_exn
+      List.zip_exn closure.type_vars gclosure.variables |> C.Type.Var.Map.of_alist_exn
     in
     { (empty ~range ~curr_region) with type_vars }
   ;;
@@ -238,9 +237,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
   | With_range (t, range) -> solve ~state ~env:(Env.with_range env ~range) t
 
 and gclosure_of_closure ~env closure : G.Suspended_match.closure =
-  let variables =
-    closure.type_vars |> Set.to_list |> List.map ~f:(Env.find_type_var env)
-  in
+  let variables = List.map closure.type_vars ~f:(Env.find_type_var env) in
   { variables }
 
 and gscheme_of_scheme ~state ~env { type_vars; in_; type_ } =
