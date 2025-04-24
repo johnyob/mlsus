@@ -895,42 +895,58 @@ let create_former ~state ~curr_region former =
   create_type ~state ~curr_region (Structure (Structure former))
 ;;
 
-let partial_copy ~state ~curr_region ~instance_id type_ =
-  (* Copy generics fully, partial generics are shallowly copied (only fresh vars) *)
+let copy ~state ~curr_region ~when_ ~instance_id t =
   let copies = Hashtbl.create (module Identifier) in
-  let rec loop ?(root = false) type_ =
+  let rec loop type_ =
     let structure = Type.structure type_ in
     match structure.status with
     | Instance _ | Partial { kind = Instance; _ } -> type_
     | Generic | Partial { kind = Generic; _ } ->
-      let id = structure.id in
-      (try Hashtbl.find_exn copies id with
+      (try Hashtbl.find_exn copies structure.id with
        | Not_found_s _ ->
          let copy = create_var ~state ~curr_region () in
-         Hashtbl.set copies ~key:id ~data:copy;
-         let should_copy_structure =
-           root
-           ||
-           match structure.status with
-           | Generic -> true
-           | Partial ({ kind = Generic; instances; region_node = _ } as ps)
-             when not (Map.mem instances instance_id) ->
-             Type.add_guard copy ~guard:(Instance instance_id) ~data:Instance;
-             Type.set_structure
-               type_
-               { structure with
-                 status =
-                   Partial
-                     { ps with instances = Map.set instances ~key:instance_id ~data:copy }
-               };
-             true
-           | _ -> false
-         in
-         if should_copy_structure
-         then Type.set_inner copy (S.Inner.copy structure.inner ~f:loop);
+         Hashtbl.set copies ~key:structure.id ~data:copy;
+         if when_ type_
+         then (
+           (match structure.status with
+            | Partial { kind = Generic; instances; region_node } ->
+              Type.add_guard copy ~guard:(Instance instance_id) ~data:Instance;
+              Type.set_structure
+                type_
+                { structure with
+                  status =
+                    Partial
+                      { kind = Generic
+                      ; region_node
+                      ; instances = Map.set instances ~key:instance_id ~data:copy
+                      }
+                }
+            | Generic -> ()
+            | Instance _ | Partial { kind = Instance; _ } ->
+              (* Cannot instantiate instances *)
+              assert false);
+           Type.set_inner copy (S.Inner.copy ~f:loop structure.inner));
          copy)
   in
-  loop ~root:true type_
+  loop t
+;;
+
+let partial_copy ~state ~curr_region ~instance_id partial_type =
+  copy
+    ~state
+    ~curr_region
+    ~instance_id
+    ~when_:(fun type_ ->
+      (* Always copy the root structure of the partial type *)
+      Type.same_class partial_type type_
+      ||
+      (* Copy generics fully, partial generics are shallowly copied (only fresh vars) 
+         if they're already part of this instance group *)
+      match Type.status type_ with
+      | Generic -> true
+      | Partial { kind = Generic; instances; _ } -> not (Map.mem instances instance_id)
+      | Partial { kind = Instance; _ } | Instance _ -> assert false)
+    partial_type
 ;;
 
 let remove_guard (type a) ~state t (guard : a Guard.t) =
@@ -1280,50 +1296,14 @@ let force_generalization ~state region_node =
 
 let exit_region ~curr_region root = create_scheme root curr_region
 
-let partial_instantiate ~state ~curr_region ~instance_id type_ =
-  let structure = Type.structure type_ in
-  let copy = create_var ~state ~curr_region () in
-  (match structure.status with
-   | Partial { kind = Generic; instances; region_node } ->
-     (* Register the instance on the type we're instantiating *)
-     Type.add_guard copy ~guard:(Instance instance_id) ~data:Instance;
-     Type.set_structure
-       type_
-       { structure with
-         status =
-           Partial
-             { kind = Generic
-             ; region_node
-             ; instances = Map.set instances ~key:instance_id ~data:copy
-             }
-       }
-   | Generic -> ()
-   | Instance _ | Partial { kind = Instance; _ } ->
-     (* Cannot instantiate instances *)
-     assert false);
-  copy
-;;
-
 let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
   [%log.global.debug
     "Generalization tree @ instantiation"
       (state.generalization_tree : Generalization_tree.t)];
   (* Generalize the region (if necessary) *)
   Option.iter region_node ~f:(force_generalization ~state);
-  (* Make the copy of the type *)
-  let copies = Hashtbl.create (module Identifier) in
+  (* Create an instance group *)
   let instance_id = Instance_identifier.create state.id_source in
-  let rec loop type_ =
-    let structure = Type.structure type_ in
-    match structure.status with
-    | Instance _ -> type_
-    | _ ->
-      (try Hashtbl.find_exn copies structure.id with
-       | Not_found_s _ ->
-         let copy = partial_instantiate ~state ~curr_region ~instance_id type_ in
-         Hashtbl.set copies ~key:structure.id ~data:copy;
-         Type.set_inner copy (S.Inner.copy ~f:loop structure.inner);
-         copy)
-  in
-  loop root
+  (* Copy the type (always copy if possible) *)
+  copy ~state ~curr_region ~when_:(Fn.const true) ~instance_id root
 ;;
