@@ -230,7 +230,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
       [%log.global.debug "Exiting else region"]
     in
     [%log.global.debug "Suspending match..."];
-    G.suspend
+    G.Suspended_match.match_or_yield
       ~state
       ~curr_region:env.curr_region
       { matchee; closure = gclosure; case; else_ }

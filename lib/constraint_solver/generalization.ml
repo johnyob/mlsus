@@ -535,18 +535,6 @@ module Type = struct
   ;;
 end
 
-module Suspended_match = struct
-  type t =
-    { matchee : Type.t
-    ; closure : closure
-    ; case : curr_region:Type.region_node -> Type.t R.t -> unit
-    ; else_ : curr_region:Type.region_node -> unit
-    }
-  [@@deriving sexp_of]
-
-  and closure = { variables : Type.t list } [@@deriving sexp_of]
-end
-
 module Generalization_tree : sig
   (** Generalization can be performed lazily at instantiation. A region [rn] may
       be generalized provided all of the descendants are generalized. We represent
@@ -980,43 +968,6 @@ let partial_copy ~state ~curr_region ~instance_id partial_type =
     partial_type
 ;;
 
-let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_match.t) =
-  match Type.inner matchee with
-  | Var _ ->
-    let guard = Guard.Match (Match_identifier.create state.id_source) in
-    [%log.global.debug "Suspended match guard" (guard : Guard.Match.t Guard.t)];
-    let curr_region_of_closure () =
-      visit_region ~state curr_region;
-      curr_region
-    in
-    Type.add_handler
-      matchee
-      { run =
-          (fun s ->
-            let curr_region = curr_region_of_closure () in
-            (* Remove guards for each variable in closure *)
-            List.iter closure.variables ~f:(fun type_ -> Type.remove_guard type_ guard);
-            (* Solve case *)
-            case ~curr_region s;
-            [%log.global.debug
-              "Generalization tree after solving case"
-                (state.generalization_tree : Generalization_tree.t)])
-      ; default =
-          (fun () ->
-            let curr_region = curr_region_of_closure () in
-            else_ ~curr_region;
-            [%log.global.debug
-              "Generalization tree running default handler"
-                (state.generalization_tree : Generalization_tree.t)])
-      };
-    (* Add guards for each variable in closure *)
-    List.iter closure.variables ~f:(fun type_ ->
-      Type.add_guard type_ ~guard ~data:(Match matchee))
-  | Structure s ->
-    (* Optimisation: Immediately solve the case *)
-    case ~curr_region s
-;;
-
 let unify ~state ~curr_region type1 type2 =
   let schedule_handler s (handler : _ S.Inner.Var.handler) =
     Scheduler.schedule state.scheduler (fun () -> handler.run s)
@@ -1320,3 +1271,60 @@ let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
   (* Copy the type (always copy if possible) *)
   copy ~state ~curr_region ~when_:(Fn.const true) ~instance_id root
 ;;
+
+module Suspended_match = struct
+  type t =
+    { matchee : Type.t
+    ; closure : closure
+    ; case : curr_region:Type.region_node -> Type.t R.t -> unit
+    ; else_ : curr_region:Type.region_node -> unit
+    }
+  [@@deriving sexp_of]
+
+  and closure = { variables : Type.t list } [@@deriving sexp_of]
+
+  let closure_add_guard { variables } ~guard ~data =
+    List.iter variables ~f:(fun type_ -> Type.add_guard type_ ~guard ~data)
+  ;;
+
+  let closure_remove_guard { variables } guard =
+    List.iter variables ~f:(fun type_ -> Type.remove_guard type_ guard)
+  ;;
+
+  let match_or_yield ~state ~curr_region { matchee; case; closure; else_ } =
+    match Type.inner matchee with
+    | Var _ ->
+      let guard = Guard.Match (Match_identifier.create state.id_source) in
+      let data = Guard.Map.Data.Match matchee in
+      [%log.global.debug "Suspended match guard" (guard : Guard.Match.t Guard.t)];
+      let curr_region_of_closure () =
+        visit_region ~state curr_region;
+        curr_region
+      in
+      Type.add_handler
+        matchee
+        { run =
+            (fun s ->
+              let curr_region = curr_region_of_closure () in
+              (* Remove guard from closure *)
+              closure_remove_guard closure guard;
+              (* Solve case *)
+              case ~curr_region s;
+              [%log.global.debug
+                "Generalization tree after solving case"
+                  (state.generalization_tree : Generalization_tree.t)])
+        ; default =
+            (fun () ->
+              let curr_region = curr_region_of_closure () in
+              else_ ~curr_region;
+              [%log.global.debug
+                "Generalization tree running default handler"
+                  (state.generalization_tree : Generalization_tree.t)])
+        };
+      (* Add guard to closure *)
+      closure_add_guard closure ~guard ~data
+    | Structure s ->
+      (* Optimisation: Immediately solve the case *)
+      case ~curr_region s
+  ;;
+end
