@@ -453,17 +453,6 @@ module S = struct
   let is_generic t = Status.is_generic t.status
 end
 
-module Scheme = struct
-  type 'a t =
-    { root : 'a
-    ; region_node : 'a Region.Tree.sexp_identifier_node option
-    }
-  [@@deriving sexp_of]
-
-  let body t = t.root
-  let mono_scheme root = { root; region_node = None }
-end
-
 module Type = struct
   include Unifier.Make (S)
   include Type
@@ -475,7 +464,6 @@ module Type = struct
 
   type region_tree = t Region.Tree.t [@@deriving sexp_of]
   type region = t Region.t [@@deriving sexp_of]
-  type scheme = t Scheme.t [@@deriving sexp_of]
 
   let id t = (structure t).id
   let inner t = (structure t).inner
@@ -552,6 +540,30 @@ module Type = struct
   let set_removed_guards t removed_guards =
     let structure = structure t in
     set_structure t { structure with removed_guards }
+  ;;
+end
+
+module Scheme = struct
+  type t =
+    { root : Type.t
+    ; region_node : Type.sexp_identifier_region_node option
+    }
+  [@@deriving sexp_of]
+
+  let body t = t.root
+  let mono_scheme root = { root; region_node = None }
+
+  let iter_instances_and_partial_generics t ~f =
+    let visited = Hash_set.create (module Identifier) in
+    let rec loop type_ =
+      let id = Type.id type_ in
+      if not (Hash_set.mem visited id)
+      then (
+        match Type.status type_ with
+        | Generic -> Type.inner type_ |> S.Inner.iter ~f:loop
+        | Partial _ | Instance _ -> f type_)
+    in
+    loop t.root
   ;;
 end
 
@@ -1257,9 +1269,7 @@ let update_and_generalize ~state (curr_region : Type.region_node) =
   [%log.global.debug "End generalization" (curr_region.id : Identifier.t)]
 ;;
 
-let create_scheme root region_node : Type.t Scheme.t =
-  { root; region_node = Some region_node }
-;;
+let create_scheme root region_node : Scheme.t = { root; region_node = Some region_node }
 
 let force_generalization ~state region_node =
   Generalization_tree.generalize_region
@@ -1278,7 +1288,7 @@ let force_generalization ~state region_node =
 
 let exit_region ~curr_region root = create_scheme root curr_region
 
-let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
+let instantiate ~state ~curr_region ({ root; region_node } : Scheme.t) =
   [%log.global.debug
     "Generalization tree @ instantiation"
       (state.generalization_tree : Generalization_tree.t)];
@@ -1299,14 +1309,30 @@ module Suspended_match = struct
     }
   [@@deriving sexp_of]
 
-  and closure = { variables : Type.t list } [@@deriving sexp_of]
+  and closure =
+    { variables : Type.t list
+    ; schemes : Scheme.t list
+    }
+  [@@deriving sexp_of]
 
-  let closure_add_guard { variables } ~guard ~data =
-    List.iter variables ~f:(fun type_ -> Type.add_guard type_ ~guard ~data)
+  let closure_add_guard ~state { variables; schemes } ~guard ~data =
+    let visit_and_add_guard type_ =
+      visit_region ~state (Type.region_exn ~here:[%here] type_);
+      Type.add_guard type_ ~guard ~data
+    in
+    List.iter variables ~f:visit_and_add_guard;
+    List.iter schemes ~f:(fun scheme ->
+      Scheme.iter_instances_and_partial_generics scheme ~f:visit_and_add_guard)
   ;;
 
-  let closure_remove_guard { variables } guard =
-    List.iter variables ~f:(fun type_ -> Type.remove_guard type_ guard)
+  let closure_remove_guard ~state { variables; schemes } guard =
+    let visit_and_remove_guard type_ =
+      visit_region ~state (Type.region_exn ~here:[%here] type_);
+      Type.remove_guard type_ guard
+    in
+    List.iter variables ~f:visit_and_remove_guard;
+    List.iter schemes ~f:(fun scheme ->
+      Scheme.iter_instances_and_partial_generics scheme ~f:visit_and_remove_guard)
   ;;
 
   let match_or_yield ~state ~curr_region { matchee; case; closure; else_ } =
@@ -1325,7 +1351,7 @@ module Suspended_match = struct
             (fun s ->
               let curr_region = curr_region_of_closure () in
               (* Remove guard from closure *)
-              closure_remove_guard closure guard;
+              closure_remove_guard ~state closure guard;
               (* Solve case *)
               case ~curr_region s;
               [%log.global.debug
@@ -1340,7 +1366,7 @@ module Suspended_match = struct
                   (state.generalization_tree : Generalization_tree.t)])
         };
       (* Add guard to closure *)
-      closure_add_guard closure ~guard ~data
+      closure_add_guard ~state closure ~guard ~data
     | Structure s ->
       (* Optimisation: Immediately solve the case *)
       case ~curr_region s
