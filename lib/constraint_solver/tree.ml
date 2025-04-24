@@ -54,13 +54,6 @@ let rec nearest_common_ancestor t1 t2 =
       (Option.value_exn ~here:[%here] t2.parent))
 ;;
 
-let unsafe_max_by_level ts =
-  match ts with
-  | [] -> assert false
-  | t :: ts ->
-    List.fold ts ~init:t ~f:(fun t1 t2 -> if Level.(t1.level < t2.level) then t2 else t1)
-;;
-
 module Path = struct
   type 'a t =
     { dst : 'a node

@@ -34,11 +34,6 @@ val create_node : id_source:Identifier.source -> parent:'a node -> 'a -> 'a node
 (** [nearest_common_ancestor n1 n2] returns the nearest common ancestor of two nodes in a tree *)
 val nearest_common_ancestor : 'a node -> 'a node -> 'a node
 
-(** [unsafe_max_by_level ns] returns the node with the highest level.
-
-    Safety: This operation is only well-defined for a list of nodes on a given path from the root. *)
-val unsafe_max_by_level : 'a node list -> 'a node
-
 module Path : sig
   (** A (linear) path in the tree from the root to a given node *)
   type 'a t [@@deriving sexp_of]
