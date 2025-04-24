@@ -128,6 +128,8 @@ module Guard = struct
     val remove : 's t -> 'a Key.t -> 's t
     val merge_skewed : 's t -> 's t -> 's t
     val is_subset : 's t -> of_:'s t -> bool
+    val key_set : _ t -> Packed.Set.t
+    val remove_many : 's t -> Packed.Set.t -> 's t
 
     module Match : sig
       val is_empty : _ t -> bool
@@ -166,6 +168,12 @@ module Guard = struct
           && Set.is_subset t1.inst_set ~of_:t2.inst_set)
     ;;
 
+    let key_set t =
+      Set.union
+        (Packed.Set.map (Map.key_set t.match_map) ~f:(fun mid -> pack (Match mid)))
+        (Packed.Set.map t.inst_set ~f:(fun iid -> pack (Instance iid)))
+    ;;
+
     let mem (type s a) (t : s t) (key : a Key.t) =
       match key with
       | Match mid -> Map.mem t.match_map mid
@@ -193,6 +201,10 @@ module Guard = struct
       match key with
       | Match mid -> { t with match_map = Map.remove t.match_map mid }
       | Instance iid -> { t with inst_set = Set.remove t.inst_set iid }
+    ;;
+
+    let remove_many t key_set =
+      Set.fold key_set ~init:t ~f:(fun t (Packed.T key) -> remove t key)
     ;;
 
     let singleton (type s a) (key : a Key.t) (data : (s, a) Data.t) = set empty ~key ~data
@@ -295,6 +307,7 @@ module S = struct
     { id : Identifier.t
     ; inner : 'a Inner.t
     ; guards : 'a Guard.Map.t
+    ; removed_guards : Guard.Packed.Set.t
     ; status : 'a Status.t
     }
   [@@deriving sexp_of]
@@ -303,7 +316,22 @@ module S = struct
     { id = Identifier.create id_source
     ; status = Status.of_region_node region_node
     ; guards = Guard.Map.empty
+    ; removed_guards = Guard.Packed.Set.empty
     ; inner
+    }
+  ;;
+
+  let add_guard t ~guard ~data =
+    { t with
+      guards = Guard.Map.set t.guards ~key:guard ~data
+    ; removed_guards = Set.remove t.removed_guards (Guard.Packed.T guard)
+    }
+  ;;
+
+  let remove_guard t guard =
+    { t with
+      guards = Guard.Map.remove t.guards guard
+    ; removed_guards = Set.add t.removed_guards (Guard.Packed.T guard)
     }
   ;;
 
@@ -369,7 +397,7 @@ module S = struct
   type 'a ctx =
     { id_source : Identifier.source
     ; curr_region : 'a Region.Tree.node
-    ; schedule_remove_instance_guard : 'a -> Instance_identifier.t -> unit
+    ; remove_instance_guard : 'a -> Instance_identifier.t -> unit
     ; super : 'a Inner.ctx
     }
 
@@ -390,24 +418,18 @@ module S = struct
          the current unification is successful, [type1] and [type2] will refer to
          the *same* type. *)
       unify type2 inst;
-      ctx.schedule_remove_instance_guard inst instance_id
+      ctx.remove_instance_guard inst instance_id
     in
     let status = Status.merge t1.status t2.status ~unify ~partial_unify in
     let inner =
       Inner.merge ~ctx:ctx.super ~create ~unify ~type1 ~type2 t1.inner t2.inner
     in
     let guards = Guard.Map.merge_skewed t1.guards t2.guards in
-    { id = t1.id; status; inner; guards }
+    let removed_guards = Set.union t1.removed_guards t2.removed_guards in
+    { id = t1.id; status; inner; guards; removed_guards }
   ;;
 
   let is_generic t = Status.is_generic t.status
-
-  let add_guard t ~guard ~data =
-    { t with guards = Guard.Map.set t.guards ~key:guard ~data }
-  ;;
-
-  let remove_guard t guard = { t with guards = Guard.Map.remove t.guards guard }
-  let add_guards t guards = { t with guards = Guard.Map.merge_skewed t.guards guards }
 end
 
 module Scheme = struct
@@ -500,9 +522,16 @@ module Type = struct
   let is_generic t = S.is_generic (structure t)
   let guards t = (structure t).guards
 
-  let add_guards t guards =
+  let set_guards t guards =
     let structure = structure t in
-    set_structure t (S.add_guards structure guards)
+    set_structure t { structure with guards }
+  ;;
+
+  let removed_guards t = (structure t).removed_guards
+
+  let set_removed_guards t removed_guards =
+    let structure = structure t in
+    set_structure t { structure with removed_guards }
   ;;
 end
 
@@ -951,28 +980,6 @@ let partial_copy ~state ~curr_region ~instance_id partial_type =
     partial_type
 ;;
 
-let remove_guard (type a) ~state t (guard : a Guard.t) =
-  let visited = Hash_set.create (module Identifier) in
-  [%log.global.debug "Removing guard" (T guard : Guard.Packed.t)];
-  let rec loop t =
-    [%log.global.debug "Visiting" (t : Type.t)];
-    let structure = Type.structure t in
-    let id = structure.id in
-    if Hash_set.mem visited id
-    then assert (not (Guard.Map.mem structure.guards guard))
-    else (
-      Hash_set.add visited id;
-      if Guard.Map.mem structure.guards guard
-      then (
-        [%log.global.debug "Visiting children" (t : Type.t)];
-        let region = Type.region_exn ~here:[%here] t in
-        visit_region ~state region;
-        Type.remove_guard t guard;
-        S.iter structure ~f:loop))
-  in
-  loop t
-;;
-
 let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_match.t) =
   match Type.inner matchee with
   | Var _ ->
@@ -988,7 +995,7 @@ let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_m
           (fun s ->
             let curr_region = curr_region_of_closure () in
             (* Remove guards for each variable in closure *)
-            List.iter closure.variables ~f:(fun type_ -> remove_guard ~state type_ guard);
+            List.iter closure.variables ~f:(fun type_ -> Type.remove_guard type_ guard);
             (* Solve case *)
             case ~curr_region s;
             [%log.global.debug
@@ -1014,14 +1021,16 @@ let unify ~state ~curr_region type1 type2 =
   let schedule_handler s (handler : _ S.Inner.Var.handler) =
     Scheduler.schedule state.scheduler (fun () -> handler.run s)
   in
-  let schedule_remove_instance_guard inst instance_id =
-    remove_guard ~state inst (Instance instance_id)
+  let remove_instance_guard instance instance_id =
+    (* Must visit region since instance may be partially generialized *)
+    visit_region ~state (Type.region_exn ~here:[%here] instance);
+    Type.remove_guard instance (Instance instance_id)
   in
   let unifier_ctx : _ S.ctx =
     { id_source = state.id_source
     ; curr_region
+    ; remove_instance_guard
     ; super = { schedule_handler; super = () }
-    ; schedule_remove_instance_guard
     }
   in
   Unify.unify ~ctx:unifier_ctx type1 type2
@@ -1072,28 +1081,47 @@ let update_type_levels ~state (young_region : Young_region.t) =
 let update_type_guards (young_region : Young_region.t) =
   [%log.global.debug "Updating type guards" (young_region : Young_region.t)];
   let visited = Hash_set.create (module Identifier) in
-  let rec loop type_ parent_guards =
+  (* INVARIANT: [parent_guards # parent_removed_guards] *)
+  let rec loop type_ parent_guards parent_removed_guards =
     let structure = Type.structure type_ in
     let id = structure.id in
     let guards = structure.guards in
-    if Hash_set.mem visited id && Guard.Map.is_subset parent_guards ~of_:guards
+    let removed_guards = structure.removed_guards in
+    if
+      (* Previously visited *)
+      Hash_set.mem visited id
+      (* and no changes to be made *)
+      && Guard.Map.is_subset parent_guards ~of_:guards
+      && Set.are_disjoint parent_removed_guards (Guard.Map.key_set guards)
+      && Set.is_empty removed_guards
     then ()
     else (
       [%log.global.debug "Visiting" (type_ : Type.t) (parent_guards : Type.t Guard.Map.t)];
       Hash_set.add visited id;
-      Type.add_guards type_ parent_guards;
+      let parent_guards = Guard.Map.remove_many parent_guards removed_guards in
+      (* [parent_guards # parent_removed_guards union removed_guards] *)
+      let guards = Guard.Map.remove_many guards parent_removed_guards in
+      (* [guards # parent_removed_guards union removed_guards] *)
+      let guards = Guard.Map.merge_skewed guards parent_guards in
+      let removed_guards = Set.union parent_removed_guards removed_guards in
+      Type.set_guards type_ guards;
       if young_region.mem type_
       then (
         [%log.global.debug "Type in young region, visiting children"];
-        let parent_guards = Guard.Map.merge_skewed parent_guards guards in
-        S.Inner.iter structure.inner ~f:(fun type_ -> loop type_ parent_guards)))
+        Type.set_removed_guards type_ Guard.Packed.Set.empty;
+        S.Inner.iter structure.inner ~f:(fun type_ -> loop type_ guards removed_guards))
+      else
+        (* Set guards to remove (for later) *)
+        Type.set_removed_guards type_ removed_guards)
   in
-  young_region.region.types |> List.iter ~f:(fun type_ -> loop type_ (Type.guards type_))
+  young_region.region.types
+  |> List.iter ~f:(fun type_ ->
+    loop type_ (Type.guards type_) (Type.removed_guards type_))
 ;;
 
 exception Rigid_variable_escape of (Range.t * Type.t)
 
-let scope_check_young_region ~state:_ (young_region : Young_region.t) =
+let scope_check_young_region (young_region : Young_region.t) =
   [%log.global.debug "Scope check young region" (young_region : Young_region.t)];
   (* Iterate over rigid variables, if the level of the rigid variable is 
      less than the young region level, then the rigid variable has escaped 
@@ -1138,7 +1166,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
            let curr_region = Type.region_exn ~here:[%here] instance in
            visit_region ~state curr_region;
            unify ~state ~curr_region type_ instance;
-           remove_guard ~state instance (Instance instance_id));
+           Type.remove_guard instance (Instance instance_id));
          (* Filter the type from the result list *)
          false)
        else (
@@ -1179,7 +1207,6 @@ let generalize_young_region ~state (young_region : Young_region.t) =
         (* Perform a partial copy on the generic to ensure the instance has the generalized
            structure and then unify *)
         let copy = partial_copy ~state ~curr_region ~instance_id partial_generic in
-        (* NOTE: Scheduler jobs that are queued by [unify] and [remove_guard] only visit siblings or parents. *)
         unify ~state ~curr_region copy instance));
   (* Generalize partial generics that can be generalized to (full) generics *)
   [%log.global.debug "Generalising partial generics"];
@@ -1190,7 +1217,8 @@ let generalize_young_region ~state (young_region : Young_region.t) =
          (* The partial generic associated with the instance [(guard, instance)] has
             been fully generalized.*)
          (* Remove the guard *)
-         remove_guard ~state instance (Instance instance_id)));
+         visit_region ~state (Type.region_exn ~here:[%here] instance);
+         Type.remove_guard instance (Instance instance_id)));
   [%log.global.debug "Changes" (generics : Type.t list)];
   (* Schedule default handlers *)
   let roots_and_guarded_partial_generics =
@@ -1245,7 +1273,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
 let update_and_generalize_young_region ~state young_region =
   update_type_levels ~state young_region;
   update_type_guards young_region;
-  scope_check_young_region ~state young_region;
+  scope_check_young_region young_region;
   generalize_young_region ~state young_region
 ;;
 
