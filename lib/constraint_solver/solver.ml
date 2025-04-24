@@ -27,7 +27,7 @@ end
 module Env = struct
   type t =
     { type_vars : Type.t C.Type.Var.Map.t
-    ; expr_vars : Type.scheme C.Var.Map.t
+    ; expr_vars : G.Scheme.t C.Var.Map.t
     ; curr_region : G.Type.region_node
     ; range : Range.t option
     }
@@ -78,7 +78,11 @@ module Env = struct
       List.zip_exn (Set.to_list closure.type_vars) gclosure.variables
       |> C.Type.Var.Map.of_alist_exn
     in
-    { (empty ~range ~curr_region) with type_vars }
+    let expr_vars = 
+      List.zip_exn (Set.to_list closure.vars) gclosure.schemes 
+      |> C.Var.Map.of_alist_exn
+    in 
+    { (empty ~range ~curr_region) with type_vars; expr_vars }
   ;;
 end
 
@@ -178,7 +182,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
   | Let (var, scheme, in_) ->
     [%log.global.debug "Solving let scheme"];
     let gscheme = gscheme_of_scheme ~state ~env scheme in
-    [%log.global.debug "Binding var to scheme" (var : C.Var.t) (gscheme : Type.scheme)];
+    [%log.global.debug "Binding var to scheme" (var : C.Var.t) (gscheme : G.Scheme.t)];
     let env = Env.bind_var env ~var ~type_:gscheme in
     [%log.global.debug "Solving let body"];
     self ~state ~env in_
@@ -187,7 +191,7 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     let expected_gtype = gtype_of_type ~state ~env expected_type in
     [%log.global.debug "Decoded expected_type" (expected_gtype : Type.t)];
     let var_gscheme = Env.find_var env var in
-    [%log.global.debug "Instantiating scheme" (var : C.Var.t) (var_gscheme : Type.scheme)];
+    [%log.global.debug "Instantiating scheme" (var : C.Var.t) (var_gscheme : G.Scheme.t)];
     let actual_gtype = G.instantiate ~state ~curr_region:env.curr_region var_gscheme in
     [%log.global.debug "Scheme instance" (actual_gtype : Type.t)];
     unify ~state ~env actual_gtype expected_gtype
@@ -241,7 +245,8 @@ and gclosure_of_closure ~env closure : G.Suspended_match.closure =
   let variables =
     closure.type_vars |> Set.to_list |> List.map ~f:(Env.find_type_var env)
   in
-  { variables }
+  let schemes = closure.vars |> Set.to_list |> List.map ~f:(Env.find_var env) in
+  { variables; schemes }
 
 and gscheme_of_scheme ~state ~env { type_vars; in_; type_ } =
   let env = Env.enter_region ~state env in
@@ -259,7 +264,7 @@ and gscheme_of_scheme ~state ~env { type_vars; in_; type_ } =
   solve ~state ~env in_;
   [%log.global.debug "Type of scheme" (type_ : Type.t)];
   let scheme = Env.exit_region ~state env type_ in
-  [%log.global.debug "Exiting region" (scheme : Type.scheme)];
+  [%log.global.debug "Exiting region" (scheme : G.Scheme.t)];
   scheme
 ;;
 
