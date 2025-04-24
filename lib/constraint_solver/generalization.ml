@@ -977,27 +977,6 @@ let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_m
     let guard = Guard.Match (Match_identifier.create state.id_source) in
     [%log.global.debug "Suspended match guard" (guard : Guard.Match.t Guard.t)];
     let curr_region_of_closure () =
-      let curr_region =
-        (* Safety: The list of region nodes are on a given path from
-           the root.
-
-           This is because [matchee] and [closure.variables] are in the
-           same scope (when initially referenced), thus must be on a given
-           path from the root. And since unification maintains the invariant:
-           {v
-              v1 in rn1 on path p1 && v2 in rn2 on path p2 
-                => unify(v1, v2) in nearest_common_ancestor(rn1, rn2)
-                   on path longest_common_path(p1, p2)
-           v}
-           We conclude that any type on a given path [p] must be on a
-           sub-path of [p]. So it follows that all the nodes are still
-           on a given path from the root when the [case] is scheduled.
-           The path in particular is defined by [Tree.Path.of_node curr_region]. *)
-        Tree.unsafe_max_by_level
-          (Type.region_exn ~here:[%here] matchee
-           :: List.map closure.variables ~f:(fun type_ ->
-             Type.region_exn ~here:[%here] type_))
-      in
       visit_region ~state curr_region;
       curr_region
     in
@@ -1006,10 +985,10 @@ let suspend ~state ~curr_region ({ matchee; case; closure; else_ } : Suspended_m
       { run =
           (fun s ->
             let curr_region = curr_region_of_closure () in
-            (* Solve case *)
-            case ~curr_region s;
             (* Remove guards for each variable in closure *)
             List.iter closure.variables ~f:(fun type_ -> remove_guard ~state type_ guard);
+            (* Solve case *)
+            case ~curr_region s;
             [%log.global.debug
               "Generalization tree after solving case"
                 (state.generalization_tree : Generalization_tree.t)])
