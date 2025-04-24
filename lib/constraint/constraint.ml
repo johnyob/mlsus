@@ -43,9 +43,20 @@ module Var = Var.Make (struct
   end)
 
 module Closure = struct
-  type t = { type_vars : Type.Var.Set.t } [@@unboxed] [@@deriving sexp]
+  type t =
+    { type_vars : Type.Var.Set.t
+    ; vars : Var.Set.t
+    }
+  [@@deriving sexp]
 
-  let of_list type_vars = { type_vars = Type.Var.Set.of_list type_vars }
+  let of_list type_or_schemes =
+    let type_vars, vars =
+      List.partition_map type_or_schemes ~f:(function
+        | `Type type_var -> First type_var
+        | `Scheme var -> Second var)
+    in
+    { type_vars = Type.Var.Set.of_list type_vars; vars = Var.Set.of_list vars }
+  ;;
 end
 
 type t =

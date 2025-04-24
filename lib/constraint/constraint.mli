@@ -34,7 +34,7 @@ end
 module Var : Var.S
 
 module Closure : sig
-  type t = { type_vars : Type.Var.Set.t } [@@unboxed] [@@deriving sexp]
+  type t = { type_vars : Type.Var.Set.t; vars: Var.Set.t } [@@deriving sexp]
 end
 
 (** [t] is a constraint *)
@@ -87,7 +87,7 @@ val inst : Var.t -> Type.t -> t
 
 val match_
   :  Type.Var.t
-  -> closure:Type.Var.t list
+  -> closure:[< `Type of Type.Var.t | `Scheme of Var.t] list
   -> with_:(Type.Matchee.t -> t)
   -> else_:(unit -> t)
   -> t
