@@ -322,7 +322,7 @@ let%expect_test "Partial generic becomes instance" =
           (in_
            (Match (matchee ((id 0) (name Type.Var)))
             (closure
-             ((type_vars (((id 1) (name Type.Var)) ((id 2) (name Type.Var))))))
+             ((type_vars (((id 2) (name Type.Var)) ((id 1) (name Type.Var))))))
             (case <fun>) (else_ <fun>)))
           (type_ (Var ((id 2) (name Type.Var)))))
          (Conj
@@ -524,7 +524,7 @@ let%expect_test "Partial ungeneralization (Partial<>Instance)" =
           (in_
            (Match (matchee ((id 0) (name Type.Var)))
             (closure
-             ((type_vars (((id 1) (name Type.Var)) ((id 2) (name Type.Var))))))
+             ((type_vars (((id 2) (name Type.Var)) ((id 1) (name Type.Var))))))
             (case <fun>) (else_ <fun>)))
           (type_ (Var ((id 2) (name Type.Var)))))
          (Conj
@@ -584,7 +584,7 @@ let%expect_test "Partial ungeneralization (Partial<>Partial)" =
              (in_
               (Match (matchee ((id 0) (name Type.Var)))
                (closure
-                ((type_vars (((id 2) (name Type.Var)) ((id 3) (name Type.Var))))))
+                ((type_vars (((id 3) (name Type.Var)) ((id 2) (name Type.Var))))))
                (case <fun>) (else_ <fun>)))
              (type_ (Var ((id 3) (name Type.Var)))))
             (Conj
