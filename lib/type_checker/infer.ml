@@ -265,7 +265,9 @@ struct
           &~ lower hd_type
           &~ match_
                hd_type
-               ~closure:([ ret; hd_type ] @ X.arg_closure arg)
+               ~closure:
+                 ([ ret; hd_type ] @ X.arg_closure arg
+                  |> List.map ~f:(fun type_var -> `Type type_var))
                ~with_:(function
                  | App _ | Spine _ -> assert false
                  | (Head (Arrow | Tuple _) | Rigid_var) as matchee ->
