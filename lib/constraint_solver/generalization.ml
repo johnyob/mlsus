@@ -130,6 +130,7 @@ module Guard = struct
     val is_subset : 's t -> of_:'s t -> bool
 
     module Match : sig
+      val is_empty : _ t -> bool
       val iter : 's t -> f:(key:Match_identifier.t -> data:'s -> unit) -> unit
     end
   end = struct
@@ -206,6 +207,7 @@ module Guard = struct
 
     module Match = struct
       let iter t ~f = Map.iteri t.match_map ~f
+      let is_empty t = Map.is_empty t.match_map
     end
   end
 end
@@ -1195,8 +1197,12 @@ let generalize_young_region ~state (young_region : Young_region.t) =
     List.filter generics ~f:(fun type_ ->
       let structure = Type.structure type_ in
       match structure.status, structure.inner with
-      | _, Var (Empty_one_or_more_handlers _) -> true
-      | Partial _, _ -> not (Guard.Map.is_empty structure.guards)
+      | _, Var (Empty_one_or_more_handlers _) ->
+        (* Must contain handlers *)
+        true
+      | Partial _, _ ->
+        (* Or be guarded by a match handler *)
+        not (Guard.Map.Match.is_empty structure.guards)
       | _ -> false)
   in
   [%log.global.debug
