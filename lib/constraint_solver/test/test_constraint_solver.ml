@@ -53,8 +53,8 @@ let%expect_test "Cannot resume suspended generic" =
     ("Constraint is unsatisfiable"
      (cst
       (Exists ((id 0) (name Type.Var))
-       (Match (matchee ((id 0) (name Type.Var))) (closure ((type_vars ())))
-        (case <fun>) (else_ <fun>))))
+       (Match (matchee ((id 0) (name Type.Var)))
+        (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>))))
      (err
       ((it
         (Unsatisfiable
@@ -72,7 +72,11 @@ let%expect_test "Cannot unsuspend undetermined" =
   let a1 = T.Var.create ~id_source () in
   let cst =
     exists a1
-    @@ match_ a1 ~closure:[ a1 ] ~with_:(fun _ -> T.var a1 =~ tint) ~else_:else_unsat_err
+    @@ match_
+         a1
+         ~closure:[ `Type a1 ]
+         ~with_:(fun _ -> T.var a1 =~ tint)
+         ~else_:else_unsat_err
   in
   print_solve_result cst;
   [%expect
@@ -81,7 +85,7 @@ let%expect_test "Cannot unsuspend undetermined" =
      (cst
       (Exists ((id 0) (name Type.Var))
        (Match (matchee ((id 0) (name Type.Var)))
-        (closure ((type_vars (((id 0) (name Type.Var)))))) (case <fun>)
+        (closure ((type_vars (((id 0) (name Type.Var)))) (vars ()))) (case <fun>)
         (else_ <fun>))))
      (err
       ((it
@@ -125,8 +129,8 @@ let%expect_test "Can unsuspend determined (pre)" =
        (Conj
         (Eq (Var ((id 0) (name Type.Var)))
          (App (Spine ()) (Head (Constr ((id 0) (name int))))))
-        (Match (matchee ((id 0) (name Type.Var))) (closure ((type_vars ())))
-         (case <fun>) (else_ <fun>))))))
+        (Match (matchee ((id 0) (name Type.Var)))
+         (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>))))))
     |}]
 ;;
 
@@ -159,8 +163,8 @@ let%expect_test "Can unsuspend determined (post)" =
      (cst
       (Exists ((id 0) (name Type.Var))
        (Conj
-        (Match (matchee ((id 0) (name Type.Var))) (closure ((type_vars ())))
-         (case <fun>) (else_ <fun>))
+        (Match (matchee ((id 0) (name Type.Var)))
+         (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>))
         (Eq (Var ((id 0) (name Type.Var)))
          (App (Spine ()) (Head (Constr ((id 0) (name int))))))))))
     |}]
@@ -174,10 +178,14 @@ let%expect_test "Cannot unsuspend circular dependencies" =
   let cst =
     exists a1
     @@ exists a2
-    @@ (match_ a1 ~closure:[ a2 ] ~with_:(fun _ -> T.var a2 =~ tint) ~else_:else_unsat_err
+    @@ (match_
+          a1
+          ~closure:[ `Type a2 ]
+          ~with_:(fun _ -> T.var a2 =~ tint)
+          ~else_:else_unsat_err
         &~ match_
              a2
-             ~closure:[ a1 ]
+             ~closure:[ `Type a1 ]
              ~with_:(fun _ -> T.var a1 =~ tint)
              ~else_:else_unsat_err)
   in
@@ -190,11 +198,11 @@ let%expect_test "Cannot unsuspend circular dependencies" =
        (Exists ((id 1) (name Type.Var))
         (Conj
          (Match (matchee ((id 0) (name Type.Var)))
-          (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
-          (else_ <fun>))
+          (closure ((type_vars (((id 1) (name Type.Var)))) (vars ())))
+          (case <fun>) (else_ <fun>))
          (Match (matchee ((id 1) (name Type.Var)))
-          (closure ((type_vars (((id 0) (name Type.Var)))))) (case <fun>)
-          (else_ <fun>))))))
+          (closure ((type_vars (((id 0) (name Type.Var)))) (vars ())))
+          (case <fun>) (else_ <fun>))))))
      (err
       ((it
         (Unsatisfiable
@@ -217,7 +225,7 @@ let%expect_test "Can unsuspend topological dependencies" =
     @@ (T.(var a1 =~ tint)
         &~ match_
              a1
-             ~closure:[ a2 ]
+             ~closure:[ `Type a2 ]
              ~with_:(fun _ -> T.var a2 =~ tint)
              ~else_:else_unsat_err
         &~ match_ a2 ~closure:[] ~with_:(fun _ -> tt) ~else_:else_unsat_err)
@@ -234,10 +242,10 @@ let%expect_test "Can unsuspend topological dependencies" =
           (Eq (Var ((id 0) (name Type.Var)))
            (App (Spine ()) (Head (Constr ((id 0) (name int))))))
           (Match (matchee ((id 0) (name Type.Var)))
-           (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
-           (else_ <fun>)))
-         (Match (matchee ((id 1) (name Type.Var))) (closure ((type_vars ())))
-          (case <fun>) (else_ <fun>)))))))
+           (closure ((type_vars (((id 1) (name Type.Var)))) (vars ())))
+           (case <fun>) (else_ <fun>)))
+         (Match (matchee ((id 1) (name Type.Var)))
+          (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>)))))))
     |}]
 ;;
 
@@ -327,7 +335,7 @@ let%expect_test "Partial generic becomes instance" =
                 ([ Flexible, a3 ]
                  @. match_
                       a1
-                      ~closure:[ a3; a2 ]
+                      ~closure:[ `Type a3; `Type a2 ]
                       ~with_:(fun _ -> T.(var a3 =~ var a2) &~ T.(var a2 =~ tint))
                       ~else_:else_unsat_err
                  @=> T.var a3))
@@ -345,7 +353,8 @@ let%expect_test "Partial generic becomes instance" =
           (in_
            (Match (matchee ((id 0) (name Type.Var)))
             (closure
-             ((type_vars (((id 2) (name Type.Var)) ((id 1) (name Type.Var))))))
+             ((type_vars (((id 2) (name Type.Var)) ((id 1) (name Type.Var))))
+              (vars ())))
             (case <fun>) (else_ <fun>)))
           (type_ (Var ((id 2) (name Type.Var)))))
          (Conj
@@ -370,7 +379,7 @@ let%expect_test "Partial generic becomes generic" =
                 ([ Flexible, a2 ]
                  @. match_
                       a1
-                      ~closure:[ a2 ]
+                      ~closure:[ `Type a2 ]
                       ~with_:(fun _ -> exists a3 @@ T.(var a2 =~ var a3 @-> var a3))
                       ~else_:else_unsat_err
                  @=> T.var a2))
@@ -389,8 +398,8 @@ let%expect_test "Partial generic becomes generic" =
         ((type_vars ((Flexible ((id 1) (name Type.Var)))))
          (in_
           (Match (matchee ((id 0) (name Type.Var)))
-           (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
-           (else_ <fun>)))
+           (closure ((type_vars (((id 1) (name Type.Var)))) (vars ())))
+           (case <fun>) (else_ <fun>)))
          (type_ (Var ((id 1) (name Type.Var)))))
         (Conj
          (Conj
@@ -425,14 +434,18 @@ let%expect_test "Propagating changes during partial generalization" =
          x1#=(poly_scheme
                 ([ Flexible, a3 ]
                  @. ((* This match forces [a3] to be partially generic *)
-                     match_ a1 ~closure:[ a3 ] ~with_:(fun _ -> tt) ~else_:else_unsat_err
+                     match_
+                       a1
+                       ~closure:[ `Type a3 ]
+                       ~with_:(fun _ -> tt)
+                       ~else_:else_unsat_err
                      &~
                      (* This match is resolved after [a2] is unified with int.
                           But since [a3] is still partially generic, the structure of [a3] is
                           not propagated to [a4]. This causes a bug. *)
                      match_
                        a2
-                       ~closure:[ a3 ]
+                       ~closure:[ `Type a3 ]
                        ~with_:(fun _ -> T.(var a3 =~ tint))
                        ~else_:else_unsat_err)
                  @=> T.var a3))
@@ -442,7 +455,7 @@ let%expect_test "Propagating changes during partial generalization" =
                 &~ T.(var a2 =~ tint)
                 &~ match_
                      a4
-                     ~closure:[ a1 ]
+                     ~closure:[ `Type a1 ]
                      ~with_:(fun _ -> T.(var a1 =~ tint))
                      ~else_:else_unsat_err))
   in
@@ -458,11 +471,11 @@ let%expect_test "Propagating changes during partial generalization" =
           (in_
            (Conj
             (Match (matchee ((id 0) (name Type.Var)))
-             (closure ((type_vars (((id 2) (name Type.Var)))))) (case <fun>)
-             (else_ <fun>))
+             (closure ((type_vars (((id 2) (name Type.Var)))) (vars ())))
+             (case <fun>) (else_ <fun>))
             (Match (matchee ((id 1) (name Type.Var)))
-             (closure ((type_vars (((id 2) (name Type.Var)))))) (case <fun>)
-             (else_ <fun>))))
+             (closure ((type_vars (((id 2) (name Type.Var)))) (vars ())))
+             (case <fun>) (else_ <fun>))))
           (type_ (Var ((id 2) (name Type.Var)))))
          (Exists ((id 3) (name Type.Var))
           (Conj
@@ -472,8 +485,8 @@ let%expect_test "Propagating changes during partial generalization" =
             (Eq (Var ((id 1) (name Type.Var)))
              (App (Spine ()) (Head (Constr ((id 0) (name int)))))))
            (Match (matchee ((id 3) (name Type.Var)))
-            (closure ((type_vars (((id 0) (name Type.Var)))))) (case <fun>)
-            (else_ <fun>)))))))))
+            (closure ((type_vars (((id 0) (name Type.Var)))) (vars ())))
+            (case <fun>) (else_ <fun>)))))))))
     |}]
 ;;
 
@@ -491,12 +504,12 @@ let%expect_test "loop" =
         | App (spine, constr) ->
           match_
             spine
-            ~closure:[ constr ]
+            ~closure:[ `Type constr ]
             ~with_:(function
               | Spine [ t1; t2 ] ->
                 match_
                   constr
-                  ~closure:[ t1; t2 ]
+                  ~closure:[ `Type t1; `Type t2 ]
                   ~with_:(function
                     | Head (Constr constr) when T.Ident.(constr = tapp_ident) ->
                       T.(var t1 =~ tapp (var t1) (var t2))
@@ -526,10 +539,10 @@ let%expect_test "loop" =
         (Exists ((id 2) (name Type.Var))
          (Conj
           (Conj
-           (Match (matchee ((id 1) (name Type.Var))) (closure ((type_vars ())))
-            (case <fun>) (else_ <fun>))
-           (Match (matchee ((id 2) (name Type.Var))) (closure ((type_vars ())))
-            (case <fun>) (else_ <fun>)))
+           (Match (matchee ((id 1) (name Type.Var)))
+            (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>))
+           (Match (matchee ((id 2) (name Type.Var)))
+            (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>)))
           (Eq (Var ((id 1) (name Type.Var)))
            (App
             (Spine
@@ -553,7 +566,7 @@ let%expect_test "Partial ungeneralization (Partial<>Instance)" =
                 ([ Flexible, a3 ]
                  @. match_
                       a1
-                      ~closure:[ a3; a2 ]
+                      ~closure:[ `Type a3; `Type a2 ]
                       ~with_:(fun _ -> T.(var a3 =~ var a2))
                       ~else_:else_unsat_err
                  @=> T.var a3))
@@ -571,7 +584,8 @@ let%expect_test "Partial ungeneralization (Partial<>Instance)" =
           (in_
            (Match (matchee ((id 0) (name Type.Var)))
             (closure
-             ((type_vars (((id 2) (name Type.Var)) ((id 1) (name Type.Var))))))
+             ((type_vars (((id 2) (name Type.Var)) ((id 1) (name Type.Var))))
+              (vars ())))
             (case <fun>) (else_ <fun>)))
           (type_ (Var ((id 2) (name Type.Var)))))
          (Conj
@@ -610,7 +624,7 @@ let%expect_test "Partial ungeneralization (Partial<>Partial)" =
                              ([ Flexible, a4 ]
                               @. match_
                                    a1
-                                   ~closure:[ a4; a3 ]
+                                   ~closure:[ `Type a4; `Type a3 ]
                                    ~with_:(fun _ -> T.(var a4 =~ var a3))
                                    ~else_:else_unsat_err
                               @=> T.var a4))
@@ -633,7 +647,8 @@ let%expect_test "Partial ungeneralization (Partial<>Partial)" =
              (in_
               (Match (matchee ((id 0) (name Type.Var)))
                (closure
-                ((type_vars (((id 3) (name Type.Var)) ((id 2) (name Type.Var))))))
+                ((type_vars (((id 3) (name Type.Var)) ((id 2) (name Type.Var))))
+                 (vars ())))
                (case <fun>) (else_ <fun>)))
              (type_ (Var ((id 3) (name Type.Var)))))
             (Conj
@@ -668,7 +683,7 @@ let%expect_test "Partials propagate to same instance group" =
                 ([ Flexible, a2; Flexible, a3 ]
                  @. match_
                       a1
-                      ~closure:[ a2; a3 ]
+                      ~closure:[ `Type a2; `Type a3 ]
                       ~with_:(fun _ -> T.(var a2 =~ var a3))
                       ~else_:else_unsat_err
                  @=> T.(var a3 @-> var a2)))
@@ -692,7 +707,8 @@ let%expect_test "Partials propagate to same instance group" =
          (in_
           (Match (matchee ((id 0) (name Type.Var)))
            (closure
-            ((type_vars (((id 1) (name Type.Var)) ((id 2) (name Type.Var))))))
+            ((type_vars (((id 1) (name Type.Var)) ((id 2) (name Type.Var))))
+             (vars ())))
            (case <fun>) (else_ <fun>)))
          (type_
           (App
@@ -735,10 +751,14 @@ let%expect_test "Detect SCC cycle accross regions" =
     @@ let_
          x1#=(poly_scheme
                 ([ Flexible, a2; Flexible, a3 ]
-                 @. (match_ a2 ~closure:[ a3 ] ~with_:(fun _ -> tt) ~else_:else_unsat_err
+                 @. (match_
+                       a2
+                       ~closure:[ `Type a3 ]
+                       ~with_:(fun _ -> tt)
+                       ~else_:else_unsat_err
                      &~ match_
                           a3
-                          ~closure:[ a2 ]
+                          ~closure:[ `Type a2 ]
                           ~with_:(fun _ -> tt)
                           ~else_:else_unsat_err
                      &~ T.(var a2 =~ var a1))
@@ -759,11 +779,11 @@ let%expect_test "Detect SCC cycle accross regions" =
           (Conj
            (Conj
             (Match (matchee ((id 1) (name Type.Var)))
-             (closure ((type_vars (((id 2) (name Type.Var)))))) (case <fun>)
-             (else_ <fun>))
+             (closure ((type_vars (((id 2) (name Type.Var)))) (vars ())))
+             (case <fun>) (else_ <fun>))
             (Match (matchee ((id 2) (name Type.Var)))
-             (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
-             (else_ <fun>)))
+             (closure ((type_vars (((id 1) (name Type.Var)))) (vars ())))
+             (case <fun>) (else_ <fun>)))
            (Eq (Var ((id 1) (name Type.Var))) (Var ((id 0) (name Type.Var))))))
          (type_
           (App
@@ -808,13 +828,13 @@ let%expect_test "" =
                 ([ Flexible, a2 ]
                  @. (match_
                        a1
-                       ~closure:[ a2 ]
+                       ~closure:[ `Type a2 ]
                        ~with_:(fun _ ->
                          exists_many [ a3; a4 ] @@ T.(var a2 =~ var a3 @-> var a4))
                        ~else_:else_unsat_err
                      &~ match_
                           a5
-                          ~closure:[ a2 ]
+                          ~closure:[ `Type a2 ]
                           ~with_:(fun _ -> T.(var a2 =~ tint @-> tint))
                           ~else_:else_unsat_err)
                  @=> T.(var a2)))
@@ -842,11 +862,11 @@ let%expect_test "" =
             (in_
              (Conj
               (Match (matchee ((id 0) (name Type.Var)))
-               (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
-               (else_ <fun>))
+               (closure ((type_vars (((id 1) (name Type.Var)))) (vars ())))
+               (case <fun>) (else_ <fun>))
               (Match (matchee ((id 4) (name Type.Var)))
-               (closure ((type_vars (((id 1) (name Type.Var)))))) (case <fun>)
-               (else_ <fun>))))
+               (closure ((type_vars (((id 1) (name Type.Var)))) (vars ())))
+               (case <fun>) (else_ <fun>))))
             (type_ (Var ((id 1) (name Type.Var)))))
            (Conj
             (Conj
@@ -859,5 +879,145 @@ let%expect_test "" =
               (Var ((id 6) (name Type.Var)))))
             (Eq (Var ((id 4) (name Type.Var)))
              (App (Spine ()) (Head (Constr ((id 0) (name int))))))))))))))
+    |}]
+;;
+
+let%expect_test "" =
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let x1 = Var.create ~id_source () in
+  let cst =
+    exists a1
+    @@ let_
+         x1#=(poly_scheme @@ [ Flexible, a2 ] @. tt @=> T.(var a2 @-> var a2))
+         ~in_:
+           (match_
+              a1
+              ~closure:[ `Type a1; `Scheme x1 ]
+              ~with_:(fun _ -> inst x1 (T.var a1))
+              ~else_:else_unsat_err
+            &~ T.(var a1 =~ tint @-> tint))
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is satisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Let ((id 2) (name Constraint.Var))
+        ((type_vars ((Flexible ((id 1) (name Type.Var))))) (in_ True)
+         (type_
+          (App
+           (Spine
+            ((Var ((id 1) (name Type.Var))) (Var ((id 1) (name Type.Var)))))
+           (Head Arrow))))
+        (Conj
+         (Match (matchee ((id 0) (name Type.Var)))
+          (closure
+           ((type_vars (((id 0) (name Type.Var))))
+            (vars (((id 2) (name Constraint.Var))))))
+          (case <fun>) (else_ <fun>))
+         (Eq (Var ((id 0) (name Type.Var)))
+          (App
+           (Spine
+            ((App (Spine ()) (Head (Constr ((id 0) (name int)))))
+             (App (Spine ()) (Head (Constr ((id 0) (name int)))))))
+           (Head Arrow))))))))
+    |}]
+;;
+
+let%expect_test "" =
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let x1 = Var.create ~id_source () in
+  let x2 = Var.create ~id_source () in
+  let cst =
+    exists_many [ a1 ]
+    @@ let_
+         x1#=(poly_scheme
+              @@ [ Flexible, a2 ]
+              @. let_
+                   x2#=(mono_scheme (T.var a2))
+                   ~in_:
+                     (match_
+                        a1
+                        ~closure:[ `Scheme x2 ]
+                        ~with_:(fun _ -> inst x2 tint)
+                        ~else_:else_unsat_err)
+              @=> T.var a2)
+         ~in_:T.(var a1 =~ tint)
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is satisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Let ((id 2) (name Constraint.Var))
+        ((type_vars ((Flexible ((id 1) (name Type.Var)))))
+         (in_
+          (Let ((id 3) (name Constraint.Var))
+           ((type_vars ()) (in_ True) (type_ (Var ((id 1) (name Type.Var)))))
+           (Match (matchee ((id 0) (name Type.Var)))
+            (closure ((type_vars ()) (vars (((id 3) (name Constraint.Var))))))
+            (case <fun>) (else_ <fun>))))
+         (type_ (Var ((id 1) (name Type.Var)))))
+        (Eq (Var ((id 0) (name Type.Var)))
+         (App (Spine ()) (Head (Constr ((id 0) (name int))))))))))
+    |}]
+;;
+
+let%expect_test "" =
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let x1 = Var.create ~id_source () in
+  let x2 = Var.create ~id_source () in
+  let cst =
+    exists_many [ a1 ]
+    @@ let_
+         x1#=(poly_scheme
+              @@ [ Flexible, a2 ]
+              @. let_
+                   x2#=(mono_scheme (T.var a2))
+                   ~in_:
+                     (match_
+                        a1
+                        ~closure:[ `Scheme x2 ]
+                        ~with_:(fun _ -> inst x2 tint)
+                        ~else_:else_unsat_err)
+              @=> T.var a2)
+         ~in_:T.(var a1 =~ tint &~ inst x1 tstring)
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is unsatisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Let ((id 2) (name Constraint.Var))
+        ((type_vars ((Flexible ((id 1) (name Type.Var)))))
+         (in_
+          (Let ((id 3) (name Constraint.Var))
+           ((type_vars ()) (in_ True) (type_ (Var ((id 1) (name Type.Var)))))
+           (Match (matchee ((id 0) (name Type.Var)))
+            (closure ((type_vars ()) (vars (((id 3) (name Constraint.Var))))))
+            (case <fun>) (else_ <fun>))))
+         (type_ (Var ((id 1) (name Type.Var)))))
+        (Conj
+         (Eq (Var ((id 0) (name Type.Var)))
+          (App (Spine ()) (Head (Constr ((id 0) (name int))))))
+         (Instance ((id 2) (name Constraint.Var))
+          (App (Spine ()) (Head (Constr ((id 1) (name string))))))))))
+     (err
+      ((it
+        (Cannot_unify (App (Spine ()) (Head (Constr ((id 0) (name int)))))
+         (App (Spine ()) (Head (Constr ((id 1) (name string)))))))
+       (range ()))))
     |}]
 ;;
