@@ -86,15 +86,11 @@ let rec gtype_of_type : state:State.t -> env:Env.t -> C.Type.t -> G.Type.t =
   let self = gtype_of_type ~state ~env in
   match type_ with
   | Var type_var -> Env.find_type_var env type_var
-  | Arrow (type1, type2) ->
-    G.create_former ~state ~curr_region:env.curr_region (Arrow (self type1, self type2))
-  | Tuple types ->
-    G.create_former ~state ~curr_region:env.curr_region (Tuple (List.map types ~f:self))
-  | Constr (args, constr) ->
-    G.create_former
-      ~state
-      ~curr_region:env.curr_region
-      (Constr (List.map args ~f:self, constr))
+  | App (type1, type2) ->
+    G.create_former ~state ~curr_region:env.curr_region (App (self type1, self type2))
+  | Spine types ->
+    G.create_former ~state ~curr_region:env.curr_region (Spine (List.map types ~f:self))
+  | Head hd -> G.create_former ~state ~curr_region:env.curr_region (Head hd)
 ;;
 
 let match_type : state:State.t -> env:Env.t -> G.Type.t G.R.t -> Env.t * C.Type.Matchee.t =
@@ -106,10 +102,10 @@ let match_type : state:State.t -> env:Env.t -> G.Type.t G.R.t -> Env.t * C.Type.
   in
   match former with
   | Rigid_var -> env, Rigid_var
-  | Structure (Tuple gtypes) ->
+  | Structure (Spine gtypes) ->
     let env, type_vars = match_types ~env gtypes in
-    env, Tuple type_vars
-  | Structure (Arrow (gtype1, gtype2)) ->
+    env, Spine type_vars
+  | Structure (App (gtype1, gtype2)) ->
     let type_var1 = C.Type.Var.create ~id_source:state.id_source () in
     let type_var2 = C.Type.Var.create ~id_source:state.id_source () in
     let env =
@@ -117,10 +113,8 @@ let match_type : state:State.t -> env:Env.t -> G.Type.t G.R.t -> Env.t * C.Type.
       |> Env.bind_type_var ~var:type_var1 ~type_:gtype1
       |> Env.bind_type_var ~var:type_var2 ~type_:gtype2
     in
-    env, Arrow (type_var1, type_var2)
-  | Structure (Constr (gtypes, constr)) ->
-    let env, type_vars = match_types ~env gtypes in
-    env, Constr (type_vars, constr)
+    env, App (type_var1, type_var2)
+  | Structure (Head hd) -> env, Head hd
 ;;
 
 let forall ~(state : State.t) ~env ~type_var =

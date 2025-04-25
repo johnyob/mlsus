@@ -4,9 +4,9 @@ module type S = Mlsus_unifier.Structure.S
 
 module Former = struct
   type 'a t =
-    | Arrow of 'a * 'a
-    | Tuple of 'a list
-    | Constr of 'a list * Type_ident.t
+    | App of 'a * 'a
+    | Spine of 'a list
+    | Head of Type_head.t
   [@@deriving sexp]
 
   type 'a ctx = unit
@@ -15,43 +15,40 @@ module Former = struct
 
   let iter t ~f =
     match t with
-    | Arrow (t1, t2) ->
+    | App (t1, t2) ->
       f t1;
       f t2
-    | Tuple ts -> List.iter ts ~f
-    | Constr (ts, _) -> List.iter ts ~f
+    | Spine ts -> List.iter ts ~f
+    | Head _ -> ()
   ;;
 
   let map t ~f =
     match t with
-    | Arrow (t1, t2) -> Arrow (f t1, f t2)
-    | Tuple ts -> Tuple (List.map ts ~f)
-    | Constr (ts, constr) -> Constr (List.map ts ~f, constr)
+    | App (t1, t2) -> App (f t1, f t2)
+    | Spine ts -> Spine (List.map ts ~f)
+    | Head hd -> Head hd
   ;;
 
   let copy t ~f = map t ~f
 
   let fold t ~f ~init =
     match t with
-    | Arrow (t1, t2) -> f t2 (f t1 init)
-    | Tuple ts -> List.fold_right ts ~f ~init
-    | Constr (ts, _) -> List.fold_right ts ~f ~init
+    | App (t1, t2) -> f t2 (f t1 init)
+    | Spine ts -> List.fold_right ts ~f ~init
+    | Head _ -> init
   ;;
 
   let merge ~ctx:() ~create:_ ~unify ~type1:_ ~type2:_ t1 t2 =
     match t1, t2 with
-    | Arrow (t11, t12), Arrow (t21, t22) ->
+    | App (t11, t12), App (t21, t22) ->
       unify t11 t21;
       unify t12 t22;
       t1
-    | Tuple ts1, Tuple ts2 ->
+    | Spine ts1, Spine ts2 ->
       (match List.iter2 ts1 ts2 ~f:unify with
        | Ok () -> t1
        | Unequal_lengths -> raise Cannot_merge)
-    | Constr (ts1, constr1), Constr (ts2, constr2) when Type_ident.(constr1 = constr2) ->
-      (match List.iter2 ts1 ts2 ~f:unify with
-       | Ok () -> t1
-       | Unequal_lengths -> raise Cannot_merge)
+    | Head hd1, Head hd2 when Type_head.(hd1 = hd2) -> t1
     | _ -> raise Cannot_merge
   ;;
 end
