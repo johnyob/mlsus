@@ -5,7 +5,13 @@ open Grace
 (** The module [Type] provides the concrete representation of types
     (using constraint type variables) in constraints. *)
 module Type : sig
+  (** Type identifiers for constructors *)
   module Ident : Var.S
+
+  (** Identifiers for type scheme skeletons *)
+  module Scheme_skeleton_ident : Var.S
+
+  (** Variables that represent types ['a] *)
   module Var : Var.S
 
   module Head : sig
@@ -14,7 +20,9 @@ module Type : sig
       | Arrow
       | Tuple of int
       | Constr of Ident.t
-    [@@deriving sexp]
+      | Poly
+      | Scheme of Scheme_skeleton_ident.t
+    [@@deriving equal, compare, hash, sexp]
 
     include Comparable.S with type t := t
   end
@@ -29,12 +37,49 @@ module Type : sig
     [@@deriving sexp]
   end
 
-  (** [t] represents the type [tau]. *)
+  (** [t] represents a sorted-kinded-type [tau].
+  
+      Kinds are either [*] (for monotypes) or [scm] (for type schemes), 
+      Sorts are [sp] (for spines), [hd] for heads. *)
   type t =
     | Head of Head.t (** [F] *)
     | App of t * t (** [tau1 tau2] where [tau1] is a spine and [tau2] is a head *)
     | Spine of t list (** [(tau1, ..., taun)] is a spine *)
-    | Var of Var.t (** [ɑ] *)
+    | Var of Var.t (** ['ɑ] *)
+    | Defunctionalized_scheme of scheme (** [D[|sigma|]] of kind [scm] *)
+
+  (** [scheme] represents a polymorphic type. 
+  
+      Our constraint language exposes a canonical defunctionalized 
+      representation of type schemes. 
+      
+      Namely, a type scheme 
+      {v
+        forall ('b1, ..., 'bn). tau
+      v}
+      may be viewed as a function from types to types, with a closure. 
+
+      We expliclity write this as: 
+      {v
+        ['a1, ..., 'an]forall ('b1, ..., 'bn). tau
+      v}
+      where the closure ['a1, ..., 'an] is defined as  [fv(tau) \ 'b1, ..., 'bn]. 
+
+      We call the underlying function, the 'skeleton' of the type scheme. 
+      Each scheme maps to a canonical skeleton and a closure (applied to the skeleton). 
+      These heads may be exposed using suspended constraints (and matching on a scheme head). 
+    *)
+  and scheme =
+    { scheme_quantifiers : Var.t list (** The polymorphic variables of the type scheme. *)
+    ; scheme_body : t (** The type of the body *)
+    }
+  [@@deriving sexp]
+
+  (** [defunctionalized_scheme] represents a defunctionalized [sigma]. *)
+  type defunctionalized_scheme =
+    { scheme_closure : t (** [closure] of the scheme of sort [sp] *)
+    ; scheme_skeleton : Scheme_skeleton_ident.t
+    }
   [@@deriving sexp]
 
   val var : Var.t -> t
@@ -44,6 +89,9 @@ module Type : sig
   val spine : t list -> t
   val ( @% ) : t -> t -> t
   val hd : Head.t -> t
+  val poly : t -> t
+  val defunctionalized_scheme : scheme -> t
+  val ( @. ) : Var.t list -> t -> scheme
 end
 
 module Var : Var.S
@@ -58,10 +106,12 @@ type t =
   | False of Mlsus_error.t (** [false] *)
   | Conj of t * t (** [C1 /\ C2] *)
   | Eq of Type.t * Type.t (** [tau1 = tau2] *)
-  | Exists of Type.Var.t * t (** [exists overline(a). C]*)
   | Lower of Type.Var.t (** [lower(a)] *)
+  | Exists of Type.Var.t * t (** [exists 'a. C] *)
+  | Forall of Type.Var.t list * t (** [forall overline('a). C] *)
   | Let of Var.t * scheme * t (** [let x = sigma in C] *)
   | Instance of Var.t * Type.t (** [x <= tau] *)
+  | Instance_scheme of Type.defunctionalized_scheme * Type.t (** [sigma <= tau] *)
   | Match of
       { matchee : Type.Var.t
       ; closure : Closure.t
@@ -88,6 +138,7 @@ val ( &~ ) : t -> t -> t
 val all : t list -> t
 val ( =~ ) : Type.t -> Type.t -> t
 val exists : Type.Var.t -> t -> t
+val forall : Type.Var.t list -> t -> t
 val exists_many : Type.Var.t list -> t -> t
 val lower : Type.Var.t -> t
 val ( #= ) : Var.t -> scheme -> Var.t * scheme
@@ -101,6 +152,7 @@ val mono_scheme : Type.t -> scheme
 val poly_scheme : quantified_scheme -> scheme
 val let_ : Var.t * scheme -> in_:t -> t
 val inst : Var.t -> Type.t -> t
+val inst_scm : Type.defunctionalized_scheme -> Type.t -> t
 
 val match_
   :  Type.Var.t

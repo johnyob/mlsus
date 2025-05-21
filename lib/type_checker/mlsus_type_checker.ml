@@ -56,6 +56,16 @@ let check cst =
                   (var : Constraint.Var.t)
                   (range : Range.t option)
                   (cst : Constraint.t)])
+     | Unknown_scheme_skeleton_ident skel_ident ->
+       Mlsus_error.(
+         raise
+         @@ bug_s
+              ~here:[%here]
+              [%message
+                "Unknown constraint scheme skeleton ident"
+                  (skel_ident : Constraint.Type.Scheme_skeleton_ident.t)
+                  (range : Range.t option)
+                  (cst : Constraint.t)])
      | Cannot_unify (type1, type2) ->
        Mlsus_error.(
          raise

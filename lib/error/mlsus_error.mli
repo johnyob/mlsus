@@ -59,7 +59,7 @@ val ambiguous_constructor : range:Range.t -> t
 
 val disambiguation_mismatched_type
   :  range:Range.t
-  -> type_head:[ `Tuple | `Arrow | `Rigid_var ]
+  -> type_head:[ `Tuple | `Arrow | `Rigid_var | `Poly | `Scheme ]
   -> t
 
 val ambiguous_label : range:Range.t -> t

@@ -2,11 +2,13 @@ open! Import
 
 module type S = Mlsus_unifier.Structure.S
 
+module Head = Constraint.Type.Head
+
 module Former = struct
   type 'a t =
     | App of 'a * 'a
     | Spine of 'a list
-    | Head of Type_head.t
+    | Head of Head.t
   [@@deriving sexp]
 
   type 'a ctx = unit
