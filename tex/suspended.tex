@@ -1,0 +1,102 @@
+\input{\jobname.cfg}
+\newcommand{\acmart}{\True}
+
+\RequirePackage{boolean}
+
+\documentclass[acmsmall,screen,nonacm]{acmart}
+
+\usepackage{boolean}
+\usepackage{reversion}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{mylistings}
+\usepackage{mycomments}
+\usepackage{mymath}
+\usepackage{mybiblio}
+\usepackage{myhyperref}
+\usepackage{notations}
+
+% Comments
+% Use either
+%   \Xgabriel[text to comment]{your comment on the text}
+% or
+%   \Xgabriel{free comment}
+\newcommand{\Xgabriel}[2][]{\XXX{#1}{Gabriel}{purple}{#2}}
+\newcommand{\Xalistair}[2][]{\XXX{#1}{Alistair}{orange}{#2}}
+\newcommand{\Xdidier}[2][]{\XXX{#1}{Didier}{green}{#2}}
+%
+%% Uncomment this line to hide all comments.
+% \UNXXX{}
+
+\begin{document}
+
+\title{Suspended constraints for type inference of ML extensions}
+
+%%
+%% The abstract is a short summary of the work to be presented in the
+%% article.
+\begin{abstract}
+  DRAFT: this is a difficult feature. It solves some of the loose ends
+  with extensions of H-D-M type inference to a full-scale programming
+  language. We believe that it improves on the OCaml state of the art
+  (epsilon variables + bidirectional, giving warnings when it would
+  make non-principal choices).
+\end{abstract}
+
+
+%% This command processes the author and affiliation and title
+%% information and builds the first part of the formatted document.
+\maketitle
+
+\section{Introduction}
+
+Generalization is the distinguishing feature of Hindley-Damas-Milner type inference. Consider a subterm $\cletin{x = e_1}{e_2}$ of the program being inferred. We first infer a type $\tau_1$ for $e_1$, and then we \emph{generalize}: we look for variables $\bar{\alpha}$ that occur in $\tau_1$, but nowhere else in the typing context, and we assign to the variable $x$ the polymorphic type scheme $\tfor{\bar{\alpha}}{\tau_1}$. Each occurrence of $x$ in $e_2$ can use a different choice of instances $\bar{\tau'}$ of these polymorphic variables $\bar{\alpha}$, it will be elaborated into $x [\bar{\tau'}]$ at type $\tau[\bar{\alpha} := \bar{\tau'}]$. In other words, generalization turns things that are \emph{undetermined} in the definition $e_1$ into generic parameters that can be chosen differently at each use-site $x$.
+
+Qualified types~\citep*{TODO} represent additional knowledge on a type. They are used in particular in Haskell type-classes, where a constraint $\mathsf{Show}~\alpha$ represents the fact that a part of the inferred term needs to print values of type $\alpha$. A constraint on a ground type such as $\mathsf{Show}~\mathsf{Int}$ can be resolved to a known printer. But if the undetermined variable $\alpha$ becomes generalizable in a type $\tau$, we get a type-scheme $\tfor{(\alpha \mid \mathsf{Show}~\alpha)}{\tau}$ that also includes the type-class constraint.
+
+DRAFT: Type-classes let each use-site choose a different typeclass instance -- but this implies dictionary-passing or specialization. Sometimes we want the choice to be shared by all use-sites: TODO introduce suspended constraints. But: generalization becomes tricky.
+\begin{itemize}
+\item easy case: the choice is resolved while typing the definition
+\item hard case: an a-priori generalizable variable is captured in a frozen constraint
+\item question: what to do when the frozen variable is generalizable?
+\item another difficulty: supporting default clauses in the failure case
+\end{itemize}
+
+Different kind of difficulties:
+\begin{itemize}
+\item finding a reasonable declarative semantics for the behavior we want
+\item implementing a solver, which is quite hard
+\end{itemize}
+
+\section{Suspended constraints}
+
+(Only the constraint syntax, not constraint-solving yet. The point is to show examples in a concrete way.)
+
+\subsection{Constraint-solving: an intuition}
+
+\section{Various features using suspended constraints}
+
+\begin{itemize}
+\item type-based disambiguation of data constructors (and record fields)
+\item polytypes (are we sure?)
+\item anti-unification-based overloading (are we sure?)
+\end{itemize}
+
+\section{Semantics of constraints}
+
+\section{Solving constraints}
+
+\section{Comparison with other inference approaches}
+
+\subsection{Suspended constraints in OutsideIn}
+\subsection{Suspended constraints in dependent-type systems}
+\subsection{Bi-directional type inference}
+\subsection{Principality tracking in OCaml}
+
+% \begin{acks}
+% \end{acks}
+
+\bibliography{suspended}
+
+\end{document}
