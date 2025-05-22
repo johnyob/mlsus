@@ -1,0 +1,40 @@
+\usepackage{amsmath}
+\usepackage{amsthm}
+
+\usepackage{mathpartir}
+\newcommand{\mathparinit}{
+% spacing below and above mathpar blocks
+\abovedisplayskip .5em
+\belowdisplayskip .5em
+}
+\newcommand{\Rule}[1]{\hyperlink{#1}{\TirName {#1}}}
+\renewcommand{\DefTirName}[1]{\hypertarget{#1}{\TirName {#1}}}
+
+\newtheorem*{notation}{Notation}
+
+\newtheorem{fact}{Fact}
+
+\newenvironment{remark}
+   {\paragraph{Remark}}
+   {}
+
+% This looks like a space hack, but it's not! The point
+% is to remove a visually-ugly stacking of spacings coming
+% from the figure and the math environment.
+\newenvironment{mathparfig}[3][htb!]
+   {\begin{figure}[#1]
+       \abovedisplayskip 0em
+       \belowdisplayskip 0em
+       \def \LABEL{#2}
+       \def \CAPTION{#3}
+       \begin{mathpar}}
+       {\end{mathpar}
+       \caption{\CAPTION}
+       \label{\LABEL}
+     \end{figure}}
+
+\newenvironment{mathline}
+   {\abovedisplayskip 0.1em
+    \belowdisplayskip 0.1em
+    \begin{mathpar}}
+   {\end{mathpar}}

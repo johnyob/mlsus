@@ -1,0 +1,156 @@
+%  Boolean --- Boolean expressions
+%
+%  Copyright (C) 2006 Didier Rémy
+%
+%  Author         : Didier Remy 
+%  Version        : 0.1
+%  Bug Reports    : to author
+%  Web Site       : http://pauillac.inria.fr/~remy/latex/
+% 
+%  Boolean is free software; you can redistribute it and/or modify
+%  it under the terms of the GNU General Public License as published by
+%  the Free Software Foundation; either version 2, or (at your option)
+%  any later version.
+%  
+%  Boolean is distributed in the hope that it will be useful,
+%  but WITHOUT ANY WARRANTY; without even the implied warranty of
+%  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%  GNU General Public License for more details 
+%  (http://pauillac.inria.fr/~remy/license/GPL).
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  File boolean.sty (LaTeX macros)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{boolean}
+    [2006/10/05 version 0.1  Boolean expressions]
+
+%% This package  provides LaTeX with boolean expressions 
+
+%% Identification
+%% Preliminary declaratitons
+
+\newcommand {\True}[2]{#1}
+\newcommand {\False}[2]{#2}
+
+\let \bln@true \True
+\let \bln@false \False
+
+%% Options
+
+\let \bln@withstring \bln@false
+\DeclareOption {string}{\let \bln@withstring \bln@true}
+\ProcessOptions
+
+%% Public commands (also given inner hidden names)
+
+\newcommand {\BAnd}[2]{#1{#2}{\bln@false}}
+\newcommand {\BOr}[2]{#1{\bln@true}{#2}}
+\newcommand {\BNot}[1]{#1{\bln@false}{\bln@true}}
+\newcommand {\BIfThenElse}[3]{#1{#2}{#3}}
+
+\let \bln@and \BAnd
+\let \bln@or  \BOr
+\let \bln@not \BNot
+\let \bln@ifthenelse  \BIfThenElse
+
+
+%% To convert if.. macros into Booleans: 
+
+\newcommand {\texbool}[1]
+    {#1\let \bln@do \bln@true \else \let \bln@do \bln@false\fi \bln@do}
+\newcommand {\nottexbool}[1]
+    {#1\let \bln@do \bln@false \else \let \bln@do \bln@true\fi \bln@do}
+%% Does not work
+\let \bln@tex \texbool
+\let \bln@nottex \nottexbool
+
+\newcommand {\ifxbool}[2]
+    {\ifx #1#2\let \bln@do \bln@true \else \let \bln@do \bln@false \fi \bln@do}
+\let \bln@ifx \ifxbool
+
+\newcommand {\ifybool}[2]
+    {\def \bln@testa{#1}\ifxbool{\bln@testa}{#2}}
+\let \bln@ify \ifybool
+
+\newcommand {\ifequalbool}[2]
+    {\def \bln@testa{#1}\def \bln@testb{#2}\ifxbool{\bln@testa}{\bln@testb}}
+\let \bln@ifequal \ifequalbool
+
+\def \bln@empty {}
+\newcommand {\IsEmpty}[1]
+    {\ifybool{#1}{\bln@empty}}
+\newcommand {\IsxEmpty}[1]
+    {\ifxbool{#1}{\bln@empty}}
+\let \bln@isempty \IsEmpty
+\let \bln@isxempty \IsxEmpty
+
+%% To force evaluation, e.g. if a blnlean expression is to be used several
+%% times. This takes a Boolean expression and returns a Boolean value, i.e. 
+%% \True or \False.
+
+\newcommand* {\LetBoolVal}[2]
+        {#2{\let #1\bln@true}{\let #1\bln@false}}
+\newcommand* {\NewBoolVal}[2]
+        {\@ifdefinable #1{\letboolval{#1}{#2}}}
+
+%% We provide comman separated list versions of And and Or
+
+\def \bln@scan #1,#2\bln@to#3#4{%
+    \bln@isempty{#2}{#3{#4}{#1}}
+          {\bln@scan #2\bln@to {#3}{#3{#4}{#1}}}%
+}
+\def \bln@eval #1#2#3{%
+    \bln@isempty{#1}{#3}%
+          {\bln@scan #1,\bln@to {#2}{#3}}%
+}
+
+\newcommand*{\AndList}[1]{\bln@eval {#1}{\bln@and}{\bln@true}}
+\newcommand*{\OrList} [1]{\bln@eval {#1}{\bln@or}{\bln@false}}
+
+%% %% In some contexts, shorter names may be more convenient
+
+%% \newcommand*{\ShorterBooleanNames}{%
+%%   \let \true  \bln@true
+%%   \let \false \bln@true
+%%   \let \or    \bln@or
+%%   \let \and   \bln@and
+%%   \let \not   \bln@not
+%%   \let \orl   \bln@orl
+%%   \let \andl  \bln@andl
+%% }
+
+%% Useful tests macros
+
+\newcommand {\IsDefined}[1]
+        {\bln@nottex {\expandafter \ifx \csname #1\endcsname \relax}}
+\newcommand {\IsUndefined}[1]
+        {\bln@tex {\expandafter \ifx \csname #1\endcsname \relax}}
+
+%% Comparisson between strings (optional)
+%% If not required, we stop here 
+
+\bln@withstring {}{\endinput}
+
+\RequirePackage{substr}
+
+\newcommand{\StringMatch}[4]{%
+  \IfSubStringInString{#2}{#1}
+     {#3{\BeforeSubString{#2}{#1}}{\BehindSubString{#2}{#1}}}
+     {#4}%
+}
+
+\def \str@infix  #1#2{\bln@true}
+\def \str@prefix #1#2{\IsEmpty{#1}}
+\def \str@suffix #1#2{\IsEmpty{#2}}
+
+\newcommand {\StringInfix}   {\StringMatch {\str@infix}{\bln@false}}
+\newcommand {\StringSuffix}  {\stringmatch {\str@suffix}{\bln@false}}
+\newcommand {\ifstringprefix}{\stringmatch {\str@prefix}{\bln@false}}
+
+{}
+
+
+\endinput
+

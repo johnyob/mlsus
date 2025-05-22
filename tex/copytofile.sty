@@ -1,0 +1,113 @@
+%%
+%% This is the original source file copytofile.sty
+%%
+%% Package `copytofile to use with LaTeX2e
+%% Copyright Didier Remy, all rights reserved.
+%%
+%% See http://cristal.inria.fr/~remy/latex/
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%
+
+%% Identification
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{copytofile}
+         [2001/23/02 v0.92 Copytofile]
+
+\newwrite \cpy@outchan
+\newread \cpy@inchan
+
+\def \cpy@ext {cpy}
+\def \cpy@filename {\jobname.\cpy@ext}
+\def \cpy@call {\@input {\cpy@filename}}
+\def \@copytofile #1#2{%
+   \edef \cpy@endenv {#1}%
+   \begingroup 
+     \edef \cpy@@filename{#2}%
+     \immediate \openout \cpy@outchan \cpy@@filename\relax
+     \cpy@copytoend}
+\newcommand{\copytofile}[2][\@currenvir]{\@copytofile{#1}{#2}}
+
+\def \cpy@write #1{\immediate \write\cpy@outchan {#1}}
+
+\def \un@inpenc@loop#1#2{%
+  \@tempcnta`#1\relax
+  \loop
+    \catcode\@tempcnta 12
+  \ifnum\@tempcnta<`#2\relax
+     \advance\@tempcnta\@ne
+  \repeat}
+
+  
+%% To undo accents encodings, so as to be truely verbatim
+\def\uninputencoding {\@ifundefined {inputencoding}{\catcode `\^^A 12}{%
+    \un@inpenc@loop\^^A\^^H%
+    \un@inpenc@loop\^^K\^^K%
+    \un@inpenc@loop\^^N\^^_%
+    \un@inpenc@loop\^^?\^^ff%
+    }}
+
+\def \cpy@next@end
+   {\immediate \closeout \cpy@outchan 
+    \endgroup 
+    \csname end\cpy@endenv\endcsname
+    \expandafter \endgroup \ignorespaces}
+
+\newcount \cpy@level
+
+\def \cpy@loop{%
+      \ifnum \cpy@level>0\relax
+        \cpy@write {\cpy@arg}%
+       \else 
+        \let \cpy@next \cpy@next@end
+      \fi}
+
+\bgroup
+\catcode `\|=0 \catcode `\{=12 \catcode `\}=12
+\catcode `\[=1 \catcode `\]=2  \catcode`\\=12
+
+|gdef |cpy@dotest@begin#1\begin{#2}#3|END[%
+      |def |@test [#1]|ifx |@test|empty
+          |def |@env [#2]|ifx |@env |cpy@endenv
+             |advance |cpy@level by 1|relax
+          |fi
+      |fi]
+|gdef |cpy@dotest@end#1\end{#2}#3|END[%
+      |def |@test [#1]|ifx |@test|empty
+          |def |@env [#2]|ifx |@env |cpy@endenv
+             |advance |cpy@level by -1|relax
+          |fi
+      |fi]
+|gdef |cpy@testarg#1|END[%
+    |cpy@dotest@begin#1|relax|relax\begin{|relax}|END%
+    |cpy@dotest@end#1|relax|relax\end{|relax}|END%
+    |cpy@loop
+  ]
+|egroup
+
+\def \@begincopyhook{}
+\def \AtBeginCopy {\g@addto@macro \@begincopyhook}
+
+\def\cpy@copytoend
+  {\uninputencoding
+   \@begincopyhook%
+   \let \do \@makeother \dospecials \obeylines
+   \cpy@level=1\relax\cpy@copy@first}
+{\obeylines%
+\gdef \cpy@copy#1
+  {\def\cpy@arg{#1}\cpy@testarg#1\END\cpy@next}%
+\gdef \cpy@copy@first#1
+  {\def \@test{#1}\let \cpy@next \cpy@copy%
+   \ifx \@test \empty \else \def\cpy@arg{#1}\cpy@testarg#1\END\fi%
+   \cpy@next}%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\@ifundefined{whizzy@makelineno}{}{%
+  \def \setline@copy
+   {\whizzy@makelineno \cpy@write
+      {\string \SourceFile {\whizzy@curfile}%
+       \string \SetLineno {\the\whizzy@count}}}%
+  \AtBeginCopy{\setline@copy}%
+}

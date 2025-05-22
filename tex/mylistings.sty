@@ -1,0 +1,20 @@
+\usepackage{listings}
+\lstset{xleftmargin=1em}
+\lstset{
+  mathescape=true,
+  language=[Objective]{Caml},
+  basicstyle=\ttfamily,
+  commentstyle={\color{gray!60!blue}\ttfamily},
+  extendedchars=true,
+  showstringspaces=false,
+  aboveskip=\smallskipamount,
+  belowskip=\smallskipamount,
+  columns=flexible,
+  moredelim=**[is][\color{blue}]{/*}{*/},
+  moredelim=**[is][\color{green!60!black}]{/!}{!/},
+  moredelim=**[is][\bfseries]{/(}{)/},
+  moredelim=**[is][\small]{/.}{./},
+  moredelim=[is][\color{red}]{/[}{]/}
+}
+\newcommand{\code}[1]{\lstinline!#1!}
+\lstMakeShortInline[columns=fullflexible]|

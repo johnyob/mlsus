@@ -1,0 +1,26 @@
+\usepackage{ifthen}
+\acmart{
+\definecolor[named]{blue}{cmyk}{1,0.1,0,0.1}
+\definecolor[named]{yellow}{cmyk}{0,0.16,1,0}
+\definecolor[named]{orange}{cmyk}{0,0.42,1,0.01}
+\definecolor[named]{red}{cmyk}{0,0.90,0.86,0}
+\definecolor[named]{lightblue}{cmyk}{0.49,0.01,0,0}
+\definecolor[named]{green}{cmyk}{0.20,0,1,0.19}
+\definecolor[named]{purple}{cmyk}{0.55,1,0,0.15}
+\definecolor[named]{darkblue}{cmyk}{1,0.58,0,0.21}
+
+}{\RequirePackage[dvipsnames]{xcolor}}
+
+% #1: part of the text that is being commented
+% #2: remark author name
+% #3: remark color
+% #4: remark content
+\newcommand {\XXX}[4]{%
+  \textcolor{#3}{\textbf{#2}}%
+  {\ifthenelse{\equal{#1}{}}{}%
+    {\textcolor{#3}{\textbf{[}}#1\textcolor{#3}{\textbf{]}}}}%
+  \textcolor{#3}{\textbf{\{}#4\textbf{\}}}}
+\newcommand \NOXXX[4]{#1}
+
+% call \UNXXX in your document to hide comments
+\newcommand \UNXXX{\let \XXX \NOXXX}

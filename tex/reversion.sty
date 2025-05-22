@@ -1,0 +1,69 @@
+\RequirePackage{keyval}
+\RequirePackage{boolean}
+\RequirePackage{copytofile}
+
+%% Configurable commands
+
+\edef \VersionAuxFile{\jobname.rev}
+\newcommand{\VersionEval}[1]{\OrList{#1}}
+
+%% Visible command
+
+\newif \ifVersionVisible \VersionVisibletrue
+\newcount \VersionDepth 
+\newcommand {\theVersionDepth}{\the \Version@Depth}
+
+%% Hidden commands
+
+\let \rev@depth \VersionDepth 
+\rev@depth 0\relax
+\let \version@level  \rev@depth 
+
+\def \rev@show {\advance \rev@depth by 1\relax\ignorespaces}
+\def \rev@hide {\copytofile{\VersionAuxFile}}
+
+\newif \if@rev
+
+\providecommand{\VersionAnchor}[1]{\fbox{#1}}
+
+%% Environment \end{version} must be at the beginning of a line. 
+\newenvironment{version}[2][]
+   {\VersionEval{#2}{\rev@show}
+        {\IsEmpty{#1}{}{\VersionAnchor {#1}}\rev@hide}}
+   {}
+
+%% Shorter version
+\newcommand {\ifversion}[1]{\VersionEval{#1}}
+
+\DeclareOption{whizzy}
+  {\AtEndOfPackage {\csname WhizzyVersionActivate\endcsname}}
+\ProcessOptions
+
+\def \WhizzyVersionAutoActivate
+  {\@ifundefined{whizzy@version}{}{\WhizzyVersionActivate}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\@ifundefined{whizzy@version}{%
+\let \WhizzyVersionActivate \relax
+\endinput
+}{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Extra for WhizzyTeX 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{color}
+
+\definecolor{forestgreen}{rgb}{0.1,0.6,0.1}
+
+\def \WhizzyVisibleVersionStyle
+     {\ifodd \VersionDepth \color{forestgreen}\else \color{blue}\fi}
+\def \WhizzyHiddenVersionStyle {\color{red}}
+
+\def \WhizzyVersionActivate
+  {\WhizzyInsideEnvironment {version}[2][]
+       {\VersionEval{##2}{\WhizzyVisibleVersionStyle}
+                        {\WhizzyHiddenVersionStyle}\rev@show}
+       {\endout@version}}
+
+\endinput
+
