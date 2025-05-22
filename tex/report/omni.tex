@@ -1,0 +1,326 @@
+
+\section{Motivation}
+
+We begin by first introducing \textit{bidirectional typechecking} [??], an alternative approach to \HM for type inference. 
+We discuss the limitations of bidirectional typechecking, providing us with the motivation for 
+\textit{omnidirectional type inference}. 
+
+\subsection{Bidirectional typechecking}
+
+% What is directionality (in the context of bidirectional type inference)
+\textit{Bidirectional typechecking} separates typing rules into two \textit{modes}: checking ($\Gamma \tack e \Leftarrow \tau$) and synthesizing ($\Gamma \tack e \Rightarrow \tau$). 
+Checking takes $\Gamma, e, \tau$ as inputs and checks if the term $e$ can be typed with $\tau$. Whereas, synthesizing takes $\Gamma, e$ as inputs and outputs the inferred type of $\tau$
+if $e$ is well-typed. 
+
+% A bit about the uses of bidirectional typechecking 
+Bidirectional typing was popularized by Pierce and Turner's work on local type inference, which was introduced as an alternative to \HM type systems 
+which could easily deal with polymorphic languages with subtyping. Various other authors have proved the effectiveness of bidirectional typechecking 
+in several other settings, including systems with higher-rank polymorphism [??], generalized algebraic data types [??], and dependent types [??]. 
+
+% The Pfenning recipe
+Most bidirectional typechecking rules follow the \textit{Pfenning recipe} [??]. This recipe gives a guideline on how to bidirectionalze a type assignment system $\Gamma \tack e : \tau$. 
+The recipe distinguishes introduction from elimination rules. Constructs which correspond to introduction forms are \textit{checked} against a given type, 
+while constructs corresponding to elimination forms \textit{infer} their types. For illustration, Figure ?? gives the bidirectional typing rules for the simply typed lambda calculus, based on this recipe. 
+
+\begin{figure}[!htpb]
+  \begin{mathpar}
+    \inferrule* [Lab=Chk-Unit]
+      {\hspace{1mm}}
+      {\Gamma \tack () \Leftarrow \Unit}
+
+    \inferrule* [Lab=Syn-Var]
+      {x : \tau \in \Gamma}
+      {\Gamma \tack x \Rightarrow \tau}
+      
+    \inferrule* [Lab=Chk-Lam]
+      {\Gamma, x : \tone \tack e \Leftarrow \ttwo}
+      {\Gamma \tack \Efun x e \Leftarrow \Farr \tone \ttwo}
+    
+    \inferrule* [Lab=Syn-App]
+      {\Gamma \tack \eone \Rightarrow \Farr \tone \ttwo \\ \Gamma \tack \etwo \Leftarrow \ttwo}
+      {\Gamma \tack \Eapp \eone \etwo \Rightarrow \ttwo}
+    
+    \inferrule* [Lab=Syn-Annot]
+      {\Gamma \tack e \Leftarrow \tau}
+      {\Gamma \tack (e : \tau) \Rightarrow \tau}
+    
+    \inferrule* [Lab=Chk-Eq]
+      {\Gamma \tack e \Rightarrow \tone \\ \tone = \ttwo}
+      {\Gamma \tack e \Leftarrow \ttwo}
+  \end{mathpar} 
+\end{figure}
+
+% Explanation of rules
+The \textsc{Chk-Unit} rule checks that $()$ has the type $\Unit$. \textsc{Syn-Var} infers the type of $x$ by fetching it from the context.
+\textsc{Syn-Annot} and \textsc{Chk-Eq} switch the modes of inferences. The \textsc{Chk-Lam} rule checks the term $\Efun x e$ against $\Farr \tone \ttwo$, 
+the return type $\ttwo$ is used to check $e$ in the extended context. 
+
+% Directional propagation is fixed. 
+The \textsc{Syn-App} rule is particularly interesting, since the rule permits types to propagate across adjacent nodes within the syntax tree. 
+For example, in the expression $\Eapp {(\Efun { f : \Farr \Unit \Unit} {\Eapp f {()}})} {(\Efun x x)}$, 
+the type of $x$ can be inferred from the type annotation on $f$ \textit{without the use of unification}.
+Specifically if we know that the type of $\eone$ is a function from $\Farr \tone \ttwo$, we can check that $\etwo$ has 
+type $\tone$. However, this flow of typing information is one-way: in $\Eapp {(\Efun f {\Eapp f {()}})} {(\Efun x x : \Farr \Unit \Unit)}$ the type of the function 
+cannot be inferred from the argument. This fixed directionality is a central limitation of bidirectional typing. 
+
+% Duplication of rules
+Another issues arises from strict adherence to the Pfenning recipe. The introduction rules for unit literals is supposed to be in checking mode (rule \textsc{Chk-Unit}), not inferred. 
+As a result, even trivial program like $()$ are ill-typed unless annotated $(() : \Unit)$. In this particular case, 
+bidirectional typechecking goes against its original intention of removing burden from programming, since this annotation is unnecessary. 
+Practical systems often sidestep this by duplicating rules:
+\begin{mathpar}
+  \inferrule* [Lab=Syn-Unit]
+    {\hspace{1mm}}
+    {\Gamma \tack () \Rightarrow \Unit}
+\end{mathpar}
+Now we can type check $()$, but we pay the price with the duplication of typing rules. Worse still, the same criticism applies to other constructs, for example, pairs. 
+This shows an additional drawback of bidirectional typechecking: to minimize annotations, many rules are duplicated for having both the inference and checking mode. 
+
+% Inference is only local 
+Bidirectionality also struggles with global inference. Consider the following term in Dunfield and Krishnaswami's system (\DK) with higher-rank polymorphism (and pairs):
+\begin{align*}
+  \Efun f {(\Eapp f (), (f : \Tforall \alpha {\Farr \alpha \alpha}))}
+\end{align*}
+In the type assignment system, this term has a clear principal type. Yet in the \DK system, it fails to typecheck due to directionality: we must 
+statically choose a direction for each subterm, even if there is no `optimal' direction, thus some programs inevitably fall through the cracks. 
+
+% Annotation criterion 
+Binding constructs are another pain point. Since they are niether introduction nor elimination forms, the Pfenning recipe doesn't offer a clear treatment. 
+A common workaround is to provide both checking and synthesis variants (duplicating rules yet again):
+\begin{mathpar}
+  \inferrule* [Lab=Syn-Let]
+    {\Gamma \tack \eone \Rightarrow \tone \\ \Gamma, x : \tone \tack \etwo \Rightarrow \ttwo}
+    {\Gamma \tack \Elet x \eone \etwo \Rightarrow \ttwo}
+  
+  \inferrule* [Lab=Chk-Let]
+    {\Gamma \tack \eone \Rightarrow \tone \\ \Gamma, x : \tone \tack \etwo \Leftarrow \ttwo}
+    {\Gamma \tack \Elet x \tone \etwo \Leftarrow \ttwo}
+\end{mathpar}
+This unfortunately only makes matters worse. Dunfield and Krishnaswami note that the annotability criterion for requiring annotations at redexes is no-longer true in 
+the presence of $\Let$ binders. For instance, consider the expression: 
+\begin{align*}
+  \Eapp {(\Elet x {()} {\Efun f {\Eapp f x}})} {(\Efun x x)}
+\end{align*}
+In this case, we either must annotate the body of the let expression and use \textsc{Syn-Let} or annotate the entire let expression and use \textsc{Chk-Let}. Thus, for some features, 
+it may not be easy to give programmers a clear guideline for where to place annotations. 
+
+
+\subsection{Our approach}
+
+Bidirectional typechecking is elegant and lightweight. It works well in the presence of many complex features and 
+supports the propagation og type information with minimal annotations. But it suffers from:
+\begin{enumerate}
+  \item \textbf{Unclear annotability}: especially in the presence of constructs like $\Let$-bindings. 
+  \item \textbf{Rule duplication}: required to make the system practical for type inference. 
+  \item \textbf{Fixed directionality}: makes the system brittle to program refactoring and limits inference for otherwise well-typed programs.
+\end{enumerate}
+
+We'd like to retain the advantages of bidirectional typing, namely the use of propagated type information and removal of redundant annotations without the above issues. 
+
+Our key insight: \textit{types can be inferred in any order}. Traditional algorithms enforce an ordering on the resolution of typing constraints -- e.g. inferring 
+the type of let-bound expressions before its uses. But from a constraint-based perspective, this isn't necessary. A sufficiently powerful constraint solver 
+can resolve typing constraints in any order, provided it preserves semantic equivalence of constraints. 
+
+We call this approach \textit{omnidirectional type inference}. It requires no division of rules into checking and inference modes, eliminating rule duplication. 
+It also enables the inference of programs that bidirectional systems reject and reduces the need for manual annotations. 
+
+The remainder of this chapter formalises omnidirectional type inference and discusses its application to \ML type inference with features like 
+static overloading and first-class polymorphism while trivially retaining properties like \textit{principality}. 
+
+
+
+
+
+\section{Suspended constraints}
+
+The core primitive for omnidirectional type inference is the \textit{suspended match constraint} (often referred to simply as a \textit{suspended constraint}). 
+These are a new form of constraint that allows the type checker to delay the resolution of typing constraints until it has sufficient type information to do so. 
+
+A suspended constraint has the the form $\Cmatch \alpha f$ (defined in Figure ??) where:
+\begin{enumerate}
+  \item The matchee $\alpha$ is a type variable. The constraint is suspended until $\alpha$ is unified (resolved) to a non-variable type. 
+  \item The handler $f : \mathsf{TyShallow} \to C$ is a function from shallow types to constraints. It encodes the branches of the 
+  match constraint. Here, $\mathsf{TyShallow}$ denotes the set of shallow types formed by the grammar $\psi ::= \overline{\alpha} \Fapp$. 
+\end{enumerate} 
+
+Informally, the semantics of $\Cmatch \alpha f$ are as follows: the constraint remains suspended until the type variable $\alpha$ is unified to 
+concrete non-variable type $\overline{\beta} \Fapp$, at which point the handler is applied to this type $f(\overline{\beta} \Fapp)$ and the generated 
+constraint is scheduled to be solved. If $\alpha$ is never resolved, the constraint remains unsatisfiable. 
+
+\begin{figure}[!htpb]
+  \centering  
+  \begin{tabular*}{\linewidth}{~CR=;;C;;L~cr=}&
+    C \is \ldots \mid \Cmatch \alpha f && Constraints
+  \end{tabular*}
+  \caption{The syntax of suspended match constraints}
+\end{figure}
+
+Suspended match constraints perform only shallow matching on the type of $\alpha$. However, just as in functional programming languages for algebraic data types, 
+shallow matches are expressive enough to encode deep pattern matches. For instance, the match constraint that waits until $\alpha$ is fully realised (i.e. contains no unification variables)
+can be encoded as: 
+\begin{align*}
+  \Cdmatch \alpha f 
+  &= \Cmatch \alpha 
+    \lambda \overline{\beta} \Fapp.\;
+    \begin{aligned}[t]
+      &\textbf{if } |\overline{\beta}| = 0 \textbf{ then } f(\F) \\
+      &\textbf{else } \Cdmatch{\beta_1} \left(\lambda \tau_1.\right. \\
+      &\quad\;\;\;\; \ldots \\
+      &\quad\;\;\;\; \Cdmatch{\beta_n} \left(\lambda \tau_n.\;
+        f(\overline{\tau} \Fapp)
+      \right) \left.\vphantom{\lambda \tau_1} \right)
+    \end{aligned}
+\end{align*}
+
+\subsection{A na\"ive semantics}
+
+The semantics of suspended constraints are best understood from the solver's perspective. 
+We begin by providing an informal description of how our solver processes suspended match constraints (which we later refine in Section ??), 
+from this we show that a na\"ive semantics for suspended constraints would be incomplete. 
+
+\paragraph{Solver} When solving $\Cmatch \alpha f$, the solver proceeds as follows:
+\begin{enumerate}
+  \item If $\alpha$ is already unified to a non-variable type, apply the handler $f$ immediately to the resolved type. 
+  \item If $\alpha$ is still unresolved. enqueue the suspended constraint in a scheduler of pending constraints. 
+  \item During unification, whenever a type variable with a pending suspended constraint becomes resolved, the solver retrieves all constraints waiting on that variable, applies their handlers to the resolved types, 
+  and schedules the resulting constraints. 
+\end{enumerate}
+Once all active constraints have been processed, any suspended constraints that remain unresolved indicate failure. 
+
+
+\paragraph{Semantics} A naive denotational semantics for suspended constraints would be to simply apply the 
+assignment to $\alpha$ to $f$. More formally, 
+\begin{mathpar}
+  \inferrule* [Lab=Sat-Match-Na\"ive]
+    {\Phi, \overline{\beta} := \meta{match}(\Phi, \alpha, \F) \tack f(\overline{\beta} \Fapp)}
+    {\Phi \tack \Cmatch \alpha f}
+\end{mathpar}
+\[
+  \meta{match}(\Phi, \alpha, \F) = \overline{\tau} \hspace{1cm} \text{where } \{\Phi\} \alpha = \overline{\tau} \Fapp
+\]
+
+However, our informal solver would be incomplete with respect to this semantics. 
+We let us consider the constraint $\Cexists \alpha {\Cmatch \alpha {\lambda \_. \; \alpha = \Unit}}$. 
+This constraint does not unify $\alpha$ outside the suspended constraint, but once it is resumed, the 
+variable must be unified with $\Unit$. So our informal semantics suggests that this constraint is unsatisfiable 
+since $\alpha$ is never unified outside the match constraint. Yet our semantics satisfies this constraint with 
+the assignment $\alpha := \Unit$: 
+DERIVATION TREE
+
+Moreover, suspended constraints can form complex dependency graphs with cycles. For example, our semantics needs to 
+reject constraints like $\Cexists {\alpha, \beta} {\Cmatch \alpha {\lambda \_. \; \beta = \Unit} \Cand \Cmatch \beta {\lambda \_. \; \alpha = \Unit}}$. 
+
+Worse still, is that the binding location of $\alpha$ may not even contain the sufficient information to prove that $\alpha$ is realised. For example, 
+\begin{align*}
+  \Cexists \beta {\beta = \Unit \Cand \Cexists \alpha {\alpha = \beta \Cand \Cmatch \alpha f}}
+\end{align*}
+
+While it is not standard to motivate the constraint's semantics from the solver's perspective, we treat the solver as a form of operational semantics, for which we aim to 
+establish a corresponding denotational semantics. Our view is that these two semantics should coincide. In practice, suspended match constraints are more straightforward to formalise operaitonally, 
+and this operational view guides our design of the operational semantics. 
+
+
+Our conclusion is that this na\"ive semantics should be rejected in favour for the semantics of our informal solver. 
+Our intent with the suspended constraint is that the blocking variable should not be \textit{guessed} out of thin air (ex ...) 
+but \textit{deduced} from the surrounding context without knowledge of the constraint generated by the handler. 
+
+\subsection{Contextual semantics}
+
+The idea, inspired by our specification of OML, is to contextually ensure that the only assignment that can satisfy the entire 
+constraint requires that $\alpha$ is assigned to some type with a unique type constructor. 
+
+We begin by motivation the property of principal realisation by some context $\mathcal{C}[-]$. A type variable $\alpha$ is principally realised with 
+the constructor $\F$ by the context $\mathcal{C}$ if for all assigments $\Phi$, there exists an assignment $\Phi'$ for the hole such that $\Phi \tack \mathcal{C}[\Phi' \tack \True]$
+implies $\{\Phi'\}\alpha = \overline{\tau} \Fapp$. 
+
+
+For example, the above unsatisfiable constraint would have the context $\mathcal{C}[-] = [-]$. This context cannot realise $\alpha$, thus the constraint is unsatisfiable. 
+
+THe semantics for a suspended constraint is to require that some surrounding context princiaplly realises the matchee. We formally write this as 
+\begin{mathpar}
+  \inferrule* [Lab=Sat-Match]
+    {\Phi \tack \mathcal{C}[\Phi', \overline{\beta} := \meta{match}(\Phi', \alpha, \F) \tack f (\overline{\beta} \Fapp)] \\ \mathcal{C}[\alpha \; !] \text{ with constructor } \F}
+    {\Phi \tack \mathcal{C}[\Phi' \tack \Cmatch \alpha f]}
+\end{mathpar}
+
+
+
+
+
+
+\section{Static overloading}
+
+This section discusses the application of omnidirectional type inference to \textit{static overloading}. 
+By static overloading, we mean a form of overloading where the overloading must be resolved statically. That is, 
+type inference must statically disambiguate all occurances of overloading. 
+
+
+% % Merging HM with bidirectional 
+% Bidirectional typechecking was first popularized by Pierce and Turner's work on local type inference. 
+% Local type inference was originally introduced as an alternative to the \HM type system, which could easily deal with language features such as higher-rank polymorphism [??]
+% and subtyping [??]. Later work has focused on combining \HM-style techniques for inference with bidirectional systems, including the Dunfield-Krishnaswami type system [??] 
+% and the work of Payton Jones et al. [??].  
+
+\OCaml features a specialisation of static overloading, called \textit{constructor and record label overloading}. 
+This allows programmers to define data types with overloaded constructor or field names; to resolve the ambiguity, 
+\OCaml's type checker relies on type-based disambiguation:
+\begin{figure}[!htpb]
+ \centering 
+ \begin{minted}{ocaml}
+    type t = A;;
+    type u = A;; 
+
+    let x = (A : t) ;;
+    let y = (A : u) ;;
+\end{minted}
+\end{figure}
+\FloatBarrier
+
+This is predictable and efficient, but still relies on arbitrary directional choices. Making inference brittle to program refactoring and 
+requires the programmer to experiment where they should place a type annotation as there is no clear specification for disambiguation. As shown below: 
+
+\begin{minted}{ocaml}
+  type t = A ;; 
+  type u = A ;; 
+
+  let x = (A, A : u * t);; 
+  (* The following is ill-typed due to directionality, even though it 
+    should be a valid transformation *)
+  let y = 
+    let z = A in 
+    (z, A : t * u)
+  ;;
+\end{minted}
+
+This approach suffers from the annotability issue discussed in Section ??.
+
+
+
+\subsection{Kinded(1) types}
+
+\section{First-class polymorphism}
+
+\subsection{Semi-explicit first-class polymorphism}
+
+\subsection{Polymorphic parameters}
+
+\section{Solving suspended constraints}
+
+\paragraph{Solver challenges} When solving a suspended constraint $\Cmatch \alpha f$, we wait until $\alpha$ is unified with some type constructor.
+We could achieve this by simply yielding within the solver, making some progress elsewhere and revisiting the constraint. However, the interaction between 
+let generalisation and suspended constraints makes this harder.  
+
+
+\subsection{In the absence of let-generalisation}
+
+\subsection{Partial generalisation and instantiation}
+
+\section{Related work}
+
+Review Contextual typing 
+
+Review constraint handler rules 
+
+
+
+\section{Future work}
