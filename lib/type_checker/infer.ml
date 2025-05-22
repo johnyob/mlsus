@@ -268,11 +268,13 @@ struct
                ~closure:([ ret; hd_type ] @ X.arg_closure arg)
                ~with_:(function
                  | App _ | Spine _ -> assert false
-                 | (Head (Arrow | Tuple _) | Rigid_var) as matchee ->
+                 | (Head (Arrow | Tuple _ | Scheme _ | Poly) | Rigid_var) as matchee ->
                    let type_head =
                      match matchee with
                      | Head Arrow -> `Arrow
                      | Head (Tuple _) -> `Tuple
+                     | Head Poly -> `Poly
+                     | Head (Scheme _) -> `Scheme
                      | Rigid_var -> `Rigid_var
                      | _ -> assert false
                    in

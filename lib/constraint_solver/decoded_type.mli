@@ -1,7 +1,7 @@
 open! Import
 module G := Generalization
 
-type t [@@deriving sexp]
+type t [@@deriving sexp, hash]
 
 include Pretty_printer.S with type t := t
 
@@ -13,5 +13,5 @@ module Decoder : sig
 
       All decoded types will share a common identifier source and coherent set of variable
       renamings. *)
-  val create : unit -> t
+  val create : ?alloc_var_name:(Identifier.t -> string option) -> unit -> t
 end

@@ -6,6 +6,7 @@ module Var = Var.Make (struct
   end)
 
 module Ident = Constraint.Type.Ident
+module Scheme_skeleton_ident = Constraint.Type.Scheme_skeleton_ident
 module Head = Constraint.Type.Head
 
 type t =
@@ -14,7 +15,7 @@ type t =
   | Spine of t list
   | App of t * t
   | Mu of Var.t * t
-[@@deriving sexp]
+[@@deriving sexp, hash]
 
 let pp ppf t =
   let var_to_name (var : Var.t) =
@@ -25,6 +26,9 @@ let pp ppf t =
   in
   let ident_to_name (ident : Ident.t) =
     String.split_on_chars ~on:[ '.' ] ident.name |> List.last_exn
+  in
+  let scm_skel_ident_to_name (ident : Scheme_skeleton_ident.t) =
+    "scm/" ^ Int.to_string (ident.id :> int)
   in
   let rec pp_mu ppf t =
     match t with
@@ -39,10 +43,21 @@ let pp ppf t =
     match t with
     | App (Spine ts, Head (Tuple _)) ->
       Fmt.(pf ppf "@[<0>%a@]" (list ~sep:(any " *@ ") pp_atom) ts)
+    | t -> pp_poly ppf t
+  and pp_poly ppf t =
+    match t with
+    | App (Spine [ t ], Head Poly) -> Fmt.pf ppf "@[[%a]@]" pp_mu t
+    | t -> pp_scm ppf t
+  and pp_scm ppf t =
+    match t with
+    | App (t, Head (Scheme skel_hash)) ->
+      (* TODO: Pretty print into a type instead of an ident *)
+      Fmt.(
+        pf ppf "@[<%a> %s]" (pp_spine ~in_app:false) t (scm_skel_ident_to_name skel_hash))
     | t -> pp_app ppf t
   and pp_app ppf t =
     match t with
-    | App (_, Head (Arrow | Tuple _)) -> Fmt.(parens pp_mu ppf t)
+    | App (_, Head (Arrow | Tuple _ | Scheme _ | Poly)) -> Fmt.(parens pp_mu ppf t)
     | App (t1, t2) -> Fmt.(pf ppf "@[%a%a@]" (pp_spine ~in_app:true) t1 pp_atom t2)
     | t -> pp_spine ~in_app:false ppf t
   and pp_spine ~in_app ppf t =
@@ -68,6 +83,10 @@ let pp ppf t =
     | Arrow -> Fmt.string ppf "(->)"
     | Tuple n -> Fmt.pf ppf "Pi^%d" n
     | Constr constr -> Fmt.pf ppf "%s" (ident_to_name constr)
+    | Poly -> Fmt.pf ppf "[]"
+    | Scheme skel_ident ->
+      (* TODO: Pretty print into a type instead of an ident  *)
+      Fmt.pf ppf "<%s>" (scm_skel_ident_to_name skel_ident)
   in
   pp_mu ppf t
 ;;
@@ -87,10 +106,15 @@ module Decoder = struct
       }
     ;;
 
-    let alloc_var t = Var.create ~id_source:t.id_source ()
+    let default_alloc_var_name _ = None
 
-    let rename_var t id =
-      Hashtbl.find_or_add t.variable_renaming id ~default:(fun () -> alloc_var t)
+    let alloc_var t id ~alloc_var_name =
+      Var.create ~id_source:t.id_source ?name:(alloc_var_name id) ()
+    ;;
+
+    let rename_var t id ~alloc_var_name =
+      Hashtbl.find_or_add t.variable_renaming id ~default:(fun () ->
+        alloc_var t id ~alloc_var_name)
     ;;
   end
 
@@ -102,7 +126,7 @@ module Decoder = struct
     (** A cyclical node with an allocated variable (for a mu-binder). *)
   [@@deriving sexp_of]
 
-  let create () : t =
+  let create ?(alloc_var_name = State.default_alloc_var_name) () : t =
     let state = State.create () in
     fun gtype ->
       let visited_table = Hashtbl.create (module Identifier) in
@@ -115,7 +139,7 @@ module Decoder = struct
           (* Node is cyclic, use allocated variable *)
           Var var
         | Some Active ->
-          let var = State.alloc_var state in
+          let var = State.alloc_var state id ~alloc_var_name in
           (* Mark the node as being cyclic.
              Allocate a variable to represent cyclic positions *)
           Hashtbl.set visited_table ~key:id ~data:(Cyclical var);
@@ -134,12 +158,12 @@ module Decoder = struct
            | Active -> result)
       and decode_first_order_structure ~id structure =
         match structure with
-        | Var _ -> Var (State.rename_var state id)
+        | Var _ -> Var (State.rename_var state id ~alloc_var_name)
         | Structure s -> decode_rigid_structure ~id s
       and decode_rigid_structure ~id structure =
         match structure with
-        | Rigid_var -> Var (State.rename_var state id)
-        | Structure former -> decode_former former
+        | Rigid_var -> Var (State.rename_var state id ~alloc_var_name)
+        | Structure s -> decode_former s
       and decode_former former =
         match former with
         | App (gtype1, gtype2) ->
