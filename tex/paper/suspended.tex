@@ -111,9 +111,11 @@ be solved. If $\alpha$ is never unified, the constraint remains unsatisfiable.
 
 For each feature:
 \begin{itemize}
-\item propose surface-language typing rules
+\item propose *informal* surface-language typing rules
 \item elaborate them into the constraint language
 \end{itemize}
+
+We will provide *precise* declarative semantics in the ``Semantics of constraints'' section.
 
 \subsection{Static overloading of constuctors and record labels}
 
@@ -248,21 +250,59 @@ outside the match constraint. Yet we can use the above rule to show that this co
     }
     {\cdot \vdash \cexists \alpha \cmatch \alpha \alpha (\lambda \_.~ \alpha = 1)}
 \end{mathpar}
+
+\TODO: precise declarative semantics of constraints. They should coincide with the semantics of the typing rules.
+
+Alistair has yet another proposal derived from his simplification of his timestamp semantics.
+
+\TODO: derive precise declarative semantics for the language features of Section 2.
+
 \section{Solving constraints}
 
-\section{Prototype and discussion}
+\TODO: a declarative solver.
+
+\section{HM Prototype and discussion}
 
 \subsection{Default clauses}
 
+\section{Semi-unification Prototype}
+
+Rank-2 polymorphic type inference with semi-unification!
+
+\Xdidier{When you do rank-2 unification, you don't need a 'let' anymore because 'lambda' is enough. You have rank-2 types but you cannot bind them. It's not as exciting as I thought it would be.}
 
 \section{Comparison with other inference approaches}
 
-\subsection{Suspended constraints in OutsideIn}
+\subsection{Suspended constraints in \textsc{OutsideIn}}
+
+\Xalistair{They first solve simple constraints (existentials, unification). Then they solve ``... constraints'', with implication constraints, which corresponds to the case of GADT matches. Crucially, they abandon local let generalization.}
+
 \subsection{Suspended constraints in dependent-type systems}
+
+
 \subsection{Bi-directional type inference}
+
+\Xgabriel{Our approach should have better properties for disambiguation, but which ones?}
+
+In the simply-typed case our system works better. But with generalization you can have more issues.
+
+\Xdidier{Should we try to extend what we did to predicative polymorphism?}
+
+\Xalistair{Not ready yet and would probably need too much space.}
+
+\Xgabriel{CoreML + bidirectional disambiguation of constructors?}
+
+\TODO: do we understand what to say precisely about bidirectional type inference?
+
 \subsection{Principality tracking in OCaml}
 
+\Xdidier{The point of that is to enforce a directional type inference that is based on let-bindings. When we check that the level is generic, we check that we already ``closed'' this thing, it is an earlier 'let' binding. Because we are omni-directional, we don't have principality issues anymore -- except with default rules. We are principal by construction, we never make any choice.}
 
+\Xdidier{Principality tracking is making the choice that we are going to make a directional let-binding-based type inference. We get rid of that, we are omni-directional, and don't have any principality issues.}
+
+\Xgabriel{We should not claim too much if we don't understand default clauses well enough. It could people the impression that we hide the issue under the carpet.}
+
+\Xdidier{First a declarative/principal system, and then non-principal heuristics to refine it, a two-phase process. It's fine.}
 
 
 % \begin{acks}
