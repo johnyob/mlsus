@@ -1,5 +1,21 @@
 \newcommand{\clet}{\mathsf{let}}
 \newcommand{\cin}{\mathsf{in}}
+\newcommand{\Match}{\mathsf{match}}
+\newcommand{\With}{\mathsf{with}}
+\newcommand{\cexists}[2]{\exists {#1}. ~ #2}
+\newcommand{\cfor}[2]{\forall {#1}. ~ #2}
+\newcommand{\cand}{\wedge}
 \newcommand{\cletin}[2]{\clet ~ #1 ~ \cin ~ #2}
+\newcommand{\cmatch}[3]{\Match ~ #1 ~ \With ~ [ #2 ] #3}
+\newcommand{\F}{\mathsf{F}}
+\newcommand{\Fapp}{\mathop{}\mathrel{\F}}
 
 \newcommand{\tfor}[2]{\forall {#1}.\,{#2}}
+\newcommand{\tpoly}[2]{[#1]^{#2}}
+
+
+\newcommand{\econstr}[2]{\mathsf{#1} ~ #2}
+\newcommand{\einst}[1]{\langle #1 \rangle}
+\newcommand{\epoly}[2]{[ #1 : #2 ]}
+
+\newcommand{\cinfer}[2]{\llbracket #1 : #2 \rrbracket}

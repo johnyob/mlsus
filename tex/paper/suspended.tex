@@ -73,9 +73,24 @@ Different kind of difficulties:
 
 (Only the constraint syntax, not constraint-solving yet. The point is to show examples in a concrete way.)
 
+% Introduce syntax + explain components
+A suspended match constraint has the form $\cmatch \alpha \Delta f$ where: 
+\begin{enumerate}
+  \item The matchee $\alpha$ is a type variable. The constraint is suspended until $\alpha$ is unified to a non-variable type. 
+  \item The handler $f$ is a function from partial types to constraints. This generates the constraint to solve once $\alpha$ is unified. One may think of this as the functionalization of the branches of the match. 
+  \item The closure $\Delta$, the set of type variables $f$ is permitted to reference. 
+\end{enumerate}
+
+% Informal semantics
+Informally, the semantics of $\cmatch \alpha \Delta f$ are as follows: the constraint remains suspended until the type variable $\alpha$ is 
+unified with a concrete non-varialbe type $\overline{\beta} \Fapp$, at which point the handler 
+is applied to this type $f(\overline{\beta} \Fapp)$ and the generated constraint is scheduled to 
+be solved. If $\alpha$ is never unified, the constraint remains unsatisfiable. 
+
+
 \subsection{Constraint-solving: an intuition}
 
-\section{Various features using suspended constraints}
+\section{Applications of suspended constraints}
 
 \begin{itemize}
 \item type-based disambiguation of data constructors (and record fields)
@@ -83,8 +98,139 @@ Different kind of difficulties:
 \item anti-unification-based overloading (are we sure?)
 \end{itemize}
 
+\subsection{Constuctor and record label overloading}
+
+% Intro to the feature 
+OCaml permits on to define data types with overloaded constructor or field names. 
+\begin{lstlisting}
+  type m = L;;
+  type n = L;;
+
+  let x = L;;
+\end{lstlisting}
+The type of \code{x} is ambiguous since OCaml could either infer \code{m} or \code{n}. This amounts to a principality issue, 
+since there is no most general type for \code{x}. As such, OCaml gives the following error: ... 
+
+OCaml's type checker relies of type information provided by the bidirectional propagation of type information
+to resolve these ambiguities. Thus annotating \code{x} with either \code{m} or \code{n} would be produce a well-typed 
+program. 
+
+% Constructor disambiguation in suspended constraints
+We propose an alternative approach: suspended constraints. For the ambiguous constructor application $\econstr K e$, 
+we generate the constraint: 
+\begin{align*}
+ \cinfer {\econstr K e} \alpha &= \cexists \beta \cinfer e \beta \cand \cmatch \alpha {\alpha, \beta} (\lambda \overline{\gamma} \Fapp. ~ \clet ~ \sigma = \Delta(\F)(\mathsf{K}) ~ \cin ~ \sigma \leq \beta \to \alpha )
+\end{align*}
+where the function looks up the type scheme associated with the constructor using the type name $\F$ in the environment ($\Delta(\F)(\mathsf{K})$). 
+
+We require a unique type for each type constructor in a given algebraic data type definition, thus there is no ambiguity with this mapping, despite 
+there potentially being many constructors in the environment named $\mathsf{K}$. 
+
+This not only correctly encodes OCaml's current behaviour, but does better. 
+
+
+\paragraph{Interaction with let-polymorphism} Our intuition is not entirely correct here. While the above will 
+improve on OCaml's current inference approach, it is not powerful enough to capture the simple idea that to resolve 
+an ambiguous constructor we must use contextual information to show there is a unique type constructor $\F$ for the application. 
+
+We demonstrate this is with the following example: 
+\begin{lstlisting}
+  let foo = 
+    let f x = match x with L -> 1 in 
+    f (L : m)
+  ;; 
+\end{lstlisting}
+
+Our current approach would keep the type of \code{x} as a generalizable variable, thus the 
+application of \code{f} would not resolve this ambiguity, requiring an annotation at the definition. 
+
+We require some way of splitting the head of the type from the type itself, treating the head of the 
+variable monomorphically and the rest polymorphically.  
+\Xalistair{An explaination of kinded(1) types here }
+
+\subsection{Semi-explicit first-class polymorphism}
+
+% Polytypes (and some stuff about labelled types) 
+Semi-explicit first-class polymorphism \citep{TODO} uses \textit{labelled types} 
+to track the origins of polymorphic types. 
+
+The type constructor $\tpoly \sigma \varepsilon$ that boxes a polymorphic type $\sigma$ 
+turning it into a \textit{polytype}. Each polytype is labelled with an $\varepsilon$ variable. 
+Once boxed, polytypes are considered to be monotypes. This permits impredicative polymorphism. 
+
+To instantiate a polytype, one must use an explicit unboxing operator $\einst e$ 
+which instantiates the top-level quantifiers of a polytype if $e$ has the type $\tpoly \sigma \varepsilon$.
+
+Conversely, the introduction form for polytypes is a boxing operator $\epoly e \sigma$  
+has the type $\tpoly \sigma \varepsilon$ for some arbitrary $\varepsilon$ if $e$ has the type $\sigma$. 
+
+Principality is tracked using generalization. 
+This is done by tracking the polymorphism of labels. Type schemes quantify not only over 
+type variables but $\varepsilon$ variables. As a result, a term $e$ with the type $\tpoly \sigma \varepsilon$ 
+for some fresh $\varepsilon$ may be generalized to $\tfor \varepsilon {\tpoly \sigma \varepsilon}$. 
+The typing rule for $\einst e$ in fact requires $e$'s type to be $\tfor \varepsilon {\tpoly \sigma \varepsilon}$, not just 
+a plain polytype $\tpoly \sigma \varepsilon$. The rational is that a label is polymorphic if and only if it is principally known and not inferred. 
+This is why the introduction form for polytypes $\epoly e \sigma$ is able to introduce a \textit{fresh} $\varepsilon$ variable. 
+
+Additionally, type annotations can be used to freshen labels.  This permits us to generalize the labels of an annotated term, 
+indicating that the type is principally known. 
+
+\Xalistair[]{Something about how information can flow from let bindings to use sites for principality checking}
+
+Instead of using labelled types to infer whether the type is principally known, we may use suspended constraints. 
+Typechecking $\epoly e \sigma$ is simple: 
+\begin{align*}
+  \cinfer {\epoly e {\tfor {\overline{\beta}} \tau}} \alpha &= \left(\cfor {\overline{\beta}} \cinfer e \tau \right) \cand \alpha = [\tfor {\overline{\beta}} \tau]
+\end{align*}
+
+If $e$ is known to have the type $[\sigma]$, then we can simply instantiate it. However, if the type of $e$ is not principally known, 
+then we must wait. This is how our approach differs from OCaml's / labelled types. 
+
+By waiting for $e$'s type to be known, we guarentee principal types without the machinery of labelled types. 
+So we can simply write the constraint generated by $\einst e$ as: 
+\begin{align*}
+  \cinfer {\einst e} \alpha &= \cexists \beta \cinfer e \beta \cand \cmatch \beta {\alpha} (\lambda [\sigma]. ~ \sigma \leq \alpha)
+\end{align*}
 \section{Semantics of constraints}
 
+The semantics of suspended constraints are best understood from the solver's perspective. 
+We begin by providing an informal description of how our solver processes suspended constraints (which we later refine), 
+from this we show that a na\"ive semantics for suspended constraints would be incomplete.
+
+When solving $\cmatch \alpha \Delta f$, the solver proceeds as follows: 
+\begin{enumerate}
+  \item If $\alpha$ is already unified to a non-variable type, apply the handler $f$ immediately to the resolved type. 
+  \item If $\alpha$ is still unresolved, enqueue the suspended constraint to the list of suspended constraints blocked by $\alpha$. 
+  \item During unification, whenever a type variable with a pending constraint becomes resolved, the solver retrieves all blocked constraints on that variable and schedules them. 
+\end{enumerate}
+Once all constraints have been processed, any pending suspended constraints that remain unsolved indidcate failure. 
+
+A na\"ive denotation semantics for suspended constraints would be to simply apply the assignment of $\alpha$ to $f$. More formally, 
+\begin{mathpar}
+  \inferrule* 
+    {\phi(\alpha) = \overline{\tau} \Fapp \\ \phi_{\setminus \Delta}[\overline{\beta := \tau}] \vdash f(\overline{\beta} \Fapp)}
+    {\phi \vdash \cmatch \alpha \Delta f}
+\end{mathpar}
+
+However, our informal solver would be incomplete with respect to this semantics. 
+We show this by considering the constraint $\cexists \alpha \cmatch \alpha \alpha (\lambda \_.~ \alpha = 1)$. 
+This constraint does not unify $\alpha$ outside the suspended constraint, but once it is scheduled, the variable $\alpha$ must 
+be unified with the unit type $1$. So our informal solver suggests that this constraint is unsatisfiable since $\alpha$ is never unified 
+outside the match constraint. Yet we can use the above rule to show that this constraint is satisfiable: 
+\begin{mathpar}
+  \inferrule*   
+    {
+      \inferrule* 
+        {
+          (\alpha \mapsto 1)(\alpha) = 1 \\
+          \inferrule* 
+            {(\alpha \mapsto 1)(\alpha) = 1}   
+            {\alpha \mapsto 1 \vdash \alpha = 1}
+        }
+        {\alpha \mapsto 1 \vdash \cmatch \alpha \alpha (\lambda \_. ~ \alpha = 1)}
+    }
+    {\cdot \vdash \cexists \alpha \cmatch \alpha \alpha (\lambda \_.~ \alpha = 1)}
+\end{mathpar}
 \section{Solving constraints}
 
 \section{Comparison with other inference approaches}
