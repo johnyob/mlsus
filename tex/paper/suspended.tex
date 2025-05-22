@@ -31,12 +31,20 @@
 
 \begin{document}
 
-\title{Omni-directional type inference with suspended constraints}
+\title{Omnidirectional type inference for ML extensions}
 
 %%
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
+  % Traditional type inference algorithms such as $\mathscr{W}$ for Hindley-Milner 
+  % or bidirectional typechecking enforce an ordering on the propagation of type information 
+  % -- e.g. inferring the type of a let-bound expression before its uses. We revisit the 
+  % problem of type inference for several extensions of the ML language, from the constraint-based 
+  % perspective in the style of Pottier and R\'emy, to derive a new approach: \textit{omnidirectional type inference}
+  % which improves on the state 
+
+
   DRAFT: this is a difficult feature. It solves some of the loose ends
   with extensions of H-D-M type inference to a full-scale programming
   language. We believe that it improves on the OCaml state of the art
@@ -75,7 +83,11 @@ Different kind of difficulties:
 
 \Xalistair{For tuples we added a projection rule that gives the size of the tuple. I imagine for polytypes there would be something like that.}
 
+\paragraph{Organization} 
+
 \section{Suspended constraints}
+
+\Xalistair{Intro to syntax of constraints}
 
 (Only the constraint syntax, not constraint-solving yet. The point is to show examples in a concrete way.)
 
@@ -138,7 +150,7 @@ program.
 We propose an alternative approach: suspended constraints. For the ambiguous constructor application $\econstr K e$, 
 we generate the constraint: 
 \begin{align*}
- \cinfer {\econstr K e} \alpha &= \cexists \beta \cinfer e \beta \cand \cmatch \alpha {\alpha, \beta} (\lambda \overline{\gamma} \Fapp. ~ \clet ~ \sigma = \Delta(\F)(\mathsf{K}) ~ \cin ~ \sigma \leq \beta \to \alpha )
+ \cinfer {\econstr K e} \alpha &= \cexists \beta \cinfer e \beta \cand \cmatch \alpha {\alpha, \beta} (\lambda \overline{\gamma} \Fapp. ~ \Let ~ \sigma = \Delta(\F)(\mathsf{K}) ~ \In ~ \sigma \leq \beta \to \alpha )
 \end{align*}
 where the function looks up the type scheme associated with the constructor using the type name $\F$ in the environment ($\Delta(\F)(\mathsf{K})$). 
 
@@ -293,6 +305,32 @@ matchee. This is formally specified as:
 Alistair has yet another proposal derived from his simplification of his timestamp semantics.
 
 \TODO: derive precise declarative semantics for the language features of Section 2.
+
+\subsection{Type system}
+
+In order to show our approach is sound and complete with respect to our constraint generation translation 
+and solver, we need to give a calculus and type system to serve as a specification. 
+
+\paragraph{Syntax} In Figure ??, we give the grammar for our calculus. It contains all of the ML calculus, including 
+the unit term $\eunit$, lambda abstractions $\efun x e$, applications $\eapp \eone \etwo$, annotations $(e : \tau)$ and let bindings $\elet x \eone \etwo$. 
+For constructor disambiguation, we add constructor applications $\econstr \K e$ and their eliminators, match expressions, $\ematch e {\overline{\ecase \Ki \evari \ei}}$.
+And for semi-explicit first-class polymorphism, we have the boxing construct $\epoly e \sigma$ and the unboxing construct $\einst e$. 
+
+\paragraph{Typing}
+
+\begin{mathpar}
+  \inferrule*   
+    {x : \sigma \in \Gamma}
+    {\Gamma \vdash x : \sigma}
+
+  \inferrule* 
+    {\Gamma \vdash \tauone \\ \Gamma, x : \tauone \vdash e : \tautwo }
+    {\Gamma \vdash \efun x e : \tauone \to \tautwo}
+
+  \inferrule* 
+    {\Gamma \vdash \eone : \tauone \to \tautwo \\ \Gamma \vdash \etwo : \tauone}
+    {\Gamma \vdash \eapp \eone \etwo : \tautwo}
+\end{mathpar}
 
 \section{Solving constraints}
 

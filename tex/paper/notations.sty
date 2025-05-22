@@ -1,23 +1,45 @@
-\newcommand{\clet}{\mathsf{let}}
-\newcommand{\cin}{\mathsf{in}}
+\newcommand{\Let}{\mathsf{let}}
+\newcommand{\In}{\mathsf{in}}
 \newcommand{\Match}{\mathsf{match}}
 \newcommand{\With}{\mathsf{with}}
+
 \newcommand{\ctrue}{\mathsf{true}}
 \newcommand{\cexists}[2]{\exists {#1}. ~ #2}
 \newcommand{\cfor}[2]{\forall {#1}. ~ #2}
 \newcommand{\cand}{\wedge}
-\newcommand{\cletin}[2]{\clet ~ #1 ~ \cin ~ #2}
+\newcommand{\cletin}[2]{\Let ~ #1 ~ \In ~ #2}
 \newcommand{\cmatch}[3]{\Match ~ #1 ~ \With ~ [ #2 ] #3}
+
 \newcommand{\F}{\mathsf{F}}
 \newcommand{\Fapp}{\mathop{}\mathrel{\F}}
-
 \newcommand{\tfor}[2]{\forall {#1}.\,{#2}}
 \newcommand{\tpoly}[2]{[#1]^{#2}}
 
 
-\newcommand{\econstr}[2]{\mathsf{#1} ~ #2}
+\newcommand{\econstr}[2]{#1 ~ #2}
 \newcommand{\einst}[1]{\langle #1 \rangle}
 \newcommand{\epoly}[2]{[ #1 : #2 ]}
+\newcommand{\eunit}{()}
+\newcommand{\efun}[2]{\lambda {#1}. ~ {#2}}
+\newcommand{\eapp}[2]{{#1} ~ {#2}}
+\newcommand{\elet}[3]{\Let ~ #1 = #2 ~ \In ~ #3}
+\newcommand{\ematch}[2]{\Match ~ #1 ~ \With ~ #2}
+\newcommand{\ecase}[3]{#1 ~ #2 \Rightarrow #3}
 
 \newcommand{\cinfer}[2]{\llbracket #1 : #2 \rrbracket}
+
 \newcommand{\TODO}{\textcolor{red}{TODO}}
+
+% Common metas
+\newcommand{\eone}{e_1}
+\newcommand{\etwo}{e_2}
+\newcommand{\ei}{e_i}
+
+\newcommand{\tauone}{\tau_1}
+\newcommand{\tautwo}{\tau_2}
+\newcommand{\taui}{\tau_i}
+
+\newcommand{\evari}{x_i}
+
+\newcommand{\K}{\mathsf{K}}
+\newcommand{\Ki}{\K_i}
