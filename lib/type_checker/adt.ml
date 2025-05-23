@@ -11,6 +11,12 @@ type type_expr =
   | Type_arrow of type_expr * type_expr
   | Type_tuple of type_expr list
   | Type_constr of type_expr list * Type_ident.t
+  | Type_poly of type_scheme_expr
+
+and type_scheme_expr =
+  { scheme_quantifiers : Type_var_name.t list
+  ; scheme_body : type_expr
+  }
 [@@deriving sexp_of]
 
 (** Type definitions to encode user-defined types e.g. variants. *)

@@ -300,6 +300,24 @@ let ambiguous_label ~range =
     "ambiguous label"
 ;;
 
+let polytype_inst_mismatched_type ~range ~type_head =
+  let open Diagnostic in
+  let head_name =
+    match type_head with
+    | `Tuple -> "tuple"
+    | `Arrow -> "function type"
+    | `Rigid_var -> "polymorphic variable"
+    | `Poly -> "boxed type scheme"
+    | `Constr -> "type constructor"
+  in
+  Diagnostic.createf
+    ~labels:
+      [ Label.primaryf ~range "expected a polymorphic type scheme, found a %s" head_name ]
+    ~code:Code.Type_mismatch
+    Error
+    "mismatched type"
+;;
+
 module For_testing = struct
   let use_expect_test_config () = is_in_expect_test := true
 end
