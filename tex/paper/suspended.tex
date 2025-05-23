@@ -1,9 +1,14 @@
-\input{\jobname.cfg}
+%; whizzy section
+
+%% Leave the above line for didier
+%% No macros before \documentclass
+
+\documentclass[acmsmall,screen,nonacm]{acmart}
+
+\input{suspended.cfg}
 \newcommand{\acmart}{\True}
 
 \RequirePackage{boolean}
-
-\documentclass[acmsmall,screen,nonacm]{acmart}
 
 \usepackage{boolean}
 \usepackage{reversion}
@@ -11,21 +16,18 @@
 \usepackage[utf8]{inputenc}
 
 \usepackage{mylistings}
-\usepackage{mycomments}
+\usepackage{mycolors}
 \usepackage{mymath}
 \usepackage{mybiblio}
 \usepackage{myhyperref}
 \usepackage{notations}
+\usepackage{mycomments}
 
-% Comments
-% Use either
-%   \Xgabriel[text to comment]{your comment on the text}
-% or
-%   \Xgabriel{free comment}
-\newcommand{\Xgabriel}[2][]{\XXX{#1}{Gabriel}{purple}{#2}}
-\newcommand{\Xalistair}[2][]{\XXX{#1}{Alistair}{orange}{#2}}
-\newcommand{\Xdidier}[2][]{\XXX{#1}{Didier}{green}{#2}}
-%
+%% \Xfirstname defined in {mycomments}
+%% Use either
+%%   \Xfistname[text to comment]{your comment on the text}
+%% or
+%%   \Xfirstname{free comment}
 %% Uncomment this line to hide all comments.
 % \UNXXX{}
 
@@ -59,6 +61,17 @@
 %% This command processes the author and affiliation and title
 %% information and builds the first part of the formatted document.
 \maketitle
+
+\begin{version}{\color{darkgreen}\True}
+I suggest to wrap lines (76 charaters)
+
+If you do not see any problem, I can install a program environment 
+(customized listings) that allows indices, distinguish input from output,
+etc.
+
+\end{version}
+
+
 
 \section{Introduction}
 
@@ -185,7 +198,9 @@ A suspended match constraint has the form $\cmatch \alpha \Delta f$ where:
   The matchee $\alpha$ is a type variable. The constraint is suspended until
   $\alpha$ is unified to a non-variable type.
 \item
-  The handler $f$ is a function from partial types to constraints. This
+  The handler $f$ is a function from partial types to constraints.
+  \Xdidier {what is a partial type?}
+  This
   generates the constraint to solve once $\alpha$ is unified. One may think
   of this as the functionalization of the branches of the match.
 \item
@@ -216,6 +231,12 @@ unified, the constraint remains unsatisfiable.
   anti-unification-based overloading (are we sure?) \\ there is some
   uniqueness of the head / variational type
 \end{itemize}
+\Xdidier {For me, the three examples are mandatory.
+disambiguation of data constructors and record fields is too simple...
+Also, polytypes may or may not include polyparams. Polyparams are a real
+challenge because most constraints will be delayed, hence the need for a
+strategy to resolve them. Static ad hoc overloading is more general.
+}
 
 \Xgabriel{I care most about the semantics and implementation of the
 constraint language.} 

@@ -1,16 +1,29 @@
 PRJ = suspended
 
-LATEXMK = latexmk -pdf 
+LATEXMK = latexmk -pdf -outdir=_build -auxdir=_build
 
 SOURCES=$(shell find . -name '*.tex' -or -name '*.bib' -or -name '*.sty')
 
 all: $(addsuffix .pdf,${PRJ})
 
+.PRECIOUS: %.pdf
+
 %.pdf: %.tex ${SOURCES}
-	$(LATEXMK) $<
+	@mkdir -p _build
+	$(LATEXMK) $< || (cp _build/$@ . && false)
+	cp _build/$@ .
+
+%.wpdf: %.tex ${SOURCES}
+	$(LATEXMK) -pvc $<
 
 %.view: %.pdf
 	open $< &
 
 clean:
-	rm -rf *.toc *.aux $(addsuffix .bbl,${PRJ}) *.blg *.log *~* *.bak *.out $(addsuffix .pdf,${PRJ}) cut.sh .latexrun.db* *.fls *.rel _region_.* *.synctex.gz *.fdb_latexmk *.ist *.glo
+	rm -rf _build
+
+vacuum: clean
+	rm -f suspended.pdf
+
+
+

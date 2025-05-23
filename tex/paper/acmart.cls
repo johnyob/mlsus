@@ -38,7 +38,7 @@
 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{acmart}
-[2023/11/05 v2.00 Typesetting articles for the Association for Computing Machinery]
+[2024/05/27 v2.08 Typesetting articles for the Association for Computing Machinery]
 \def\@classname{acmart}
 \InputIfFileExists{acmart-preload-hook.tex}{%
   \ClassWarning{\@classname}{%
@@ -179,6 +179,7 @@
 \newif\if@ACM@manuscript
 \newif\if@ACM@journal
 \newif\if@ACM@journal@bibstrip
+\newif\if@ACM@journal@bibstrip@or@tog
 \newif\if@ACM@sigchiamode
 \newif\if@ACM@engage
 \@ACM@engagefalse
@@ -224,6 +225,7 @@
   \@ACM@journaltrue
 \or % acmtog
   \@ACM@journaltrue
+  \@ACM@journal@bibstrip@or@togtrue
 \or % sigconf
   \@ACM@journalfalse
 \or % siggraph
@@ -244,7 +246,8 @@
   \AtBeginDocument{\@ACM@printacmreffalse}%
 \fi
 \if@ACM@journal
- \@ACM@journal@bibstriptrue
+  \@ACM@journal@bibstriptrue
+  \@ACM@journal@bibstrip@or@togtrue
 \else
  \@ACM@journal@bibstripfalse
 \fi
@@ -666,7 +669,11 @@
        \immediate\write\@auxout{\string\bibstyle{#1}}%
      \fi}}
 \RequirePackage{graphicx}
-\RequirePackage[prologue]{xcolor}
+%% \RequirePackage[prologue]{xcolor}
+\expandafter \ifx \csname WhizzyTeX\endcsname \relax\else
+   \PassOptionsToPackage{prologue}{xcolor}
+\fi
+\RequirePackage{xcolor}
 \definecolor[named]{ACMBlue}{cmyk}{1,0.1,0,0.1}
 \definecolor[named]{ACMYellow}{cmyk}{0,0.16,1,0}
 \definecolor[named]{ACMOrange}{cmyk}{0,0.42,1,0.01}
@@ -1128,9 +1135,9 @@
   TOMPECS,%
   TOMS,%
   TOPC,%
-  TOPS,%
   TOPLAS,%
   TOPML,%
+  TOPS,%
   TORS,%
   TOS,%
   TOSEM,%
@@ -1148,6 +1155,7 @@
   \def\@journalName{ACM Journal on Computing and Sustainable Societies}%
   \def\@journalNameShort{ACM J. Comput. Sustain. Soc.}%
   \def\@permissionCodeOne{2834-5533}%
+  \def\@permissionCodeTwo{2834-5533}%
 \or % CIE
   \def\@journalName{ACM Computers in Entertainment}%
   \def\@journalNameShort{ACM Comput. Entertain.}%
@@ -1156,18 +1164,22 @@
   \def\@journalName{ACM Computing Surveys}%
   \def\@journalNameShort{ACM Comput. Surv.}%
   \def\@permissionCodeOne{0360-0300}%
+  \def\@permissionCodeTwo{1557-7341}%
 \or % DGOV
   \def\@journalName{Digital Government: Research and Practice}%
   \def\@journalNameShort{Digit. Gov. Res. Pract.}%
   \def\@permissionCodeOne{2639-0175}%
+  \def\@permissionCodeTwo{2639-0175}%
 \or % DLT
   \def\@journalName{Distributed Ledger Technologies: Research and Practice}%
   \def\@journalNameShort{Distrib. Ledger Technol.}%
   \def\@permissionCodeOne{2769-6472}%
+  \def\@permissionCodeTwo{2769-6480}%
 \or % DTRAP
   \def\@journalName{Digital Threats: Research and Practice}%
   \def\@journalNameShort{Digit. Threat. Res. Pract.}%
   \def\@permissionCodeOne{2576-5337}%
+  \def\@permissionCodeTwo{2576-5337}%
 \or % FAC
   \def\@journalName{Formal Aspects of Computing}%
   \def\@journalNameShort{Form. Asp. Comput.}%
@@ -1177,31 +1189,37 @@
   \def\@journalName{ACM Games: Research and Practice}%
   \def\@journalNameShort{ACM Games}%
   \def\@permissionCodeOne{2832-5516}%
+  \def\@permissionCodeTwo{2832-5516}%
 \or % HEALTH
   \def\@journalName{ACM Transactions on Computing for Healthcare}%
   \def\@journalNameShort{ACM Trans. Comput. Healthcare}%
   \def\@permissionCodeOne{2637-8051}%
+  \def\@permissionCodeTwo{2637-8051}%
 \or % IMWUT
   \def\@journalName{Proceedings of the ACM on Interactive, Mobile,
     Wearable and Ubiquitous Technologies}%
   \def\@journalNameShort{Proc. ACM Interact. Mob. Wearable Ubiquitous Technol.}%
   \def\@permissionCodeOne{2474-9567}%
+  \def\@permissionCodeTwo{2474-9567}%
   \@ACM@screentrue
   \PackageInfo{\@classname}{Using screen mode due to \@journalCode}%
 \or % JACM
   \def\@journalName{Journal of the ACM}%
   \def\@journalNameShort{J. ACM}%
   \def\@permissionCodeOne{0004-5411}%
+  \def\@permissionCodeTwo{1557-735X}%
 \or % JATS
   \def\@journalName{Journal on Autonomous Transportation Systems}%
   \def\@journalNameShort{ACM J. Auton. Transport. Syst.}%
   \def\@permissionCodeOne{2833-0528}%
+  \def\@permissionCodeTwo{2833-0528}%
 \or % JDIQ
   \def\@journalName{ACM Journal of Data and Information Quality}%
   \def\@journalNameShort{ACM J. Data Inform. Quality}%
   \def\@permissionCodeOne{1936-1955}%
+  \def\@permissionCodeTwo{1936-1963}%
 \or % JDS
-  \def\@journalName{ACM/JMS Journal of Data Science}%
+  \def\@journalName{ACM/IMS Journal of Data Science}%
   \def\@journalNameShort{ACM/IMS J. Data Sci.}%
   \def\@permissionCodeOne{2831-3194}%
   \def\@permissionCodeTwo{2831-3194}%
@@ -1209,6 +1227,7 @@
   \def\@journalName{ACM Journal of Experimental Algorithmics}%
   \def\@journalNameShort{ACM J. Exp. Algor.}%
   \def\@permissionCodeOne{1084-6654}%
+  \def\@permissionCodeTwo{1084-6654}%
 \or % JERIC
   \def\@journalName{ACM Journal of Educational Resources in Computing}%
   \def\@journalNameShort{ACM J. Edu. Resources in Comput.}%
@@ -1217,6 +1236,7 @@
   \def\@journalName{ACM Journal on Emerging Technologies in Computing Systems}%
   \def\@journalNameShort{ACM J. Emerg. Technol. Comput. Syst.}%
   \def\@permissionCodeOne{1550-4832}%
+  \def\@permissionCodeTwo{1550-4840}%
 \or % JOCCH
   \def\@journalName{ACM Journal on Computing and Cultural Heritage}%
   \def\@journalNameShort{ACM J. Comput. Cult. Herit.}%
@@ -1226,52 +1246,62 @@
   \def\@journalName{ACM Journal on Responsible Computing}%
   \def\@journalNameShort{ACM J. Responsib. Comput.}%
   \def\@permissionCodeOne{2832-0565}%
+  \def\@permissionCodeTwo{2832-0565}%
 \or % PACMCGIT
   \def\@journalName{Proceedings of the ACM on Computer Graphics and Interactive Techniques}%
   \def\@journalNameShort{Proc. ACM Comput. Graph. Interact. Tech.}%
   \def\@permissionCodeOne{2577-6193}%
+  \def\@permissionCodeTwo{2577-6193}%
   \@ACM@screentrue
   \PackageInfo{\@classname}{Using screen mode due to \@journalCode}%
 \or % PACMHCI
   \def\@journalName{Proceedings of the ACM on Human-Computer Interaction}%
   \def\@journalNameShort{Proc. ACM Hum.-Comput. Interact.}%
   \def\@permissionCodeOne{2573-0142}%
+  \def\@permissionCodeTwo{2573-0142}%
   \@ACM@screentrue
   \PackageInfo{\@classname}{Using screen mode due to \@journalCode}%
 \or % PACMMOD
   \def\@journalName{Proceedings of the ACM on Management of Data}%
   \def\@journalNameShort{Proc. ACM Manag. Data}%
   \def\@permissionCodeOne{2836-6573}%
+  \def\@permissionCodeTwo{2836-6573}%
 \or % PACMNET
   \def\@journalName{Proceedings of the ACM on Networkng}%
   \def\@journalNameShort{Proc. ACM Netw.}%
   \def\@permissionCodeOne{2834-5509}%
+  \def\@permissionCodeTwo{2834-5509}%
 \or % PACMPL
   \def\@journalName{Proceedings of the ACM on Programming Languages}%
   \def\@journalNameShort{Proc. ACM Program. Lang.}%
   \def\@permissionCodeOne{2475-1421}%
+  \def\@permissionCodeTwo{2475-1421}%
   \@ACM@screentrue
   \PackageInfo{\@classname}{Using screen mode due to \@journalCode}%
 \or % PACMSE
   \def\@journalName{Proceedings of the ACM on Software Engineering}%
   \def\@journalNameShort{Proc. ACM Softw. Eng.}%
   \def\@permissionCodeOne{2994-970X}%
+  \def\@permissionCodeTwo{2994-970X}%
   \@ACM@screentrue
   \PackageInfo{\@classname}{Using screen mode due to \@journalCode}%
 \or % POMACS
   \def\@journalName{Proceedings of the ACM on Measurement and Analysis of Computing Systems}%
   \def\@journalNameShort{Proc. ACM Meas. Anal. Comput. Syst.}%
   \def\@permissionCodeOne{2476-1249}%
+  \def\@permissionCodeTwo{2476-1249}%
   \@ACM@screentrue
   \PackageInfo{\@classname}{Using screen mode due to \@journalCode}%
 \or % TAAS
   \def\@journalName{ACM Transactions on Autonomous and Adaptive Systems}%
   \def\@journalNameShort{ACM Trans. Autonom. Adapt. Syst.}%
   \def\@permissionCodeOne{1556-4665}%
+  \def\@permissionCodeTwo{1556-4703}%
 \or % TACCESS
   \def\@journalName{ACM Transactions on Accessible Computing}%
   \def\@journalNameShort{ACM Trans. Access. Comput.}%
   \def\@permissionCodeOne{1936-7228}%
+  \def\@permissionCodeTwo{1936-7236}%
 \or % TACO
   \def\@journalName{ACM Transactions on Architecture and Code Optimization}%
   \def\@journalNameShort{ACM Trans. Arch. Code Optim.}%
@@ -1281,18 +1311,22 @@
   \def\@journalName{ACM Transactions on Algorithms}%
   \def\@journalNameShort{ACM Trans. Algor.}%
   \def\@permissionCodeOne{1549-6325}%
+  \def\@permissionCodeTwo{1549-6333}%
 \or % TALLIP
   \def\@journalName{ACM Transactions on Asian and Low-Resource Language Information Processing}%
   \def\@journalNameShort{ACM Trans. Asian Low-Resour. Lang. Inf. Process.}%
   \def\@permissionCodeOne{2375-4699}%
+  \def\@permissionCodeTwo{2375-4702}%
 \or % TAP
   \def\@journalName{ACM Transactions on Applied Perception}%
   \def\@journalNameShort{ACM Trans. Appl. Percept.}%
   \def\@permissionCodeOne{1544-3558}%
+  \def\@permissionCodeTwo{1544-3965}%
 \or % TCPS
   \def\@journalName{ACM Transactions on Cyber-Physical Systems}%
   \def\@journalNameShort{ACM Trans. Cyber-Phys. Syst.}%
   \def\@permissionCodeOne{2378-962X}%
+  \def\@permissionCodeTwo{2378-9638}%
 \or % TDS
   \def\@journalName{ACM/IMS Transactions on Data Science}%
   \def\@journalNameShort{ACM/IMS Trans. Data Sci.}%
@@ -1301,26 +1335,32 @@
   \def\@journalName{ACM Transactions on Economics and Computation}%
   \def\@journalNameShort{ACM Trans. Econ. Comput.}%
   \def\@permissionCodeOne{2167-8375}%
+  \def\@permissionCodeTwo{2167-8383}%
 \or % TECS
   \def\@journalName{ACM Transactions on Embedded Computing Systems}%
   \def\@journalNameShort{ACM Trans. Embedd. Comput. Syst.}%
   \def\@permissionCodeOne{1539-9087}%
+  \def\@permissionCodeTwo{1558-3465}%
 \or % TELO
-  \def\@journalName{ACM Transactions on Evolutionary Learning}%
-  \def\@journalNameShort{ACM Trans. Evol. Learn.}%
-  \def\@permissionCodeOne{2688-3007}%
+  \def\@journalName{ACM Transactions on Evolutionary Learning and Optimization}%
+  \def\@journalNameShort{ACM Trans. Evol. Learn. Optim.}%
+  \def\@permissionCodeOne{2688-299X}%
+  \def\@permissionCodeTwo{2688-3007}%
 \or % THRI
   \def\@journalName{ACM Transactions on Human-Robot Interaction}%
   \def\@journalNameShort{ACM Trans. Hum.-Robot Interact.}%
   \def\@permissionCodeOne{2573-9522}%
+  \def\@permissionCodeTwo{2573-9522}%
 \or % TIIS
   \def\@journalName{ACM Transactions on Interactive Intelligent Systems}%
   \def\@journalNameShort{ACM Trans. Interact. Intell. Syst.}%
   \def\@permissionCodeOne{2160-6455}%
+  \def\@permissionCodeTwo{2160-6463}%
 \or % TIOT
   \def\@journalName{ACM Transactions on Internet of Things}%
   \def\@journalNameShort{ACM Trans. Internet Things}%
   \def\@permissionCodeOne{2577-6207}%
+  \def\@permissionCodeTwo{2577-6207}%
 \or % TISSEC
   \def\@journalName{ACM Transactions on Information and System Security}%
   \def\@journalNameShort{ACM Trans. Info. Syst. Sec.}%
@@ -1329,54 +1369,67 @@
   \def\@journalName{ACM Transactions on Intelligent Systems and Technology}%
   \def\@journalNameShort{ACM Trans. Intell. Syst. Technol.}%
   \def\@permissionCodeOne{2157-6904}%
+  \def\@permissionCodeTwo{2157-6912}%
 \or % TKDD
   \def\@journalName{ACM Transactions on Knowledge Discovery from Data}%
   \def\@journalNameShort{ACM Trans. Knowl. Discov. Data.}%
   \def\@permissionCodeOne{1556-4681}%
+  \def\@permissionCodeTwo{1556-472X}%
 \or % TMIS
   \def\@journalName{ACM Transactions on Management Information Systems}%
   \def\@journalNameShort{ACM Trans. Manag. Inform. Syst.}%
   \def\@permissionCodeOne{2158-656X}%
+  \def\@permissionCodeTwo{2158-6578}%
 \or % TOCE
   \def\@journalName{ACM Transactions on Computing Education}%
   \def\@journalNameShort{ACM Trans. Comput. Educ.}%
   \def\@permissionCodeOne{1946-6226}%
+  \def\@permissionCodeTwo{1946-6226}%
 \or % TOCHI
   \def\@journalName{ACM Transactions on Computer-Human Interaction}%
   \def\@journalNameShort{ACM Trans. Comput.-Hum. Interact.}%
   \def\@permissionCodeOne{1073-0516}%
+  \def\@permissionCodeTwo{1557-7325}%
 \or % TOCL
   \def\@journalName{ACM Transactions on Computational Logic}%
   \def\@journalNameShort{ACM Trans. Comput. Logic}%
   \def\@permissionCodeOne{1529-3785}%
+  \def\@permissionCodeTwo{1557-945X}%
 \or % TOCS
   \def\@journalName{ACM Transactions on Computer Systems}%
   \def\@journalNameShort{ACM Trans. Comput. Syst.}%
   \def\@permissionCodeOne{0734-2071}%
+  \def\@permissionCodeTwo{1557-7333}%
 \or % TOCT
   \def\@journalName{ACM Transactions on Computation Theory}%
   \def\@journalNameShort{ACM Trans. Comput. Theory}%
   \def\@permissionCodeOne{1942-3454}%
+  \def\@permissionCodeTwo{1942-3462}%
 \or % TODAES
   \def\@journalName{ACM Transactions on Design Automation of Electronic Systems}%
   \def\@journalNameShort{ACM Trans. Des. Autom. Electron. Syst.}%
   \def\@permissionCodeOne{1084-4309}%
+  \def\@permissionCodeTwo{1557-7309}%
 \or % TODS
   \def\@journalName{ACM Transactions on Database Systems}%
   \def\@journalNameShort{ACM Trans. Datab. Syst.}%
   \def\@permissionCodeOne{0362-5915}%
+  \def\@permissionCodeTwo{1557-4644}%
 \or % TOG
   \def\@journalName{ACM Transactions on Graphics}%
   \def\@journalNameShort{ACM Trans. Graph.}%
-  \def\@permissionCodeOne{0730-0301}
+  \def\@permissionCodeOne{0730-0301}%
+  \def\@permissionCodeTwo{1557-7368}%
 \or % TOIS
   \def\@journalName{ACM Transactions on Information Systems}%
   \def\@journalNameShort{ACM Trans. Inf. Syst.}%
   \def\@permissionCodeOne{1046-8188}%
+  \def\@permissionCodeTwo{1558-2868}%
 \or % TOIT
   \def\@journalName{ACM Transactions on Internet Technology}%
   \def\@journalNameShort{ACM Trans. Internet Technol.}%
   \def\@permissionCodeOne{1533-5399}%
+  \def\@permissionCodeTwo{1557-6051}%
 \or % TOMACS
   \def\@journalName{ACM Transactions on Modeling and Computer Simulation}%
   \def\@journalNameShort{ACM Trans. Model. Comput. Simul.}%
@@ -1391,67 +1444,82 @@
   \def\@journalName{ACM Transactions on Modeling and Performance Evaluation of Computing Systems}%
   \def\@journalNameShort{ACM Trans. Model. Perform. Eval. Comput. Syst.}%
   \def\@permissionCodeOne{2376-3639}%
+  \def\@permissionCodeTwo{2376-3647}%
 \or % TOMS
   \def\@journalName{ACM Transactions on Mathematical Software}%
   \def\@journalNameShort{ACM Trans. Math. Softw.}%
   \def\@permissionCodeOne{0098-3500}%
+  \def\@permissionCodeTwo{1557-7295}%
 \or % TOPC
   \def\@journalName{ACM Transactions on Parallel Computing}%
   \def\@journalNameShort{ACM Trans. Parallel Comput.}%
   \def\@permissionCodeOne{2329-4949}%
   \def\@permissionCodeTwo{2329-4957}%
-\or % TOPS
-  \def\@journalName{ACM Transactions on Privacy and Security}%
-  \def\@journalNameShort{ACM Trans. Priv. Sec.}%
-  \def\@permissionCodeOne{2471-2566}%
 \or % TOPLAS
   \def\@journalName{ACM Transactions on Programming Languages and Systems}%
   \def\@journalNameShort{ACM Trans. Program. Lang. Syst.}%
   \def\@permissionCodeOne{0164-0925}%
+  \def\@permissionCodeTwo{1558-4593}%
 \or % TOPML
   \def\@journalName{ACM Transactions on Probabilistic Machine Learning}%
   \def\@journalNameShort{ACM Trans. Probab. Mach. Learn.}%
   \def\@permissionCodeOne{2836-8924}%
+  \def\@permissionCodeTwo{2836-8924}%
+\or % TOPS
+  \def\@journalName{ACM Transactions on Privacy and Security}%
+  \def\@journalNameShort{ACM Trans. Priv. Sec.}%
+  \def\@permissionCodeOne{2471-2566}%
+  \def\@permissionCodeTwo{2471-2574}%
 \or % TORS
   \def\@journalName{ACM Transactions on Recommender Systems}%
   \def\@journalNameShort{ACM Trans. Recomm. Syst.}%
   \def\@permissionCodeOne{2770-6699}%
+  \def\@permissionCodeTwo{2770-6699}%
 \or % TOS
   \def\@journalName{ACM Transactions on Storage}%
   \def\@journalNameShort{ACM Trans. Storage}%
   \def\@permissionCodeOne{1553-3077}%
+  \def\@permissionCodeTwo{1553-3093}%
 \or % TOSEM
   \def\@journalName{ACM Transactions on Software Engineering and Methodology}%
   \def\@journalNameShort{ACM Trans. Softw. Eng. Methodol.}%
   \def\@permissionCodeOne{1049-331X}%
+  \def\@permissionCodeTwo{1557-7392}%
 \or % TOSN
   \def\@journalName{ACM Transactions on Sensor Networks}%
   \def\@journalNameShort{ACM Trans. Sensor Netw.}%
   \def\@permissionCodeOne{1550-4859}%
+  \def\@permissionCodeTwo{1550-4867}%
 \or % TQC
   \def\@journalName{ACM Transactions on Quantum Computing}%
   \def\@journalNameShort{ACM Trans. Quantum Comput.}%
   \def\@permissionCodeOne{2643-6817}%
+  \def\@permissionCodeTwo{2643-6817}%
 \or % TRETS
   \def\@journalName{ACM Transactions on Reconfigurable Technology and Systems}%
   \def\@journalNameShort{ACM Trans. Reconfig. Technol. Syst.}%
   \def\@permissionCodeOne{1936-7406}%
+  \def\@permissionCodeTwo{1936-7414}%
 \or % TSAS
   \def\@journalName{ACM Transactions on Spatial Algorithms and Systems}%
   \def\@journalNameShort{ACM Trans. Spatial Algorithms Syst.}%
   \def\@permissionCodeOne{2374-0353}%
+  \def\@permissionCodeTwo{2374-0361}%
 \or % TSC
   \def\@journalName{ACM Transactions on Social Computing}%
   \def\@journalNameShort{ACM Trans. Soc. Comput.}%
   \def\@permissionCodeOne{2469-7818}%
+  \def\@permissionCodeTwo{2469-7826}%
 \or % TSLP
   \def\@journalName{ACM Transactions on Speech and Language Processing}%
   \def\@journalNameShort{ACM Trans. Speech Lang. Process.}%
   \def\@permissionCodeOne{1550-4875}%
+  \def\@permissionCodeTwo{2329-9304}%
 \or % TWEB
   \def\@journalName{ACM Transactions on the Web}%
   \def\@journalNameShort{ACM Trans. Web}%
   \def\@permissionCodeOne{1559-1131}%
+  \def\@permissionCodeTwo{1559-114X}%
 \else % FACMP, a dummy journal
   \def\@journalName{ACM Just Accepted}%
   \def\@journalNameShort{ACM Accepted}%
@@ -1462,12 +1530,13 @@
   \ClassError{\@classname}{Incorrect journal #1}%
 }%
 \def\acmJournal#1{\setkeys{ACM}{acmJournal=#1}%
-  \global\@ACM@journal@bibstriptrue}
+  \global\@ACM@journal@bibstriptrue
+  \global\@ACM@journal@bibstrip@or@togtrue}
 \def\@journalCode@nr{0}
 \def\@journalName{}%
 \def\@journalNameShort{\@journalName}%
 \def\@permissionCodeOne{XXXX-XXXX}%
-\def\@permissionCodeTwo{}%
+\def\@permissionCodeTwo{\@permissionCodeOne}%
 \newcommand\acmConference[4][]{%
   \gdef\acmConference@shortname{#1}%
   \gdef\acmConference@name{#2}%
@@ -1477,6 +1546,11 @@
     \gdef\acmConference@shortname{#2}%
   \fi
   \global\@ACM@journal@bibstripfalse
+  \ifx\@acmBooktitle\@empty\relax
+    \acmBooktitle{Proceedings of \acmConference@name
+      \ifx\acmConference@name\acmConference@shortname\else
+      \ (\acmConference@shortname)\fi}%
+  \fi
 }
 \if@ACM@journal\else
 \acmConference[Conference'17]{ACM Conference}{July 2017}{Washington,
@@ -1484,11 +1558,6 @@
 \fi
 \def\acmBooktitle#1{\gdef\@acmBooktitle{#1}}
 \acmBooktitle{}
-\ifx\acmConference@name\@undefined\else
-\acmBooktitle{Proceedings of \acmConference@name
-       \ifx\acmConference@name\acmConference@shortname\else
-       \ (\acmConference@shortname)\fi}
-\fi
 \def\@editorsAbbrev{(Ed.)}
 \def\@acmEditors{}
 \def\editor#1{\ifx\@acmEditors\@empty
@@ -1568,10 +1637,8 @@
   \def\institution##1{##1\ignorespaces}%
   \def\department{\@ifnextchar[{\@department}{\@department[]}}%
   \def\@department[##1]##2{\unskip, ##2\ignorespaces}%
-  \let\streetaddress\position
   \let\city\position
   \let\state\position
-  \let\postcode\position
   \let\country\position
   Also with #1\unskip.\egroup}
 \renewcommand{\email}[2][]{%
@@ -1642,6 +1709,8 @@
   January\or February\or March\or April\or May\or June\or
   July\or August\or September\or October\or November\or
   December\fi~\@acmYear}
+\def\acmPrice#1{\ClassWarning{\@classname}{The macro \string\acmPrice
+    is obsolete.  ACM no longer prints the price in bibstrip.}}
 \def\acmSubmissionID#1{\def\@acmSubmissionID{#1}}
 \acmSubmissionID{}
 \def\acmISBN#1{\def\@acmISBN{#1}}
@@ -1977,7 +2046,7 @@
    and\hspace*{.5pt}/or a fee. Request permissions from
    permissions@acm.org.
   \or % rightsretained
-   Permission to make digital or hard copies of part or all of this
+   Permission to make digital or hard copies of all or part of this
    work for personal or classroom use is granted without fee provided
    that copies are not made or distributed for profit or commercial
    advantage and that copies bear this notice and the full citation on
@@ -2158,7 +2227,7 @@
   \if@ACM@acmcp\else
     \ifx\@empty\@authorsaddresses\else
        \if@ACM@anonymous\else
-         \if@ACM@journal@bibstrip
+         \if@ACM@journal@bibstrip@or@tog
            \footnotetextauthorsaddresses{%
              \def\par{\let\par\@par}\parindent\z@\@setauthorsaddresses}%
          \fi
@@ -2215,7 +2284,7 @@
         \else
           \if@ACM@nonacm\else
             \if@ACM@journal@bibstrip
-              ACM~\@permissionCodeOne/\@acmYear/\@acmMonth-ART\@acmArticle\\
+              ACM~\@permissionCodeTwo/\@acmYear/\@acmMonth-ART\@acmArticle\\
               \@formatdoi{\@acmDOI}%
             \else % Conference
               \ifx\@acmISBN\@empty\else ACM~ISBN~\@acmISBN\\\fi
@@ -2501,8 +2570,12 @@
     \unskip\cleaders\copy\@ACM@commabox\hskip\wd\@ACM@commabox
   \fi\fi
   #1}
-\def\streetaddress#1{\unskip\ignorespaces}
-\def\postcode#1{\unskip\ignorespaces}
+\def\streetaddress#1{\ClassWarning{\@classname}{ACM no longer collects
+  authors' postal addresses.  I am ignoring your street
+  address}\unskip\ignorespaces}
+\def\postcode#1{\ClassWarning{\@classname}{ACM no longer collects
+  authors' postal addresses.  I am ignoring your postal
+  code}\unskip\ignorespaces}
 \if@ACM@journal
   \def\position#1{\unskip\ignorespaces}
   \def\institution#1{\global\@ACM@instpresenttrue
@@ -2762,11 +2835,14 @@
 \def\@mkauthorsaddresses{%
   \ifnum\num@authors>1\relax
   Authors' \else Author's \fi
-  \ifnum\num@authorgroups>1\relax
-  addresses: \else address: \fi
+  Contact Information:
   \bgroup
-  \def\streetaddress##1{\unskip, ##1}%
-  \def\postcode##1{\unskip, ##1}%
+  \def\streetaddress##1{\ClassWarning{\@classname}{ACM no longer collects
+  authors' postal addresses.  I am ignoring your street
+  address}\unskip\ignorespaces}%
+  \def\postcode##1{\ClassWarning{\@classname}{ACM no longer collects
+  authors' postal addresses.  I am ignoring your postal
+  code}\unskip\ignorespaces}%
   \def\position##1{\unskip\ignorespaces}%
   \gdef\@ACM@institution@separator{, }%
   \def\institution##1{\unskip\@ACM@institution@separator ##1\gdef\@ACM@institution@separator{ and }}%
@@ -2960,7 +3036,7 @@
       \@acmArticle\if@ACM@printfolios:\thepage\fi%
     \fi%
   }%
-  \if@ACM@journal@bibstrip
+  \if@ACM@journal@bibstrip@or@tog
     \ifcase\ACM@format@nr
     \relax % manuscript
       \fancyhead[LE]{\ACM@linecountL\if@ACM@printfolios\thepage\fi}%
@@ -2996,9 +3072,15 @@
       \fancyhead[RE]{\ACM@linecountR}%
       \fancyhead[RO]{\@headfootfont
         \shorttitle\quad\textbullet\quad\@acmArticlePage\ACM@linecountR}%
-      \if@ACM@nonacm\else%
-        \fancyfoot[RO,LE]{\footnotesize \@journalNameShort, Vol. \@acmVolume, No.
-        \@acmNumber, Article \@acmArticle.  Publication date: \@acmPubDate.}%
+      \if@ACM@nonacm\else
+        \if@ACM@journal@bibstrip
+          \fancyfoot[RO,LE]{\footnotesize \@journalNameShort,
+            Vol. \@acmVolume, No.~\@acmNumber, Article \@acmArticle.
+            Publication date: \@acmPubDate.}%
+        \else
+          \fancyfoot[RO,LE]{\footnotesize \acmConference@shortname,
+            \acmConference@date, \acmConference@venue.}%
+         \fi
       \fi
     \else % Proceedings
       \fancyfoot[C]{\if@ACM@printfolios\footnotesize\thepage\fi}%
@@ -3077,7 +3159,7 @@
   \fancyhf{}%
   \renewcommand{\headrulewidth}{\z@}%
   \renewcommand{\footrulewidth}{\z@}%
-  \if@ACM@journal@bibstrip
+  \if@ACM@journal@bibstrip@or@tog
     \ifcase\ACM@format@nr
     \relax % manuscript
       \fancyhead[L]{\ACM@linecountL\@acmBadgeL}%
@@ -3108,9 +3190,14 @@
       \fancyhead[LO]{\ACM@linecountL\@acmBadgeL}%
     \or % acmtog
       \if@ACM@nonacm\else%
-        \fancyfoot[RO,LE]{\footnotesize \@journalNameShort, Vol. \@acmVolume, No.
-        \@acmNumber, Article \@acmArticle.  Publication date:
-        \@acmPubDate.}%
+        \if@ACM@journal@bibstrip
+          \fancyfoot[RO,LE]{\footnotesize \@journalNameShort,
+            Vol. \@acmVolume, No.~\@acmNumber, Article \@acmArticle.
+            Publication date: \@acmPubDate.}%
+        \else
+          \fancyfoot[RO,LE]{\footnotesize \acmConference@shortname,
+            \acmConference@date, \acmConference@venue.}%
+         \fi
       \fi%
       \fancyhead[L]{\ACM@linecountL\@acmBadgeL}%
       \fancyhead[R]{\@acmBadgeR\ACM@linecountR}%
@@ -3209,7 +3296,7 @@
   \rightskip\@rightskip
   \leftskip\z@skip
   \parindent\z@}
-\def\@secfont{\sffamily\bfseries\section@raggedright\MakeTextUppercase}
+\def\@secfont{\sffamily\bfseries\section@raggedright}
 \def\@subsecfont{\sffamily\bfseries\section@raggedright}
 \def\@subsubsecfont{\sffamily\itshape}
 \def\@parfont{\itshape}
@@ -3218,16 +3305,16 @@
 \relax % manuscript
 \or % acmsmall
 \or % acmlarge
- \def\@secfont{\sffamily\large\section@raggedright\MakeTextUppercase}
+ \def\@secfont{\sffamily\large\section@raggedright}
  \def\@subsecfont{\sffamily\large\section@raggedright}
 \or % acmtog
- \def\@secfont{\sffamily\large\section@raggedright\MakeTextUppercase}
+ \def\@secfont{\sffamily\large\section@raggedright}
  \def\@subsecfont{\sffamily\large\section@raggedright}
 \or % sigconf
- \def\@secfont{\bfseries\Large\section@raggedright\MakeTextUppercase}
+ \def\@secfont{\bfseries\Large\section@raggedright}
  \def\@subsecfont{\bfseries\Large\section@raggedright}
 \or % siggraph
- \def\@secfont{\sffamily\bfseries\Large\section@raggedright\MakeTextUppercase}
+ \def\@secfont{\sffamily\bfseries\Large\section@raggedright}
  \def\@subsecfont{\sffamily\bfseries\Large\section@raggedright}
 \or % sigplan
  \def\@secfont{\bfseries\Large\section@raggedright}
@@ -3237,14 +3324,14 @@
  \def\@subparfont{\itshape}
 \or % sigchi
  \setcounter{secnumdepth}{1}
- \def\@secfont{\sffamily\bfseries\section@raggedright\MakeTextUppercase}
+ \def\@secfont{\sffamily\bfseries\section@raggedright}
  \def\@subsecfont{\sffamily\bfseries\section@raggedright}
 \or % sigchi-a
  \setcounter{secnumdepth}{0}
- \def\@secfont{\sffamily\bfseries\section@raggedright\MakeTextUppercase}
+ \def\@secfont{\sffamily\bfseries\section@raggedright}
  \def\@subsecfont{\sffamily\bfseries\section@raggedright}
 \or % acmengage
- \def\@secfont{\bfseries\Large\section@raggedright\MakeTextUppercase}
+ \def\@secfont{\bfseries\Large\section@raggedright}
  \def\@subsecfont{\bfseries\Large\section@raggedright}
 \or %acmcp
 \fi
