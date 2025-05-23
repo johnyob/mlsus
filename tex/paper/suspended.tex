@@ -62,6 +62,61 @@
 
 \section{Introduction}
 
+\Xdidier{
+I think the intro should be more like
+\begin{enumerate}
+\item Core ML
+\item type inference HM - W - type constraints
+   can be solved in any order, but in practice, they are let-binding
+   directional.  
+\item
+   The order does not matter for core ML
+\item
+   Trivial extensions of ML: that fits in HM (ex. higher-kinded types)
+\item
+   Advanced extensions: they require extra type information from user
+   provided type annotayions:  static overloading, semi-explicit
+   polymorphism, GADTs
+\item
+   The advanced extensions can be made trivial if we required more explicit
+   type annotaions.
+\item
+   They can be understood as the elaboration of a surface language that
+   omits some of the annotations.
+\item
+   The difficult is which annotations can be ommited: how can this be
+   specified and implemented.
+\item
+   Two approches:
+   \begin{itemize}
+    \item OCaml uses let-binding directionality
+    \item Others use bidirection type inference
+   \end{itemize}
+   Both are unsatisfactory
+   \begin{itemize}
+    \item OCaml cannot get information from expected return types. 
+    \item Bidirectional type inference is not stable by exchanging the order
+       of arguments
+   \end{itemize}
+\item
+   Both specify and use a spcific order in the resolution of constraints
+\item
+   Principal types are with respect to this ordering, which is fragile.
+\item
+   We instead want to get rid of the ordering.
+\item
+   An easy solution is to be able resolve core ML typing constraint in any
+   order.
+\item
+   We may then delay advance constraints that require extra information
+\item
+   Which hopefully can be solved one all other information has been
+   propagate.   
+\end{enumerate}
+Then, we should present our solution, where the difficulties are, and our
+contributions. 
+}
+
 Generalization is the distinguishing feature of Hindley-Damas-Milner type
 inference. Consider a subterm $\cletin{x = e_1}{e_2}$ of the program being
 inferred. We first infer a type $\tau_1$ for $e_1$, and then we
