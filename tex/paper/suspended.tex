@@ -482,6 +482,38 @@ timestamp semantics.
 \TODO: derive precise declarative semantnics for the language features of
 Section 2. 
 
+
+Idea after discussion with Alistair:
+\begin{itemize}
+\item sketch a two-place satisfiability judgment $\phi \vdash C$
+\item define a three-place judgment $\phi \vdash C[\phi' \vdash \square]$
+\item from it we can re-derive the two-place judgment
+  $$ \phi \vdash C \quad := \quad \phi \vdash (C \wedge \square)[\phi \vdash \square] $$
+  and also define a four-place judgment
+  \begin{mathpar}
+    \infer
+    {\phi \vdash \mathscr{C}[\phi' \vdash \square] \and \phi' \vdash C'}
+    {\phi \vdash \mathscr{C}[\phi' \vdash C']}
+  \end{mathpar}
+\item then we have all the bits to introduce the condition
+  $\mathscr{C}[\alpha !]$:
+  \begin{mathpar}
+    \begin{array}{l}
+    \exists! \F, \quad \forall \phi, \phi',\\ \qquad \phi \vdash \mathscr{C}[\phi' \vdash \square] \implies \mathsf{head}(\phi'(\alpha)) = \F
+    \end{array}
+  \end{mathpar}
+\item and finally the global rule
+  \begin{mathpar}
+    \infer
+    {\mathscr{C}[\alpha !]
+      \and \phi'(\alpha) = \overline{\tau} \Fapp
+      \and \phi \vdash \mathscr{C}[\phi', \overline{\beta := \tau} \vdash f(\overline{\beta} \Fapp)] }
+    {\phi \vdash \mathscr{C}[\phi' \vdash \cmatch \alpha \Delta f]}
+  \end{mathpar}
+\end{itemize}
+
+The intuition for the four-place judgment $\phi \vdash \mathscr{C}[\phi' \vdash C]$ is that it is a proof of satisfiability of $\mathscr{C}[C]$ where the $C$ sub-derivation has the valuation $\phi'$. Note that, after the the global rule is added, the derivations of this judgment are not syntactically directed by $\mathscr{C}$ anymore.
+
 \subsection{Type system}
 
 In order to show our approach is sound and complete with respect to our
