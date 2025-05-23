@@ -135,6 +135,10 @@ let forall ~(state : State.t) ~env ~type_var =
     ~type_:(G.create_rigid_var ~state ~curr_region:env.curr_region ())
 ;;
 
+let forall_many ~state ~env type_vars =
+  List.fold type_vars ~init:env ~f:(fun env type_var -> forall ~state ~env ~type_var)
+;;
+
 let exists ~(state : State.t) ~env ~type_var =
   Env.bind_type_var
     env
@@ -219,6 +223,11 @@ let rec solve : state:State.t -> env:Env.t -> C.t -> unit =
     [%log.global.debug "Updated env" (env : Env.t)];
     [%log.global.debug "Solving exist body"];
     self ~state ~env cst
+  | Forall (type_vars, in_) ->
+    (* No need to explicitly exit the region since lazily generalization will handle it :) *)
+    let env = Env.enter_region ~state env in
+    let env = forall_many ~state ~env type_vars in
+    self ~state ~env in_
   | Match { matchee; closure; case = f; else_ } ->
     let matchee = Env.find_type_var env matchee in
     [%log.global.debug "Matchee type" (matchee : Type.t)];

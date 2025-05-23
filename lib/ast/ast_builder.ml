@@ -20,6 +20,7 @@ module type S = sig
     val arrow : (core_type -> core_type -> core_type) with_range_fn
     val tuple : (core_type list -> core_type) with_range_fn
     val constr : (core_type list -> Type_name.With_range.t -> core_type) with_range_fn
+    val poly : (core_scheme -> core_type) with_range_fn
 
     val scheme
       : (?quantifiers:Type_var_name.With_range.t list -> core_type -> core_scheme)
@@ -69,6 +70,8 @@ module type S = sig
 
     val sequence : (expression -> expression -> expression) with_range_fn
     val case : (lhs:pattern -> rhs:expression -> case) with_range_fn
+    val poly : (expression -> ?scheme:core_scheme -> unit -> expression) with_range_fn
+    val inst : (expression -> expression) with_range_fn
   end
 
   val value_binding : (Var_name.With_range.t -> expression -> value_binding) with_range_fn
@@ -113,6 +116,8 @@ module Default : S with type 'a with_range_fn := range:Range.t -> 'a = struct
     let constr ~range arg_types constr_name =
       With_range.create ~range @@ Type_constr (arg_types, constr_name)
     ;;
+
+    let poly ~range scheme = With_range.create ~range @@ Type_poly scheme
 
     let scheme ~range ?(quantifiers = []) body =
       With_range.create ~range @@ { scheme_quantifiers = quantifiers; scheme_body = body }
@@ -173,6 +178,9 @@ module Default : S with type 'a with_range_fn := range:Range.t -> 'a = struct
     let case ~range ~lhs ~rhs =
       With_range.create ~range @@ { case_lhs = lhs; case_rhs = rhs }
     ;;
+
+    let poly ~range exp ?scheme () = With_range.create ~range @@ Exp_poly (exp, scheme)
+    let inst ~range exp = With_range.create ~range @@ Exp_inst exp
   end
 
   let value_binding ~range var exp =
@@ -213,6 +221,7 @@ module Make (R : Range) : S with type 'a with_range_fn := 'a = struct
     let arrow = Type.arrow ~range:R.v
     let tuple = Type.tuple ~range:R.v
     let constr = Type.constr ~range:R.v
+    let poly = Type.poly ~range:R.v
     let scheme = Type.scheme ~range:R.v
   end
 
@@ -245,6 +254,8 @@ module Make (R : Range) : S with type 'a with_range_fn := 'a = struct
     let if_ = Expression.if_ ~range:R.v
     let sequence = Expression.sequence ~range:R.v
     let case = Expression.case ~range:R.v
+    let poly = Expression.poly ~range:R.v
+    let inst = Expression.inst ~range:R.v
   end
 
   let value_binding = value_binding ~range:R.v

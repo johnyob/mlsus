@@ -795,7 +795,9 @@ let%expect_test "" =
     error[E011]: mismatched type
         ┌─ expect_test.ml:3:9
       3 │          (x, x) (fun y -> y)
-        │          ^^^^^^ `'a -> 'b` is not equal to `'c * 'd`
+        │          ^^^^^^ `'a -> 'b`
+        │                   is not equal to
+        │                 `'c * 'd`
     |}]
 ;;
 
@@ -813,7 +815,9 @@ let%expect_test "" =
     error[E011]: mismatched type
         ┌─ expect_test.ml:3:26
       3 │          (fun y z -> y z) ()
-        │                           ^^ `'a -> 'b` is not equal to `unit`
+        │                           ^^ `'a -> 'b`
+        │                                is not equal to
+        │                              `unit`
     |}]
 ;;
 
@@ -991,7 +995,9 @@ let%expect_test "" =
     error[E011]: mismatched type
         ┌─ expect_test.ml:4:21
       4 │            (fun x -> x : 'a -> 'b)
-        │                      ^ `'a` is not equal to `'b`
+        │                      ^ `'a`
+        │                          is not equal to
+        │                        `'b`
     |}]
 ;;
 
@@ -1427,6 +1433,184 @@ let%expect_test "" =
         let f = fun x -> x.1 in
         f (1, 2)
       ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;; 
+      let pid = [ id : 'a. 'a -> 'a ] ;; 
+      let see_pid = (fun x -> (@[x], @[x])) pid ;;
+      let see_pid_type = forall (type 'a 'b) -> (see_pid : ('a -> 'a) * ('b -> 'b)) ;; 
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;; 
+      let pid1 = exists (type 'b) -> [ id : 'a. 'a * 'b -> 'a * 'b ] ;;
+      let see_pid1 = (fun x -> (@[x], @[x])) pid1 ;;
+      let see_pid1_type = forall (type 'a 'b 'c) -> (see_pid1 : ('a * 'b -> 'a * 'b) * ('c * 'b -> 'c * 'b)) ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;; 
+      let pid1 = exists (type 'b) -> [ id : 'a. 'a * 'b -> 'a * 'b ] ;;
+      let see_pid1 = (fun x -> (@[x], @[x])) pid1 ;;
+      let see_pid1_type_wrong = forall (type 'a 'b 'c 'd) -> (see_pid1 : ('a * 'b -> 'a * 'b) * ('c * 'd -> 'c * 'd)) ;;
+    |}
+  in
+  (* Bug in grace, this should print aligned with the ^^^^^^ *)
+  type_check_and_print str;
+  [%expect
+    {|
+    error[E011]: mismatched type
+        ┌─ expect_test.ml:5:63
+      5 │        let see_pid1_type_wrong = forall (type 'a 'b 'c 'd) -> (see_pid1 : ('a * 'b -> 'a * 'b) * ('c * 'd -> 'c * 'd)) ;;
+        │                                                                ^^^^^^^^
+        │  `('a * 'b -> 'a * 'b) * ('c * 'b -> 'c * 'b)`
+        │    is not equal to
+        │  `('d * 'e -> 'd * 'e) * ('f * 'g -> 'f * 'g)`
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;; 
+      let pid2 = [ id : 'a 'b. 'a * 'b -> 'a * 'b ] ;;
+      let see_pid2 = (fun x -> (@[x], @[x])) pid2 ;;
+      let see_pid2_type = forall (type 'a 'b 'c 'd) -> (see_pid2 : ('a * 'b -> 'a * 'b) * ('c * 'd -> 'c * 'd)) ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      external combine : 'a. 'a -> 'a -> 'a;;
+
+      let id = fun x -> x ;; 
+      let qid = [ id ] ;; 
+      let pid = [ id : 'a. 'a -> 'a ] ;;
+      let pqid = combine pid qid ;;
+      let pqid_type = (pqid : [ 'a. 'a -> 'a ]) ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;;
+      let mono_use_pid = fun pid -> @[pid] ;;
+      let succ = fun x -> x + 1 ;;
+      let mono_use_pid_app_succ = fun pid -> @[pid] succ ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;;
+      let pid = [ id : 'a. 'a -> 'a ] ;; 
+      let use_id_pid = (fun pid -> @[pid]) pid ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;;
+      let pid = [ id : 'a. 'a ] ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect
+    {|
+    error[E011]: mismatched type
+        ┌─ expect_test.ml:3:19
+      3 │        let pid = [ id : 'a. 'a ] ;;
+        │                    ^^ `'a -> 'a`
+        │                         is not equal to
+        │                       `'b`
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let succ = fun x -> x + 1 ;;
+      let pid = [ succ : 'a. 'a -> 'a ] ;;  
+    |}
+  in
+  type_check_and_print str;
+  [%expect
+    {|
+    error[E011]: mismatched type
+        ┌─ expect_test.ml:3:19
+      3 │        let pid = [ succ : 'a. 'a -> 'a ] ;;
+        │                    ^^^^ `int -> int`
+        │                           is not equal to
+        │                         `'a -> 'a`
+    |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;;
+      let pid = [ id : 'a. 'a -> 'a ] ;;
+      let use_id_twice_app_pid = (fun pid -> let x = @[pid] in (x, x)) pid ;;
+      let xx_pid = (fun pid -> @[pid] @[pid]) pid ;;
+      let idide = fun (pid : ['a. 'a -> 'a]) -> let id = @[pid] in (id, id) ;;
+      let idide_pid = idide pid ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;;
+      let use_poly_mono = fun x -> let y = [ (id, x) ] in @[y] ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let id = fun x -> x ;;
+      let use_poly_mono = fun x -> let y = [ (id, x) ] in 0 ;;
     |}
   in
   type_check_and_print str;

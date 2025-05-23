@@ -11,76 +11,96 @@ module Convert = struct
     | Some type_def -> type_def.type_ident, type_def.type_arity
   ;;
 
-  module Core_type = struct
-    let assert_expected_arity_is_equal_to_actual_arity
-          ~(arg_types : _ With_range.t list)
-          ~(expected_arity : int)
-          ~(constr_name : Type_name.With_range.t)
-      =
-      let actual_arity = List.length arg_types in
-      if expected_arity <> actual_arity
-      then (
-        let args_range =
-          match arg_types with
-          | type_ :: arg_types ->
-            List.fold arg_types ~init:type_.range ~f:(fun range type_ ->
-              Range.merge range type_.range)
-          | [] ->
-            (* For an empty args list, the correct range is the range of the type name *)
-            constr_name.range
-        in
-        Mlsus_error.(
-          raise
-          @@ type_constructor_arity_mismatch
-               ~args_range
-               ~actual_arity
-               ~expected_arity
-               constr_name))
-    ;;
+  let assert_expected_arity_is_equal_to_actual_arity
+        ~(arg_types : _ With_range.t list)
+        ~(expected_arity : int)
+        ~(constr_name : Type_name.With_range.t)
+    =
+    let actual_arity = List.length arg_types in
+    if expected_arity <> actual_arity
+    then (
+      let args_range =
+        match arg_types with
+        | type_ :: arg_types ->
+          List.fold arg_types ~init:type_.range ~f:(fun range type_ ->
+            Range.merge range type_.range)
+        | [] ->
+          (* For an empty args list, the correct range is the range of the type name *)
+          constr_name.range
+      in
+      Mlsus_error.(
+        raise
+        @@ type_constructor_arity_mismatch
+             ~args_range
+             ~actual_arity
+             ~expected_arity
+             constr_name))
+  ;;
 
-    let rec to_type_expr ~env (type_ : Ast.core_type) : Adt.type_expr =
-      match type_.it with
-      | Type_var v -> Type_var v.it
-      | Type_arrow (type1, type2) ->
-        let type_expr1 = to_type_expr ~env type1
-        and type_expr2 = to_type_expr ~env type2 in
-        Type_arrow (type_expr1, type_expr2)
-      | Type_tuple types ->
-        let type_exprs = List.map types ~f:(to_type_expr ~env) in
-        Type_tuple type_exprs
-      | Type_constr (arg_types, constr_name) ->
-        let type_ident, expected_arity = type_name ~env constr_name in
-        assert_expected_arity_is_equal_to_actual_arity
-          ~arg_types
-          ~expected_arity
-          ~constr_name;
-        let arg_types = List.map arg_types ~f:(to_type_expr ~env) in
-        Type_constr (arg_types, type_ident)
-    ;;
+  let rec core_type_to_type_expr ~env (type_ : Ast.core_type) : Adt.type_expr =
+    let self = core_type_to_type_expr ~env in
+    match type_.it with
+    | Type_var v -> Type_var v.it
+    | Type_arrow (type1, type2) ->
+      let type_expr1 = self type1
+      and type_expr2 = self type2 in
+      Type_arrow (type_expr1, type_expr2)
+    | Type_tuple types ->
+      let type_exprs = List.map types ~f:self in
+      Type_tuple type_exprs
+    | Type_constr (arg_types, constr_name) ->
+      let type_ident, expected_arity = type_name ~env constr_name in
+      assert_expected_arity_is_equal_to_actual_arity
+        ~arg_types
+        ~expected_arity
+        ~constr_name;
+      let arg_types = List.map arg_types ~f:self in
+      Type_constr (arg_types, type_ident)
+    | Type_poly scheme -> Type_poly (core_scheme_to_type_scheme_expr ~env scheme)
 
-    let rec to_type ~env (type_ : Ast.core_type) : Type.t =
-      match type_.it with
-      | Type_var v ->
-        (match Env.find_type_var env v.it with
-         | Some v -> Type.var v
-         | None -> Mlsus_error.(raise @@ unbound_type_variable ~range:v.range v.it))
-      | Type_arrow (type1, type2) ->
-        let type1 = to_type ~env type1
-        and type2 = to_type ~env type2 in
-        Type.(type1 @-> type2)
-      | Type_tuple types ->
-        let types = types |> List.map ~f:(to_type ~env) in
-        Type.tuple types
-      | Type_constr (arg_types, constr_name) ->
-        let type_ident, expected_arity = type_name ~env constr_name in
-        assert_expected_arity_is_equal_to_actual_arity
-          ~arg_types
-          ~expected_arity
-          ~constr_name;
-        let arg_types = arg_types |> List.map ~f:(to_type ~env) in
-        Type.constr arg_types type_ident
-    ;;
-  end
+  and core_scheme_to_type_scheme_expr ~env (scheme : Ast.core_scheme)
+    : Adt.type_scheme_expr
+    =
+    let { scheme_quantifiers; scheme_body } = scheme.it in
+    let scheme_quantifiers = List.map scheme_quantifiers ~f:With_range.it in
+    let scheme_body = core_type_to_type_expr ~env scheme_body in
+    { scheme_quantifiers; scheme_body }
+  ;;
+
+  let rec core_type_to_type ~env (type_ : Ast.core_type) : Type.t =
+    let self = core_type_to_type ~env in
+    match type_.it with
+    | Type_var v ->
+      (match Env.find_type_var env v.it with
+       | Some v -> Type.var v
+       | None -> Mlsus_error.(raise @@ unbound_type_variable ~range:v.range v.it))
+    | Type_arrow (type1, type2) ->
+      let type1 = self type1
+      and type2 = self type2 in
+      Type.(type1 @-> type2)
+    | Type_tuple types ->
+      let types = types |> List.map ~f:self in
+      Type.tuple types
+    | Type_constr (arg_types, constr_name) ->
+      let type_ident, expected_arity = type_name ~env constr_name in
+      assert_expected_arity_is_equal_to_actual_arity
+        ~arg_types
+        ~expected_arity
+        ~constr_name;
+      let arg_types = arg_types |> List.map ~f:self in
+      Type.constr arg_types type_ident
+    | Type_poly scheme -> Type.poly (core_scheme_to_type_scheme ~env scheme)
+
+  and core_scheme_to_type_scheme ~env scheme : Type_scheme.t =
+    let { scheme_quantifiers; scheme_body } = scheme.it in
+    let env, scheme_quantifiers =
+      List.fold_map scheme_quantifiers ~init:env ~f:(fun env type_var ->
+        Env.rename_type_var env ~type_var:type_var.it ~in_:(fun env ctype_var ->
+          env, ctype_var))
+    in
+    let scheme_body = core_type_to_type ~env scheme_body in
+    Type_scheme.create ~quantifiers:scheme_quantifiers scheme_body
+  ;;
 
   let rec type_expr ~env (type_ : Adt.type_expr) : Type.t =
     match type_ with
@@ -103,18 +123,25 @@ module Convert = struct
     | Type_constr (arg_type_exprs, constr) ->
       let arg_types = arg_type_exprs |> List.map ~f:(type_expr ~env) in
       Type.constr arg_types constr
+    | Type_poly scheme -> Type.poly (type_scheme_expr ~env scheme)
+
+  and type_scheme_expr ~env { scheme_quantifiers; scheme_body } : Type_scheme.t =
+    let env, scheme_quantifiers =
+      List.fold_map scheme_quantifiers ~init:env ~f:(fun env type_var ->
+        Env.rename_type_var env ~type_var ~in_:(fun env ctype_var -> env, ctype_var))
+    in
+    let scheme_body = type_expr ~env scheme_body in
+    Type_scheme.create ~quantifiers:scheme_quantifiers scheme_body
   ;;
 
-  let core_scheme ~(env : Env.t) (scheme : Ast.core_scheme)
-    : (flexibility * Type.Var.t) list * Type.t
-    =
+  let core_scheme ~(env : Env.t) (scheme : Ast.core_scheme) : Type.Var.t list * Type.t =
     let { scheme_quantifiers; scheme_body } = scheme.it in
     let env, quantifiers =
       List.fold_map scheme_quantifiers ~init:env ~f:(fun env type_var ->
         Env.rename_type_var env ~type_var:type_var.it ~in_:(fun env ctype_var ->
-          env, (Flexible, ctype_var)))
+          env, ctype_var))
     in
-    let body = Core_type.to_type ~env scheme_body in
+    let body = core_type_to_type ~env scheme_body in
     quantifiers, body
   ;;
 end
@@ -438,7 +465,7 @@ module Pattern = struct
                 [%message "Constructor argument mistmatch in pattern" (pat : Ast.pattern)]))
     | Pat_record label_pats -> infer_label_pats ~env ~record_type:pat_type label_pats k
     | Pat_annot (pat, annot) ->
-      let type_ = Convert.Core_type.to_type ~env annot in
+      let type_ = Convert.core_type_to_type ~env annot in
       infer_pat ~env pat pat_type @@ fun (f, c) -> k (f, Type.(var pat_type =~ type_) &~ c)
 
   and infer_pats ~env pats k =
@@ -556,7 +583,7 @@ module Expression = struct
               (((Flexible, exp_type') :: rigid_type_vars) @. c @=> Type.var exp_type'))
         ~in_:(inst x (Type.var exp_type))
     | Exp_annot (exp, annot) ->
-      let annot = Convert.Core_type.to_type ~env annot in
+      let annot = Convert.core_type_to_type ~env annot in
       let c = infer_exp ~env exp exp_type in
       Type.(var exp_type =~ annot) &~ c
     | Exp_tuple exps ->
@@ -642,6 +669,56 @@ module Expression = struct
         @@ fun arg_type -> (), Type.(var exp_type =~ var arg_type)
       in
       c1 &~ c2
+    | Exp_poly (exp, scheme_annot) ->
+      (match scheme_annot with
+       | None ->
+         infer_exp_principal ~env exp
+         @@ fun cvar ->
+         match_
+           exp_type
+           ~closure:[ `Scheme cvar; `Type exp_type ]
+           ~with_:(function
+             | Poly { quantifiers; body } -> forall quantifiers @@ inst cvar body
+             | (Arrow _ | Constr _ | Tuple _) as matchee ->
+               let type_head =
+                 match matchee with
+                 | Arrow _ -> `Arrow
+                 | Constr _ -> `Constr
+                 | Tuple _ -> `Tuple
+                 | _ -> assert false
+               in
+               ff (Mlsus_error.polytype_mismatched_type ~range:exp.range ~type_head))
+           ~else_:(fun () ->
+             exists' ~id_source
+             @@ fun mono -> Type.(var exp_type =~ poly (Type_scheme.create (var mono))))
+       | Some core_scheme ->
+         let quantifiers, type_ = Convert.core_scheme ~env core_scheme in
+         Type.(var exp_type =~ poly (Convert.core_scheme_to_type_scheme ~env core_scheme))
+         &~ forall quantifiers
+            @@ exists' ~id_source
+            @@ fun exp_type -> Type.(var exp_type =~ type_) &~ infer_exp ~env exp exp_type)
+    | Exp_inst exp ->
+      exists' ~id_source
+      @@ fun poly_type ->
+      infer_exp ~env exp poly_type
+      &~ match_
+           poly_type
+           ~closure:[ `Type poly_type; `Type exp_type ]
+           ~with_:(function
+             | Poly { quantifiers; body } ->
+               exists_many quantifiers Type.(var exp_type =~ body)
+             | (Arrow _ | Constr _ | Tuple _) as matchee ->
+               let type_head =
+                 match matchee with
+                 | Arrow _ -> `Arrow
+                 | Constr _ -> `Constr
+                 | Tuple _ -> `Tuple
+                 | _ -> assert false
+               in
+               ff (Mlsus_error.polytype_mismatched_type ~range:exp.range ~type_head))
+           ~else_:(fun () ->
+             exists' ~id_source
+             @@ fun mono -> Type.(var poly_type =~ poly (Type_scheme.create (var mono))))
 
   and infer_exps ~env exps k =
     match exps with
@@ -665,6 +742,17 @@ module Expression = struct
      @@ fun arg_type -> (), infer_exp ~env arg_exp arg_type)
     |> snd
 
+  and infer_exp_principal ~env exp k =
+    let id_source = Env.id_source env in
+    let cvar = Var.create ~id_source () in
+    let exp_type = Type.Var.create ~id_source () in
+    let_
+      cvar#=(poly_scheme
+               ([ Flexible, exp_type ]
+                @. infer_exp ~env exp exp_type
+                @=> Type.var exp_type))
+      ~in_:(k cvar)
+
   and infer_cases ~env cases ~lhs_type ~rhs_type =
     let cs = cases |> List.map ~f:(infer_case ~env ~lhs_type ~rhs_type) in
     all cs
@@ -687,6 +775,7 @@ module Structure = struct
   let infer_prim ~env (value_desc : value_description) k =
     let { value_type; value_name } = value_desc.it in
     let quantifiers, type_ = Convert.core_scheme ~env value_type in
+    let quantifiers = List.map ~f:(fun q -> Flexible, q) quantifiers in
     Env.rename_var env ~var:value_name.it ~in_:(fun env cvar ->
       let c = k env in
       let_ cvar#=(poly_scheme (quantifiers @. tt @=> type_)) ~in_:c)
@@ -714,7 +803,7 @@ module Structure = struct
         let constr_decls =
           List.map constr_decls ~f:(fun { constructor_name; constructor_arg } ->
             let constructor_arg =
-              Option.map constructor_arg ~f:(Convert.Core_type.to_type_expr ~env)
+              Option.map constructor_arg ~f:(Convert.core_type_to_type_expr ~env)
             in
             { Adt.constructor_name = constructor_name.it
             ; constructor_alphas = List.map type_decl_params ~f:With_range.it
@@ -732,7 +821,7 @@ module Structure = struct
         in
         let label_defs =
           List.map label_decls ~f:(fun { label_name; label_arg } ->
-            let label_arg = Convert.Core_type.to_type_expr ~env label_arg in
+            let label_arg = Convert.core_type_to_type_expr ~env label_arg in
             { Adt.label_name = label_name.it
             ; label_alphas = List.map type_decl_params ~f:With_range.it
             ; label_arg
