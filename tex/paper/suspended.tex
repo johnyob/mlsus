@@ -31,18 +31,21 @@
 
 \begin{document}
 
-\title{Omnidirectional type inference for ML extensions}
+\title{Omnidirectional type inference with delayed constraints
+   for static overloading and semi-explicit polymorphism}
 
 %%
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-  % Traditional type inference algorithms such as $\mathscr{W}$ for Hindley-Milner 
-  % or bidirectional typechecking enforce an ordering on the propagation of type information 
-  % -- e.g. inferring the type of a let-bound expression before its uses. We revisit the 
-  % problem of type inference for several extensions of the ML language, from the constraint-based 
-  % perspective in the style of Pottier and R\'emy, to derive a new approach: \textit{omnidirectional type inference}
-  % which improves on the state 
+  % Traditional type inference algorithms such as $\mathscr{W}$ for
+  % Hindley-Milner or bidirectional typechecking enforce an ordering on the
+  % propagation of type information -- e.g. inferring the type of a
+  % let-bound expression before its uses. We revisit the problem of type
+  % inference for several extensions of the ML language, from the
+  % constraint-based perspective in the style of Pottier and R\'emy, to
+  % derive a new approach: \textit{omnidirectional type inference} which
+  % improves on the state
 
 
   DRAFT: this is a difficult feature. It solves some of the loose ends
@@ -59,14 +62,36 @@
 
 \section{Introduction}
 
-Generalization is the distinguishing feature of Hindley-Damas-Milner type inference. Consider a subterm $\cletin{x = e_1}{e_2}$ of the program being inferred. We first infer a type $\tau_1$ for $e_1$, and then we \emph{generalize}: we look for variables $\bar{\alpha}$ that occur in $\tau_1$, but nowhere else in the typing context, and we assign to the variable $x$ the polymorphic type scheme $\tfor{\bar{\alpha}}{\tau_1}$. Each occurrence of $x$ in $e_2$ can use a different choice of instances $\bar{\tau'}$ of these polymorphic variables $\bar{\alpha}$, it will be elaborated into $x [\bar{\tau'}]$ at type $\tau[\bar{\alpha} := \bar{\tau'}]$. In other words, generalization turns things that are \emph{undetermined} in the definition $e_1$ into generic parameters that can be chosen differently at each use-site $x$.
+Generalization is the distinguishing feature of Hindley-Damas-Milner type
+inference. Consider a subterm $\cletin{x = e_1}{e_2}$ of the program being
+inferred. We first infer a type $\tau_1$ for $e_1$, and then we
+\emph{generalize}: we look for variables $\bar{\alpha}$ that occur in
+$\tau_1$, but nowhere else in the typing context, and we assign to the
+variable $x$ the polymorphic type scheme $\tfor{\bar{\alpha}}{\tau_1}$. Each
+occurrence of $x$ in $e_2$ can use a different choice of instances
+$\bar{\tau'}$ of these polymorphic variables $\bar{\alpha}$, it will be
+elaborated into $x [\bar{\tau'}]$ at type $\tau[\bar{\alpha} :=
+\bar{\tau'}]$. In other words, generalization turns things that are
+\emph{undetermined} in the definition $e_1$ into generic parameters that can
+be chosen differently at each use-site $x$.
 
-Qualified types~\citep*{TODO} represent additional knowledge on a type. They are used in particular in Haskell type-classes, where a constraint $\mathsf{Show}~\alpha$ represents the fact that a part of the inferred term needs to print values of type $\alpha$. A constraint on a ground type such as $\mathsf{Show}~\mathsf{Int}$ can be resolved to a known printer. But if the undetermined variable $\alpha$ becomes generalizable in a type $\tau$, we get a type-scheme $\tfor{(\alpha \mid \mathsf{Show}~\alpha)}{\tau}$ that also includes the type-class constraint.
+Qualified types~\citep*{TODO} represent additional knowledge on a type. They
+are used in particular in Haskell type-classes, where a constraint
+$\mathsf{Show}~\alpha$ represents the fact that a part of the inferred term
+needs to print values of type $\alpha$. A constraint on a ground type such
+as $\mathsf{Show}~\mathsf{Int}$ can be resolved to a known printer. But if
+the undetermined variable $\alpha$ becomes generalizable in a type $\tau$,
+we get a type-scheme $\tfor{(\alpha \mid \mathsf{Show}~\alpha)}{\tau}$ that
+also includes the type-class constraint.
 
-DRAFT: Type-classes let each use-site choose a different typeclass instance -- but this implies dictionary-passing or specialization. Sometimes we want the choice to be shared by all use-sites: TODO introduce suspended constraints. But: generalization becomes tricky.
+DRAFT: Type-classes let each use-site choose a different typeclass instance
+-- but this implies dictionary-passing or specialization. Sometimes we want
+the choice to be shared by all use-sites: TODO introduce suspended
+constraints. But: generalization becomes tricky.
 \begin{itemize}
 \item easy case: the choice is resolved while typing the definition
-\item hard case: an a-priori generalizable variable is captured in a frozen constraint
+\item hard case: an a-priori generalizable variable is captured in a frozen
+   constraint 
 \item question: what to do when the frozen variable is generalizable?
 \item another difficulty: supporting default clauses in the failure case
 \end{itemize}
@@ -77,11 +102,17 @@ Different kind of difficulties:
 \item implementing a solver, which is quite hard
 \end{itemize}
 
-\Xalistair{Is this the right introduction? All the features we describe below break principality usually. So our work is about principality. This is a way to guarantee principal types for these advanced features.}
+\Xalistair{Is this the right introduction? All the features we describe
+below break principality usually. So our work is about principality. This is
+a way to guarantee principal types for these advanced features.} 
 
-\Xdidier{We would like to elaborate features with difficult type-checking into a core language where things fit exactly the ML type-inference approach. The source language has less annotations, the target language has more precise annotations.}
+\Xdidier{We would like to elaborate features with difficult type-checking
+into a core language where things fit exactly the ML type-inference
+approach. The source language has less annotations, the target language has
+more precise annotations.} 
 
-\Xalistair{For tuples we added a projection rule that gives the size of the tuple. I imagine for polytypes there would be something like that.}
+\Xalistair{For tuples we added a projection rule that gives the size of the
+tuple. I imagine for polytypes there would be something like that.} 
 
 \paragraph{Organization} 
 
@@ -89,21 +120,31 @@ Different kind of difficulties:
 
 \Xalistair{Intro to syntax of constraints}
 
-(Only the constraint syntax, not constraint-solving yet. The point is to show examples in a concrete way.)
+(Only the constraint syntax, not constraint-solving yet. The point is to
+show examples in a concrete way.)
 
 % Introduce syntax + explain components
-A suspended match constraint has the form $\cmatch \alpha \Delta f$ where: 
+A suspended match constraint has the form $\cmatch \alpha \Delta f$ where:
 \begin{enumerate}
-  \item The matchee $\alpha$ is a type variable. The constraint is suspended until $\alpha$ is unified to a non-variable type. 
-  \item The handler $f$ is a function from partial types to constraints. This generates the constraint to solve once $\alpha$ is unified. One may think of this as the functionalization of the branches of the match. 
-  \item The closure $\Delta$, the set of type variables $f$ is permitted to reference. 
+\item
+  The matchee $\alpha$ is a type variable. The constraint is suspended until
+  $\alpha$ is unified to a non-variable type.
+\item
+  The handler $f$ is a function from partial types to constraints. This
+  generates the constraint to solve once $\alpha$ is unified. One may think
+  of this as the functionalization of the branches of the match.
+\item
+  The closure $\Delta$, the set of type variables $f$ is permitted to
+  reference.
 \end{enumerate}
 
 % Informal semantics
-Informally, the semantics of $\cmatch \alpha \Delta f$ are as follows: the constraint remains suspended until the type variable $\alpha$ is 
-unified with a concrete non-varialbe type $\overline{\beta} \Fapp$, at which point the handler 
-is applied to this type $f(\overline{\beta} \Fapp)$ and the generated constraint is scheduled to 
-be solved. If $\alpha$ is never unified, the constraint remains unsatisfiable. 
+Informally, the semantics of $\cmatch \alpha \Delta f$ are as follows: the
+constraint remains suspended until the type variable $\alpha$ is unified
+with a concrete non-varialbe type $\overline{\beta} \Fapp$, at which point
+the handler is applied to this type $f(\overline{\beta} \Fapp)$ and the
+generated constraint is scheduled to be solved. If $\alpha$ is never
+unified, the constraint remains unsatisfiable.
 
 \subsection{Constraint-solving: an intuition}
 
@@ -111,14 +152,20 @@ be solved. If $\alpha$ is never unified, the constraint remains unsatisfiable.
 \section{Applications of suspended constraints}
 
 \begin{itemize}
-\item type-based disambiguation of data constructors (and record fields)
-\item polytypes (are we sure?) \\ ensuring that there is a unique polytype skeleton
-\item anti-unification-based overloading (are we sure?) \\
-  there is some uniqueness of the head / variational type
+\item
+  type-based disambiguation of data constructors (and record fields)
+\item
+  polytypes (are we sure?) \\ ensuring that there is a unique polytype
+  skeleton
+\item
+  anti-unification-based overloading (are we sure?) \\ there is some
+  uniqueness of the head / variational type
 \end{itemize}
 
-\Xgabriel{I care most about the semantics and implementation of the constraint language.}
-\Xdidier{It would be nice to have typing rules for the surface language, and show that they match the constraints generated.}
+\Xgabriel{I care most about the semantics and implementation of the
+constraint language.} 
+\Xdidier{It would be nice to have typing rules for the surface language, and
+show that they match the constraints generated.} 
 \Xalistair{I agree.}
 
 For each feature:
@@ -127,127 +174,163 @@ For each feature:
 \item elaborate them into the constraint language
 \end{itemize}
 
-We will provide *precise* declarative semantics in the ``Semantics of constraints'' section.
+We will provide *precise* declarative semantics in the ``Semantics of
+constraints'' section.
 
 \subsection{Static overloading of constuctors and record labels}
 
 % Intro to the feature 
-OCaml permits on to define data types with overloaded constructor or field names. 
+OCaml permits on to define data types with overloaded constructor or field
+names.
 \begin{lstlisting}
-  type m = L;;
-  type n = L;;
+type m = L;; type n = L;;
 
-  let x = L;;
+let x = L;;
 \end{lstlisting}
-The type of \code{x} is ambiguous since OCaml could either infer \code{m} or \code{n}. This amounts to a principality issue, 
-since there is no most general type for \code{x}. As such, OCaml gives the following error: ... 
+The type of \code{x} is ambiguous since OCaml could either infer \code{m} or
+\code{n}. This amounts to a principality issue, since there is no most
+general type for \code{x}. As such, OCaml gives the following error: ...
 
-OCaml's type checker relies of type information provided by the bidirectional propagation of type information
-to resolve these ambiguities. Thus annotating \code{x} with either \code{m} or \code{n} would be produce a well-typed 
-program. 
+OCaml's type checker relies of type information provided by the
+bidirectional propagation of type information to resolve these
+ambiguities. Thus annotating \code{x} with either \code{m} or \code{n} would
+be produce a well-typed program.
 
 % Constructor disambiguation in suspended constraints
-We propose an alternative approach: suspended constraints. For the ambiguous constructor application $\econstr K e$, 
-we generate the constraint: 
+We propose an alternative approach: suspended constraints. For the ambiguous
+constructor application $\econstr K e$, we generate the constraint:
 \begin{align*}
- \cinfer {\econstr K e} \alpha &= \cexists \beta \cinfer e \beta \cand \cmatch \alpha {\alpha, \beta} (\lambda \overline{\gamma} \Fapp. ~ \Let ~ \sigma = \Delta(\F)(\mathsf{K}) ~ \In ~ \sigma \leq \beta \to \alpha )
+\cinfer {\econstr K e} \alpha &= \cexists \beta \cinfer e \beta \cand \cmatch \alpha {\alpha, \beta} (\lambda \overline{\gamma} \Fapp. ~ \Let ~ \sigma = \Delta(\F)(\mathsf{K}) ~ \In ~ \sigma \leq \beta \to \alpha )
 \end{align*}
-where the function looks up the type scheme associated with the constructor using the type name $\F$ in the environment ($\Delta(\F)(\mathsf{K})$). 
+where the function looks up the type scheme associated with the constructor
+using the type name $\F$ in the environment ($\Delta(\F)(\mathsf{K})$).
 
-We require a unique type for each type constructor in a given algebraic data type definition, thus there is no ambiguity with this mapping, despite 
-there potentially being many constructors in the environment named $\mathsf{K}$. 
+We require a unique type for each type constructor in a given algebraic data
+type definition, thus there is no ambiguity with this mapping, despite there
+potentially being many constructors in the environment named $\mathsf{K}$.
 
-This not only correctly encodes OCaml's current behaviour, but does better. 
+This not only correctly encodes OCaml's current behaviour, but does better.
 
 
-\paragraph{Interaction with let-polymorphism} Our intuition is not entirely correct here. While the above will 
-improve on OCaml's current inference approach, it is not powerful enough to capture the simple idea that to resolve 
-an ambiguous constructor we must use contextual information to show there is a unique type constructor $\F$ for the application. 
+\paragraph{Interaction with let-polymorphism}
 
-We demonstrate this is with the following example: 
+Our intuition is not entirely correct here. While the above will improve on
+OCaml's current inference approach, it is not powerful enough to capture the
+simple idea that to resolve an ambiguous constructor we must use contextual
+information to show there is a unique type constructor $\F$ for the
+application.
+
+We demonstrate this is with the following example:
 \begin{lstlisting}
-  let foo = 
-    let f x = match x with L -> 1 in 
-    f (L : m)
-  ;; 
+let foo =
+  let f x = match x with L -> 1 in 
+  f (L : m)
+;;
 \end{lstlisting}
+Our current approach would keep the type of \code{x} as a generalizable
+variable, thus the application of \code{f} would not resolve this ambiguity,
+requiring an annotation at the definition.
 
-Our current approach would keep the type of \code{x} as a generalizable variable, thus the 
-application of \code{f} would not resolve this ambiguity, requiring an annotation at the definition. 
-
-We require some way of splitting the head of the type from the type itself, treating the head of the 
-variable monomorphically and the rest polymorphically.  
+We require some way of splitting the head of the type from the type itself,
+treating the head of the variable monomorphically and the rest
+polymorphically.
 \Xalistair{An explaination of kinded(1) types here }
 
 \subsection{Semi-explicit first-class polymorphism}
 
 % Polytypes (and some stuff about labelled types) 
-Semi-explicit first-class polymorphism \citep{TODO} uses \textit{labelled types} 
-to track the origins of polymorphic types. 
 
-The type constructor $\tpoly \sigma \varepsilon$ that boxes a polymorphic type $\sigma$ 
-turning it into a \textit{polytype}. Each polytype is labelled with an $\varepsilon$ variable. 
-Once boxed, polytypes are considered to be monotypes. This permits impredicative polymorphism. 
+Semi-explicit first-class polymorphism \citep{TODO} uses \textit{labelled
+types} to track the origins of polymorphic types.
 
-To instantiate a polytype, one must use an explicit unboxing operator $\einst e$ 
-which instantiates the top-level quantifiers of a polytype if $e$ has the type $\tpoly \sigma \varepsilon$.
+The type constructor $\tpoly \sigma \varepsilon$ that boxes a polymorphic
+type $\sigma$ turning it into a \textit{polytype}. Each polytype is labelled
+with an $\varepsilon$ variable.  Once boxed, polytypes are considered to be
+monotypes. This permits impredicative polymorphism.
 
-Conversely, the introduction form for polytypes is a boxing operator $\epoly e \sigma$  
-has the type $\tpoly \sigma \varepsilon$ for some arbitrary $\varepsilon$ if $e$ has the type $\sigma$. 
+To instantiate a polytype, one must use an explicit unboxing operator
+$\einst e$ which instantiates the top-level quantifiers of a polytype if $e$
+has the type $\tpoly \sigma \varepsilon$.
 
-Principality is tracked using generalization. 
-This is done by tracking the polymorphism of labels. Type schemes quantify not only over 
-type variables but $\varepsilon$ variables. As a result, a term $e$ with the type $\tpoly \sigma \varepsilon$ 
-for some fresh $\varepsilon$ may be generalized to $\tfor \varepsilon {\tpoly \sigma \varepsilon}$. 
-The typing rule for $\einst e$ in fact requires $e$'s type to be $\tfor \varepsilon {\tpoly \sigma \varepsilon}$, not just 
-a plain polytype $\tpoly \sigma \varepsilon$. The rational is that a label is polymorphic if and only if it is principally known and not inferred. 
-This is why the introduction form for polytypes $\epoly e \sigma$ is able to introduce a \textit{fresh} $\varepsilon$ variable. 
+Conversely, the introduction form for polytypes is a boxing operator $\epoly
+e \sigma$ has the type $\tpoly \sigma \varepsilon$ for some arbitrary
+$\varepsilon$ if $e$ has the type $\sigma$.
 
-Additionally, type annotations can be used to freshen labels.  This permits us to generalize the labels of an annotated term, 
-indicating that the type is principally known. 
+Principality is tracked using generalization.  This is done by tracking the
+polymorphism of labels. Type schemes quantify not only over type variables
+but $\varepsilon$ variables. As a result, a term $e$ with the type $\tpoly
+\sigma \varepsilon$ for some fresh $\varepsilon$ may be generalized to
+$\tfor \varepsilon {\tpoly \sigma \varepsilon}$.  The typing rule for
+$\einst e$ in fact requires $e$'s type to be $\tfor \varepsilon {\tpoly
+\sigma \varepsilon}$, not just a plain polytype $\tpoly \sigma
+\varepsilon$. The rational is that a label is polymorphic if and only if it
+is principally known and not inferred.  This is why the introduction form
+for polytypes $\epoly e \sigma$ is able to introduce a \textit{fresh}
+$\varepsilon$ variable.
+
+Additionally, type annotations can be used to freshen labels.  This permits
+us to generalize the labels of an annotated term, indicating that the type
+is principally known.
 
 \Xalistair[]{Something about how information can flow from let bindings to use sites for principality checking}
 
-Instead of using labelled types to infer whether the type is principally known, we may use suspended constraints. 
-Typechecking $\epoly e \sigma$ is simple: 
+Instead of using labelled types to infer whether the type is principally
+known, we may use suspended constraints.  Typechecking $\epoly e \sigma$ is
+simple:
 \begin{align*}
   \cinfer {\epoly e {\tfor {\overline{\beta}} \tau}} \alpha &= \left(\cfor {\overline{\beta}} \cinfer e \tau \right) \cand \alpha = [\tfor {\overline{\beta}} \tau]
 \end{align*}
 
-If $e$ is known to have the type $[\sigma]$, then we can simply instantiate it. However, if the type of $e$ is not principally known, 
-then we must wait. This is how our approach differs from OCaml's / labelled types. 
+If $e$ is known to have the type $[\sigma]$, then we can simply instantiate
+it. However, if the type of $e$ is not principally known, then we must
+wait. This is how our approach differs from OCaml's / labelled types.
 
-By waiting for $e$'s type to be known, we guarantee principal types without the machinery of labelled types. 
-So we can simply write the constraint generated by $\einst e$ as: 
+By waiting for $e$'s type to be known, we guarantee principal types without
+the machinery of labelled types.  So we can simply write the constraint
+generated by $\einst e$ as:
 \begin{align*}
-  \cinfer {\einst e} \alpha &= \cexists \beta \cinfer e \beta \cand \cmatch \beta {\alpha} (\lambda [\sigma]. ~ \sigma \leq \alpha)
+  \cinfer {\einst e} \alpha &= \cexists \beta \cinfer e \beta \cand \cmatch
+  \beta {\alpha} (\lambda [\sigma]. ~ \sigma \leq \alpha) 
 \end{align*}
 \section{Semantics of constraints}
 
-The semantics of suspended constraints are best understood from the solver's perspective. 
-We begin by providing an informal description of how our solver processes suspended constraints (which we later refine), 
-from this we show that a na\"ive semantics for suspended constraints would be incomplete.
+The semantics of suspended constraints are best understood from the solver's
+perspective.  We begin by providing an informal description of how our
+solver processes suspended constraints (which we later refine), from this we
+show that a na\"ive semantics for suspended constraints would be incomplete.
 
-When solving $\cmatch \alpha \Delta f$, the solver proceeds as follows: 
+When solving $\cmatch \alpha \Delta f$, the solver proceeds as follows:
 \begin{enumerate}
-  \item If $\alpha$ is already unified to a non-variable type, apply the handler $f$ immediately to the resolved type. 
-  \item If $\alpha$ is still unresolved, enqueue the suspended constraint to the list of suspended constraints blocked by $\alpha$. 
-  \item During unification, whenever a type variable with a pending constraint becomes resolved, the solver retrieves all blocked constraints on that variable and schedules them. 
+\item
+  If $\alpha$ is already unified to a non-variable type, apply the handler
+  $f$ immediately to the resolved type.
+\item
+  If $\alpha$ is still unresolved, enqueue the suspended constraint to the
+  list of suspended constraints blocked by $\alpha$.
+\item
+  During unification, whenever a type variable with a pending constraint
+  becomes resolved, the solver retrieves all blocked constraints on that
+  variable and schedules them.
 \end{enumerate}
-Once all constraints have been processed, any pending suspended constraints that remain unsolved indidcate failure. 
+Once all constraints have been processed, any pending suspended constraints
+that remain unsolved indidcate failure.
 
-A na\"ive denotation semantics for suspended constraints would be to simply apply the assignment of $\alpha$ to $f$. More formally, 
+A na\"ive denotation semantics for suspended constraints would be to simply
+apply the assignment of $\alpha$ to $f$. More formally,
 \begin{mathpar}
   \inferrule* 
     {\phi(\alpha) = \overline{\tau} \Fapp \\ \phi_{\setminus \Delta}[\overline{\beta := \tau}] \vdash f(\overline{\beta} \Fapp)}
     {\phi \vdash \cmatch \alpha \Delta f}
 \end{mathpar}
 
-However, our informal solver would be incomplete with respect to this semantics. 
-We show this by considering the constraint $\cexists \alpha \cmatch \alpha \alpha (\lambda \_.~ \alpha = 1)$. 
-This constraint does not unify $\alpha$ outside the suspended constraint, but once it is scheduled, the variable $\alpha$ must 
-be unified with the unit type $1$. So our informal solver suggests that this constraint is unsatisfiable since $\alpha$ is never unified 
-outside the match constraint. Yet we can use the above rule to show that this constraint is satisfiable: 
+However, our informal solver would be incomplete with respect to this
+semantics.  We show this by considering the constraint $\cexists \alpha
+\cmatch \alpha \alpha (\lambda \_.~ \alpha = 1)$.  This constraint does not
+unify $\alpha$ outside the suspended constraint, but once it is scheduled,
+the variable $\alpha$ must be unified with the unit type $1$. So our
+informal solver suggests that this constraint is unsatisfiable since
+$\alpha$ is never unified outside the match constraint. Yet we can use the
+above rule to show that this constraint is satisfiable:
 \begin{mathpar}
   \inferrule*   
     {
@@ -255,66 +338,90 @@ outside the match constraint. Yet we can use the above rule to show that this co
         {
           (\alpha \mapsto 1)(\alpha) = 1 \\
           \inferrule* 
-            {(\alpha \mapsto 1)(\alpha) = 1}   
-            {\alpha \mapsto 1 \vdash \alpha = 1}
+            {(\alpha \mapsto 1)(\alpha) = 1} {\alpha \mapsto 1 \vdash \alpha
+            = 1}
         }
-        {\alpha \mapsto 1 \vdash \cmatch \alpha \alpha (\lambda \_. ~ \alpha = 1)}
+        {\alpha \mapsto 1 \vdash \cmatch \alpha \alpha (\lambda \_. ~ \alpha
+        = 1)}
     }
     {\cdot \vdash \cexists \alpha \cmatch \alpha \alpha (\lambda \_.~ \alpha = 1)}
 \end{mathpar}
 
-The dependency of suspended constraints can also be complex, as in the following example: $\cexists {\alpha, \beta} \cmatch \alpha \beta {(\lambda \_. ~ \beta = 1)} \cand \cmatch \beta \alpha {(\lambda \_. ~ \alpha = 1)}$. 
-Worse still, is that the binding location of $\alpha$ may not even contain the sufficient information to show that $\alpha$ is realised. 
-For instance, 
+The dependency of suspended constraints can also be complex, as in the
+following example: $\cexists {\alpha, \beta} \cmatch \alpha \beta {(\lambda
+\_. ~ \beta = 1)} \cand \cmatch \beta \alpha {(\lambda \_. ~ \alpha = 1)}$.
+Worse still, is that the binding location of $\alpha$ may not even contain
+the sufficient information to show that $\alpha$ is realised.  For instance,
 \begin{align*}
   \cexists \beta \beta = 1 \cand \cexists \alpha \alpha = \beta \cand \cmatch \alpha \Delta f 
 \end{align*}
 
-Our conclusion is that the na\"ive semantics should be rejected in favour for the semantics of our 
-informal solver. Our intent with suspended constraints is that the blocking variable should not be guessed out of thin air, 
-but deduced from the surrounding context without knowledge of the constraint generated by the handler. 
+Our conclusion is that the na\"ive semantics should be rejected in favour
+for the semantics of our informal solver. Our intent with suspended
+constraints is that the blocking variable should not be guessed out of thin
+air, but deduced from the surrounding context without knowledge of the
+constraint generated by the handler.
 
-The idea, inspired by type systems that require principality (such as FreezeML), is to stipulate 
-that the only satisfying assignments for the context of the suspended constraint requires $\alpha$ 
-to be assigned to some type with a unique type constructor. 
+The idea, inspired by type systems that require principality (such as
+FreezeML), is to stipulate that the only satisfying assignments for the
+context of the suspended constraint requires $\alpha$ to be assigned to some
+type with a unique type constructor.
 \Xalistair[]{This doesn't read entirely correctly, we want a unique constructor for all assignments}. 
 
-This motivates our next definition: the principal realisation of a type variable $\alpha$ by some constraint context $\mathcal{C}[-]$. 
+This motivates our next definition: the principal realisation of a type
+variable $\alpha$ by some constraint context $\mathcal{C}[-]$.
 
 \begin{definition}
-  A type variable $\alpha$ is principally realised with the constructor $\F$ by the context $\mathcal{C}[-]$, written $\mathcal{C}[\alpha !] \rhd \F$, 
-  iff for all assignments $\phi$, there exists an assignment $\phi'$ for the hole such that $\phi \vdash \mathcal{C}[\phi' \vdash \ctrue]$ implies 
+  A type variable $\alpha$ is principally realised with the constructor $\F$
+  by the context $\mathcal{C}[-]$, written $\mathcal{C}[\alpha !] \rhd \F$,
+  iff for all assignments $\phi$, there exists an assignment $\phi'$ for the
+  hole such that $\phi \vdash \mathcal{C}[\phi' \vdash \ctrue]$ implies
   $\phi'(\alpha) = \overline{\tau} \Fapp$
 \end{definition}
 
-\TODO: Here, we not only rely on the definition of a constraint with a hole $\mathcal{C}[-]$ but a judgement with a hole 
-and some way to translate between the two. We'll need formal definitions for this.  
+\TODO: Here, we not only rely on the definition of a constraint with a hole
+$\mathcal{C}[-]$ but a judgement with a hole and some way to translate
+between the two. We'll need formal definitions for this.
 
 \TODO: Some examples of principal realisation
 
-As we've previously hinted, the semantics for a suspended constraint must require that the surrounding context principally realises the 
-matchee. This is formally specified as: 
+As we've previously hinted, the semantics for a suspended constraint must
+require that the surrounding context principally realises the matchee. This
+is formally specified as:
 \begin{mathpar}
-  \inferrule* 
-    {\mathcal{C}[\alpha !] \rhd \F \\ \phi \vdash \mathcal{C}[\phi'_{\setminus \Delta}[\overline{\beta := \tau}]  \vdash f(\overline{\beta} \Fapp)] \\ \phi'(\alpha) = \overline{\tau} \Fapp} 
-    {\phi \vdash \mathcal{C}[\phi' \vdash \cmatch \alpha \Delta f]}
+\inferrule* 
+   {\mathcal{C}[\alpha !] \rhd \F \\
+    \phi \vdash \mathcal{C}[\phi'_{\setminus \Delta}[\overline{\beta :=
+      \tau}] \vdash f(\overline{\beta} \Fapp)] \\
+    \phi'(\alpha) = \overline{\tau} \Fapp}  
+   {\phi \vdash \mathcal{C}[\phi' \vdash \cmatch \alpha \Delta f]}
 \end{mathpar}
 
-\TODO: precise declarative semantics of constraints. They should coincide with the semantics of the typing rules.
+\TODO: precise declarative semantics of constraints. They should coincide
+with the semantics of the typing rules. 
 
-Alistair has yet another proposal derived from his simplification of his timestamp semantics.
+Alistair has yet another proposal derived from his simplification of his
+timestamp semantics.
 
-\TODO: derive precise declarative semantics for the language features of Section 2.
+\TODO: derive precise declarative semantnics for the language features of
+Section 2. 
 
 \subsection{Type system}
 
-In order to show our approach is sound and complete with respect to our constraint generation translation 
-and solver, we need to give a calculus and type system to serve as a specification. 
+In order to show our approach is sound and complete with respect to our
+constraint generation translation and solver, we need to give a calculus and
+type system to serve as a specification.
 
-\paragraph{Syntax} In Figure ??, we give the grammar for our calculus. It contains all of the ML calculus, including 
-the unit term $\eunit$, lambda abstractions $\efun x e$, applications $\eapp \eone \etwo$, annotations $(e : \tau)$ and let bindings $\elet x \eone \etwo$. 
-For constructor disambiguation, we add constructor applications $\econstr \K e$ and their eliminators, match expressions, $\ematch e {\overline{\ecase \Ki \evari \ei}}$.
-And for semi-explicit first-class polymorphism, we have the boxing construct $\epoly e \sigma$ and the unboxing construct $\einst e$. 
+\paragraph{Syntax}
+
+In Figure ??, we give the grammar for our calculus. It contains all of the
+ML calculus, including the unit term $\eunit$, lambda abstractions $\efun x
+e$, applications $\eapp \eone \etwo$, annotations $(e : \tau)$ and let
+bindings $\elet x \eone \etwo$.  For constructor disambiguation, we add
+constructor applications $\econstr \K e$ and their eliminators, match
+expressions, $\ematch e {\overline{\ecase \Ki \evari \ei}}$.  And for
+semi-explicit first-class polymorphism, we have the boxing construct $\epoly
+e \sigma$ and the unboxing construct $\einst e$.
 
 \paragraph{Typing}
 
@@ -344,22 +451,29 @@ And for semi-explicit first-class polymorphism, we have the boxing construct $\e
 
 Rank-2 polymorphic type inference with semi-unification!
 
-\Xdidier{When you do rank-2 unification, you don't need a 'let' anymore because 'lambda' is enough. You have rank-2 types but you cannot bind them. It's not as exciting as I thought it would be.}
+\Xdidier{When you do rank-2 unification, you don't need a 'let' anymore
+because 'lambda' is enough. You have rank-2 types but you cannot bind
+them. It's not as exciting as I thought it would be.} 
 
 \section{Comparison with other inference approaches}
 
 \subsection{Suspended constraints in \textsc{OutsideIn}}
 
-\Xalistair{They first solve simple constraints (existentials, unification). Then they solve ``... constraints'', with implication constraints, which corresponds to the case of GADT matches. Crucially, they abandon local let generalization.}
+\Xalistair{They first solve simple constraints (existentials,
+unification). Then they solve ``... constraints'', with implication
+constraints, which corresponds to the case of GADT matches. Crucially, they
+abandon local let generalization.} 
 
 \subsection{Suspended constraints in dependent-type systems}
 
 
 \subsection{Bi-directional type inference}
 
-\Xgabriel{Our approach should have better properties for disambiguation, but which ones?}
+\Xgabriel{Our approach should have better properties for disambiguation, but
+which ones?} 
 
-In the simply-typed case our system works better. But with generalization you can have more issues.
+In the simply-typed case our system works better. But with generalization
+you can have more issues.
 
 \Xdidier{Should we try to extend what we did to predicative polymorphism?}
 
@@ -371,13 +485,23 @@ In the simply-typed case our system works better. But with generalization you ca
 
 \subsection{Principality tracking in OCaml}
 
-\Xdidier{The point of that is to enforce a directional type inference that is based on let-bindings. When we check that the level is generic, we check that we already ``closed'' this thing, it is an earlier 'let' binding. Because we are omni-directional, we don't have principality issues anymore -- except with default rules. We are principal by construction, we never make any choice.}
+\Xdidier{The point of that is to enforce a directional type inference that
+is based on let-bindings. When we check that the level is generic, we check
+that we already ``closed'' this thing, it is an earlier 'let'
+binding. Because we are omni-directional, we don't have principality issues
+anymore -- except with default rules. We are principal by construction, we
+never make any choice.} 
 
-\Xdidier{Principality tracking is making the choice that we are going to make a directional let-binding-based type inference. We get rid of that, we are omni-directional, and don't have any principality issues.}
+\Xdidier{Principality tracking is making the choice that we are going to
+make a directional let-binding-based type inference. We get rid of that, we
+are omni-directional, and don't have any principality issues.} 
 
-\Xgabriel{We should not claim too much if we don't understand default clauses well enough. It could people the impression that we hide the issue under the carpet.}
+\Xgabriel{We should not claim too much if we don't understand default
+clauses well enough. It could people the impression that we hide the issue
+under the carpet.} 
 
-\Xdidier{First a declarative/principal system, and then non-principal heuristics to refine it, a two-phase process. It's fine.}
+\Xdidier{First a declarative/principal system, and then non-principal
+heuristics to refine it, a two-phase process. It's fine.} 
 
 
 % \begin{acks}
