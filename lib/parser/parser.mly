@@ -171,6 +171,8 @@ atom_type:
         | e.l                               (* field *)
         | e; e                              (* sequence *)
         | (e : tau)                         (* type annotation *)
+        | [e : sigma]                       (* polytype box *)
+        | ![e]                              (* polytype unbox *)
     v} 
 
     Expressions also include cases, patterns and value bindings, given by the following 
@@ -227,7 +229,7 @@ expression:
   | op = unary_op
     ; exp = expression %prec prec_unary_op
       { unary_op ~range:(range_of_lex $loc) ~op ~exp }
-  | exp1 = expression
+  | exp1 = expression 
     ; op = bin_op
     ; exp2 = expression
       { binary_op ~range:(range_of_lex $loc) ~op ~exp1 ~exp2 }
@@ -323,6 +325,16 @@ atom_expression:
     ; "."  
     ; label_name = label_name
       { Expression.field ~range:(range_of_lex $loc) exp label_name }
+  | "["
+    ; exp = seq_expression 
+    ; ":"
+    ; scheme = core_scheme 
+    ; "]"
+      { Expression.poly ~range:(range_of_lex $loc) exp ~scheme () }
+  | "!["
+    ; exp = seq_expression 
+    ; "]"
+      { Expression.inst ~range:(range_of_lex $loc) exp }
   | "("
     ; exp = seq_expression
     ; ":"

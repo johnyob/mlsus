@@ -65,6 +65,11 @@ val disambiguation_mismatched_type
 val ambiguous_label : range:Range.t -> t
 val rigid_variable_escape : range:Range.t -> t
 
+val polytype_inst_mismatched_type
+  :  range:Range.t
+  -> type_head:[ `Tuple | `Arrow | `Rigid_var | `Poly | `Constr ]
+  -> t
+
 module For_testing : sig
   val use_expect_test_config : unit -> unit
 end

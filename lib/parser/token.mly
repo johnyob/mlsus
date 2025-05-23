@@ -56,5 +56,8 @@
 %token RIGHT_PAREN ")"
 %token LEFT_BRACE "{" 
 %token RIGHT_BRACE "}"
+%token LEFT_BRACKET "["
+%token RIGHT_BRACKET "]"
+%token BANG_LEFT_BRACKET "!["
 
 %%

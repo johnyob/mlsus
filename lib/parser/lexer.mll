@@ -136,6 +136,12 @@ rule read  =
       { LEFT_BRACE }
   | "}"
       { RIGHT_BRACE }
+  | "["
+      { LEFT_BRACKET }
+  | "]" 
+      { RIGHT_BRACKET }
+  | "!["
+      { BANG_LEFT_BRACKET }
 
   | eof
       { EOF }
