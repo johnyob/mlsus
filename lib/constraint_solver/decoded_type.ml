@@ -126,6 +126,7 @@ module Pretter_printer = struct
         | t -> pp_lvl_app ppf t
       and pp_lvl_app ppf t =
         match t with
+        | App (_, Shape (Sh_tuple _ | Sh_arrow)) -> Fmt.(parens pp_lvl_arrow ppf t)
         | App (t, Shape (Sh_constr (_, constr))) ->
           pp_constr (pp_lvl_spine ~in_app:true) ppf (t, constr)
         | App (t1, t2) ->

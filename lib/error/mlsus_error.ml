@@ -246,7 +246,7 @@ let mismatched_type ~range ~pp_type type1 type2 =
     ~labels:
       [ Label.primaryf
           ~range
-          "%a is not equal to %a"
+          "@[<v>%a@;<1 2>is not equal to@,%a@]"
           pp_quoted_type
           type1
           pp_quoted_type
@@ -325,6 +325,21 @@ let ambiguous_label ~range =
     ~code:Code.Ambiguous_label
     Error
     "ambiguous label"
+;;
+
+let polytype_mismatched_type ~range ~type_head =
+  let open Diagnostic in
+  let head_name =
+    match type_head with
+    | `Tuple -> "tuple"
+    | `Arrow -> "function type"
+    | `Constr -> "type constructor"
+  in
+  Diagnostic.createf
+    ~labels:[ Label.primaryf ~range "expected a polymorphic type, found a %s" head_name ]
+    ~code:Code.Type_mismatch
+    Error
+    "mismatched type"
 ;;
 
 module For_testing = struct

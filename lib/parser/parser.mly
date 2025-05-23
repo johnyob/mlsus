@@ -138,6 +138,10 @@ atom_type:
   | arg_types = type_argument_list
     ; type_name = type_name
       { Type.constr ~range:(range_of_lex $loc) arg_types type_name }
+  | "["
+    ; scheme = core_scheme 
+    ; "]"
+      { Type.poly ~range:(range_of_lex $loc) scheme }
 
 %inline type_argument_list:
     (* empty *)
@@ -149,6 +153,13 @@ atom_type:
     ; ")"
       { types }
 
+core_scheme:
+    type_var_names = nonempty_list(type_var_name)
+    ; "."
+    ; type_ = core_type
+      { Type.scheme ~range:(range_of_lex $loc) ~quantifiers:type_var_names type_ }
+  | type_ = core_type
+      { Type.scheme ~range:(range_of_lex $loc) type_ }
 
 (** {4 Expressions and Patterns}
 
@@ -167,11 +178,14 @@ atom_type:
         | let vb in e                       (* let *)
         | { l1 = e1; ...; ln = en }         (* record *)
         | (e1, ..., en)                     (* tuples *)
+        | e.j                               (* projection *)
         | K e?                              (* constructor *)
         | e.l                               (* field *)
         | e; e                              (* sequence *)
         | (e : tau)                         (* type annotation *)
-    v}
+        | [e : sigma]                       (* polytype box *)
+        | <e>                              (* polytype unbox *)
+    v} 
 
     Expressions also include cases, patterns and value bindings, given by the following
     grammars:
@@ -227,7 +241,7 @@ expression:
   | op = unary_op
     ; exp = expression %prec prec_unary_op
       { unary_op ~range:(range_of_lex $loc) ~op ~exp }
-  | exp1 = expression
+  | exp1 = expression 
     ; op = bin_op
     ; exp2 = expression
       { binary_op ~range:(range_of_lex $loc) ~op ~exp1 ~exp2 }
@@ -327,6 +341,20 @@ atom_expression:
     ; "."
     ; index = "<int>"
         { Expression.proj ~range:(range_of_lex $loc) exp index }
+  | "["
+    ; exp = seq_expression 
+    ; ":"
+    ; scheme = core_scheme 
+    ; "]"
+      { Expression.poly ~range:(range_of_lex $loc) exp ~scheme () }
+  | "["
+    ; exp = seq_expression 
+    ; "]"
+      { Expression.poly ~range:(range_of_lex $loc) exp () }
+  | "@["
+    ; exp = seq_expression 
+    ; "]"
+      { Expression.inst ~range:(range_of_lex $loc) exp }
   | "("
     ; exp = seq_expression
     ; ":"
@@ -418,13 +446,6 @@ atom_pattern:
     value bindings.
 *)
 
-core_scheme:
-    type_var_names = nonempty_list(type_var_name)
-    ; "."
-    ; type_ = core_type
-      { Type.scheme ~range:(range_of_lex $loc) ~quantifiers:type_var_names type_ }
-  | type_ = core_type
-      { Type.scheme ~range:(range_of_lex $loc) type_ }
 
 type_declarations:
   "type"

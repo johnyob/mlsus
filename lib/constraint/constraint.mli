@@ -91,6 +91,7 @@ type t =
   | Conj of t * t (** [C1 /\ C2] *)
   | Eq of Type.t * Type.t (** [tau1 = tau2] *)
   | Exists of Type.Var.t * t (** [exists overline(a). C]*)
+  | Forall of Type.Var.t list * t (** [forall overline(a). C] *)
   | Let of Var.t * scheme * t (** [let x = sigma in C] *)
   | Instance of Var.t * Type.t (** [x <= tau] *)
   | Match of
@@ -120,6 +121,7 @@ val all : t list -> t
 val ( =~ ) : Type.t -> Type.t -> t
 val exists : Type.Var.t -> t -> t
 val exists_many : Type.Var.t list -> t -> t
+val forall : Type.Var.t list -> t -> t
 val ( #= ) : Var.t -> scheme -> Var.t * scheme
 
 type unquantified_scheme := t * Type.t

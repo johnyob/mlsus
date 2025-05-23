@@ -240,6 +240,7 @@ type t =
   | Conj of t * t
   | Eq of Type.t * Type.t
   | Exists of Type.Var.t * t
+  | Forall of Type.Var.t list * t
   | Let of Var.t * scheme * t
   | Instance of Var.t * Type.t
   | Match of
@@ -275,6 +276,7 @@ let all ts =
 let ( =~ ) type1 type2 = Eq (type1, type2)
 let exists type_var t = Exists (type_var, t)
 let exists_many vars in_ = List.fold_right vars ~init:in_ ~f:exists
+let forall type_vars t = Forall (type_vars, t)
 let ( #= ) x scheme = x, scheme
 let mono_scheme type_ = { type_vars = []; in_ = tt; type_ }
 let ( @=> ) t1 t2 = t1, t2

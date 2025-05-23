@@ -11,9 +11,10 @@ and core_type_desc =
   | Type_arrow of core_type * core_type
   | Type_tuple of core_type list
   | Type_constr of core_type list * Type_name.With_range.t
+  | Type_poly of core_scheme
 [@@deriving sexp_of]
 
-type core_scheme = core_scheme_desc With_range.t
+and core_scheme = core_scheme_desc With_range.t
 
 and core_scheme_desc =
   { scheme_quantifiers : Type_var_name.With_range.t list
@@ -53,6 +54,8 @@ and expression_desc =
   | Exp_match of expression * case list
   | Exp_if_then_else of expression * expression * expression
   | Exp_sequence of expression * expression
+  | Exp_poly of expression * core_scheme option
+  | Exp_inst of expression
 [@@deriving sexp_of]
 
 and value_binding = value_binding_desc With_range.t

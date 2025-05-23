@@ -408,11 +408,12 @@ module S = struct
 
   let partial_ungeneralize t ~f =
     match t.status with
-    | Partial { kind = Instance; instances; region_node = _ } ->
+    | Partial ({ kind = Instance; instances; region_node = _ } as s) ->
       (* An ungeneralized instance that is still partial (but whose level is lowered)
          must noify the instances of this (likely making then less generic) *)
-      Map.iteri instances ~f:(fun ~key ~data -> f key data)
-    | _ -> ()
+      Map.iteri instances ~f:(fun ~key ~data -> f key data);
+      { t with status = Partial { s with instances = Instance_identifier.Map.empty } }
+    | _ -> t
   ;;
 
   type 'a ctx =
@@ -448,7 +449,12 @@ module S = struct
     in
     let guards = Guard.Map.merge_skewed t1.guards t2.guards in
     let removed_guards = Set.union t1.removed_guards t2.removed_guards in
-    { id = t1.id; status; inner; guards; removed_guards }
+    let id =
+      (* It doesn't matter which id we pick. We use the minimum (ie the oldest)
+         since it helps with logging *)
+      Identifier.min t1.id t2.id
+    in
+    { id; status; inner; guards; removed_guards }
   ;;
 
   let is_generic t = Status.is_generic t.status
@@ -508,7 +514,10 @@ module Type = struct
     set_structure t (S.partial_generalize structure ~f)
   ;;
 
-  let partial_ungeneralize t ~f = S.partial_ungeneralize (structure t) ~f
+  let partial_ungeneralize t ~f =
+    let structure = structure t in
+    set_structure t (S.partial_ungeneralize structure ~f)
+  ;;
 
   let add_guard t ~guard ~data =
     let structure = structure t in
@@ -956,54 +965,69 @@ let create_app ~state ~curr_region type1 type2 =
   create_former ~state ~curr_region (App (type1, type2))
 ;;
 
-let copy ~state ~curr_region ~when_ ~instance_id t =
+let copy
+      ~state
+      ~(copy_region : Type.region_node)
+      ~(curr_region : Type.region_node)
+      ~(when_ : Type.t S.t -> bool)
+      ~instance_id
+      t
+  =
   let copies = Hashtbl.create (module Identifier) in
   let rec loop type_ =
     let structure = Type.structure type_ in
     match structure.status with
+    | Generic ->
+      find_or_alloc_copy structure ~on_alloc:(fun _copy ->
+        (* No book-keeping required for copying generics. *)
+        ())
+    | Partial { kind = Generic; region_node; instances } ->
+      (* If the partial generic is not a member of the region, then we do not copy it. *)
+      if Identifier.(copy_region.id = region_node.id)
+      then
+        find_or_alloc_copy structure ~on_alloc:(fun copy ->
+          (* Patch the copy to have a guard and the original type to contain the 
+             copy in its instance list. *)
+          Type.add_guard copy ~guard:(Instance instance_id) ~data:Instance;
+          Type.set_structure
+            type_
+            { structure with
+              status =
+                Partial
+                  { kind = Generic
+                  ; region_node
+                  ; instances = Map.set instances ~key:instance_id ~data:copy
+                  }
+            })
+      else type_
     | Instance _ | Partial { kind = Instance; _ } -> type_
-    | Generic | Partial { kind = Generic; _ } ->
-      (try Hashtbl.find_exn copies structure.id with
-       | Not_found_s _ ->
-         let copy = create_var ~state ~curr_region () in
-         Hashtbl.set copies ~key:structure.id ~data:copy;
-         if when_ type_
-         then (
-           (match structure.status with
-            | Partial { kind = Generic; instances; region_node } ->
-              Type.add_guard copy ~guard:(Instance instance_id) ~data:Instance;
-              Type.set_structure
-                type_
-                { structure with
-                  status =
-                    Partial
-                      { kind = Generic
-                      ; region_node
-                      ; instances = Map.set instances ~key:instance_id ~data:copy
-                      }
-                }
-            | Generic -> ()
-            | Instance _ | Partial { kind = Instance; _ } ->
-              (* Cannot instantiate instances *)
-              assert false);
-           Type.set_inner copy (S.Inner.copy ~f:loop structure.inner));
-         copy)
+  and find_or_alloc_copy (structure : _ S.t) ~on_alloc =
+    try Hashtbl.find_exn copies structure.id with
+    | Not_found_s _ ->
+      let copy = create_var ~state ~curr_region () in
+      Hashtbl.set copies ~key:structure.id ~data:copy;
+      if when_ structure
+      then (
+        on_alloc copy;
+        Type.set_inner copy (S.Inner.copy ~f:loop structure.inner));
+      copy
   in
   loop t
 ;;
 
-let partial_copy ~state ~curr_region ~instance_id partial_type =
+let partial_copy ~state ~copy_region ~curr_region ~instance_id partial_type =
   copy
     ~state
+    ~copy_region
     ~curr_region
     ~instance_id
-    ~when_:(fun type_ ->
+    ~when_:(fun type_structure ->
       (* Always copy the root structure of the partial type *)
-      Type.same_class partial_type type_
+      Identifier.(Type.id partial_type = type_structure.id)
       ||
       (* Copy generics fully, partial generics are shallowly copied (only fresh vars)
          if they're already part of this instance group *)
-      match Type.status type_ with
+      match type_structure.status with
       | Generic -> true
       | Partial { kind = Generic; instances; _ } -> not (Map.mem instances instance_id)
       | Partial { kind = Instance; _ } | Instance _ -> assert false)
@@ -1017,6 +1041,10 @@ let unify ~state ~curr_region type1 type2 =
   let remove_instance_guard instance instance_id =
     (* Must visit region since instance may be partially generialized *)
     visit_region ~state (Type.region_exn ~here:[%here] instance);
+    [%log.global.debug
+      "Removing instance guard due to unification with instance"
+        (instance : Type.t)
+        (instance_id : Instance_identifier.t)];
     Type.remove_guard instance (Instance instance_id)
   in
   let unifier_ctx : _ S.ctx =
@@ -1151,9 +1179,10 @@ let generalize_young_region ~state (young_region : Young_region.t) =
       ([%log.global.debug "Visiting type" (type_ : Type.t)];
        let r = Type.region_exn ~here:[%here] type_ in
        [%log.global.debug "Region of type_" (r : Type.sexp_identifier_region_node)];
-       if Tree.Level.(r.level < young_level)
+       if Identifier.(r.id <> young_region.node.id)
        then (
          [%log.global.debug "Type is not generic"];
+         (* Invariant: region is a parent (or potentially a cousin) of [young_region] *)
          (* Register [type_] in the region [r] *)
          visit_region ~state r;
          Region.(register_type (Tree.region r) type_);
@@ -1163,12 +1192,17 @@ let generalize_young_region ~state (young_region : Young_region.t) =
            let curr_region = Type.region_exn ~here:[%here] instance in
            visit_region ~state curr_region;
            unify ~state ~curr_region type_ instance;
+           [%log.global.debug
+             "Removing instance guard due to partial ungeneralization"
+               (type_ : Type.t)
+               (instance_id : Instance_identifier.t)
+               (instance : Type.t)];
            Type.remove_guard instance (Instance instance_id));
          (* Filter the type from the result list *)
          false)
        else (
          [%log.global.debug "Type is generic"];
-         assert (Tree.Level.(r.level = young_level));
+         assert (Identifier.(r.id = young_region.node.id));
          (* If the type is a partial instance and has instances, then we propagate
             the structure. *)
          (match Type.status type_ with
@@ -1203,19 +1237,29 @@ let generalize_young_region ~state (young_region : Young_region.t) =
         visit_region ~state curr_region;
         (* Perform a partial copy on the generic to ensure the instance has the generalized
            structure and then unify *)
-        let copy = partial_copy ~state ~curr_region ~instance_id partial_generic in
+        let copy =
+          partial_copy
+            ~state
+            ~copy_region:young_region.node
+            ~curr_region
+            ~instance_id
+            partial_generic
+        in
         unify ~state ~curr_region copy instance));
   (* Generalize partial generics that can be generalized to (full) generics *)
   [%log.global.debug "Generalising partial generics"];
-  List.iter
-    generics
-    ~f:
-      (Type.partial_generalize ~f:(fun instance_id instance ->
-         (* The partial generic associated with the instance [(guard, instance)] has
+  List.iter generics ~f:(fun type_ ->
+    Type.partial_generalize type_ ~f:(fun instance_id instance ->
+      (* The partial generic associated with the instance [(guard, instance)] has
             been fully generalized.*)
-         (* Remove the guard *)
-         visit_region ~state (Type.region_exn ~here:[%here] instance);
-         Type.remove_guard instance (Instance instance_id)));
+      (* Remove the guard *)
+      visit_region ~state (Type.region_exn ~here:[%here] instance);
+      [%log.global.debug
+        "Removing instance guard due to partial generalization"
+          (type_ : Type.t)
+          (instance_id : Instance_identifier.t)
+          (instance : Type.t)];
+      Type.remove_guard instance (Instance instance_id)));
   [%log.global.debug "Changes" (generics : Type.t list)];
   (* Schedule default handlers *)
   let roots_and_guarded_partial_generics =
@@ -1254,6 +1298,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
       match Type.status type_ with
       | Instance _ | Partial { kind = Instance; _ } ->
         (* No instances are left in the region *)
+        [%log.global.debug "Type that should be a generic but isn't" (type_ : Type.t)];
         assert false
       | Partial { kind = Generic; _ } -> true
       | Generic -> false)
@@ -1305,15 +1350,18 @@ let force_generalization ~state region_node =
 let exit_region ~curr_region root = create_scheme root curr_region
 
 let instantiate ~state ~curr_region ({ root; region_node } : Scheme.t) =
-  [%log.global.debug
-    "Generalization tree @ instantiation"
-      (state.generalization_tree : Generalization_tree.t)];
-  (* Generalize the region (if necessary) *)
-  Option.iter region_node ~f:(force_generalization ~state);
-  (* Create an instance group *)
-  let instance_id = Instance_identifier.create state.id_source in
-  (* Copy the type (always copy if possible) *)
-  copy ~state ~curr_region ~when_:(Fn.const true) ~instance_id root
+  match region_node with
+  | None -> root
+  | Some copy_region ->
+    [%log.global.debug
+      "Generalization tree @ instantiation"
+        (state.generalization_tree : Generalization_tree.t)];
+    (* Generalize the region *)
+    force_generalization ~state copy_region;
+    (* Create an instance group *)
+    let instance_id = Instance_identifier.create state.id_source in
+    (* Copy the type *)
+    copy ~state ~copy_region ~curr_region ~when_:(Fn.const true) ~instance_id root
 ;;
 
 module Suspended_match = struct
@@ -1379,6 +1427,10 @@ module Suspended_match = struct
         ; default =
             (fun () ->
               let curr_region = curr_region_of_closure () in
+              (* HACK: This forces the region of [shape_matchee] to be visited as well. 
+                 [closure_remove_guard] does not guarantee this. But the default handler 
+                 always guarantee's that [shape_matchee] is updated. *)
+              visit_region ~state (Type.region_exn ~here:[%here] shape_matchee);
               else_ ~curr_region;
               [%log.global.debug
                 "Generalization tree running default handler"
