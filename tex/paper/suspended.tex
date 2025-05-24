@@ -700,37 +700,67 @@ timestamp semantics.
 {derive precise declarative semantics for the language features of
 Section 2.}
 
+\begin{mathparfig}%
+  {fig:constraint-semantics}%
+  {Semantics of constraints (without suspended constraints)}
+  \begin{array}{rrl@{\hspace{8em}}l}
+    \semenv
+      & ::=
+      & \cdot \mid \semenv, \alpha := \tau
+      & \text{Semantic environment}
+    \\[2em]
+    \square,\semmetav &&& \text{Linear constraint meta-variable}
+    \\
+    \semmetaenv
+      & ::=
+      & \cdot \mid \semmetaenv, (\semenv \vdash \semmetav)
+      & \text{Linear meta-variable environment}
+    \\[2em]
+  \end{array}
+\\
+  \infer
+  {\semenv(\tone) = \semenv(\ttwo)}
+  {\cdot; \semenv \vdash \tone = \ttwo}
 
-Idea after discussion with Alistair:
+  \infer
+  {\semmetaenv_1; \semenv \vdash \cone
+   \and
+   \semmetaenv_2; \semenv \vdash \ctwo}
+  {\semmetaenv_1 \uplus \semmetaenv_2; \semenv \vdash \cone \cand \ctwo}
+
+  \infer
+  {\semmetaenv; \semenv[\alpha := \tau] \vdash \c}
+  {\semmetaenv; \semenv \vdash \cexists \cv \c}
+
+  \infer
+  { }
+  {(\semenv \vdash \semmetav) ; \semenv \vdash \semmetav}
+\end{mathparfig}
+
+Meta-substitution lemma: if $\semmetav$ occurs exactly once in $\c$, then $\semmetaenv, (\semenvp \vdash \semmetav); \semenv \vdash C$ and $\semenvp \vdash \cp$ if and only if $\semmetaenv; \semenv \vdash \c[\semmetav := \cp]$.
+
+Convention: we write $\c[\cp]$ for $\c[\square := \cp]$. In particular $\c[\square] = \c$ when $\square$ occurs once in $\c$.
+
+Next steps:
 \begin{itemize}
-\item sketch a two-place satisfiability judgment $\semenv \vdash C$
-\item define a three-place judgment $\semenv \vdash C[\semenvp \vdash \square]$
-\item from it we can re-derive the two-place judgment
-  $$ \semenv \vdash C \quad := \quad \semenv \vdash (C \wedge \square)[\semenv \vdash \square] $$
-  and also define a four-place judgment
-  \begin{mathpar}
-    \infer
-    {\semenv \vdash \cctx[\semenvp \vdash \square] \and \semenvp \vdash \cp}
-    {\semenv \vdash \cctx[\semenvp \vdash \cp]}
-  \end{mathpar}
-\item then we have all the bits to introduce the condition
-  $\cctx[\cv !]$:
+\item introduce the condition
+  $\c[\cv !]$:
   \begin{mathpar}
     \begin{array}{l}
-    \exists! \F, \quad \forall \semenv, \semenvp,\\ \qquad \semenv \vdash \cctx[\semenvp \vdash \square] \implies \mathsf{head}(\semenvp(\cv)) = \F
+    \exists! \F, \quad \forall \semenv, \semenvp,\\ \qquad (\semenvp \vdash \square); \semenv \vdash \c[\square] \implies \mathsf{head}(\semenvp(\cv)) = \F
     \end{array}
   \end{mathpar}
 \item and finally the global rule
   \begin{mathpar}
     \infer
-    {\cctx[\cva !]
+    {\c[\cva !]
       \and \semenvp(\cva) = \overline{\t} \Fapp
-      \and \semenv \vdash \cctx[\semenvp, \overline{\cvb := \t} \vdash f(\overline{\cvb} \Fapp)] }
-    {\semenv \vdash \cctx[\semenvp \vdash \cmatch \cva \Delta f]}
+      \and \semmetaenv, (\semenvp, \overline{\cvb := \t} \vdash \square)\vdash \c[f(\overline{\cvb} \Fapp)] }
+    {\semmetaenv, (\semenvp \vdash \square); \semenv \vdash \c[\cmatch \cva \Delta f]}
   \end{mathpar}
 \end{itemize}
 
-The intuition for the four-place judgment $\semenv \vdash \cctx[\semenvp \vdash C]$ is that it is a proof of satisfiability of $\cctx[C]$ where the $C$ sub-derivation has the valuation $\semenvp$. Note that, after the the global rule is added, the derivations of this judgment are not syntactically directed by $\cctx$ anymore.
+The intuition for the judgment $\semmetaenv, (\semenvp \vdash \square); \semenv \vdash \c[\cp]$ is that it is a proof of satisfiability of $\c[\square := \cp]$ with valuation $\semenv$, where we furthermore know that the $\cp$ sub-derivation has the valuation $\semenvp$. Note that, after the the global rule is added, the derivations of this judgment are not syntactically directed by $\c$ anymore.
 
 \section{The language}
 \label{sec:language}
