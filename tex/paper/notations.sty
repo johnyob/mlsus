@@ -18,7 +18,9 @@
 \newcommand{\cand}{\wedge}
 \newcommand{\cunif}[2]{{#1} = {#2}}
 \newcommand{\cinst}[2]{#1 ~ #2}
-\newcommand{\cletin}[2]{\Let ~ #1 ~ \In ~ #2}
+\newcommand{\cletin}[3]{\Let ~ #1 = #2 ~ \In ~ #3}
+\newcommand{\cabs}[2]{\lambda {#1}. ~ {#2}}
+\newcommand{\capp}[2]{{#1} ~ {#2}}
 \newcommand{\cmatch}[3]{\Match ~ #1 ~ \With ~ [ #2 ] #3}
 \newcommand{\clam}[2]{\lambda {#1}.\,{#2}}
 
@@ -31,6 +33,7 @@
 
 \newcommand{\econstr}[2]{#1 ~ #2}
 \newcommand{\einst}[1]{\langle #1 \rangle}
+\newcommand{\exinst}[3]{\langle #1 : \exists {#2}. ~ #3 \rangle}
 \newcommand{\epoly}[2]{[ #1 : #2 ]}
 \newcommand{\eunit}{()}
 \newcommand{\efun}[2]{\lambda {#1}. ~ {#2}}
@@ -38,19 +41,43 @@
 \newcommand{\elet}[3]{\Let ~ #1 = #2 ~ \In ~ #3}
 \newcommand{\ematch}[2]{\Match ~ #1 ~ \With ~ #2}
 \newcommand{\ecase}[3]{#1 ~ #2 \Rightarrow #3}
+\newcommand{\efield}[2]{#1.#2}
+\newcommand{\eproj}[2]{#1.#2}
+\newcommand{\exfield}[3]{#1.#2.#3}
+\newcommand{\erecord}[1]{\{ #1 \}}
 
 \newcommand{\cinfer}[2]{\llbracket #1 : #2 \rrbracket}
 
 %% \newcommand{\TODO}{\textcolor{red}{TODO}}
+\newcommand{\disjoint}{\mathop{\#}}
 
 % Common metas
 \newcommand{\eone}{e_1}
 \newcommand{\etwo}{e_2}
 \newcommand{\ei}{e_i}
+\newcommand{\en}{e_n}
+
+\newcommand{\Cone}{C_1}
+\newcommand{\Ctwo}{C_2}
+\newcommand{\Ci}{C_i}
+\newcommand{\Cn}{C_n}
+
 
 \newcommand{\tauone}{\tau_1}
 \newcommand{\tautwo}{\tau_2}
 \newcommand{\taui}{\tau_i}
+\newcommand{\tauj}{\tau_j}
+
+\newcommand{\sigmaone}{\sigma_1}
+\newcommand{\sigmatwo}{\sigma_2}
+\newcommand{\sigmai}{\sigma_i}
+\newcommand{\sigman}{\sigma_n}
+
+
+\newcommand{\labone}{l_1}
+\newcommand{\labtwo}{l_2}
+\newcommand{\labi}{l_i}
+\newcommand{\labn}{l_n}
 
 \newcommand{\evari}{x_i}
 
@@ -68,7 +95,3 @@
 \defmetavar {\x} {x}
 
 \newcommand{\all}[2]{\forall #1.\,#2}
-
-
-
-

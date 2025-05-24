@@ -38,3 +38,16 @@
     \belowdisplayskip 0.1em
     \begin{mathpar}}
    {\end{mathpar}}
+
+\usepackage{array}
+
+\newcommand{\bnflabel}[1]{\textit{#1}}
+\newcommand{\bnfis}{::=}
+\newenvironment{bnf}
+   {\renewcommand{\arraystretch}{1.2}%
+    \begin{array}{@{}r@{\quad}l@{}}}
+   {\end{array}}
+\newenvironment{bnfalign}
+   {\renewcommand{\arraystretch}{1}%
+    \begin{array}[t]{@{}>{{}}r<{{}}@{}l@{}}}
+   {\end{array}}
