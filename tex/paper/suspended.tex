@@ -375,15 +375,15 @@ complete solver involves several difficulties.
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
   \begin{array}{rrl@{\hspace{8em}}l}
-    \alpha, \beta, \gamma &&& \text{(flexible) inference variables}
+    \alpha, \beta, \gamma &&& \text{Type variables}
     \\
     \tau & ::=
-         & \alpha \mid \overline{\alpha} \Fapp
-         & \text{(shallow) inference types}
+         & \alpha \mid \overline{\tau} \Fapp ~ \mid \ldots
+         & \text{Constraint types}
     \\
     \Fapp & ::=
           & \tunit \mid \cdot \tarrow \cdot \mid \dots
-          & \text{type constructors}
+          & \text{Type constructors}
     \\[2em]
 
     C & ::=
@@ -400,7 +400,11 @@ complete solver involves several difficulties.
       &
       \\
       & \mid
-      & \cmatch \tau \Delta f
+      & \cmatch \tau \Delta f 
+    \\
+    \varsigma & ::=
+              & \overline{\alpha} \Fapp ~ \mid \ldots
+              & \text{Shapes}
   \end{array}
 \end{mathparfig}
 
@@ -420,17 +424,15 @@ eliminated using application constraints $\capp x \tau$ which applies the type $
 bound to $x$.
 
 % Suspended match constraints
-
 Finally, we introduce \textit{suspended match constraints}\footnote{Previously dubbed `frozen constraints' \citep{TODO}}.  
-These constraints defer constraint generation until the top-level constructor of a 
-type becomes known (through unification), at which point they match on the constructor 
-to generate a new constraint. Formally, a suspended constraint is written as 
+These constraints defer constraint generation until the \textit{shape}, \eg its top-level constructor, of a type becomes known (through unification), at which point 
+they match on the shape to generate a new constraint. Formally, a suspended constraint is written as 
 $\cmatch \tau \Delta f$, where:
 \begin{enumerate}
 \item
-  The matchee $\tau$ is a type. The constraint remains suspended until the head constructor of $\tau$ is determined. 
+  The matchee $\tau$ is a type. The constraint remains suspended until the shape of $\tau$ is determined. 
 \item 
-  The handler $f$ is a meta function from type patterns of the form $\overline{\beta} \Fapp$rto constraints.
+  The handler $f$ is a meta function from shape ($\varsigma$) to constraints.
   Once the constraint is unblocked, this function is applied to generate the constraint to be solved. 
   Conceptually, $f$ represents a meta-level functionalization of the match's branches.
 \item
@@ -438,13 +440,38 @@ $\cmatch \tau \Delta f$, where:
   The role of $\Delta$ in constraint solving is discussed further in Section \ref{sec:solving}. 
 \end{enumerate}
 
+\begin{figure}[!htpb]
+  \begin{align*}
+    \shape(\alpha) &= \bot \\ 
+    \shape(\overline{\tau} \Fapp) &= \langle \overline{\alpha} \Fapp, [\overline{\alpha := \tau}] \rangle
+  \end{align*} 
+  \caption{Definition of $\shape(\tau)$, a partial function from types to shape-substitution pairs $\langle \varsigma, \theta \rangle$}
+  \label{fig:shape-fn-def}
+\end{figure}
+
 % Informal semantics
 Informally, the semantics of $\cmatch \tau \Delta f$ are as follows: the
-constraint remains suspended until the type variable $\alpha$ is unified
-with a concrete non-variable type $\overline{\beta} \Fapp$, at which point
-the handler is applied to this type $f(\overline{\beta} \Fapp)$ and the
-generated constraint is scheduled to be solved. If $\alpha$ is never
-unified, the constraint remains unsatisfiable.
+constraint remains suspended until the shape of $\tau$ is defined (through unification), at which point
+the handler is applied to this shape $f(\varsigma)$ and the
+generated constraint is scheduled to be solved. If the shape of $\tau$ is never
+determined, the constraint remains unsatisfiable.
+
+% Applications
+
+The remainder of this section illustrates the role of suspended constraints in supporting 
+language features that historically pose challenges to the preservation of principal types. 
+These include:
+\begin{enumerate}
+  \item Constructor and record label overloading for nominal algebraic datatypes; 
+  \item Overloaded tuple project, in the style of \SML; 
+  \item Semi-explicit first-class polymorphism
+\end{enumerate}
+We demonstrate how the typablity of each of these features can be elaborated into 
+constraints, formalized using a constraint generation function of the form $\cinfer e \alpha$, 
+which, given a term $e$ and expected type $\alpha$, produces a constraint $C$ which is satisfiable if 
+and only if $e$ is well-typed. A formal account of the semantics of suspended constraints 
+and the declarative typing rules for these features is deferred to Sections \ref{sec:semantics}
+and \ref{sec:language}, respectively. 
 
 % When solving $\cmatch \alpha \Delta f$, the solver proceeds as follows:
 % \begin{enumerate}
@@ -462,41 +489,41 @@ unified, the constraint remains unsatisfiable.
 % Once all constraints have been processed, any pending suspended constraints
 % that remain unsolved indicate failure.
 
-\paragraph{Constraint-solving: an intuition}
+% \paragraph{Constraint-solving: an intuition}
 
 
-\paragraph{Applications}
-\begin{itemize}
-\item
-  type-based disambiguation of data constructors (and record fields)
-\item
-  polytypes (are we sure?) \\ ensuring that there is a unique polytype
-  skeleton
-\item
-  anti-unification-based overloading (are we sure?) \\ there is some
-  uniqueness of the head / variational type
-\end{itemize}
-\Xdidier {For me, the three examples are mandatory.
-disambiguation of data constructors and record fields is too simple...
-Also, polytypes may or may not include polyparams. Polyparams are a real
-challenge because most constraints will be delayed, hence the need for a
-strategy to resolve them. Static ad hoc overloading is more general.
-}
+% \paragraph{Applications}
+% \begin{itemize}
+% \item
+%   type-based disambiguation of data constructors (and record fields)
+% \item
+%   polytypes (are we sure?) \\ ensuring that there is a unique polytype
+%   skeleton
+% \item
+%   anti-unification-based overloading (are we sure?) \\ there is some
+%   uniqueness of the head / variational type
+% \end{itemize}
+% \Xdidier {For me, the three examples are mandatory.
+% disambiguation of data constructors and record fields is too simple...
+% Also, polytypes may or may not include polyparams. Polyparams are a real
+% challenge because most constraints will be delayed, hence the need for a
+% strategy to resolve them. Static ad hoc overloading is more general.
+% }
 
-\Xgabriel{I care most about the semantics and implementation of the
-constraint language.} 
-\Xdidier{It would be nice to have typing rules for the surface language, and
-show that they match the constraints generated.} 
-\Xalistair{I agree.}
+% \Xgabriel{I care most about the semantics and implementation of the
+% constraint language.} 
+% \Xdidier{It would be nice to have typing rules for the surface language, and
+% show that they match the constraints generated.} 
+% \Xalistair{I agree.}
 
-For each feature:
-\begin{itemize}
-\item propose *informal* surface-language typing rules
-\item elaborate them into the constraint language
-\end{itemize}
+% For each feature:
+% \begin{itemize}
+% \item propose *informal* surface-language typing rules
+% \item elaborate them into the constraint language
+% \end{itemize}
 
-We will provide *precise* declarative semantics in the ``Semantics of
-constraints'' section.
+% We will provide *precise* declarative semantics in the ``Semantics of
+% constraints'' section.
 
 \subsection{Static overloading of constuctors and record labels}
 
