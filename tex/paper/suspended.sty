@@ -1,0 +1,21 @@
+\RequirePackage{boolean}
+\RequirePackage{reversion}
+\RequirePackage[utf8]{inputenc}
+%% \RequirePackage{mylistings}
+\RequirePackage{myprogram}
+\RequirePackage{mycolors}
+\RequirePackage{mymath}
+\RequirePackage{mybiblio}
+\RequirePackage{myhyperref}
+\RequirePackage{notations}
+\RequirePackage{mycomments}
+\RequirePackage{myabbreviations}
+
+%% Enumerations
+
+\RequirePackage[inline,shortlabels]{enumitem}
+\newlist{Enumerate}{enumerate}{1}
+\setlist[Enumerate]{label*=\textbf{(\arabic*)}}
+
+\setlist{leftmargin=2em,noitemsep}
+\setlist*[enumerate]{label*=\textbf{(\arabic*)}}

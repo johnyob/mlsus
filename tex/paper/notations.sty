@@ -1,3 +1,11 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand \mathpostfix[2][\keyword]{\mathrel{#1{#2}}\mathclose{}}
+\newcommand \mathprefix [2][\keyword]{\mathopen{}\mathrel{#1{#2}}}
+\newcommand \mathinfix [2][\keyword]{\mathrel{#1{#2}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Alistair
+
 \newcommand{\Let}{\mathsf{let}}
 \newcommand{\In}{\mathsf{in}}
 \newcommand{\Match}{\mathsf{match}}
@@ -28,7 +36,7 @@
 
 \newcommand{\cinfer}[2]{\llbracket #1 : #2 \rrbracket}
 
-\newcommand{\TODO}{\textcolor{red}{TODO}}
+%% \newcommand{\TODO}{\textcolor{red}{TODO}}
 
 % Common metas
 \newcommand{\eone}{e_1}
@@ -43,3 +51,19 @@
 
 \newcommand{\K}{\mathsf{K}}
 \newcommand{\Ki}{\K_i}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% DR
+
+\RequirePackage{metavar}
+
+\defmetavar {\kv} {\epsilon}
+\let \t\relax 
+\defmetavar {\t} {\tau}
+\defmetavar {\x} {x}
+
+\newcommand{\all}[2]{\forall #1.\,#2}
+
+
+
+

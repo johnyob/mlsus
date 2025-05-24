@@ -1,0 +1,52 @@
+%%% Package metavar
+
+\RequirePackage{kvoptions}
+\RequirePackage{keyval}
+
+\DeclareBoolOption [false]{types}
+\DeclareBoolOption[false]{i}
+\DeclareComplementaryOption{I}{i}
+\DeclareBoolOption[false]{j}
+\DeclareComplementaryOption{J}{j}
+\ProcessKeyvalOptions*
+
+\def \mva@@newcommand #1#2\relax#3#4%
+    {\expandafter \let \expandafter \@tmp \csname #2#3\endcsname
+     \ifx \@tmp \relax
+       \expandafter \newcommand \csname #2#3\endcsname {#4}%
+     \else
+       \PackageWarning {metavar}
+       {Command \expandafter \string \csname #2#3\endcsname\space
+        not redefined}%
+     \fi}
+\def \mva@newcommand
+    #1#2#3{\expandafter \mva@@newcommand \string#1\relax{#2}{#3}}
+
+\newcommand {\setmetavar} [1]{\setkeys{metavar}{#1}}
+\define@key {metavar}{i}[]{\metavar@itrue}
+\define@key {metavar}{j}[]{\metavar@jtrue}
+
+
+\newcommand{\defmetavar}[3][]{%
+  \newcommand {#2}{#3}%
+  \mva@newcommand {#2}{p}{{#3'}}%
+  \mva@newcommand {#2}{pp}{{#3''}}%
+  \mva@newcommand {#2}{i}{{#3_i}}%
+  \mva@newcommand {#2}{ip}{{#3'_i}}%
+  \mva@newcommand {#2}{z}{{#3_0}}%
+  \mva@newcommand {#2}{a}{{#3_1}}%
+  \mva@newcommand {#2}{b}{{#3_2}}%
+  \mva@newcommand {#2}{zp}{{#3_0'}}%
+  \mva@newcommand {#2}{ap}{{#3_1'}}%
+  \mva@newcommand {#2}{bp}{{#3_2'}}%
+  \setmetavar{#1}%
+  \ifmetavar@i \mva@newcommand {#2}{i}{{#3_i}}\fi%
+  \ifmetavar@j \mva@newcommand {#2}{j}{{#3_j}}\fi%
+}
+
+\newcommand {\defmetatypes}{%
+  \defmetavar \tv \alpha
+  \defmetavar \tw \beta
+  \let \t \relax \defmetavar \t \tau
+}
+\ifmetavar@types \defmetatypes \fi

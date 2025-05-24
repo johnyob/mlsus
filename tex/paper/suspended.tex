@@ -7,21 +7,7 @@
 
 \input{suspended.cfg}
 \newcommand{\acmart}{\True}
-
-\RequirePackage{boolean}
-
-\usepackage{boolean}
-\usepackage{reversion}
-
-\usepackage[utf8]{inputenc}
-
-\usepackage{mylistings}
-\usepackage{mycolors}
-\usepackage{mymath}
-\usepackage{mybiblio}
-\usepackage{myhyperref}
-\usepackage{notations}
-\usepackage{mycomments}
+\usepackage{suspended}
 
 %% \Xfirstname defined in {mycomments}
 %% Use either
@@ -31,104 +17,261 @@
 %% Uncomment this line to hide all comments.
 % \UNXXX{}
 
-\begin{document}
+\usepackage{marginnote}
 
 \title{Omnidirectional type inference with delayed constraints
    for static overloading and semi-explicit polymorphism}
 
-%%
-%% The abstract is a short summary of the work to be presented in the
-%% article.
+\begin{document}
+
 \begin{abstract}
-  % Traditional type inference algorithms such as $\mathscr{W}$ for
-  % Hindley-Milner or bidirectional typechecking enforce an ordering on the
-  % propagation of type information -- e.g. inferring the type of a
-  % let-bound expression before its uses. We revisit the problem of type
-  % inference for several extensions of the ML language, from the
-  % constraint-based perspective in the style of Pottier and R\'emy, to
-  % derive a new approach: \textit{omnidirectional type inference} which
-  % improves on the state
-
-
-  DRAFT: this is a difficult feature. It solves some of the loose ends
-  with extensions of H-D-M type inference to a full-scale programming
-  language. We believe that it improves on the OCaml state of the art
-  (epsilon variables + bidirectional, giving warnings when it would
-  make non-principal choices).
+We propose a new concept of \emph{omnidirectional} type inference, which is
+the ability to resolve \ML-style typing constraints in disorder, by
+contrast with all known implementations that always fully typecheck the
+bindings before the bodies of let-expressions.
+%
+This relies on two technical devices: \emph{partial type schemes}
+and \emph{delayed constraints}. Partial here means  the
+possibility of taking an instances of a type scheme that is not yet
+completely solved with a mechanism to tack and update their instances when
+the type scheme is refined, incrementally.
+\emph{Delayed} constraints means a mechanism to freeze the resolution of
+some constraints which typically require non-local not-yet-available
+contextual information and to discharged then when we have learned enough
+information from the resolution of other constraints, typically when some type
+variables have been instantiated.
+%
+We illustrate the benefit of omnidirectional type inference for several
+advanced features present in the \OCaml language, including static
+overloading of record labels and datatype constructors on the one hand and
+semi-explicit polymorphism on the other hand.
 \end{abstract}
 
-
-%% This command processes the author and affiliation and title
-%% information and builds the first part of the formatted document.
 \maketitle
-
-\begin{version}{\color{darkgreen}\True}
-I suggest to wrap lines (76 charaters)
-
-If you do not see any problem, I can install a program environment 
-(customized listings) that allows indices, distinguish input from output,
-etc.
-
-\end{version}
-
 
 
 \section{Introduction}
 
-\Xdidier{
-I think the intro should be more like
-\begin{enumerate}
-\item Core ML
-\item type inference HM - W - type constraints
-   can be solved in any order, but in practice, they are let-binding
-   directional.  
+ML polymorphism, also known as Hindley-Milner type system, has been a very
+sweet spot in the design space of strongly typed programming languages, as
+it enjoys the principal type property and more importantly is closed by
+common program transformations such as let-contraction and let-expansion,
+and permutation of the order or arguments.
+
+Over the years, many extensions of \ML have been proposed.  While some of
+them, such as flexible records, higher-kinded types, or dimensional types
+fits nicely into the \ML framework, others such as GADTs or semi-explicit
+polymorphism, or overloading of datatype constructors and record fields, are
+less satisfactory, since they require to twist the ML-style specification
+with some direct or indirect algorithmic flavor in order to preserve
+principality.
+
+All borderline extensions have in common that they introduce new construct
+that require explicit type annotations that may sometimes but not always be
+omitted. They can actually be views as an elaboration into the slightly weaker
+language that makes annotations mandatory, but itself first nicely into
+the \ML framework. The elaboration just defines which annotations can be
+omitted and rebuilds them from context.
+%
+The difficulty lies in finding a clear such specification that comes with a
+complete effective elaboration algorithm.
+
+The solutions proposed in those cases so far all enforce some ordering in
+which type inference is performed, which can then be used to propagate both
+inferred types and user-provided type annotations as known types that can be
+used for disambiguation and all alleviate the need for some annotations.
+
+\paragraph{Bidirectional type inference}
+
+Bidirectional type inference is a known alternative to unification for
+propagating type information. Type inference then receives an optional
+expected type in addition to the expression to be typechecked and the
+context in which it should be typechecked, When omitted, this correspond to
+the usual type inference and when present it becomes a checking mode.  This
+mechanisms allows to pass source type annotations but also inferred types
+such as the codomain of a function in an application position during type
+inference of its argument.  The typing rules must specify which type
+information is passed as expected returned types which is considered as
+\emph{known}.  Hence bidirectional type inference is a framework that can be
+instantiated differently, depending on the choice of typing rules.  While
+\OCaml uses a very limited form of bidirectional type inference, other
+languages, such as \Haskell, make a more extensive use of it.
+
+
+\paragraph{Poly-directional type inference}
+
+\OCaml uses another mechanism for propagation of type
+information, based on polymorphism, which actually enforces an ordering in
+the typechecking of let-bindings, where the (polymorphic part of) a the
+bound expression must be typed before the body of the let-expression.
+We call it \emph{poly}-directional type inference.\Xdidier {let-directional?}
+
+Let us illustrate this mechanism with the overloading of record fields in
+\ML. The user may define two records with overlapping fields:
+\begin{program}[input]
+type one = {x : int}
+type 'a two = {x : 'a; y : int}
+\end{program}
+This can be thought of as defining two abstract types \ocaml{foo} and
+\ocaml{bar} with two access \ocaml{(_:one).x} and \ocaml{(_:two).x} of
+respective types \ocaml{(one -> int)} and \ocaml{(two -> int)}, among
+others.
+%
+In the absence of overloading the latter definition would hide the former
+and we fall back in \ML. With overloading enabled, both definitions are
+visible and the compiler must statically choose one of them.
+%
+The question is which one to choose or, equivalently, which type to infer
+in the following three expressions? 
+\begin{program}[input]
+let e_1 r = r.x
+let e_2 = let r = {x = 1} in r.x
+let e_3 = (fun r -> r.x) {x = 1} ;;
+\end{program}
+To be able to resolve the overloading, the type of the projection should be
+\emph{known} to be either \ocaml{one} or \ocaml{'a two} when typing the
+projection.  Expression \ocaml[indices]{e_1} is clearly ambiguous since
+there is no clue on the type of \ocaml{r} and its typechecking
+fails\footnote {In fact, \OCaml uses a default resolution strategy instead
+of failing when the type is ambiguous, which is to use the last
+definition. Here, this will amount to chose the type \ocaml[greek]{'a two}
+still leading to a failure since the record passed to the function is
+actually of type \ocaml{one}. But we shall ignore default resolution
+strategies for the moment.}.
+%
+By contrast, the only possible
+type for \ocaml{r} is \ocaml {one} in both \ocaml{e_2} and \ocaml {e_3}.
+Still, there is a difference.  Indeed, the type of \ocaml{e_2} is considered
+to be unambiguous, while the type of \ocaml{e_3} is ambiguous. To
+understand why \ocaml{e_3} fails, consider the equivalent versions of
+\ocaml{e_3} where \ocaml{@@} and \ocaml{|>} are the application and the
+reverse application functions.
+\begin{program}[escapechar={}]
+let e_4 = (fun r -> r.x) @@ {x = 1} ;;
+let e_5 = {x = 1}  |> (fun r -> r.x) ;;
+\end{program}
+\OCaml  does not make any difference between
+\ocaml[indices]{e_1}, \ocaml[indices]{e_2}, or \ocaml[indices]{e_3}
+and consider all subexpressions in an application, including the function
+and all arguments as being inferred simultaneously, until they are
+let-bound. More precisely, polymorphic types are considered to be known
+while monomorphic types are consider to be unknown (or rather
+not-yet-known). In \ocaml{fun r -> r.x}, the type of \ocaml{r} in
+in the subexpression \ocaml{r.x} is not-yet-known even if equal to
+\ocaml{one} since this is the lambda-bound variable \ocaml{r}, hence in the
+typing context, hence it is monomorphic.\footnote{Technically, all type
+nodes are annotated with special $\epsilon$ variables, so that we may
+distinguish between the polymorphic binding $\xa : \all \kv. \t^\kv$ that
+binds $r$ to the known (raw) type $\t$ and the monomorphic binding $\xb :
+\t^\kv$ that binds $\xa$ to the unknown (raw) type $\t$.}
+
+
+\paragraph{Limitations of directional type inference}
+
+Directional type inference have been in used in different languages and
+somehow proven to work. Still, each of them is unsatisfactory.  The main
+critics of bidirectional type inference is to make a somewhat aribtrary
+choice in the specification of the flow of information, typically in
+applications: should the the function be typed first and its codomain be
+used to improve the typing of its argument or, on the opposite, should the
+argument be typed first and be used as the type of the codomain of the
+function?  There are examples when the former is a better choice and others
+when the latter is preferable---but typing rules have to choose one of the
+two alternative forever.  One may also allow information to flow between
+multiple arguments passed to the same function, or on the opposite disallow
+it entirery. Again, there is not best choice. We eventually have a complete
+algorthim with respect to a spec that made somewhat arbitray choices.
+
+Poly-directional type inference seems a better first for \ML, since it
+relies on polymorphism which is the essence of \ML. Still, it does not even
+allow to propagate user-type annotations! Thus \OCaml, which use
+poly-directional type inference as the primary mechanisms also added a weak
+form of bidirectional propagration. Besides, the implementation of
+poly-directional type inference has an algorithmic cost, since the addition
+of variable annotations requires to reread dags as trees distroying the
+sharing that naturally resulting from unification, which may increase the
+size of types and the cost of type inference. For that reason, the implement
+of \OCaml cheats and is incomplete by default and the user must explicitly
+require the most expensive computation of principal types when desired.
+
+\paragraph{Omnidirectional type inference}
+
+Both bidirectional and poly-directional type inference rely on an ordering
+for type propagation that is partially specified, explicitly or implicitly,
+to take advantage of user-provided type annotations and already-inferred types
+to alleviated the need for extra annotations.
+
+While they come provide complete algorithms with respect to their
+specification, their specifications consist of choices that are principled,
+but subjective and not principal.
+
+Indeed, they all reject examples as ambiguous when sometimes they would be a
+unique well-typed solution, as seen in the limitation of direction type
+inference.  There are actually two sources of incompleteness: 
+\begin{enumerate*}
 \item
-   The order does not matter for core ML
+  the ordering between the resolution of core-language constraints that
+  prevents some core information to be taken into account when resolving
+  ambiguities.
+\item 
+  the resolution of each ambiguity, independently of others and sometimes
+  just not taking all contextual type information into account. 
+\end{enumerate*}
+Indeed, taking overloading of record fields, for example, the following
+example fails as ambiguous, while the only solution is obviously that
+\ocaml{r} be \ocaml[greek]{'a two}.
+\begin{program}
+let fail r = (r.x = r.y)
+\end{program}
+
+Complete resolution of ambiguity may actually be impractical as the
+complexity of overloading is in general is NP-hard even in the absence of
+let-polymorphism,a s show by an encoding of 3-SAT problem as shown by~\citet
+{Chargueraud-Bodin-Dunfield-Riboulet/jfla2025}.
+
+We propose to use omnidirectional type inference to eliminated the first
+source of incompleteness.
+
+\paragraph{Omnidirectional type inference}
+
+A type inference system without polymorphism, would be solely based on
+unification constraints, which can be solved in any order.  The difficulty
+originates from \ML let-polymorphism, all known implementations of which,
+choose to infer type of let-bindings, turn then into type schemes that is
+assigned to the let-bound variable to extend the typing environment in which
+the body is typed. Algorithm $W$, its variant $M$ or more agnostics
+constraint solving all follow this strategy.
+
+However, it is not mandatory. In fact, type constraints can be instantiated
+before being solved, but at the price of some work duplication.  Still,
+this shows that the let-binding ordering is a convenience, not a
+requirement.
+
+We this allow typing constraint to be solved in disorder, which we call
+omnidirectional type inference. By this, we mean that we are able to take
+into account all program core-expression constraints before resolving
+ambiguities.  There are two difficulties:
+\begin{enumerate*}
 \item
-   Trivial extensions of ML: that fits in HM (ex. higher-kinded types)
+  we first must work with partial types schemes, \ie. we the ability
+  to instantiate type schemes that are not yet fully determined and
+  consequently revisit their instances when their are being refined,
+  incrementally.
 \item
-   Advanced extensions: they require extra type information from user
-   provided type annotayions:  static overloading, semi-explicit
-   polymorphism, GADTs
-\item
-   The advanced extensions can be made trivial if we required more explicit
-   type annotaions.
-\item
-   They can be understood as the elaboration of a surface language that
-   omits some of the annotations.
-\item
-   The difficult is which annotations can be ommited: how can this be
-   specified and implemented.
-\item
-   Two approches:
-   \begin{itemize}
-    \item OCaml uses let-binding directionality
-    \item Others use bidirection type inference
-   \end{itemize}
-   Both are unsatisfactory
-   \begin{itemize}
-    \item OCaml cannot get information from expected return types. 
-    \item Bidirectional type inference is not stable by exchanging the order
-       of arguments
-   \end{itemize}
-\item
-   Both specify and use a spcific order in the resolution of constraints
-\item
-   Principal types are with respect to this ordering, which is fragile.
-\item
-   We instead want to get rid of the ordering.
-\item
-   An easy solution is to be able resolve core ML typing constraint in any
-   order.
-\item
-   We may then delay advance constraints that require extra information
-\item
-   Which hopefully can be solved one all other information has been
-   propagate.   
-\end{enumerate}
-Then, we should present our solution, where the difficulties are, and our
-contributions. 
-}
+  we then must allow \emph{delayed constraints} as a way to freeze ambiguity
+  resolution until sufficient information has been found from context so
+  that they can be discharged and hopefully resolved.
+
+\end{enumerate*}
+Finally, once the framework established, it just remains to instantiate it
+to each use case.
+
+\Xdidier {We should continue with a brief description of both mechanisms}
+
+\subsection {Refinement of instantiation constraints}
+
+\subsection {Delated constraints} 
+
 
 Generalization is the distinguishing feature of Hindley-Damas-Milner type
 inference. Consider a subterm $\cletin{x = e_1}{e_2}$ of the program being
@@ -316,11 +459,11 @@ polymorphically.
 
 % Polytypes (and some stuff about labelled types) 
 
-Semi-explicit first-class polymorphism \citep{TODO} uses \textit{labelled
+Semi-explicit first-class polymorphism \citep{TODO} uses \textit{annotated
 types} to track the origins of polymorphic types.
 
 The type constructor $\tpoly \sigma \varepsilon$ that boxes a polymorphic
-type $\sigma$ turning it into a \textit{polytype}. Each polytype is labelled
+type $\sigma$ turning it into a \textit{polytype}. Each polytype is annotated
 with an $\varepsilon$ variable.  Once boxed, polytypes are considered to be
 monotypes. This permits impredicative polymorphism.
 
@@ -329,7 +472,8 @@ $\einst e$ which instantiates the top-level quantifiers of a polytype if $e$
 has the type $\tpoly \sigma \varepsilon$.
 
 Conversely, the introduction form for polytypes is a boxing operator $\epoly
-e \sigma$ has the type $\tpoly \sigma \varepsilon$ for some arbitrary
+e \sigma$ with an explicity polytype annotation $\sigma$ and an annotation
+$\varepsilon$, has the type $\tpoly \sigma \varepsilon$ for some arbitrary 
 $\varepsilon$ if $e$ has the type $\sigma$.
 
 Principality is tracked using generalization.  This is done by tracking the
@@ -455,11 +599,13 @@ variable $\alpha$ by some constraint context $\mathcal{C}[-]$.
   $\phi'(\alpha) = \overline{\tau} \Fapp$
 \end{definition}
 
-\TODO: Here, we not only rely on the definition of a constraint with a hole
+\TODO
+{Here, we not only rely on the definition of a constraint with a hole
 $\mathcal{C}[-]$ but a judgement with a hole and some way to translate
-between the two. We'll need formal definitions for this.
+between the two. We'll need formal definitions for this.}
 
-\TODO: Some examples of principal realisation
+\TODO
+{Some examples of principal realisation}
 
 As we've previously hinted, the semantics for a suspended constraint must
 require that the surrounding context principally realises the matchee. This
@@ -479,8 +625,9 @@ with the semantics of the typing rules.
 Alistair has yet another proposal derived from his simplification of his
 timestamp semantics.
 
-\TODO: derive precise declarative semantnics for the language features of
-Section 2. 
+\TODO
+{derive precise declarative semantnics for the language features of
+Section 2.}
 
 \subsection{Type system}
 
@@ -501,6 +648,9 @@ e \sigma$ and the unboxing construct $\einst e$.
 
 \paragraph{Typing}
 
+
+
+
 \begin{mathpar}
   \inferrule*   
     {x : \sigma \in \Gamma}
@@ -517,7 +667,8 @@ e \sigma$ and the unboxing construct $\einst e$.
 
 \section{Solving constraints}
 
-\TODO: a declarative solver.
+\TODO
+{a declarative solver.}
 
 \section{HM Prototype and discussion}
 
@@ -557,7 +708,8 @@ you can have more issues.
 
 \Xgabriel{CoreML + bidirectional disambiguation of constructors?}
 
-\TODO: do we understand what to say precisely about bidirectional type inference?
+\TODO
+{do we understand what to say precisely about bidirectional type inference?}
 
 \subsection{Principality tracking in OCaml}
 
@@ -586,3 +738,7 @@ heuristics to refine it, a two-phase process. It's fine.}
 \bibliography{suspended}
 
 \end{document}
+
+% LocalWords:  omnidirectional typecheck polymorphism Hindley Milner kinded
+% LocalWords:  GADTs typechecked codomain typechecking subexpressions Bodin
+% LocalWords:  monomorphic subexpression Dunfield Riboulet jfla

@@ -1,0 +1,242 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% My listings
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Code inserts
+\usepackage[final]{listings}
+
+% Code colors
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolor}{rgb}{0.95,0.95,0.95}
+% Settings
+\newcommand{\ocamlcommentstyle}{\color{gray}}
+%% \@ifundefined {WhizzyTeX}
+%%   {\lstdefinestyle{bg}{backgroundcolor=\color{backcolor}}}
+%%   {\lstdefinestyle{bg}{}}
+
+%% \newcommand{\lstxbasicstyle}{\linespread{1.1}}
+\newcommand{\lstxbasicstyle}{}
+\newcommand{\lstxleftmargin}{5.0ex}
+\renewcommand{\lstlistingname}{Example}
+\newcommand{\lvl}{{\ensuremath n}}
+
+\lstdefinelanguage{ocaml}[Objective]{Caml}{
+  % Fix errors in the default definition of ocaml.
+  deletekeywords={closed,ref},
+  morekeywords={initializer, module, struct, functor, sig, def},
+  % General settings.
+  flexiblecolumns=false,
+  showstringspaces=false,
+  framesep=5pt,
+  commentstyle=\ocamlcommentstyle,
+  morecomment=[is]{\%\%}{\^^M},
+  % By default, we use a small font.
+  basicstyle=\lstxbasicstyle\ttfamily\small,%\relax \footnotesize
+  numberstyle=\small,
+  %% identifierstyle=\sffamily,
+  % Keyword style
+  keywordstyle=\bfseries\color{black},
+  % Line numbers
+  numbers=none,%left
+  numberstyle=\tiny,
+  %% DR
+  showlines=false,%true
+  numberblanklines=false,%true
+  keepspaces=true,
+  extendedchars=true,
+  %% basewidth={0.52em,0.43em},%
+  % basewidth={0.5em,0.41em},%
+  stepnumber=1,
+  % Background
+  frame=l,
+  alsoletter={\'},%
+  flexiblecolumns=true,
+  %% columns=l,
+  ndkeywordstyle={\bf},%
+  xleftmargin=\lstxleftmargin,
+  captionpos=b,
+  moredelim=**[is][\btHL]{~}{~},
+  % LaTeX escape.
+  inputencoding=utf8,
+  escapechar=@,
+  mathescape,
+  %% escapechar=°,
+  literate={%
+    {->}{\ensuremath\to}2%
+    %% {=>}{\ensuremath\Rightarrow}2%
+    %% {>}{\ensuremath>}1%
+    %% {\#}{\ensuremath\wild}1%
+    %% {>=}{\ensuremath\geq}2%
+    %% {<}{\ensuremath<}1%
+    %% {<-}{\ensuremath\leftarrow}2%
+    %% {<=}{\ensuremath\leq}2%
+    {=def=}{\ensuremath\eqdef}1%
+    %% {lvl}{\ensuremath\lvl}1%
+  },
+  greek,
+  indices,
+  %% mathescape=true,
+  %% escapebegin={(*//},
+  %% escapeend={//*)},
+}
+
+\newcommand{\programjoin}[1][0ex]
+    {\vspace{-\lst@belowskip-\lst@aboveskip-#1}}
+\let \lst \lstinline
+
+\newcommand{\halfline}[1][1ex]{\vadjust{\vspace {-#1}}}
+
+\define@key{lst}{indices}[]{}
+\define@cmdkey{lst}{indices}
+  {\lstset{moreliterate={%
+     {_0}{\ensuremath{_0}}1
+     {_1}{\ensuremath{_1}}1
+     {_2}{\ensuremath{_2}}1
+     {_3}{\ensuremath{_3}}1
+     {_4}{\ensuremath{_4}}1
+     {_5}{\ensuremath{_5}}1
+     }}}
+
+\define@key{lst}{greek}[]{}
+\define@cmdkey{lst}{greek}
+  {\lstset{moreliterate={%
+     {'a}{\ensuremath{\alpha}}1
+     {'b}{\ensuremath{\beta}}1
+     {'c}{\ensuremath{\gamma}}1
+     {'d}{\ensuremath{\delta}}1
+     {'e}{\ensuremath{\epsilon}}1
+     }}}
+
+\define@key{lst}{angles}[]{}
+\define@cmdkey{lst}{angles}
+  {\lstset{moreliterate={%
+     {<}{\ensuremath{\langle}}1
+     {|>}{\large \ensuremath{\triangleright}}1
+     {>}{\ensuremath{\rangle}}1
+  }}}
+
+\def\lst@moreLiteratekey#1\@nil@{\let\lst@ifxliterate\lst@if
+    \expandafter\def\expandafter\lst@literate\expandafter{\lst@literate#1}}
+
+%% \define@key{lst}{moreliterate} does not work
+%% \def \KV@lst@moreliterate@default{\empty}
+\lst@Key{moreliterate}{}
+  {\@ifstar
+      {\lst@true \lst@moreLiteratekey}
+      {\lst@false\lst@moreLiteratekey}#1\@nil@}
+      
+
+\lstdefinestyle{inputnumbers}
+    {numbers=right,numberstyle=\tiny}
+\lstdefinestyle{program}
+    {language=ocaml,framerule=4pt,framesep=1pt}
+   
+\lstdefinestyle{input}
+    {}
+\lstdefinestyle{output}
+    {basicstyle=\lstxbasicstyle\ttfamily\itshape\small}
+\lstdefinestyle{sugar}
+    {}
+\lstdefinestyle{error}
+    {escapechar=°}
+\lstdefinestyle{message}
+    {deletekeywords={type,of,if,with}}
+\lstdefinestyle{algo}
+    {}
+
+\colorlet{input}{blue!7}
+\colorlet{error}{red!10}
+\colorlet{output}{green!10}
+\colorlet{sugar}{yellow!20}
+\colorlet{algo}{green!2}
+
+\newcommand {\lstsetprogram}[1]
+  {\lstset
+     {style=program,style=#1,frame=tbl,
+      backgroundcolor=\color{#1},rulecolor=\color{#1}}}
+
+\define@key{lst}{input}[]{\lstsetprogram{input}}
+\define@key{lst}{error}[]{\lstsetprogram{error}}
+\define@key{lst}{output}[]{\lstsetprogram{output}}
+\define@key{lst}{sugar}[]{\lstsetprogram{sugar}}
+
+\define@key{lst}{smallskip}[]
+   {\lstset{aboveskip=\smallskipamount,belowskip=\smallskipamount}}
+%% \define@key{lst}{algo}[]{}
+\define@key{lst}{algo}[]{\lstsetprogram{algo}}
+%% \lst@Key{algo}{}{\lstsetprogram{input}}
+
+\let \lst@hide \False
+\define@boolkey{lst}{hide}[true]
+   {\ifKV@lst@hide \let \lst@hide \True\else \let \lst@hide \False\fi}
+
+\lstnewenvironment{program}[1][language=ocaml]
+   {\lstset{%
+       language=ocaml,%
+       aboveskip=\smallskipamount,%
+       belowskip=\smallskipamount,%
+       #1}%
+    \lst@hide{\setbox0 \vbox \bgroup}{}}
+   {\lst@hide{\egroup \setbox0 \null}{}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Highlighting in programs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+
+%highlighting
+%% \makeatletter
+\newenvironment{btHighlight}[1][]
+{\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\bt@HL@box[bt@Highlight@par]{\@tempboxa}\endgroup}
+\newcommand\btHL[1][]{%
+  \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
+}
+\def\bt@HL@endenv{%
+  \end{btHighlight}%   
+  \egroup
+}
+\newenvironment{btHighlightBis}[1][]
+{\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\bt@HL@boxBis[bt@Highlight@par]{\@tempboxa}\endgroup}
+\newcommand\btHR[1][]{%
+  \begin{btHighlightBis}[#1]\bgroup\aftergroup\bt@HR@endenv%
+}
+\def\bt@HR@endenv{%
+  \end{btHighlightBis}%   
+  \egroup
+}
+\let \btHL@orig \btHL
+\def \btHLR {\let \btHL \btHR}
+\def \btHLL {\let \btHL \btHL@orig}
+
+\colorlet{HLcolor}{yellow!30}
+\colorlet{HLcorig}{HLcolor}
+\colorlet{HLcolorBis}{orange!30}
+\colorlet{HLcorigBis}{HLcolorBis}
+\newcommand{\bt@HL@box@color}[3]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=#3,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=1pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+\newcommand{\bt@HL@box}[2][]{\bt@HL@box@color{#1}{#2}{HLcolor}}
+\newcommand{\bt@HL@boxBis}[2][]{\bt@HL@box@color{#1}{#2}{HLcolorBis}}
+
+\newcommand{\h}{°~°}
+%% \newcommand{\H}{°@°}
+\renewcommand{\H}{\aftergroup\btHRL\h}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\code}[1]{\lstinline!#1!}
+\newcommand\ocaml[1][language=OCaml]{\lstinline[language=OCaml,#1]}
+
+%% \lstMakeShortInline[columns=fullflexible]|
