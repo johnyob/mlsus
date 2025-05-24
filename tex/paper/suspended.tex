@@ -30,13 +30,13 @@ contrast with all known implementations that always fully typecheck the
 bindings before the bodies of let-expressions.
 %
 This relies on two technical devices: \emph{partial type schemes}
-and \emph{delayed constraints}. Partial here means  the
+and \emph{suspended match constraints}. Partial here means  the
 possibility of taking an instances of a type scheme that is not yet
 completely solved with a mechanism to tack and update their instances when
 the type scheme is refined, incrementally.
-\emph{Delayed} constraints means a mechanism to freeze the resolution of
+\emph{Suspended} match constraints means a mechanism to delay the resolution of
 some constraints which typically require non-local not-yet-available
-contextual information and to discharged then when we have learned enough
+contextual information and to be discharged then when we have learned enough
 information from the resolution of other constraints, typically when some type
 variables have been instantiated.
 %
@@ -257,7 +257,7 @@ ambiguities.  There are two difficulties:
   consequently revisit their instances when their are being refined,
   incrementally.
 \item
-  we then must allow \emph{delayed constraints} as a way to freeze ambiguity
+  we then must allow \emph{suspended match constraints} as a way to suspend ambiguity
   resolution until sufficient information has been found from context so
   that they can be discharged and hopefully resolved.
 
