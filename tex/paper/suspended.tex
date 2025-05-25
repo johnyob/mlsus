@@ -56,7 +56,6 @@ semi-explicit polymorphism on the other hand.
   {Show we replace semi-explicit by higher-rank?}
 
 
-
 \section{Introduction}
 
 ML polymorphism, also known as Hindley-Milner type system, has been a very
@@ -156,7 +155,7 @@ to be unambiguous, while the type of \ocaml{e_3} is ambiguous. To
 understand why \ocaml{e_3} fails, consider the equivalent versions of
 \ocaml{e_3} where \ocaml{@@} and \ocaml{|>} are the application and the
 reverse application functions.
-\begin{program}[escapechar={}]
+\begin{program}[escapechar={},input]
 let e_4 = (fun r -> r.x) @@ {x = 1} 
 let e_5 = {x = 1}  |> (fun r -> r.x) 
 \end{program}
@@ -288,42 +287,87 @@ technical devices, hence two problems to solve:
 Once the framework established, it just remains to be instantiated
 to each use case,
 
-\Xdidier {We should continue with a brief description of both mechanisms}
-\Xalistair {Should we? I think the discussions of both mechanisms could be left to later sections}
-
-\paragraph {Refinement of instantiation constraints}
-
-\begin{version}[Inlined Conflict]{}
-\Xdidier {This has been cut off but conflicting. 
- Double check and remove it}
-\Xdidier {Reconnect pierces of the old intro}
 
 
-Generalization is the distinguishing feature of Hindley-Damas-Milner type
-inference. Consider a subterm $\cletin{x = e_1}{e_2}$ of the program being
-inferred. We first infer a type $\tau_1$ for $e_1$, and then we
-\emph{generalize}: we look for variables $\bar{\alpha}$ that occur in
-$\tau_1$, but nowhere else in the typing context, and we assign to the
-variable $x$ the polymorphic type scheme $\tfor{\bar{\alpha}}{\tau_1}$. Each
-occurrence of $x$ in $e_2$ can use a different choice of instances
-$\bar{\tau'}$ of these polymorphic variables $\bar{\alpha}$, it will be
-elaborated into $x [\bar{\tau'}]$ at type $\tau[\bar{\alpha} :=
-\bar{\tau'}]$. In other words, generalization turns things that are
-\emph{undetermined} in the definition $e_1$ into generic parameters that can
-be chosen differently at each use-site $x$.
 
-Qualified types~\citep*{TODO} represent additional knowledge on a type. They
-are used in particular in Haskell type-classes, where a constraint
-$\mathsf{Show}~\alpha$ represents the fact that a part of the inferred term
-needs to print values of type $\alpha$. A constraint on a ground type such
-as $\mathsf{Show}~\mathsf{Int}$ can be resolved to a known printer. But if
-the undetermined variable $\alpha$ becomes generalizable in a type $\tau$,
-we get a type-scheme $\tfor{(\alpha \mid \mathsf{Show}~\alpha)}{\tau}$ that
-also includes the type-class constraint.
+\subsubsection* {Plan}
 
-DRAFT: Type-classes let each use-site choose a different typeclass instance
--- but this implies dictionary-passing or specialization. Sometimes we want
-the choice to be shared by all use-sites: TODO introduce suspended
+The rest of the paper is organized as follows.
+sf\begin{enumerate*}[label={}]
+\item In \cref{sec:constraints}, we give an overview of suspended constraints and their 
+application to various extensions for \ML. 
+\item
+  In \cref{sec:semantics}, we describe the constructions for a
+  novel denotational semantics of suspended constraints.
+\item
+  In \cref{sec:language}, we define an extension of \ML featuring static
+  overloading and semi-explicit first-class polymorphism along with its
+  typing rules.  Here we give the precise definition of the constraint
+  generation translation and state the theorems of soundness and
+  completeness.
+\item
+  In \cref{sec:solving}, we provide a formal definition of our constraint
+  solver as a series of non-deterministic rewriting rules.
+\item
+  In \cref{sec:implementation}, we describe an efficient implementation of
+  suspended constraints.
+\item
+  In \cref{sec:related-work} and \cref{sec:future-work}, we discuss related
+  and futre work.
+\end{enumerate*}
+
+\Xdidier{I don't quite unedestand the difference between
+\cref{sec:solving} and
+\cref{sec:implementation}.
+For me \cref{sec:solving} is the algorithm.
+and \cref{sec:implementation} are just implementation details which could
+fit at the end of~\cref{sec:solving}. Or do you mean that~\cref
+{sec:solving} is generic and \cref {sec:implementaion} is an particular
+instance? 
+}
+
+\subsubsection* {Our constributions}
+
+Our contribusions are 
+\begin{enumerate*}
+\item
+  a new \emph{omnidirectional} novel type inference technique for
+  extensions of \ML with advanced features, based on two new devices,
+  partial type schemes and suspended constraints;
+
+  %% that require propagation of both
+  %% user-defined type annotations and already inferred types to make other
+  %% annotations optional, which is
+  %% \item
+  %% This is based on two new deviced:
+  %% \begin{enumerate*}[label=\textbf{(\theenumii)}]
+  %% \item
+  %%   We enable the ability to instantiate type scheme before they are fully
+  %%   resolved and and their incremental refinement which is propagated to their
+  %%   instances; 
+  %% \item
+  %%   We introduce suspended constraint, guarded by a type variable, that are
+  %%   discharged when their guard gets instantiated.
+  %% \end{enumerate*}
+
+\item
+  A new more permissible type system for overloading of record fields and
+  semi-explicit first-class polymorphism, and
+
+\item
+  a complete yet efficient constraint-solving type inference algorithm.
+  
+\end{enumerate*}
+
+
+\begin{version}{}
+\Xdidier {These are ``leftovers'' from the old introduction. Delete if/when
+useless}
+
+\subsection {Suspended constraints}
+
+
+TODO introduce suspended
 constraints. But: generalization becomes tricky.
 \begin{itemize}
 \item easy case: the choice is resolved while typing the definition
@@ -340,38 +384,17 @@ Different kind of difficulties:
 \end{itemize}
 \end{version}
 
-\subsection {Suspended constraints} 
-
 \Xalistair{Is this the right introduction? All the features we describe
 below break principality usually. So our work is about principality. This is
 a way to guarantee principal types for these advanced features.}
-
-\Xdidier{We would like to elaborate features with difficult type-checking
-into a core language where things fit exactly the ML type-inference
-approach. The source language has less annotations, the target language has
-more precise annotations.}
+\Xdidier{All systems proposed have principal types. We just have more
+principal types, \ie principal types with respect to a specification that is
+more expressive} 
 
 \Xalistair{For tuples we added a projection rule that gives the size of the
 tuple. I imagine for polytypes there would be something like that.}
-
-
-
-\paragraph{Structure of the paper} We proceed as follows:
-\begin{itemize}
-\item In Section \ref{sec:constraints}, we give an overview of suspended constraints and their 
-application to various extensions for \ML. 
-\item In Section \ref{sec:semantics}, we describe the constructions for a
-  novel denotational semantics of suspended constraints.
-\item In Section \ref{sec:language}, we define an extension of the \ML calculus featuring
-  static overloading and semi-explicit first-class polymorphism along with its typing rules.
-  Here we give the precise definition of the constraint generation translation and state the theorems 
-  of soundness and completeness. 
-\item In Section \ref{sec:solving}, we provide a formal definition of our constraint solver 
-  as a series of non-deterministic rewriting rules. 
-\item In Section \ref{sec:implementation}, we discuss an efficient implementation of suspended constraints.
-\item In Section \ref{sec:related-work}, we discuss related work, and in
-  Section \ref{sec:future-work}, we discuss future work.
-\end{itemize}
+\Xdidier {Yes indeed: in the explicit language, we could require the skeleton
+as a required annotation}
 
 \section{Suspended constraints}
 \label{sec:constraints}
@@ -487,7 +510,7 @@ a suspended constraint is written as $\cmatch \t \Delta f$, where:
 \item
   The closure $\Delta$ is the set of term and type variables $f$ is
   permitted to reference.  The role of $\Delta$ in constraint solving is
-  discussed further in Section \ref{sec:solving}.
+  discussed further in \cref{sec:solving}.
 \end{enumerate}
 
 \begin{figure}[!htpb]
@@ -1141,6 +1164,23 @@ them. It's not as exciting as I thought it would be.}
 
 \section{Related work}
 \label{sec:related-work}
+
+\subsection{Qualified types}
+
+\Xdidier {The following paragaph is just take from the old introduction}
+
+Qualified types~\citep*{TODO} represent additional knowledge on a type. They
+are used in particular in Haskell type-classes, where a constraint
+$\mathsf{Show}~\alpha$ represents the fact that a part of the inferred term
+needs to print values of type $\alpha$. A constraint on a ground type such
+as $\mathsf{Show}~\mathsf{Int}$ can be resolved to a known printer. But if
+the undetermined variable $\alpha$ becomes generalizable in a type $\tau$,
+we get a type-scheme $\tfor{(\alpha \mid \mathsf{Show}~\alpha)}{\tau}$ that
+also includes the type-class constraint.
+
+DRAFT: Type-classes let each use-site choose a different typeclass instance
+-- but this implies dictionary-passing or specialization. Sometimes we want
+the choice to be shared by all use-sites:
 
 
 \subsection{Suspended constraints in \textsc{OutsideIn}}
