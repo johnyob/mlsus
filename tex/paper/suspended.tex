@@ -169,10 +169,10 @@ not-yet-known). In \ocaml{fun r -> r.x}, the type of \ocaml{r} in
 in the subexpression \ocaml{r.x} is not-yet-known even if equal to
 \ocaml{one} since this is the lambda-bound variable \ocaml{r}, hence in the
 typing context, hence it is monomorphic.\footnote{Technically, all type
-nodes are annotated with special $\epsilon$ variables, so that we may
-distinguish between the polymorphic binding $\xa : \all \kv. \t^\kv$ that
-binds $r$ to the known (raw) type $\t$ and the monomorphic binding $\xb :
-\t^\kv$ that binds $\xa$ to the unknown (raw) type $\t$.}
+nodes are annotated with a special of variables called annotation variables
+$\av$, so that we may distinguish between the polymorphic binding $\xa : 
+\all \av. \t^\av$ that binds $r$ to the known (raw) type $\t$ and the monomorphic
+binding $\xb : \t^\av$ that binds $\xa$ to the unknown (raw) type $\t$.}
 
 
 \paragraph{Limitations of directional type inference}
@@ -730,6 +730,7 @@ treating the head of the variable monomorphically and the rest
 polymorphically.
 \Xalistair{An explaination of kinded(1) types here }
 
+
 \subsection{Semi-explicit first-class polymorphism}
 
 % Polytypes (and some stuff about labelled types)
@@ -737,59 +738,88 @@ polymorphically.
 Semi-explicit first-class polymorphism \citep{Garrigue-Remy/poly-ml} uses
 \textit{annotated types} to track the origins of polymorphic types.
 
-The type constructor $\tpoly \sigma \varepsilon$ that boxes a polymorphic
-type $\sigma$ turning it into a \textit{polytype}. Each polytype is annotated
-with an $\varepsilon$ variable.  Once boxed, polytypes are considered to be
-monotypes. This permits impredicative polymorphism.
+The type constructor $\tpoly \ts \av$ that boxes a polymorphic type
+$\ts$ turning it into a \textit{polytype} is actually annotated with
+an annotation variable $\av$.  Once boxed, the polytype $\tpoly
+\ts \av$ is considered a monotype.  This permits impredicative
+polymorphism. Annotations variables may be generalized as over
+variables and $\all \av \tpoly \ts \av$ is a type scheme.
 
-To instantiate a polytype, one must use an explicit unboxing operator
-$\einst e$ which instantiates the top-level quantifiers of a polytype if $e$
-has the type $\tpoly \sigma \varepsilon$.
+The introduction form for polytypes is a boxing operator $\epoly
+\e \ts$ with an explicitly polytype annotation $\ts$. The resulting expression
+has type $\tpoly \ts \av$ when $\av$ is an arbitrary (typically fresh)
+annotation variable and can thus be generalized. That is $\e$ can also be
+assigned the type scheme $\all \av \tpoly \ts \av$.
 
-Conversely, the introduction form for polytypes is a boxing operator $\epoly
-e \sigma$ with an explicity polytype annotation $\sigma$ and an annotation
-$\varepsilon$, has the type $\tpoly \sigma \varepsilon$ for some arbitrary 
-$\varepsilon$ if $e$ has the type $\sigma$.
+Conversely, to instantiate an polytype expression, one must use an explicit
+unboxing operator $\einst \e$ that need not any type annotation.
+However, it requires $e$ to be of a polytype scheme $\all \av
+\tpoly \ts \av$ and then gives $\einst \e$ a type $\t$ that is an instance of
+$\ts$.  In particular, $\einst \e$ is ill-typed if $\e$ has type $\tpoly \ts
+\av$ and $\av$ cannot be generalized.  It is the polymorphism of $\av$ that
+ensures that the polytype is indeed known and not being inferred.
 
+In particular $\efun \x {\einst \x}$ is not typable, since the
+$\lambda$-bound variable $\x$ is assigned a monotype.  However, annotations
+can be used to freshen annotation variables.  An annotation $e : \t$ behaves
+as the application of a retyping function (one that behaves as the identity
+$(\t)$ of type $\all \tvs \t \to \tp$ to the expression $\e$. We usually
+omit annotation variables in type annotations, since they can be For
+instance, $\efun {\x : \tpoly \ts {}} {\einst \x}$ which is syntactic sugar
+for $\efun \x {\elet \x {\eapp {(\tpoly \ts {})} \x} {\einst \x}}$, is
+well-typed since the polytype annotation allows the introduction of a fresh
+variable annotation which can be generalized.
+
+\begin{version}{}
+%% Old version
 Principality is tracked using generalization.  This is done by tracking the
 polymorphism of labels. Type schemes quantify not only over type variables
 but $\varepsilon$ variables. As a result, a term $e$ with the type $\tpoly
-\sigma \varepsilon$ for some fresh $\varepsilon$ may be generalized to
-$\tfor \varepsilon {\tpoly \sigma \varepsilon}$.  The typing rule for
+\ts \varepsilon$ for some fresh $\varepsilon$ may be generalized to
+$\tfor \varepsilon {\tpoly \ts \varepsilon}$.  The typing rule for
 $\einst e$ in fact requires $e$'s type to be $\tfor \varepsilon {\tpoly
-\sigma \varepsilon}$, not just a plain polytype $\tpoly \sigma
+\ts \varepsilon}$, not just a plain polytype $\tpoly \ts
 \varepsilon$. The rational is that a label is polymorphic if and only if it
 is principally known and not inferred.  This is why the introduction form
-for polytypes $\epoly e \sigma$ is able to introduce a \textit{fresh}
+for polytypes $\epoly e \ts$ is able to introduce a \textit{fresh}
 $\varepsilon$ variable.
-
-Additionally, type annotations can be used to freshen labels.  This permits
-us to generalize the labels of an annotated term, indicating that the type
-is principally known.
+\end{version}
 
 \Xalistair[]{Something about how information can flow from let bindings to
-use sites for principality checking} 
+use sites for principality checking}
 
-Instead of using labelled types to infer whether the type is principally
-known, we may use suspended constraints.  Typechecking $\epoly e \sigma$ is
-simple:
-\begin{align*}
-  \cinfer {\epoly e {\tfor {\overline{\cvb}} \t}} \cva &= \left(\cfor
-  {\overline{\cvb}} \cinfer e \t \right) \cand \cva = [\tfor
-  {\overline{\cvb}} \t] 
-\end{align*}
+The very purpose of annotation variables is to distinguish known polymorphic
+polytypes from yet-unknown monomorphic ones as required by poly-directional
+type ifnerence. 
+%
+With suspended constraint, any type information can be considered as known,
+so that we do not need the annotation variables any longer.
 
-If $e$ is known to have the type $[\sigma]$, then we can simply instantiate
-it. However, if the type of $e$ is not principally known, then we must
-wait. This is how our approach differs from OCaml's / labelled types.
+Typechecking $\epoly e \ts$ is as simple as:
+\begin{mathpar}
+\cinfer {\epoly e {\tfor {\overline{\cvb}} \t}} \cva \eqdef
+  \Parens{\cfor {\overline{\cvb}} \cinfer e \t}
+\cand
+   \cva = [\tfor {\overline{\cvb}} \t] 
+\end{mathpar}
+If $\e$ is already known to have the type $[\ts]$, then we can simply
+instantiate it.  However, if the type of $\e$ is not yet know, \ie.  it is a
+(possibly constrained) type variable $\tv$: then, we must wait.  So we
+instead write the constraint as
+\begin{mathpar}
+\cinfer {\einst e} \cva \eqdef
+    \cexists \cvb \cinfer e \cvb
+\cand
+    \cmatch  \cvb {\cva} (\lambda [\ts]. ~ \ts \leq \cva)
+\end{mathpar}
+since waiting is harmeless, as the syspended constraint may immediately be
+discharged. 
 
-By waiting for $e$'s type to be known, we guarantee principal types without
-the machinery of labelled types.  So we can simply write the constraint
-generated by $\einst e$ as:
-\begin{align*}
-  \cinfer {\einst e} \cva &= \cexists \cvb \cinfer e \cvb \cand \cmatch
-  \cvb {\cva} (\lambda [\sigma]. ~ \sigma \leq \cva)
-\end{align*}
+By waiting for $e$'s type to be \emph{known}, we may ensure principal types
+without annotation variables. However, we still need to explain what it
+means for a variable to be \emph{known}, that is, give the semantics of
+suspended constraints.
+
 
 \section{Semantics of constraints}
 \label{sec:semantics}
@@ -1313,4 +1343,5 @@ heuristics to refine it, a two-phase process. It's fine.}
 % LocalWords:  omnidirectional typecheck polymorphism Hindley Milner kinded
 % LocalWords:  GADTs typechecked codomain typechecking subexpressions Bodin
 % LocalWords:  monomorphic subexpression Dunfield Riboulet jfla subtyping
-% LocalWords:  greek Chargueraud
+% LocalWords:  greek Chargueraud typable monotype polytype Garrigue Remy
+% LocalWords:  impredicative polytypes

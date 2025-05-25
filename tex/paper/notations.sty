@@ -50,6 +50,7 @@
 \newcommand{\ti}{\t_i}
 \newcommand{\tj}{\t_j}
 \newcommand{\tv}{\tva}
+\newcommand{\tvs}{\bar\tv}
 \newcommand{\tva}{\alpha}
 \newcommand{\tvb}{\beta}
 \newcommand{\tvc}{\gamma}
@@ -67,7 +68,7 @@
 \newcommand{\exinst}[3]{\angles {#1 : \exists {#2}. \, #3}}
 \newcommand{\epoly}[2]{[ #1 : #2 ]}
 \newcommand{\eunit}{()}
-\newcommand{\efun}[2]{\lambda {#1}. \, {#2}}
+\newcommand{\efun}[2]{\lambda #1. \, #2}
 \newcommand{\eapp}[2]{#1 \; #2}
 \newcommand{\elet}[3]{\Let #1 = #2 \In #3}
 \newcommand{\ematch}[2]{\Match #1 \With #2}
@@ -133,10 +134,17 @@
 
 \RequirePackage{metavar}
 
-\defmetavar {\kv} {\epsilon}
-%% \let \t\relax 
+%% Types 
 %% \defmetavar {\t} {\tau}
+%% We could instead use \ty
+%% \defmetavar {\ty} {\tau}
+
+%% Expression variables
 \defmetavar {\x} {x}
+%% Type schemes
+\defmetavar {\ts} {\sigma}
+%% Annotation variables
+\defmetavar {\av} {\varepsilon}
 
 \newcommand{\all}[2]{\forall #1.\,#2}
 
