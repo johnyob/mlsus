@@ -373,28 +373,36 @@ application to various extensions for \ML.
 \label{sec:constraints}
 
 
-\TODO{PLAN: Only the constraint syntax, not constraint-solving yet. The point is to
-show examples in a concrete way.}
-\Xalistair{Some of this probably belongs in the intro @Didier, but I didn't want to conflict with your work}
+\TODO{PLAN: Only the constraint syntax, not constraint-solving yet. The
+point is to show examples in a concrete way.}
+\Xalistair{Some of this probably belongs in the intro @Didier, but I didn't
+want to conflict with your work} 
 
 % Constraint-based approach
-Our insights into directionality come by approaching type inference from a \textit{constraint-based} \citep{TODO} 
-perspective, in which type inference is split into two stages, mediated by the language of \textit{constraints} \citep{TODO}. 
-In the first stage, terms $e$ are translated into constraints $C$ which are satisfiable if and only if 
-the $e$ is well-typed. In the second stage, the generated constraint is solved (or shown to be unsatisfiable). 
+Our insights into directionality come by approaching type inference from a
+\textit{constraint-based} \citep{TODO} perspective, in which type inference
+is split into two stages, mediated by the language of \textit{constraints}
+\citep{TODO}.  In the first stage, terms $e$ are translated into constraints
+$C$ which are satisfiable if and only if the $e$ is well-typed. In the
+second stage, the generated constraint is solved (or shown to be
+unsatisfiable).
 
 % HMX 
-A foundational approach to constraint-based type inference is $\HM(X)$ \citep{TODO} -- the Hindley-Milner system parameterized by a 
-constraint domain $X$, allowing constraints to appear within types. Our work is inspired by the presentation of $\HM(X)$ by 
-Pottier and R\'emy \citep{TODO}, who fully decoupled of constraint generation from constraint solving. 
-Their key insight for the reduction of type inference to constraint solving is the inclusion of term variables in the language 
-of constraints.
+
+A foundational approach to constraint-based type inference is \HMX
+\cite{Odersky-Sulzmann-Wehr@tpos}---the Hindley-Milner system parameterized by a constraint
+domain $X$, allowing constraints to appear within types. Our work is
+inspired by the presentation of HMX by \citet{Pottier-Remy/emlti} who
+fully decoupled constraint generation from constraint solving.  Their key
+insight for the reduction of type inference to constraint solving is the
+inclusion of term variables in the language of constraints.
 
 % Life is hard
-\Xalistair{This paragraph now feels out of place -- nonetheless I think we need state how difficult this was :/}
-Formulating a suitable constraint language for omnidirectional type inference, 
-a (provably) correct constraint translation for our extensions, and an efficient, sound and 
-complete solver involves several difficulties. 
+\Xalistair{This paragraph now feels out of place -- nonetheless I think we
+need state how difficult this was :/} Formulating a suitable constraint
+language for omnidirectional type inference, a (provably) correct constraint
+translation for our extensions, and an efficient, sound and complete solver
+involves several difficulties.
 
 \begin{mathparfig}%
   {fig:constraint-syntax}%
@@ -435,69 +443,86 @@ complete solver involves several difficulties.
 \end{mathparfig}
 
 % Syntax!
-We begin by introducing the syntax of constraints in Figure ??. The constraint language contains 
-tautologic constraints ($\ctrue$), unsatisfiable constraints ($\cfalse$) and logical conjunctions 
-($\Cone \cand \Ctwo$). $\tone = \ttwo$ asserts that the types $\tone$ and $\ttwo$ are equal. 
-The constraint form $\cexists \tv C$ binds an existentially quantified type variable in $C$.
+
+We begin by introducing the syntax of constraints in Figure ??. The
+constraint language contains tautologic constraints ($\ctrue$),
+unsatisfiable constraints ($\cfalse$) and logical conjunctions ($\Cone \cand
+\Ctwo$). $\tone = \ttwo$ asserts that the types $\tone$ and $\ttwo$ are
+equal.  The constraint form $\cexists \tv C$ binds an existentially
+quantified type variable in $C$.
 
 % Constraint abstractions
-There are two constructs that deal with the introduction and elimination of constraint
-abstractions. As the name suggests, a constraint abstraction $\cabs \tv C$ can simply be seen as a
-function which when applied to some type $\t$ returns $C[\tv := \t]$. Constraint abstractions 
-are introduced by a let-construct $\cletin x {\cabs \tv \Cone} \Ctwo$  which binds the constraint abstraction
-to the term variable $x$ in $\Ctwo$ -- additionally ensuring the abstraction is satisfiable. They are
-eliminated using application constraints $\capp x \t$ which applies the type $\t$ to the abstraction
-bound to $x$.
+
+There are two constructs that deal with the introduction and elimination of
+constraint abstractions. As the name suggests, a constraint abstraction
+$\cabs \tv C$ can simply be seen as a function which when applied to some
+type $\t$ returns $C[\tv := \t]$. Constraint abstractions are introduced by
+a let-construct $\cletin x {\cabs \tv \Cone} \Ctwo$ which binds the
+constraint abstraction to the term variable $x$ in $\Ctwo$ -- additionally
+ensuring the abstraction is satisfiable. They are eliminated using
+application constraints $\capp x \t$ which applies the type $\t$ to the
+abstraction bound to $x$.
 
 % Suspended match constraints
-Finally, we introduce \textit{suspended match constraints}\footnote{Previously dubbed `frozen constraints' \citep{TODO}}.  
-These constraints defer constraint generation until the \textit{shape}, \eg its top-level constructor, of a type becomes known (through unification), at which point 
-they match on the shape to generate a new constraint. Formally, a suspended constraint is written as 
-$\cmatch \t \Delta f$, where:
+
+Finally, we introduce \textit{suspended match
+constraints}\footnote{Previously dubbed `frozen constraints' \citep{TODO}}.
+These constraints defer constraint generation until the \textit{shape}, \eg
+its top-level constructor, of a type becomes known (through unification), at
+which point they match on the shape to generate a new constraint. Formally,
+a suspended constraint is written as $\cmatch \t \Delta f$, where:
 \begin{enumerate}
 \item
-  The matchee $\t$ is a type. The constraint remains suspended until the shape of $\t$ is determined. 
+  The matchee $\t$ is a type. The constraint remains suspended until the
+  shape of $\t$ is determined.  
 \item 
   The handler $f$ is a meta function from shape ($\sh$) to constraints.
-  Once the constraint is unblocked, this function is applied to generate the constraint to be solved. 
-  Conceptually, $f$ represents a meta-level functionalization of the match's branches.
+  Once the constraint is unblocked, this function is applied to generate the
+  constraint to be solved.  Conceptually, $f$ represents a meta-level
+  functionalization of the match's branches.
 \item
-  The closure $\Delta$ is the set of term and type variables $f$ is permitted to reference. 
-  The role of $\Delta$ in constraint solving is discussed further in Section \ref{sec:solving}. 
+  The closure $\Delta$ is the set of term and type variables $f$ is
+  permitted to reference.  The role of $\Delta$ in constraint solving is
+  discussed further in Section \ref{sec:solving}.
 \end{enumerate}
 
 \begin{figure}[!htpb]
   \begin{align*}
     \shape(\tv) &= \bot \\ 
-    \shape(\overline{\t} \Fapp) &= \langle \overline{\tv} \Fapp, [\overline{\tv := \t}] \rangle
+    \shape(\overline{\t} \Fapp) &= \langle \overline{\tv} \Fapp,
+    [\overline{\tv := \t}] \rangle 
   \end{align*} 
-  \caption{Definition of $\shape(\t)$, a partial function from types to shape-substitution pairs $\langle \sh, \theta \rangle$}
+  \caption{Definition of $\shape(\t)$, a partial function from types to
+  shape-substitution pairs $\langle \sh, \theta \rangle$} 
   \label{fig:shape-fn-def}
 \end{figure}
 
 % Informal semantics
+
 Informally, the semantics of $\cmatch \t \Delta f$ are as follows: the
-constraint remains suspended until the shape of $\t$ is defined (through unification), at which point
-the handler is applied to this shape $f(\sh)$ and the
-generated constraint is scheduled to be solved. If the shape of $\t$ is never
-determined, the constraint remains unsatisfiable.
+constraint remains suspended until the shape of $\t$ is defined (through
+unification), at which point the handler is applied to this shape $f(\sh)$
+and the generated constraint is scheduled to be solved. If the shape of $\t$
+is never determined, the constraint remains unsatisfiable.
 
 % Applications
 
-The remainder of this section illustrates the role of suspended constraints in supporting 
-language features that historically pose challenges to the preservation of principal types. 
-These include:
+The remainder of this section illustrates the role of suspended constraints
+in supporting language features that historically pose challenges to the
+preservation of principal types.  These include:
 \begin{enumerate}
-  \item Constructor and record label overloading for nominal algebraic datatypes; 
+  \item Constructor and record label overloading for nominal algebraic
+  datatypes;  
   \item Overloaded tuple project, in the style of \SML; 
   \item Semi-explicit first-class polymorphism
 \end{enumerate}
-We demonstrate how the typablity of each of these features can be elaborated into 
-constraints, formalized using a constraint generation function of the form $\cinfer e \tv$, 
-which, given a term $e$ and expected type $\tv$, produces a constraint $C$ which is satisfiable if 
-and only if $e$ is well-typed. A formal account of the semantics of suspended constraints 
-and the declarative typing rules for these features is deferred to Sections \ref{sec:semantics}
-and \ref{sec:language}, respectively. 
+We demonstrate how the typablity of each of these features can be elaborated
+into constraints, formalized using a constraint generation function of the
+form $\cinfer e \tv$, which, given a term $e$ and expected type $\tv$,
+produces a constraint $C$ which is satisfiable if and only if $e$ is
+well-typed. A formal account of the semantics of suspended constraints and
+the declarative typing rules for these features is deferred to Sections
+\ref{sec:semantics} and \ref{sec:language}, respectively.
 
 % When solving $\cmatch \cv \Delta f$, the solver proceeds as follows:
 % \begin{enumerate}
@@ -647,13 +672,16 @@ Additionally, type annotations can be used to freshen labels.  This permits
 us to generalize the labels of an annotated term, indicating that the type
 is principally known.
 
-\Xalistair[]{Something about how information can flow from let bindings to use sites for principality checking}
+\Xalistair[]{Something about how information can flow from let bindings to
+use sites for principality checking} 
 
 Instead of using labelled types to infer whether the type is principally
 known, we may use suspended constraints.  Typechecking $\epoly e \sigma$ is
 simple:
 \begin{align*}
-  \cinfer {\epoly e {\tfor {\overline{\cvb}} \t}} \cva &= \left(\cfor {\overline{\cvb}} \cinfer e \t \right) \cand \cva = [\tfor {\overline{\cvb}} \t]
+  \cinfer {\epoly e {\tfor {\overline{\cvb}} \t}} \cva &= \left(\cfor
+  {\overline{\cvb}} \cinfer e \t \right) \cand \cva = [\tfor
+  {\overline{\cvb}} \t] 
 \end{align*}
 
 If $e$ is known to have the type $[\sigma]$, then we can simply instantiate
@@ -676,7 +704,8 @@ A na\"ive denotation semantics for suspended constraints would be to simply
 apply the assignment of $\cva$ to $f$. More formally,
 \begin{mathpar}
   \inferrule*
-    {\semenv(\cva) = \overline{\t} \Fapp \\ \semenv_{\setminus \Delta}[\overline{\cvb := \t}] \vdash f(\overline{\cvb} \Fapp)}
+    {\semenv(\cva) = \overline{\t} \Fapp \\ \semenv_{\setminus
+    \Delta}[\overline{\cvb := \t}] \vdash f(\overline{\cvb} \Fapp)} 
     {\semenv \vdash \cmatch \cva \Delta f}
 \end{mathpar}
 
@@ -723,7 +752,8 @@ The idea, inspired by type systems that require principality (such as
 FreezeML), is to stipulate that the only satisfying assignments for the
 context of the suspended constraint requires $\cv$ to be assigned to some
 type with a unique type constructor.
-\Xalistair[]{This doesn't read entirely correctly, we want a unique constructor for all assignments}.
+\Xalistair[]{This doesn't read entirely correctly, we want a unique
+constructor for all assignments}. 
 
 This motivates our next definition: the principal realisation of a type
 variable $\cv$ by some constraint context $\cctx[-]$.
@@ -731,7 +761,8 @@ variable $\cv$ by some constraint context $\cctx[-]$.
 \begin{definition}
   A type variable $\cv$ is principally realised with the constructor $\F$
   by the context $\cctx[-]$, written $\cctx[\cv !] \rhd \F$,
-  iff for all assignments $\semenv$, there exists an assignment $\semenvp$ for the
+  iff for all assignments $\semenv$, there exists an assignment $\semenvp$
+  for the 
   hole such that $\semenv \vdash \cctx[\semenvp \vdash \ctrue]$ implies
   $\semenvp(\cv) = \overline{\t} \Fapp$
 \end{definition}
@@ -803,9 +834,13 @@ Section 2.}
   {(\semenv \vdash \semmetav) ; \semenv \vdash \semmetav}
 \end{mathparfig}
 
-Meta-substitution lemma: if $\semmetav$ occurs exactly once in $\c$, then $\semmetaenv, (\semenvp \vdash \semmetav); \semenv \vdash C$ and $\semenvp \vdash \cp$ if and only if $\semmetaenv; \semenv \vdash \c[\semmetav := \cp]$.
+Meta-substitution lemma: if $\semmetav$ occurs exactly once in $\c$, then
+$\semmetaenv, (\semenvp \vdash \semmetav); \semenv \vdash C$ and $\semenvp
+\vdash \cp$ if and only if $\semmetaenv; \semenv \vdash \c[\semmetav :=
+\cp]$. 
 
-Convention: we write $\c[\cp]$ for $\c[\square := \cp]$. In particular $\c[\square] = \c$ when $\square$ occurs once in $\c$.
+Convention: we write $\c[\cp]$ for $\c[\square := \cp]$. In particular
+$\c[\square] = \c$ when $\square$ occurs once in $\c$. 
 
 Next steps:
 \begin{itemize}
@@ -813,7 +848,9 @@ Next steps:
   $\c[\cv !]$:
   \begin{mathpar}
     \begin{array}{l}
-    \exists! \F, \quad \forall \semenv, \semenvp,\\ \qquad (\semenvp \vdash \square); \semenv \vdash \c[\square] \implies \mathsf{head}(\semenvp(\cv)) = \F
+    \exists! \F, \quad \forall \semenv, \semenvp,\\ \qquad (\semenvp \vdash
+    \square); \semenv \vdash \c[\square] \implies
+    \mathsf{head}(\semenvp(\cv)) = \F 
     \end{array}
   \end{mathpar}
 \item and finally the global rule
@@ -821,12 +858,18 @@ Next steps:
     \infer
     {\c[\cva !]
       \and \semenvp(\cva) = \overline{\t} \Fapp
-      \and \semmetaenv, (\semenvp, \overline{\cvb := \t} \vdash \square)\vdash \c[f(\overline{\cvb} \Fapp)] }
+      \and \semmetaenv, (\semenvp, \overline{\cvb := \t} \vdash
+      \square)\vdash \c[f(\overline{\cvb} \Fapp)] } 
     {\semmetaenv, (\semenvp \vdash \square); \semenv \vdash \c[\cmatch \cva \Delta f]}
   \end{mathpar}
 \end{itemize}
 
-The intuition for the judgment $\semmetaenv, (\semenvp \vdash \square); \semenv \vdash \c[\cp]$ is that it is a proof of satisfiability of $\c[\square := \cp]$ with valuation $\semenv$, where we furthermore know that the $\cp$ sub-derivation has the valuation $\semenvp$. Note that, after the the global rule is added, the derivations of this judgment are not syntactically directed by $\c$ anymore.
+The intuition for the judgment $\semmetaenv, (\semenvp \vdash \square);
+\semenv \vdash \c[\cp]$ is that it is a proof of satisfiability of
+$\c[\square := \cp]$ with valuation $\semenv$, where we furthermore know
+that the $\cp$ sub-derivation has the valuation $\semenvp$. Note that, after
+the the global rule is added, the derivations of this judgment are not
+syntactically directed by $\c$ anymore.
 
 \section{The language}
 \label{sec:language}
@@ -834,30 +877,40 @@ The intuition for the judgment $\semmetaenv, (\semenvp \vdash \square); \semenv 
 % Running example: tuple projection disambiguation 
 
 % We need a spec, but this itself is hard
+
 In order to show our approach is sound and complete with respect to our
-constraint generation translation, we must first define a formal specification in 
-the form of a calculus and accompanying type system. Surprisngly, identifying an appropriate 
-declarative type system to use as a specification is itself an interesting problem! 
+constraint generation translation, we must first define a formal
+specification in the form of a calculus and accompanying type
+system. Surprisngly, identifying an appropriate declarative type system to
+use as a specification is itself an interesting problem!
 
 % Why is it hard? Examples of prev work:
-Much work has been done on various extensions of \ML with features such as static overloading \citep{TODO} 
-and first-class polymorphism \citep{TODO}. However, many of these approaches either fail to ensure 
-principality or require intricate menachisms -- such as labelled types -- to do so.  
+
+Much work has been done on various extensions of \ML with features such as
+static overloading \citep{TODO} and first-class polymorphism
+\citep{TODO}. However, many of these approaches either fail to ensure
+principality or require intricate menachisms -- such as labelled types -- to
+do so.
 
 % Why do naive approaches not guarantee principal types. 
-Na\"ive specifications, though accessible, often lack principal types. Take 
-overloaded tuple projects \textit{\`a la \SML}: an expression $\efield e j$ governed by the rule: 
+
+Na\"ive specifications, though accessible, often lack principal types. Take
+overloaded tuple projects \textit{\`a la \SML}: an expression $\efield e j$
+governed by the rule:
 \begin{mathpar}
   \infer 
     {\Gamma \vdash e : \Pi_{i = 1}^n \ti \and 1 \leq j \leq n}
     {\Gamma \vdash \efield e l : \tj}
 \end{mathpar}
-admits many typings, as any tuple of at least size $j$ satisfies the premise. This multiplicity undermines principality. 
+admits many typings, as any tuple of at least size $j$ satisfies the
+premise. This multiplicity undermines principality.
 
 % Partial annotations (shapes) to the rescue!
-Our first insight is that partial type annotations often sufficies to recover principality. We refer 
-to these annotations as \textit{shapes}. For example, explicitly annotating the tuple projection with 
-its arity, as in $\exfield e n j$, disambiguates the expression:
+
+Our first insight is that partial type annotations often sufficies to
+recover principality. We refer to these annotations as \textit{shapes}. For
+example, explicitly annotating the tuple projection with its arity, as in
+$\exfield e n j$, disambiguates the expression:
 \begin{mathpar}
    \inferrule* 
       {\Gamma \vdash e : \Pi_{i = 1}^n \ti \\ 1 \leq j \leq n }
@@ -866,36 +919,49 @@ its arity, as in $\exfield e n j$, disambiguates the expression:
 Yet, requiring users to write such annotations manually is impractical. 
 
 % Inference of shapes
-Our solution is to permit \textit{inference} of shapes, provided that the inferred annotation is \textit{uniquely determined by context}. 
-This approach ensures principality by construction and yields a clear specification with predictable annotability requirements for the 
-everyday programmer. 
+
+Our solution is to permit \textit{inference} of shapes, provided that the
+inferred annotation is \textit{uniquely determined by context}.  This
+approach ensures principality by construction and yields a clear
+specification with predictable annotability requirements for the everyday
+programmer.
 
 % A note on stratified type inference 
-The idea of leveraging a principled core language with inference of shapes is not novel. \textit{Stratified type inference} [??] 
-pursued a similar goal (in the context of generalized algebraic data types). It operates in two phases: 
-the first phase transforms the 
-program into an intermediate language and generates shapes using \textit{bidirectional typing}; the second performs \HM type inference for 
-the intermediate language. While the second phase is sound, complete and enjoys principal types,  
-the overall system remains incomplete due to the heuristic nature of the first phase. 
+
+The idea of leveraging a principled core language with inference of shapes
+is not novel. \textit{Stratified type inference} [??]  pursued a similar
+goal (in the context of generalized algebraic data types). It operates in
+two phases: the first phase transforms the program into an intermediate
+language and generates shapes using \textit{bidirectional typing}; the
+second performs \HM type inference for the intermediate language. While the
+second phase is sound, complete and enjoys principal types, the overall
+system remains incomplete due to the heuristic nature of the first phase.
 
 % How do we specify our intuition?
-Specifying the notion of unique inferrability from context is tricky. Luckily, we can leverage many of the formal methods developed in 
-the previous section -- in particular, the manipulation of contexts within the type derivation -- to prove uniqueness of shapes. Allowing 
-us to systematically replace the ambiguous constructs with their disambiguated counterparts: 
+
+Specifying the notion of unique inferrability from context is
+tricky. Luckily, we can leverage many of the formal methods developed in the
+previous section -- in particular, the manipulation of contexts within the
+type derivation -- to prove uniqueness of shapes. Allowing us to
+systematically replace the ambiguous constructs with their disambiguated
+counterparts:
 \begin{mathpar}
   \inferrule* 
     {E[e \mathop{!} \Pi^n] \\ \Gamma \vdash E[\exfield e n j] : \t}
     {\Gamma \vdash E[\efield e j] : \t}
 \end{mathpar}
-The intuition here is that the context $E$ is sufficiently large to constrain the shape of $e$'s type 
-as a tuple of size $n$. 
+The intuition here is that the context $E$ is sufficiently large to
+constrain the shape of $e$'s type as a tuple of size $n$.
 \Xalistair{Some notation trickiness here }
 
 % Limitations
-The cheif limitation of our approach is that disambiguation can still require explicit annotations 
-in inherently ambiguous scenarios. One solution is the use of sensible `defaults', such as resolving $\efield e j$ 
-by assuming the tuple has arity $j$. While appealing, such defaults compromise principality. We return to this pragmatic 
-tradeoff in Section \ref{sec:implementation}.
+
+The cheif limitation of our approach is that disambiguation can still
+require explicit annotations in inherently ambiguous scenarios. One solution
+is the use of sensible `defaults', such as resolving $\efield e j$ by
+assuming the tuple has arity $j$. While appealing, such defaults compromise
+principality. We return to this pragmatic tradeoff in Section
+\ref{sec:implementation}.
 
 \[
 \begin{bnf}
@@ -924,24 +990,37 @@ variables $x$, the unit literal $\eunit$, lambda abstractions $\efun x
 e$, applications $\eapp \eone \etwo$, annotations $(e : \t)$ and let
 bindings $\elet x \eone \etwo$. Our extensions include:
 \begin{enumerate}
-  \item Constructor and record label disambiguation, modelled using record literals $\erecord { \labone = \eone; \ldots; \labn = \en }$
-  and field projections $\efield e l$. 
+  \item Constructor and record label disambiguation, modelled using record
+  literals $\erecord { \labone = \eone; \ldots; \labn = \en }$ and field
+  projections $\efield e l$.
 
-  \item Tuples $(\eone, \ldots, \en)$ with overloaded tuple projections $\eproj e i$. 
+  \item Tuples $(\eone, \ldots, \en)$ with overloaded tuple projections
+  $\eproj e i$.  
 
-  \item For semi-explicit first-class polymorphism, we have the boxing construct $\epoly
-e \sigma$ and the unboxing construct $\einst e$.
+  \item For semi-explicit first-class polymorphism, we have the boxing
+  construct $\epoly e \sigma$ and the unboxing construct $\einst e$.
 \end{enumerate}
-Each construct that endangers principality has an explicitly annotated counterpart. 
+Each construct that endangers principality has an explicitly annotated
+counterpart.  
 
-\paragraph{Types} As usual, types are split into monotypes (or just types) and type scehems. Types $\t$ include the variables $\tv$, the unit type $1$, functions $\tone \to \ttwo$, $n$-ary products $\Pi_{i = 1}^n \ti$ and 
-nominal record types $\overline{\t} \Fapp$. Types schemes $\sigma$ extend monotypes allowing the universal quantification of zero or more type 
-variables $\tfor {\overline{\tv}} \t$. We write $\tv, \beta, \gamma$, etc. for type variables. We also have polytypes 
+\paragraph{Types}
+
+As usual, types are split into monotypes (or just types) and type
+scehems. Types $\t$ include the variables $\tv$, the unit type $1$,
+functions $\tone \to \ttwo$, $n$-ary products $\Pi_{i = 1}^n \ti$ and
+nominal record types $\overline{\t} \Fapp$. Types schemes $\sigma$ extend
+monotypes allowing the universal quantification of zero or more type
+variables $\tfor {\overline{\tv}} \t$. We write $\tv, \beta, \gamma$,
+etc. for type variables. We also have polytypes
 \textit{without the labels} $[\sigma]$ as monotypes. 
 
-\paragraph{Contexts} Contexts $\Gamma$ are an ordered sequence of expression variable typings $x : \sigma$ and 
-universally quantified type variables. Our presentation of \ML differs from most traditional ones that permit type variables 
-to ``float around''. Instead, we explicitly track the type variables in scope in the type context $\Gamma$. 
+\paragraph{Contexts}
+
+Contexts $\Gamma$ are an ordered sequence of expression variable typings $x
+: \sigma$ and universally quantified type variables. Our presentation of \ML
+differs from most traditional ones that permit type variables to ``float
+around''. Instead, we explicitly track the type variables in scope in the
+type context $\Gamma$.
 
 \paragraph{Typing}
 
@@ -990,11 +1069,14 @@ to ``float around''. Instead, we explicitly track the type variables in scope in
     {\Gamma \vdash e.n.j : \tj}
     
   \inferrule* 
-    {\Gamma \vdash e : \sigma[\overline{\tv := \t}] \\ \Gamma \vdash \overline{\t}}
-    {\Gamma \vdash \epoly e { \exists \overline{\tv}. ~ \sigma } : [\sigma[\overline{\tv := \t}]]}
+    {\Gamma \vdash e : \sigma[\overline{\tv := \t}] \\
+     \Gamma \vdash \overline{\t}}
+    {\Gamma \vdash \epoly e { \exists \overline{\tv}. ~ \sigma } :
+      [\sigma[\overline{\tv := \t}]]}
 
   \inferrule* 
-    {\Gamma \vdash e : [\sigma[\overline{\tv := \t}]] \\ \Gamma \vdash \sigma[\overline{\tv := \t}] \leq \tp}
+    {\Gamma \vdash e : [\sigma[\overline{\tv := \t}]] \\ \Gamma \vdash
+    \sigma[\overline{\tv := \t}] \leq \tp} 
     {\Gamma \vdash \exinst e {\overline{\tv}} \sigma : \tp }
 
   \inferrule*    
@@ -1006,10 +1088,13 @@ to ``float around''. Instead, we explicitly track the type variables in scope in
     {\Gamma \vdash E[\einst e] : \t}
 \end{mathpar}
 
-The shape of a type scheme is $\exists \overline{\tv}. ~\sigma$, where $\overline{\tv}$ gives the closure. 
-We write $\langle \overline{\t}, \exists \overline{\tv}. ~ \sigma \rangle$ for the type scheme $\sigma[\overline{\tv := \t}]$. 
+The shape of a type scheme is $\exists \overline{\tv}. ~\sigma$, where
+$\overline{\tv}$ gives the closure.  We write $\langle \overline{\t},
+\exists \overline{\tv}. ~ \sigma \rangle$ for the type scheme
+$\sigma[\overline{\tv := \t}]$.
 
-We also add a well-typed hole judgement (this is analogous to using $\ctrue$ in suspended constraints semantics): 
+We also add a well-typed hole judgement (this is analogous to using $\ctrue$
+in suspended constraints semantics):
 \begin{mathpar}
   \inferrule*   
     {\Gamma \vdash e : \tp}
@@ -1017,8 +1102,10 @@ We also add a well-typed hole judgement (this is analogous to using $\ctrue$ in 
 \end{mathpar}
 Then we can define: 
 \begin{align*}
-  E[e \mathop{!} s] := \exists! s'.\; &s = s' \wedge \forall \Gamma, \Gamma', \t, \tp. \\
-  &\quad \Gamma \vdash E[\Gamma' \vdash \{ e : \tp \} : \_] : \t \implies \textsf{shape}(\tp) = s'
+  E[e \mathop{!} s] := \exists! s'.\; &s = s' \wedge \forall \Gamma,
+  \Gamma', \t, \tp. \\ 
+  &\quad \Gamma \vdash E[\Gamma' \vdash \{ e : \tp \} : \_] : \t \implies
+  \textsf{shape}(\tp) = s' 
 \end{align*}
 What is a shape? 
 
@@ -1065,7 +1152,7 @@ abandon local let generalization.}
 \subsection{Bi-directional type inference}
 
 \Xgabriel{Our approach should have better properties for disambiguation, but
-which ones?}
+which ones?} 
 
 In the simply-typed case our system works better. But with generalization
 you can have more issues.
