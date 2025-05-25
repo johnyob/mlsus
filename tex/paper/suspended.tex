@@ -54,7 +54,11 @@ semi-explicit polymorphism on the other hand.
 
 \Xdidier
   {Show we replace semi-explicit by higher-rank?}
-
+\Xalistair
+  {Higher-rank or first-class? Personally, I wouldn't call polytypes higher-rank since 
+   it doesn't fit the definition of $\mathsf{rank}(k)$ types.}
+\Xalistair
+  {Also @Didier, what are you using to format / trim lines?}
 
 \section{Introduction}
 
@@ -65,8 +69,8 @@ common program transformations such as let-contraction and let-expansion,
 and permutation of the order or arguments.
 
 Over the years, many extensions of \ML have been proposed.  While some of
-them, such as flexible records, higher-kinded types, or dimensional types
-fits nicely into the \ML framework, others such as GADTs or semi-explicit
+them, such as flexible \Xalistair{structural?} records, higher-kinded types, or dimensional types
+fits nicely into the \ML framework, others such as GADTs or \Xalistair{`,' instead of `or'?} semi-explicit
 polymorphism, or overloading of datatype constructors and record fields, are
 less satisfactory, since they require to \emph{twist} the ML-style
 specification with some direct or indirect algorithmic flavor in order to
@@ -77,9 +81,11 @@ that require explicit type annotations that may sometimes but not always be
 omitted. They can actually be viewed as an elaboration into the slightly weaker
 language that makes annotations mandatory, but itself fits nicely into
 the \ML framework. The elaboration then defines which annotations can be
-omitted and rebuild from context.
+omitted and rebuild from context. \Xalistair{We could mention stratified type inference here, 
+which makes this idea more explicit}
 %
-The difficulty lies in finding a methodical such specification that comes
+The difficulty lies in finding a methodical such specification \Xalistair{should read as `lies in 
+methodically finding such a specifcation ...'?} that comes
 with a complete (hence principal) and effective elaboration algorithm.
 
 The solutions proposed so far all enforce some ordering in which type
@@ -104,6 +110,9 @@ Bidirectional type inference has been largely used for languages with
 higher-rank polymorphism or subtyping~\TODO{citations}. Still, both \OCaml
 and \Haskell use a limited form of bidirectional type inference.
 
+\Xalistair{I think we could critise bidirectional more? Aside from a forced order, 
+it suffers from scalability issues (rule duplication and lack of clear annotability
+spec)}
 
 
 \paragraph{Poly-directional type inference}
@@ -112,7 +121,10 @@ and \Haskell use a limited form of bidirectional type inference.
 information, based on polymorphism, which actually enforces an ordering in
 the typechecking of let-bindings, where the (polymorphic part of) a the
 bound expression must be typed before the body of the let-expression.
-We call it \emph{poly}-directional type inference.\Xdidier {let-directional?}
+We call it \emph{poly}-directional type inference.\Xdidier {let-directional?} 
+\Xalistair{Poly-directional > Let-directional. Let-directional isn't entirely true in 
+practice (since annotations are generalizable points). Downside for poly-directional 
+is that it sounds like type information can come from many directions?}
 
 Initially introduced with semi-explicit polymorphism to \ML~\cite
 {Garrigue-Remy/poly-ml} it has also been used for the overloading of record
@@ -157,8 +169,11 @@ understand why \ocaml{e_3} fails, consider the equivalent versions of
 reverse application functions.
 \begin{program}[escapechar={},input]
 let e_4 = (fun r -> r.x) @@ {x = 1} 
-let e_5 = {x = 1}  |> (fun r -> r.x) 
+let e_5 = {x = 1} |> (fun r -> r.x) 
 \end{program}
+\Xalistair{We should make it clearer that we're talking about \OCaml with the 
+\code{-principal} flag. Since I suspect that many OCaml programmers rely on 
+the non-principal directional behaviour (I know I do)}
 \OCaml  does not make any difference between
 \ocaml[indices]{e_1}, \ocaml[indices]{e_2}, or \ocaml[indices]{e_3}
 and consider all subexpressions in an application, including the function
@@ -191,11 +206,15 @@ multiple arguments passed to the same function, or on the opposite disallow
 it entirety. Again, there is not best choice. We eventually have a complete
 algorithm with respect to a spec that made somewhat arbitrary choices.
 
-Poly-directional type inference seems a better first for \ML, since it
+Poly-directional type inference seems a better fit for \ML, since it
 relies on polymorphism which is the essence of \ML. Still, it does not even
-allow to propagate user-type annotations! Thus \OCaml, which use
+allow to propagate user-type annotations! 
+\Xalistair{Examples here?}
+Thus \OCaml, which use
 poly-directional type inference as the primary mechanisms also added a weak
-form of bidirectional propagation. Besides, the implementation of
+form of bidirectional propagation. 
+\Xalistair{Example of bidirectionality in OCaml here?}
+Besides, the implementation of
 poly-directional type inference has an algorithmic cost, since the addition
 of variable annotations requires to reread dags as trees destroying the
 sharing that naturally resulting from unification, which may increase the
@@ -240,7 +259,7 @@ incompleteness should wishfully be eliminated.
 
 On the opposite, the former is a reasonable design to keep type inference
 effective, since the complexity of general overloading is NP-hard even in
-the absence of let-polymorphism,a s show by an encoding of 3-SAT problem as
+the absence of let-polymorphism, as show by an encoding of 3-SAT problem as
 shown by~\citet {Chargueraud-Bodin-Dunfield-Riboulet/jfla2025}.
 
 
@@ -259,8 +278,9 @@ unification constraints, which can be solved in any order.  The difficulty
 originates from \ML let-polymorphism for which all known implementations
 choose to always infer the type of a let-binding, turn it into a type scheme
 that is assigned to the let-bound variable to extend the typing environment
-in which the body is then typed. Algorithm $W$, its variant $M$ or more
-flexible constraint solving algorithms all follow this strategy.
+in which the body is then typed. Algorithm $\mathscr{W}$, its variant $M$ 
+\Xalistair{Algorithm M? I've not heard of this one, do you mean $\mathscr{J}$?} 
+or more flexible constraint solving algorithms all follow this strategy.
 
 However, it is not mandatory.  In fact, typing constraints as presented
 in~\cite {Pottier-Remy/emlti} can be instantiated before they are fully
@@ -274,7 +294,8 @@ constraints into account before resolving ambiguities.  This requires two
 technical devices, hence two problems to solve:
 \begin{enumerate*}
 \item
-  we first must work with partial types schemes, \ie. we the ability
+  we first must work with partial types schemes, \ie. \Xalistair{The .,.
+  looks like a typography issue? shouldn't it be `\textit{ie.}' } we the ability
   to instantiate type schemes that are not yet fully determined and
   consequently revisit their instances when their are being refined,
   incrementally.
@@ -293,7 +314,7 @@ to each use case,
 \subsubsection* {Plan}
 
 The rest of the paper is organized as follows.
-sf\begin{enumerate*}[label={}]
+\begin{enumerate*}[label={}]
 \item In \cref{sec:constraints}, we give an overview of suspended constraints and their 
 application to various extensions for \ML. 
 \item
@@ -325,6 +346,9 @@ and \cref{sec:implementation} are just implementation details which could
 fit at the end of~\cref{sec:solving}. Or do you mean that~\cref
 {sec:solving} is generic and \cref {sec:implementaion} is an particular
 instance?}
+\Xalistair{\cref{sec:solving} is the formal specification of the solver, a small-step operational semantics for constraints, 
+\cref{sec:implementation} discusses the implementation of the solver as a big-step operational semantics for constraints.
+Also I think there is a fair bit of impressive technical engineering / book-keeping that goes into implementing the solver. }
 
 \subsubsection* {Our constributions}
 
@@ -416,6 +440,10 @@ typecheck (without explaining how they typecheck) ?  I gave one example for
 record fields in the intro.  Should I also introduce semi-explicit
 polymorphism and give an example in the intro?}
 
+\Xalistair{I think it makes sense that this is the intro continued. As for 
+examples, I think the intro has enough. We should put them in the relevant subsections 
+in this section.}
+
 % Constraint-based approach
 
 Our insights into directionality come by approaching type inference from a
@@ -456,6 +484,8 @@ we propagate it to all its instantiations. Currently, each propagation with
 redo the job, ignoring what had already be done ealier. Hence you get a
 factor of $n$ complexity that need not necessarily be there. Plus
 constraints are copied before being simplified. Another factor...}
+\Xalistair{The spec for the solver and my solver impl does not suffer from this, 
+it is able to track which new nodes need propagating and leaves the rest untouched.}
 
 \begin{mathparfig}[t]%
   {fig:constraint-syntax}%
@@ -546,6 +576,10 @@ be transparent while $\lambda$ is opaque? It you want a syntactic binder,
 one that is not opaque, then I would write this $\Delta \bar\tv. \hf$ and
 explain that $\Delta$ stands for $\Lambda$ while beeing transparent---we can
 extra the list of variables $\bar\tv$ under that binder.}
+\Xalistair{$\D$ is a list of term \textit{and} type variables. I wouldn't 
+say $\D$ is a binder, since it relies on all variables listed being previously 
+bound. It simply serves as an explicit closure (which the solver requires to 
+track which variables are guarded)}
 
 \begin{mathparfig}[t]
 {fig:shape-fn-def}
@@ -575,11 +609,13 @@ preservation of principal types in my opinion but that there are just
 elimination of optional type annotations, which obviously requires the
 use---hence also the propagation---of \emph{known} type information.  It is
 then difficult to specify which annoations can be omitted.}
+\Xalistair{Fair, I do see the principal types `by construction' part of our work 
+as a major improvement over prior art}
 These include:
 \begin{enumerate}
   \item Constructor and record label overloading for nominal algebraic
   datatypes;  
-  \item Overloaded tuple project\Xdidier {projection?}, in the style of \SML; 
+  \item Overloaded tuple projection in the style of \SML; 
   \item Semi-explicit first-class polymorphism.
 \end{enumerate}
 We demonstrate how the typablity of each of these features can be elaborated
@@ -658,13 +694,14 @@ The type of \code{x} is ambiguous since OCaml could infer either the type
 there is no most general type for \code{x}. \Xdidier {It is not just a
 question of typing issue but of semantics: it should make a stratic choice
 of the implementation. Just speaking of it as a type issue is a bit
-misleading.} As such, OCaml gives the 
+misleading.} \Xalistair{I'll add something about how this ambiguity could have 
+runtime implications} As such, OCaml gives the 
 following error: ...
 
 OCaml's type checker relies on type information provided by the
 bidirectional\Xdidier{bidirectional is misleading here! In what sense ocaml
 is a bidirectional typechecker? It is in fact poly-direction. (poly means
-polymorphism here)} propagation of type
+polymorphism here)} \Xalistair{Agreed, will change} propagation of type
 information to resolve these 
 ambiguities. Annotating \code{x} with either \code{m} or \code{n} would
 produce a well-typed program.
@@ -678,11 +715,11 @@ constructor application $\econstr K e$, we generate the constraint:
   \cand
   \cmatch \cva {\cva, \cvb}
     \parens
-      {\clam {\overline{\cvc} \Fapp} 
+      {\clam {(\overline{\cvc} \Fapp)} 
         {\cletin \sigma {\D(\F)(\mathsf{K})} {\sigma \leq \cvb \to \cva}}
       }
 \end{align*}
-where the function $\clam {\overline{\cvc} \Fapp} {\cletin \sigma
+where the function $\clam {(\overline{\cvc} \Fapp)} {\cletin \sigma
 {\D(\F)(\mathsf{K})} {\sigma \leq \cvb \to \cva}}$ looks up the type scheme
 associated with the constructor using the type name $\F$ in the environment
 ($\Delta(\F)(\mathsf{K})$). \Xdidier{I don't really understand what you
@@ -691,7 +728,12 @@ $\lambda \parens{\bar \cvc \Fapp}. \ldots$. Still, I think it would help
 to use a postfix notation in the formal presentation. In fact
 $\bar \cvc(\Fapp)$ would not parse in \OCaml. And if $\D(\F)$ is supposed to
 be a type $\t$, what does $\t(K)$ mean?
-}\Xdidier {We haven't seen the instantiation constraint $\sigma \leq \cvb
+}
+\Xalistair{$\D(\F)(\K)$ looks up the type scheme associated with the constructor $\K$ 
+in the definition of $\F$ in the context $\D$ (although this metavar has now been taken 
+by closures...) }
+
+\Xdidier {We haven't seen the instantiation constraint $\sigma \leq \cvb
 \to \cva$ yet}
 
 We require a unique type for each type constructor in a given algebraic data
