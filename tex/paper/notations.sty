@@ -1,15 +1,16 @@
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newcommand \mathpostfix[2][\keyword]{\mathrel{#1{#2}}\mathclose{}}
-\newcommand \mathprefix [2][\keyword]{\mathopen{}\mathrel{#1{#2}}}
-\newcommand \mathinfix [2][\keyword]{\mathrel{#1{#2}}}
+\newcommand \kwd[1]{\mathsf{#1}}
+\newcommand \mathpostfix[2][\kwd]{\mathrel{#1{#2}}\mathclose{}}
+\newcommand \mathprefix [2][\kwd]{\mathopen{}\mathrel{#1{#2}}}
+\newcommand \mathinfix [2][\kwd]{\mathrel{#1{#2}}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Alistair
 
-\newcommand{\Let}{\mathsf{let}}
-\newcommand{\In}{\mathsf{in}}
-\newcommand{\Match}{\mathsf{match}}
-\newcommand{\With}{\mathsf{with}}
+\newcommand{\Let}{\mathprefix{let}}
+\newcommand{\In}{\mathinfix{in}}
+\newcommand{\Match}{\mathprefix{match}}
+\newcommand{\With}{\mathinfix{with}}
 
 \renewcommand{\c}{C}
 \newcommand{\cone}{\c_1}
@@ -21,16 +22,17 @@
 \newcommand{\cvc}{\gamma}
 \newcommand{\ctrue}{\mathsf{true}}
 \newcommand{\cfalse}{\mathsf{false}}
-\newcommand{\cexists}[2]{\exists {#1}. ~ #2}
-\newcommand{\cfor}[2]{\forall {#1}. ~ #2}
+\newcommand{\cexists}[2]{\exists {#1}.\, #2}
+\newcommand{\cfor}[2]{\forall {#1}.\, #2}
 \newcommand{\cand}{\wedge}
 \newcommand{\cunif}[2]{{#1} = {#2}}
-\newcommand{\cinst}[2]{#1 ~ #2}
-\newcommand{\cletin}[3]{\Let ~ #1 = #2 ~ \In ~ #3}
-\newcommand{\cabs}[2]{\lambda {#1}. ~ {#2}}
-\newcommand{\capp}[2]{{#1} ~ {#2}}
-\newcommand{\cmatch}[3]{\Match ~ #1 ~ \With ~ [ #2 ] #3}
+\newcommand{\cinst}[2]{#1 \; #2}
+\newcommand{\cletin}[3]{\Let #1 = #2 \In #3}
+\newcommand{\cabs}[2]{\lambda {#1}. \,{#2}}
+\newcommand{\capp}[2]{#1 \; #2}
+\newcommand{\cmatch}[3]{\Match #1 \With [ #2 ] #3}
 \newcommand{\clam}[2]{\lambda {#1}.\,{#2}}
+
 \newcommand{\cctx}{\mathscr{C}}
 
 \newcommand{\semenv}{\phi}
@@ -56,37 +58,54 @@
 \newcommand{\tpoly}[2]{[#1]^{#2}}
 \newcommand{\tunit}{1}
 
-\newcommand{\econstr}[2]{#1 ~ #2}
-\newcommand{\einst}[1]{\langle #1 \rangle}
-\newcommand{\exinst}[3]{\langle #1 : \exists {#2}. ~ #3 \rangle}
+\newcommand {\G}{\Gamma}
+
+\renewcommand{\@}{\;}
+
+\newcommand{\econstr}[2]{#1 \@ #2}
+\newcommand{\einst}[1]{\angles {#1}}
+\newcommand{\exinst}[3]{\angles {#1 : \exists {#2}. \, #3}}
 \newcommand{\epoly}[2]{[ #1 : #2 ]}
 \newcommand{\eunit}{()}
-\newcommand{\efun}[2]{\lambda {#1}. ~ {#2}}
-\newcommand{\eapp}[2]{{#1} ~ {#2}}
-\newcommand{\elet}[3]{\Let ~ #1 = #2 ~ \In ~ #3}
-\newcommand{\ematch}[2]{\Match ~ #1 ~ \With ~ #2}
-\newcommand{\ecase}[3]{#1 ~ #2 \Rightarrow #3}
+\newcommand{\efun}[2]{\lambda {#1}. \, {#2}}
+\newcommand{\eapp}[2]{#1 \; #2}
+\newcommand{\elet}[3]{\Let #1 = #2 \In #3}
+\newcommand{\ematch}[2]{\Match #1 \With #2}
+\newcommand{\ecase}[3]{#1 \; #2 \Rightarrow #3}
 \newcommand{\efield}[2]{#1.#2}
 \newcommand{\eproj}[2]{#1.#2}
 \newcommand{\exfield}[3]{#1.#2.#3}
-\newcommand{\erecord}[1]{\{ #1 \}}
+\newcommand{\erecord}[1]{\{#1\}}
 
-\newcommand{\cinfer}[2]{\llbracket #1 : #2 \rrbracket}
+\newcommand {\parens}[1]{(#1)}
+\newcommand {\braces}[1]{\{#1\}}
+\newcommand {\bbrackets}[1]{\llbracket #1\rrbracket}
+\newcommand {\angles}[1]{\langle #1\rangle}
+\newcommand {\highdelim}[2]{\left#1{#2\right}}
+\newcommand {\Parens}[1]{\highdelim\parens {#1}}
+\newcommand {\Braces}[1]{\highdelim\braces {#1}}
+\newcommand {\Angles}[1]{\highdelim\angles {#1}}
+\newcommand {\Bbrackets}[1]{\highdelim\bbrackets {#1}}
+\newcommand {\set}[1]{\braces{#1}}
+
+\newcommand{\cinfer}[2]{\bbrackets {#1 : #2}}
 
 %% \newcommand{\TODO}{\textcolor{red}{TODO}}
 \newcommand{\disjoint}{\mathop{\#}}
 \newcommand{\shape}{\textsf{shape}}
 
 % Common metas
-\newcommand{\eone}{e_1}
-\newcommand{\etwo}{e_2}
-\newcommand{\ei}{e_i}
-\newcommand{\en}{e_n}
+\newcommand{\e}{e}
+\newcommand{\eone}{\e_1}
+\newcommand{\etwo}{\e_2}
+\newcommand{\ei}{\e_i}
+\newcommand{\en}{\e_n}
 
-\newcommand{\Cone}{C_1}
-\newcommand{\Ctwo}{C_2}
-\newcommand{\Ci}{C_i}
-\newcommand{\Cn}{C_n}
+\newcommand{\C}{C}
+\newcommand{\Cone}{\C_1}
+\newcommand{\Ctwo}{\C_2}
+\newcommand{\Ci}{\C_i}
+\newcommand{\Cn}{\C_n}
 
 \newcommand{\sh}{\varsigma}
 
@@ -94,6 +113,8 @@
 \newcommand{\sigmatwo}{\sigma_2}
 \newcommand{\sigmai}{\sigma_i}
 \newcommand{\sigman}{\sigma_n}
+
+\newcommand{\hf}{f}
 
 \newcommand{\labone}{l_1}
 \newcommand{\labtwo}{l_2}
@@ -104,6 +125,8 @@
 
 \newcommand{\K}{\mathsf{K}}
 \newcommand{\Ki}{\K_i}
+
+\newcommand {\D} {\Delta}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% DR
@@ -116,3 +139,9 @@
 \defmetavar {\x} {x}
 
 \newcommand{\all}[2]{\forall #1.\,#2}
+
+\newcommand{\eqdef}{{\triangleq}}
+\newcommand \uad [1][1ex]{\hskip #1}
+\newcommand \wide[2][\;]{#1 #2 #1}
+\newcommand \Wide[2][\uad]{#1 #2 #1}
+

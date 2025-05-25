@@ -240,7 +240,8 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\newcommand{\code}[1]{\lstinline!#1!}
 \newcommand\ocaml[1][language=OCaml]{\lstinline[language=OCaml,#1]}
+%% \newcommand{\code}[1]{\lstinline!#1!}
+\newcommand{\code}[1]{\ocaml{#1}}
 
 %% \lstMakeShortInline[columns=fullflexible]|

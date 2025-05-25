@@ -316,15 +316,15 @@ application to various extensions for \ML.
   and futre work.
 \end{enumerate*}
 
-\Xdidier{I don't quite unedestand the difference between
+\Xdidier
+{I don't quite unedestand the difference between
 \cref{sec:solving} and
 \cref{sec:implementation}.
 For me \cref{sec:solving} is the algorithm.
 and \cref{sec:implementation} are just implementation details which could
 fit at the end of~\cref{sec:solving}. Or do you mean that~\cref
 {sec:solving} is generic and \cref {sec:implementaion} is an particular
-instance? 
-}
+instance?}
 
 \subsubsection* {Our constributions}
 
@@ -403,80 +403,107 @@ as a required annotation}
 \TODO{PLAN: Only the constraint syntax, not constraint-solving yet. The
 point is to show examples in a concrete way.}
 \Xalistair{Some of this probably belongs in the intro @Didier, but I didn't
-want to conflict with your work} 
+want to conflict with your work}
+
+\Xdidier {We need examples before we did in the technical details.
+But since this section is still partly informal---no semantics, we may
+then still consider as part of the intro and not described 
+suspended constraints earlier} 
+
+\Xdidier {The question is where do we put examples of programs that
+do not typecheck in \OCaml, are expected to typecheck and that we can
+typecheck (without explaining how they typecheck) ?  I gave one example for
+record fields in the intro.  Should I also introduce semi-explicit
+polymorphism and give an example in the intro?}
 
 % Constraint-based approach
+
 Our insights into directionality come by approaching type inference from a
 \textit{constraint-based} \citep{TODO} perspective, in which type inference
 is split into two stages, mediated by the language of \textit{constraints}
-\citep{TODO}.  In the first stage, terms $e$ are translated into constraints
-$C$ which are satisfiable if and only if the $e$ is well-typed. In the
-second stage, the generated constraint is solved (or shown to be
+\citep{TODO}.  In the first stage, a term $\e$ is translated into a constraint
+$\C$ which is satisfiable if and only if the term $e$ is well-typed. In the
+second stage, the generated constraint $\C$ is solved (or shown to be
 unsatisfiable).
 
 % HMX 
 
 A foundational approach to constraint-based type inference is \HMX
-\cite{Odersky-Sulzmann-Wehr@tpos}---the Hindley-Milner system parameterized by a constraint
-domain $X$, allowing constraints to appear within types. Our work is
-inspired by the presentation of HMX by \citet{Pottier-Remy/emlti} who
-fully decoupled constraint generation from constraint solving.  Their key
-insight for the reduction of type inference to constraint solving is the
+\cite{Odersky-Sulzmann-Wehr@tpos}---the Hindley-Milner system parameterized
+by a constraint domain $X$, allowing constraints to appear within types. Our
+work is inspired by the presentation of HMX by \citet{Pottier-Remy/emlti}
+who fully decoupled constraint generation from constraint solving.  Their
+key insight for the reduction of type inference to constraint solving is the
 inclusion of term variables in the language of constraints.
 
 % Life is hard
 \Xalistair{This paragraph now feels out of place -- nonetheless I think we
-need state how difficult this was :/} Formulating a suitable constraint
-language for omnidirectional type inference, a (provably) correct constraint
-translation for our extensions, and an efficient, sound and complete solver
-involves several difficulties.
+need state how difficult this was :/}\Xdidier {It could be move to the
+introduction}
+Formulating a suitable constraint language for omnidirectional type
+inference, a (provably) correct constraint translation for our extensions,
+and an efficient, sound and complete solver involves several difficulties.
+\Xdidier
+{I think what is difficult is (1) the semantics of constraints (2) the
+efficient implementation, rather than just a sound and complete
+implementation. In particular, efficiency requires to use ranks and an
+ordering on the way constraint are solve.}
+\Xdidier
+{Beside we have no proof that our implementation is efficient. In fact, I
+think is not cheap: Assume that a type scheme of size $n$ is solved
+incrementally by adding one node at a time and that every time we add a node
+we propagate it to all its instantiations. Currently, each propagation with
+redo the job, ignoring what had already be done ealier. Hence you get a
+factor of $n$ complexity that need not necessarily be there. Plus
+constraints are copied before being simplified. Another factor...}
 
-\begin{mathparfig}%
+\begin{mathparfig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
-  \begin{array}{rrl@{\hspace{8em}}l}
-    \cva, \cvb, \cvc &&& \text{Type variables}
-    \\
-    \t & ::=
-         & \cv \mid \overline{\t} \Fapp ~ \mid \ldots
-         & \text{Constraint types}
-    \\
-    \Fapp & ::=
-          & \tunit \mid \cdot \tarrow \cdot \mid \dots
-          & \text{Type constructors}
-    \\[2em]
-
-    C & ::=
-      & \ctrue
+\def \is{&::=&}
+\def \crmid {\\&&\mid&}
+\def \nois{&&}
+\def \tag{&&}
+\begin{tabular*}{\linewidth}{C~R=;;R;;LL~r}&
+\cva, \cvb, \cvc \nois
+\tag   Type variables
+\\&
+\t  \is
+     \cv \mid \overline{\t} \Fapp ~ \mid \ldots
+\tag   Constraint types
+\\&
+\Fapp \is
+\tunit \mid \cdot \tarrow \cdot \mid \dots
+\tag   Type constructors
+\\[1ex]&
+C  \is
+        \ctrue
         \mid \cfalse
-        \mid C_1 \cand C_2
+        \mid \Cone \cand \Ctwo
         \mid \cexists \cv C
         \mid \cunif \tone \ttwo
-      & \text{Constraints}
-      \\
-      & \mid
-      & \cletin x {\clam \cv {C_1}} {C_2}
-        \mid \cinst x \t
-      &
-      \\
-      & \mid
-      & \cmatch \cv \Delta f
-    \\
-    \sh
-      & ::=
-      & \overline{\tv} \Fapp ~ \mid \ldots
-      & \text{Shapes}
-  \end{array}
+\tag Constraints
+\crmid  \cletin x {\clam \cv \Cone} {\Ctwo}
+        \mid  \cinst \x \t
+      \crmid  \cmatch \cv \D  \hf
+\\&
+\sh \is \overline{\tv} \Fapp ~ \mid \ldots
+\tag   Shapes
+\end{tabular*}
 \end{mathparfig}
 
 % Syntax!
 
-We begin by introducing the syntax of constraints in Figure ??. The
-constraint language contains tautologic constraints ($\ctrue$),
-unsatisfiable constraints ($\cfalse$) and logical conjunctions ($\Cone \cand
-\Ctwo$). $\tone = \ttwo$ asserts that the types $\tone$ and $\ttwo$ are
-equal.  The constraint form $\cexists \tv C$ binds an existentially
-quantified type variable in $C$.
+We begin by introducing the syntax of constraints
+in~\Cref{fig:constraint-syntax}.  The constraint language contains
+tautologic constraints ($\ctrue$), unsatisfiable constraints ($\cfalse$),
+and logical conjunctions ($\Cone \cand \Ctwo$). The constraint form $\tone =
+\ttwo$ asserts that the types $\tone$ and $\ttwo$ are equal.  The constraint
+form $\cexists \tv C$ binds an existentially quantified type variable $\tv$
+in $C$.
+
+\Xdidier {What about the instantiation constraint? $\sigma \leq \t$?
+(\string\leq\space should be macroified)}
 
 % Constraint abstractions
 
@@ -485,9 +512,9 @@ constraint abstractions. As the name suggests, a constraint abstraction
 $\cabs \tv C$ can simply be seen as a function which when applied to some
 type $\t$ returns $C[\tv := \t]$. Constraint abstractions are introduced by
 a let-construct $\cletin x {\cabs \tv \Cone} \Ctwo$ which binds the
-constraint abstraction to the term variable $x$ in $\Ctwo$ -- additionally
-ensuring the abstraction is satisfiable. They are eliminated using
-application constraints $\capp x \t$ which applies the type $\t$ to the
+constraint abstraction to the term variable $x$ in $\Ctwo$---additionally
+ensuring the abstraction is satisfiable. They are eliminated using the
+application constraint $\capp x \t$ which applies the type $\t$ to the
 abstraction bound to $x$.
 
 % Suspended match constraints
@@ -497,7 +524,7 @@ constraints}\footnote{Previously dubbed `frozen constraints' \citep{TODO}}.
 These constraints defer constraint generation until the \textit{shape}, \eg
 its top-level constructor, of a type becomes known (through unification), at
 which point they match on the shape to generate a new constraint. Formally,
-a suspended constraint is written as $\cmatch \t \Delta f$, where:
+a suspended constraint is written as $\cmatch \t \D \hf$, where:
 \begin{enumerate}
 \item
   The matchee $\t$ is a type. The constraint remains suspended until the
@@ -508,27 +535,34 @@ a suspended constraint is written as $\cmatch \t \Delta f$, where:
   constraint to be solved.  Conceptually, $f$ represents a meta-level
   functionalization of the match's branches.
 \item
-  The closure $\Delta$ is the set of term and type variables $f$ is
-  permitted to reference.  The role of $\Delta$ in constraint solving is
+  The closure $\D$ is the set of term and type variables $f$ is
+  permitted to reference.  The role of $\D$ in constraint solving is
   discussed further in \cref{sec:solving}.
 \end{enumerate}
+\Xdidier {If $\D$ is a list of variables what not just write $\bar\tv$?}
+\Xdidier {Why not write $\Lambda \D. \hf$ that $[\D] \hf$ since
+$\hf$ is itself written as a function? It is because this $\Lambda$ should
+be transparent while $\lambda$ is opaque? It you want a syntactic binder,
+one that is not opaque, then I would write this $\Delta \bar\tv. \hf$ and
+explain that $\Delta$ stands for $\Lambda$ while beeing transparent---we can
+extra the list of variables $\bar\tv$ under that binder.}
 
-\begin{figure}[!htpb]
-  \begin{align*}
-    \shape(\tv) &= \bot \\ 
-    \shape(\overline{\t} \Fapp) &= \langle \overline{\tv} \Fapp,
-    [\overline{\tv := \t}] \rangle 
-  \end{align*} 
-  \caption{Definition of $\shape(\t)$, a partial function from types to
-  shape-substitution pairs $\langle \sh, \theta \rangle$} 
-  \label{fig:shape-fn-def}
-\end{figure}
+\begin{mathparfig}[t]
+{fig:shape-fn-def}
+{Definition of $\shape(\t)$, a partial function from types to
+shape-substitution pairs $\langle \sh, \theta \rangle$}
+\shape(\tv) \eqdef
+    \bot 
+
+\shape(\overline{\t} \Fapp) \eqdef
+        \langle \overline{\tv} \Fapp, [\overline{\tv := \t}] \rangle 
+\end{mathparfig}
 
 % Informal semantics
 
-Informally, the semantics of $\cmatch \t \Delta f$ are as follows: the
+Informally, the semantics of $\cmatch \t \Delta \hf$ are as follows: the
 constraint remains suspended until the shape of $\t$ is defined (through
-unification), at which point the handler is applied to this shape $f(\sh)$
+unification), at which point the handler is applied to this shape $\hf(\sh)$
 and the generated constraint is scheduled to be solved. If the shape of $\t$
 is never determined, the constraint remains unsatisfiable.
 
@@ -536,22 +570,27 @@ is never determined, the constraint remains unsatisfiable.
 
 The remainder of this section illustrates the role of suspended constraints
 in supporting language features that historically pose challenges to the
-preservation of principal types.  These include:
+preservation of principal types.\Xdidier {The key here is not the
+preservation of principal types in my opinion but that there are just
+elimination of optional type annotations, which obviously requires the
+use---hence also the propagation---of \emph{known} type information.  It is
+then difficult to specify which annoations can be omitted.}
+These include:
 \begin{enumerate}
   \item Constructor and record label overloading for nominal algebraic
   datatypes;  
-  \item Overloaded tuple project, in the style of \SML; 
-  \item Semi-explicit first-class polymorphism
+  \item Overloaded tuple project\Xdidier {projection?}, in the style of \SML; 
+  \item Semi-explicit first-class polymorphism.
 \end{enumerate}
 We demonstrate how the typablity of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
 form $\cinfer e \tv$, which, given a term $e$ and expected type $\tv$,
 produces a constraint $C$ which is satisfiable if and only if $e$ is
 well-typed. A formal account of the semantics of suspended constraints and
-the declarative typing rules for these features is deferred to Sections
-\ref{sec:semantics} and \ref{sec:language}, respectively.
+the declarative typing rules for these features is deferred to 
+\cref{sec:semantics} and \cref{sec:language}, respectively.
 
-% When solving $\cmatch \cv \Delta f$, the solver proceeds as follows:
+% When solving $\cmatch \cv \Delta \hf$, the solver proceeds as follows:
 % \begin{enumerate}
 % \item
 %   If $\cv$ is already unified to a non-variable type, apply the handler
@@ -606,56 +645,85 @@ the declarative typing rules for these features is deferred to Sections
 \subsection{Static overloading of constuctors and record labels}
 
 % Intro to the feature
-OCaml permits on to define data types with overloaded constructor or field
-names.
-\begin{lstlisting}
-type m = L;; type n = L;;
 
-let x = L;;
-\end{lstlisting}
-The type of \code{x} is ambiguous since OCaml could either infer \code{m} or
-\code{n}. This amounts to a principality issue, since there is no most
-general type for \code{x}. As such, OCaml gives the following error: ...
+OCaml allows users to define data types with overloaded constructors or
+record fields. 
+\begin{program}
+type m = L
+type n = L
+let x = L
+\end{program}
+The type of \code{x} is ambiguous since OCaml could infer either the type
+\code{m} or the type \code{n}. This amounts to a principality issue, since
+there is no most general type for \code{x}. \Xdidier {It is not just a
+question of typing issue but of semantics: it should make a stratic choice
+of the implementation. Just speaking of it as a type issue is a bit
+misleading.} As such, OCaml gives the 
+following error: ...
 
-OCaml's type checker relies of type information provided by the
-bidirectional propagation of type information to resolve these
-ambiguities. Thus annotating \code{x} with either \code{m} or \code{n} would
-be produce a well-typed program.
+OCaml's type checker relies on type information provided by the
+bidirectional\Xdidier{bidirectional is misleading here! In what sense ocaml
+is a bidirectional typechecker? It is in fact poly-direction. (poly means
+polymorphism here)} propagation of type
+information to resolve these 
+ambiguities. Annotating \code{x} with either \code{m} or \code{n} would
+produce a well-typed program.
 
 % Constructor disambiguation in suspended constraints
 We propose an alternative approach: suspended constraints. For the ambiguous
 constructor application $\econstr K e$, we generate the constraint:
 \begin{align*}
-\cinfer {\econstr K e} \cva &= \cexists \cvb \cinfer e \cvb \cand \cmatch \cva {\cva, \cvb} (\lambda \overline{\cvc} \Fapp. ~ \Let ~ \sigma = \Delta(\F)(\mathsf{K}) ~ \In ~ \sigma \leq \cvb \to \cva )
+\cinfer {\econstr K e} \cva &=
+  \cexists \cvb \cinfer e \cvb
+  \cand
+  \cmatch \cva {\cva, \cvb}
+    \parens
+      {\clam {\overline{\cvc} \Fapp} 
+        {\cletin \sigma {\D(\F)(\mathsf{K})} {\sigma \leq \cvb \to \cva}}
+      }
 \end{align*}
-where the function looks up the type scheme associated with the constructor
-using the type name $\F$ in the environment ($\Delta(\F)(\mathsf{K})$).
+where the function $\clam {\overline{\cvc} \Fapp} {\cletin \sigma
+{\D(\F)(\mathsf{K})} {\sigma \leq \cvb \to \cva}}$ looks up the type scheme
+associated with the constructor using the type name $\F$ in the environment
+($\Delta(\F)(\mathsf{K})$). \Xdidier{I don't really understand what you
+mean. The prefix notation for types does not help. At least, we should write
+$\lambda \parens{\bar \cvc \Fapp}. \ldots$. Still, I think it would help
+to use a postfix notation in the formal presentation. In fact
+$\bar \cvc(\Fapp)$ would not parse in \OCaml. And if $\D(\F)$ is supposed to
+be a type $\t$, what does $\t(K)$ mean?
+}\Xdidier {We haven't seen the instantiation constraint $\sigma \leq \cvb
+\to \cva$ yet}
 
 We require a unique type for each type constructor in a given algebraic data
 type definition, thus there is no ambiguity with this mapping, despite there
 potentially being many constructors in the environment named $\mathsf{K}$.
 
 This not only correctly encodes OCaml's current behaviour, but does better.
+\Xdidier {Omitting the final default pass called in case of failure to
+disambiguate.}\Xdidier {behavior means sound an complete. Here you mean
+that we succeed when OCaml does with the same answer, but we also succeed
+with a correct answer when OCaml fails. Hence, we do not capture the OCaml behavior...}
 
 
 \paragraph{Interaction with let-polymorphism}
 
-Our intuition is not entirely correct here. While the above will improve on
+%% Our intuition is not entirely correct here.
+
+While the above constraint generation already improves on
 OCaml's current inference approach, it is not powerful enough to capture the
 simple idea that to resolve an ambiguous constructor we must use contextual
 information to show there is a unique type constructor $\F$ for the
 application.
 
 We demonstrate this is with the following example:
-\begin{lstlisting}
+\begin{program}
 let foo =
   let f x = match x with L -> 1 in
   f (L : m)
-;;
-\end{lstlisting}
-Our current approach would keep the type of \code{x} as a generalizable
-variable, thus the application of \code{f} would not resolve this ambiguity,
-requiring an annotation at the definition.
+\end{program}
+With the above contraint generation, we would keep the type of \code{x}
+as a generalizable variable, thus the application of \code{f} would not
+resolve this ambiguity, requiring an annotation at the definition.
 
 We require some way of splitting the head of the type from the type itself,
 treating the head of the variable monomorphically and the rest

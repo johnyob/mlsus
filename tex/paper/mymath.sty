@@ -1,6 +1,8 @@
 \usepackage{amsmath}
 \usepackage{amsthm}
 
+%% Mathpartir
+
 \usepackage{mathpartir}
 \newcommand{\mathparinit}{
 % spacing below and above mathpar blocks
@@ -33,13 +35,29 @@
        \label{\LABEL}
      \end{figure}}
 
+
+
 \newenvironment{mathline}
    {\abovedisplayskip 0.1em
     \belowdisplayskip 0.1em
     \begin{mathpar}}
    {\end{mathpar}}
 
+%% Arrays and tabular
 \usepackage{array}
+
+\newcolumntype{L}{>{${}}l<{{}$}}
+\newcolumntype{R}{>{${}}r<{{}$}}
+\newcolumntype{C}{>{${}}c<{{}$}}
+
+\newcolumntype{.}{@{}}
+\newcolumntype{+}{@{\qquad}}
+\newcolumntype{;}{@{\;}}
+\newcolumntype{,}{@{\,}}
+
+\newcolumntype{~}{@{\extracolsep{\fill}}}
+\newcolumntype{=}{@{\extracolsep{0em}}}
+\newcolumntype{Z}{~c=}
 
 \newcommand{\bnflabel}[1]{\textit{#1}}
 \newcommand{\bnfis}{::=}
@@ -51,3 +69,4 @@
    {\renewcommand{\arraystretch}{1}%
     \begin{array}[t]{@{}>{{}}r<{{}}@{}l@{}}}
    {\end{array}}
+
