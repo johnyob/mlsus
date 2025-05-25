@@ -19,7 +19,7 @@
 
 \usepackage{marginnote}
 
-\title{Omnidirectional type inference with syspended constraints
+\title{Omnidirectional type inference with suspended constraints
    for static overloading and semi-explicit polymorphism}
 
 %% Was 
@@ -350,9 +350,9 @@ instance?}
 \cref{sec:implementation} discusses the implementation of the solver as a big-step operational semantics for constraints.
 Also I think there is a fair bit of impressive technical engineering / book-keeping that goes into implementing the solver. }
 
-\subsubsection* {Our constributions}
+\subsubsection* {Our contributions}
 
-Our contribusions are 
+Our contributions are 
 \begin{enumerate*}
 \item
   a new \emph{omnidirectional} novel type inference technique for
@@ -1191,7 +1191,20 @@ type context $\Gamma$.
 
 \paragraph{Typing}
 
+% Shape of judgements (Well-formedness, instantiation and typing)
 
+% ML explainations: variables, unit, functions, let binders, instantiation 
+
+% Annotations
+
+% Static overloading 
+
+% Shape principality 
+% Abuse of notation remark -- well foundedness 
+% Judgement indexing 
+
+% Semi-explicit first-class polymorphism 
+% Shapes of polytypes -- explain canonicalization / defunctionalization process 
 
 
 \begin{mathpar}
@@ -1289,8 +1302,37 @@ Shapes are only defined for n-ary tuples and polytypes.
 \TODO
 {a declarative solver.}
 
+% Intro 
+
+% Shape of solver 
+
+% Constraint contexts (and their use in solving)
+
+% Solved forms 
+
+% Unification 
+
+% Solver rules 
+
+% Explainations for the main rules 
+
+% Term variable constraints
+
+% Suspended match constraints 
+
+% Metatheory 
+
+
 \section{HM Prototype and discussion}
 \label{sec:implementation}
+
+% Generalization trees 
+
+% Lazy generalization 
+
+% Schedulers 
+
+% Partial generics and instances 
 
 \subsection{Default clauses}
 
