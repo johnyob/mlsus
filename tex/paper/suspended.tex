@@ -69,24 +69,31 @@ common program transformations such as let-contraction and let-expansion,
 and permutation of the order or arguments.
 
 Over the years, many extensions of \ML have been proposed.  While some of
-them, such as flexible \Xalistair{structural?} records, higher-kinded types, or dimensional types
-fits nicely into the \ML framework, others such as GADTs or \Xalistair{`,' instead of `or'?} semi-explicit
-polymorphism, or overloading of datatype constructors and record fields, are
-less satisfactory, since they require to \emph{twist} the ML-style
+them, such as flexible structural\Xdidier{I like structural (suggested by
+Alistair), but usually people call them flexible records, so I kept both, is
+this ok?} records, higher-kinded types, or dimensional types fits nicely
+into the \ML framework. Others such as GADTs, semi-explicit polymorphism, or
+overloading of datatype constructors and record fields, are 
+\emph{fragile}, since they require to \emph{twist} the ML-style
 specification with some direct or indirect algorithmic flavor in order to
-preserve \emph{principality}.
-
-All borderline extensions have in common that they introduce new construct
-that require explicit type annotations that may sometimes but not always be
-omitted. They can actually be viewed as an elaboration into the slightly weaker
-language that makes annotations mandatory, but itself fits nicely into
-the \ML framework. The elaboration then defines which annotations can be
-omitted and rebuild from context. \Xalistair{We could mention stratified type inference here, 
-which makes this idea more explicit}
+preserve \emph{principality}.  Fragile extensions have all in common that
+they introduce new constructs that require explicit type annotations that
+may sometimes but not always be omitted. We call then \emph{fragile} as they
+claim completeness but for a more or less ad-hoc specification that is a
+restriction of a more natural specification designed especially to reject
+exampples that would brak completeness, but also many others.  Fragile
+extensions can actually be viewed as an elaboration into the slightly weaker
+language that makes annotations mandatory, but itself fits nicely into the
+\ML framework. The elaboration then defines which annotations can be omitted
+and rebuilt from context, a point of view already taken in stratified type
+inference~\cite {Pottier-Regis-Gianas/stratified@popl06}
+\Xalistair{We could mention stratified type inference here, 
+which makes this idea more explicit}\Xdidier{@Alister: Is this enough, or
+you meant to explained what it does?}
 %
-The difficulty lies in finding a methodical such specification \Xalistair{should read as `lies in 
-methodically finding such a specifcation ...'?} that comes
-with a complete (hence principal) and effective elaboration algorithm.
+The difficulty in fragile extensions lies in finding a specification that is
+sufficiently expressive, principled, intuitive for the user, and for which
+we have a complete and effective elaboration algorithm.
 
 The solutions proposed so far all enforce some ordering in which type
 inference is performed, which can then be used to propagate both inferred
@@ -110,9 +117,12 @@ Bidirectional type inference has been largely used for languages with
 higher-rank polymorphism or subtyping~\TODO{citations}. Still, both \OCaml
 and \Haskell use a limited form of bidirectional type inference.
 
-\Xalistair{I think we could critise bidirectional more? Aside from a forced order, 
-it suffers from scalability issues (rule duplication and lack of clear annotability
-spec)}
+\Xalistair{I think we could critise bidirectional more? Aside from a forced
+order, it suffers from scalability issues (rule duplication and lack of
+clear annotability spec)}\Xdidier{I'd be happy with more criticism, indeed.
+I am not sure about what you mean by the the scalaby issue however.  Lack of
+clear anotability specl is fragile: we could say the same with our proposal
+in the remaining cases where it is incomplete. }
 
 
 \paragraph{Poly-directional type inference}
@@ -120,15 +130,16 @@ spec)}
 \OCaml uses another mechanism for propagation of type
 information, based on polymorphism, which actually enforces an ordering in
 the typechecking of let-bindings, where the (polymorphic part of) a the
-bound expression must be typed before the body of the let-expression.
-We call it \emph{poly}-directional type inference.\Xdidier {let-directional?} 
-\Xalistair{Poly-directional > Let-directional. Let-directional isn't entirely true in 
-practice (since annotations are generalizable points). Downside for poly-directional 
-is that it sounds like type information can come from many directions?}
+bound expression must be typed before the body of the let-expression.  We
+call it \emph{poly-directional} type inference, which is to be understood as
+the direction of \emph{polymorphism} and not in multiple directions.
+Initially introduced with the extension of \ML with semi-explicit
+first-class polymorphism~\cite {Garrigue-Remy/poly-ml}, it has also been used
+for the overloading of record fields, which we use for illustration here
+as it is simpler.\footnote {Semi-explicit polymorphism will be discussed
+in \cref{sec/constraints/polytypes}.}
 
-Initially introduced with semi-explicit polymorphism to \ML~\cite
-{Garrigue-Remy/poly-ml} it has also been used for the overloading of record
-fields. The user may define two records with overlapping fields:
+The user may define two records with overlapping fields:
 \begin{program}[input]
 type one = {x : int}
 type 'a two = {x : 'a; y : int}
@@ -158,22 +169,25 @@ of failing when the type is ambiguous, which is to use the last
 definition. Here, this will amount to chose the type \ocaml{'a two}
 still leading to a failure since the record passed to the function is
 actually of type \ocaml{one}. But we shall ignore default resolution
-strategies for the moment.}.
+strategies for the moment.}\footnote {When running examples in \OCaml,
+\OCaml should be always be called with option \texttt{-principal}, since by
+default \OCaml does not quite follow the theory for efficiency reasons.}.
 %
 By contrast, the only possible
 type for \ocaml{r} is \ocaml {one} in both \ocaml{e_2} and \ocaml {e_3}.
 Still, there is a difference.  Indeed, the type of \ocaml{e_2} is considered
 to be unambiguous, while the type of \ocaml{e_3} is ambiguous. To
 understand why \ocaml{e_3} fails, consider the equivalent versions of
-\ocaml{e_3} where \ocaml{@@} and \ocaml{|>} are the application and the
+\ocaml{e_3} where \texttt{@@} and \ocaml{|>} are the application and the
 reverse application functions.
-\begin{program}[escapechar={},input]
+\begin{program}[input,escapechar={}]
 let e_4 = (fun r -> r.x) @@ {x = 1} 
 let e_5 = {x = 1} |> (fun r -> r.x) 
 \end{program}
 \Xalistair{We should make it clearer that we're talking about \OCaml with the 
 \code{-principal} flag. Since I suspect that many OCaml programmers rely on 
-the non-principal directional behaviour (I know I do)}
+the non-principal directional behaviour (I know I do)}\Xdidier {Not even so,
+because we cancel the default strategy, but yes we should say something}
 \OCaml  does not make any difference between
 \ocaml[indices]{e_1}, \ocaml[indices]{e_2}, or \ocaml[indices]{e_3}
 and consider all subexpressions in an application, including the function
@@ -278,8 +292,10 @@ unification constraints, which can be solved in any order.  The difficulty
 originates from \ML let-polymorphism for which all known implementations
 choose to always infer the type of a let-binding, turn it into a type scheme
 that is assigned to the let-bound variable to extend the typing environment
-in which the body is then typed. Algorithm $\mathscr{W}$, its variant $M$ 
-\Xalistair{Algorithm M? I've not heard of this one, do you mean $\mathscr{J}$?} 
+in which the body is then typed. The
+Hindley-Milner algorithm $\mathcal{J}$ or its variant $\mathcal{W}$\Xdidier
+{I meant to cite M not J, but I don't rememnber the details and  I 
+cannot find the citation for, so let's cite J instead.}, 
 or more flexible constraint solving algorithms all follow this strategy.
 
 However, it is not mandatory.  In fact, typing constraints as presented
@@ -294,8 +310,7 @@ constraints into account before resolving ambiguities.  This requires two
 technical devices, hence two problems to solve:
 \begin{enumerate*}
 \item
-  we first must work with partial types schemes, \ie. \Xalistair{The .,.
-  looks like a typography issue? shouldn't it be `\textit{ie.}' } we the ability
+  we first must work with partial types schemes, \ie we the ability
   to instantiate type schemes that are not yet fully determined and
   consequently revisit their instances when their are being refined,
   incrementally.
@@ -336,19 +351,6 @@ application to various extensions for \ML.
   In \cref{sec:related-work} and \cref{sec:future-work}, we discuss related
   and futre work.
 \end{enumerate*}
-
-\Xdidier
-{I don't quite unedestand the difference between
-\cref{sec:solving} and
-\cref{sec:implementation}.
-For me \cref{sec:solving} is the algorithm.
-and \cref{sec:implementation} are just implementation details which could
-fit at the end of~\cref{sec:solving}. Or do you mean that~\cref
-{sec:solving} is generic and \cref {sec:implementaion} is an particular
-instance?}
-\Xalistair{\cref{sec:solving} is the formal specification of the solver, a small-step operational semantics for constraints, 
-\cref{sec:implementation} discusses the implementation of the solver as a big-step operational semantics for constraints.
-Also I think there is a fair bit of impressive technical engineering / book-keeping that goes into implementing the solver. }
 
 \subsubsection* {Our contributions}
 
@@ -406,8 +408,9 @@ Different kind of difficulties:
 \item finding a reasonable declarative semantics for the behavior we want
 \item implementing a solver, which is quite hard
 \end{itemize}
-\end{version}
 
+DR: Below are old comments: I think they no longer applied and can be
+deleted.
 \Xalistair{Is this the right introduction? All the features we describe
 below break principality usually. So our work is about principality. This is
 a way to guarantee principal types for these advanced features.}
@@ -419,6 +422,9 @@ more expressive}
 tuple. I imagine for polytypes there would be something like that.}
 \Xdidier {Yes indeed: in the explicit language, we could require the skeleton
 as a required annotation}
+
+\end{version}
+
 
 \section{Suspended constraints}
 \label{sec:constraints}
@@ -441,8 +447,10 @@ record fields in the intro.  Should I also introduce semi-explicit
 polymorphism and give an example in the intro?}
 
 \Xalistair{I think it makes sense that this is the intro continued. As for 
-examples, I think the intro has enough. We should put them in the relevant subsections 
-in this section.}
+examples, I think the intro has enough. We should put them in the relevant
+subsections  in this section.}\Xdidier {Or the other way round: I think we
+need examples early enough. Or keep it as is and say in the intro that we
+leave polytype examples, which are more involved for this section.}
 
 % Constraint-based approach
 
@@ -476,6 +484,7 @@ and an efficient, sound and complete solver involves several difficulties.
 efficient implementation, rather than just a sound and complete
 implementation. In particular, efficiency requires to use ranks and an
 ordering on the way constraint are solve.}
+
 \Xdidier
 {Beside we have no proof that our implementation is efficient. In fact, I
 think is not cheap: Assume that a type scheme of size $n$ is solved
@@ -485,7 +494,11 @@ redo the job, ignoring what had already be done ealier. Hence you get a
 factor of $n$ complexity that need not necessarily be there. Plus
 constraints are copied before being simplified. Another factor...}
 \Xalistair{The spec for the solver and my solver impl does not suffer from this, 
-it is able to track which new nodes need propagating and leaves the rest untouched.}
+it is able to track which new nodes need propagating and leaves the rest
+untouched.}\Xdidier {This is not what you told me when we talk. There may be
+misunderstanding. We should discuss it. However, this is not so important.
+My point about efficient implementation is that we do not have anything to
+validate that the implementation is efficient for the moment.}
 
 \begin{mathparfig}[t]%
   {fig:constraint-syntax}%
@@ -774,6 +787,8 @@ polymorphically.
 
 
 \subsection{Semi-explicit first-class polymorphism}
+
+\label {sec/constraints/polytypes}
 
 % Polytypes (and some stuff about labelled types)
 
