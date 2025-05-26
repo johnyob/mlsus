@@ -20,7 +20,7 @@
 \usepackage{marginnote}
 
 \title{Omnidirectional type inference with suspended constraints
-   for static overloading and semi-explicit polymorphism}
+   for static overloading and first-class polytypes}
 
 %% Was 
 %% \title{Omnidirectional type inference for \ML extensions}
@@ -53,12 +53,18 @@ semi-explicit polymorphism on the other hand.
 \maketitle
 
 \Xdidier
-  {Show we replace semi-explicit by higher-rank?}
+  {\emph{first-class polytypes} is not best,
+   \emph{semi-explicit first-class polymorphism} is better but too long.
+   \emph{semi-explicit polytmorphism} or 
+   \emph{first-class polytmorphism} are both a but inexact....
+   Which one should we use?
+   Alistair says polytypes doesn't fit the definition of $\mathsf{rank}(k)$
+  types and I agree.} 
+
 \Xalistair
-  {Higher-rank or first-class? Personally, I wouldn't call polytypes higher-rank since 
-   it doesn't fit the definition of $\mathsf{rank}(k)$ types.}
-\Xalistair
-  {Also @Didier, what are you using to format / trim lines?}
+  {Also @Didier, what are you using to format / trim lines?
+   Not sure this is the question, but I edit in emacs and use
+   fill-paragraph with a length of 76.}
 
 \section{Introduction}
 
@@ -81,9 +87,11 @@ they introduce new constructs that require explicit type annotations that
 may sometimes but not always be omitted. We call then \emph{fragile} as they
 claim completeness but for a more or less ad-hoc specification that is a
 restriction of a more natural specification designed especially to reject
-exampples that would brak completeness, but also many others.  Fragile
-extensions can actually be viewed as an elaboration into the slightly weaker
-language that makes annotations mandatory, but itself fits nicely into the
+exampples that would brak completeness, but also many others.
+Unsurprisingly, they have historically pose challenges to the preservation
+of principal types.  Fragile extensions can actually be viewed as an
+elaboration into the slightly weaker language that makes annotations
+mandatory, but itself fits nicely into the
 \ML framework. The elaboration then defines which annotations can be omitted
 and rebuilt from context, a point of view already taken in stratified type
 inference~\cite {Pottier-Regis-Gianas/stratified@popl06}
@@ -377,6 +385,11 @@ Our contributions are
   %% \end{enumerate*}
 
 \item
+  This includes, in particular, a new declarative caracterisation of
+  \emph{known} type information.
+  
+
+\item
   A new more permissible type system for overloading of record fields and
   semi-explicit first-class polymorphism, and
 
@@ -532,6 +545,9 @@ C  \is
 \\&
 \sh \is \overline{\tv} \Fapp ~ \mid \ldots
 \tag   Shapes
+\\&
+\D \is
+\tag {\TODO{Missing definition}}
 \end{tabular*}
 \end{mathparfig}
 
@@ -578,21 +594,10 @@ a suspended constraint is written as $\cmatch \t \D \hf$, where:
   constraint to be solved.  Conceptually, $f$ represents a meta-level
   functionalization of the match's branches.
 \item
-  The closure $\D$ is the set of term and type variables $f$ is
+  The closure $\D$ is the set of both term and type variables that $f$ is
   permitted to reference.  The role of $\D$ in constraint solving is
   discussed further in \cref{sec:solving}.
 \end{enumerate}
-\Xdidier {If $\D$ is a list of variables what not just write $\bar\tv$?}
-\Xdidier {Why not write $\Lambda \D. \hf$ that $[\D] \hf$ since
-$\hf$ is itself written as a function? It is because this $\Lambda$ should
-be transparent while $\lambda$ is opaque? It you want a syntactic binder,
-one that is not opaque, then I would write this $\Delta \bar\tv. \hf$ and
-explain that $\Delta$ stands for $\Lambda$ while beeing transparent---we can
-extra the list of variables $\bar\tv$ under that binder.}
-\Xalistair{$\D$ is a list of term \textit{and} type variables. I wouldn't 
-say $\D$ is a binder, since it relies on all variables listed being previously 
-bound. It simply serves as an explicit closure (which the solver requires to 
-track which variables are guarded)}
 
 \begin{mathparfig}[t]
 {fig:shape-fn-def}
@@ -616,14 +621,7 @@ is never determined, the constraint remains unsatisfiable.
 % Applications
 
 The remainder of this section illustrates the role of suspended constraints
-in supporting language features that historically pose challenges to the
-preservation of principal types.\Xdidier {The key here is not the
-preservation of principal types in my opinion but that there are just
-elimination of optional type annotations, which obviously requires the
-use---hence also the propagation---of \emph{known} type information.  It is
-then difficult to specify which annoations can be omitted.}
-\Xalistair{Fair, I do see the principal types `by construction' part of our work 
-as a major improvement over prior art}
+in supporting \emph{fragile} language features as defined above.
 These include:
 \begin{enumerate}
   \item Constructor and record label overloading for nominal algebraic
@@ -742,9 +740,12 @@ to use a postfix notation in the formal presentation. In fact
 $\bar \cvc(\Fapp)$ would not parse in \OCaml. And if $\D(\F)$ is supposed to
 be a type $\t$, what does $\t(K)$ mean?
 }
-\Xalistair{$\D(\F)(\K)$ looks up the type scheme associated with the constructor $\K$ 
-in the definition of $\F$ in the context $\D$ (although this metavar has now been taken 
-by closures...) }
+\Xalistair
+{$\D(\F)(\K)$ looks up the type scheme associated with the constructor $\K$
+in the definition of $\F$ in the context $\D$ (although this metavar has now
+been taken by closures...)}\Xdidier {I agree with what it should mean. But
+then $\D(F)$ should be explained. Mathematically, $\D$ is a list and
+$\F$ is just a constructor so $\D(\F)$ does not mean anything.}
 
 \Xdidier {We haven't seen the instantiation constraint $\sigma \leq \cvb
 \to \cva$ yet}
@@ -843,7 +844,8 @@ $\varepsilon$ variable.
 \end{version}
 
 \Xalistair[]{Something about how information can flow from let bindings to
-use sites for principality checking}
+use sites for principality checking}\Xdidier{Not sure of what you have in
+mind}
 
 The very purpose of annotation variables is to distinguish known, polymorphic
 polytypes from yet-unknown, monomorphic ones as required by poly-directional
@@ -881,6 +883,8 @@ suspended constraints.
 \section{Semantics of constraints}
 \label{sec:semantics}
 
+\Xdidier{We are missing an introduction to the semantics of constraints}
+
 
 A na\"ive denotation semantics for suspended constraints would be to simply
 apply the assignment of $\cva$ to $f$. More formally,
@@ -890,7 +894,6 @@ apply the assignment of $\cva$ to $f$. More formally,
     \Delta}[\overline{\cvb := \t}] \vdash f(\overline{\cvb} \Fapp)} 
     {\semenv \vdash \cmatch \cva \Delta f}
 \end{mathpar}
-
 However, our informal solver would be incomplete with respect to this
 semantics.  We show this by considering the constraint $\cexists \cv
 \cmatch \cv \cv (\lambda \_.~ \cv = 1)$.  This constraint does not
@@ -914,7 +917,6 @@ above rule to show that this constraint is satisfiable:
     }
     {\cdot \vdash \cexists \cv \cmatch \cv \cv (\lambda \_.~ \cv = 1)}
 \end{mathpar}
-
 The dependency of suspended constraints can also be complex, as in the
 following example: $\cexists {\cva, \cvb} \cmatch \cva \cvb {(\lambda
 \_. ~ \cvb = 1)} \cand \cmatch \cvb \cva {(\lambda \_. ~ \cva = 1)}$.
@@ -1149,8 +1151,10 @@ principality. We return to this pragmatic tradeoff in Section
 \begin{bnf}
   \bnflabel{Terms} & 
     \begin{bnfalign}
-      e \bnfis & x \mid () \mid \efun x e \mid \eapp \eone \etwo \mid \elet x \eone \etwo \mid (e : \t) \\
-          \mid & \erecord { \overline{l = e} } \mid \efield e l \mid \exfield e \F l \\
+      e \bnfis & x \mid () \mid \efun x e \mid \eapp \eone \etwo \mid \elet
+      x \eone \etwo \mid (e : \t) \\ 
+      \mid & \erecord { \overline{l = e} } \mid \efield e l \mid \exfield e
+      \F l \\ 
           \mid & (\eone, \ldots, \en) \mid \efield e j \mid \exfield e n j \\
           \mid & \epoly e { \exists \overline{\tv}. ~ \sigma } \mid \einst e \mid \exinst e {\overline{\tv}} \sigma
     \end{bnfalign}
@@ -1177,7 +1181,7 @@ bindings $\elet x \eone \etwo$. Our extensions include:
   projections $\efield e l$.
 
   \item Tuples $(\eone, \ldots, \en)$ with overloaded tuple projections
-  $\eproj e i$.  
+  $\efield e i$.  
 
   \item For semi-explicit first-class polymorphism, we have the boxing
   construct $\epoly e \sigma$ and the unboxing construct $\einst e$.
@@ -1222,65 +1226,76 @@ type context $\Gamma$.
 % Shapes of polytypes -- explain canonicalization / defunctionalization process 
 
 
+\newcommand{\vparens}[1]{\mathop{\parens{#1}}\limits}
+
+$\parens {a}{}_{i=1}^n$
+
 \begin{mathpar}
-  \inferrule*
-    {x : \sigma \in \Gamma}
-    {\Gamma \vdash x : \sigma}
+  \inferrule[Var]
+    {x : \sigma \in \G}
+    {\G \th x : \sigma}
 
-  \inferrule*
-    {\Gamma \vdash \tone \\ \Gamma, x : \tone \vdash e : \ttwo }
-    {\Gamma \vdash \efun x e : \tone \to \ttwo}
+  \inferrule[Fun]
+    {\G \th \tone \\
+     \G, x : \tone \th e : \ttwo }
+    {\G \th \efun x e : \tone \to \ttwo}
 
-  \inferrule* 
-    {\Gamma \vdash \eone : \tone \to \ttwo \\ \Gamma \vdash \etwo : \tone}
-    {\Gamma \vdash \eapp \eone \etwo : \ttwo}
+  \inferrule[App]
+    {\G \th \eone : \tone \to \ttwo \\
+     \G \th \etwo : \tone}
+    {\G \th \eapp \eone \etwo : \ttwo}
   
-  \inferrule* 
-    {\;}
-    {\Gamma \vdash () : 1}
+  \inferrule[Unit]
+    {}
+    {\G \th () : 1}
 
-  \inferrule*
-    {\Gamma \vdash e : \t \\ \Gamma \vdash \t}
-    {\Gamma \vdash (e : \t) : \t}
+  \inferrule[Annot]
+    {\G \th e : \t\where {\tvs \is \ts}}
+    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \ts}}
 
-  \inferrule*
-    {\Gamma, \tv \vdash e : \sigma \\ \tv \disjoint \Gamma}
-    {\Gamma \vdash e : \tfor \tv \sigma}
+  \inferrule[Gen]
+    {\G, \tv \th e : \sigma \\ \tv \disjoint \G}
+    {\G \th e : \tfor \tv \sigma}
   
-  \inferrule*   
-    {\Gamma \vdash e : \sigmaone \\ \Gamma \vdash \sigmaone \leq \sigmatwo}
-    {\Gamma \vdash e : \sigmatwo}
+  \inferrule[Inst]
+    {\G \th e : \sigmaone \\
+     \G \th \sigmaone \leq \sigmatwo}
+    {\G \th e : \sigmatwo}
 
-  \inferrule* 
-    {\Gamma \vdash \eone : \sigma \\ \Gamma, x : \sigma \vdash \etwo : \t}
-    {\Gamma \vdash \elet x \eone \etwo : \t}
+  \inferrule[Let]
+    {\G \th \eone : \sigma \\
+     \G, x : \sigma \th \etwo : \t}
+    {\G \th \elet x \eone \etwo : \t}
 
-  \inferrule*   
-    {\forall 1 \leq i \leq n, \; \Gamma \vdash \ei : \ti}
-    {\Gamma \vdash (\eone, \ldots, \en) : \Pi_{i = 1}^{n} \ti}
+  \inferrule[Tuple]
+    {\parens{\G \th \ei : \ti}\iton}
+    {\G \th (\eone, \ldots, \en) : \Pi\iton \ti}
 
-  \inferrule* 
-    {\Gamma \vdash e : \Pi_{i = 1}^n \ti \\ 1 \leq j \leq n}
-    {\Gamma \vdash e.n.j : \tj}
+  \inferrule[Proj-X]
+    {\G \th \e : \Pi\iton \ti \\
+     1 \leq j \leq n}
+    {\G \th \exfield \e j n : \tj}
+
+  \inferrule[Proj-I]
+    {E[e \mathop{!} \Pi^n] \\
+     \G \th E[\exfield e n j] : \t}
+    {\G \th E[\efield e j] : \t}
     
-  \inferrule* 
-    {\Gamma \vdash e : \sigma[\overline{\tv := \t}] \\
-     \Gamma \vdash \overline{\t}}
-    {\Gamma \vdash \epoly e { \exists \overline{\tv}. ~ \sigma } :
+  \inferrule [Poly]
+    {\G \th \e : \sigma[\overline{\tv := \t}] \\
+     \G \th \overline{\t}}
+    {\G \th \epoly \e { \exists \overline{\tv}. ~ \sigma } :
       [\sigma[\overline{\tv := \t}]]}
 
-  \inferrule* 
-    {\Gamma \vdash e : [\sigma[\overline{\tv := \t}]] \\ \Gamma \vdash
+  \inferrule [Use-X]
+    {\G \th e : [\sigma[\overline{\tv := \t}]] \\ \G \th
     \sigma[\overline{\tv := \t}] \leq \tp} 
-    {\Gamma \vdash \exinst e {\overline{\tv}} \sigma : \tp }
+    {\G \th \exinst e {\overline{\tv}} \sigma : \tp }
 
-  \inferrule*    
-    {E[e \mathop{!} \Pi^n] \\ \Gamma \vdash E[\exfield e n j] : \t}
-    {\Gamma \vdash E[\efield e j] : \t}
 
-  \inferrule* 
-    {E[e \mathop{!} \exists \overline{\tv}. ~ \sigma] \\ \Gamma \vdash E[\exinst e {\overline{\tv}} \sigma] : \t}
-    {\Gamma \vdash E[\einst e] : \t}
+  \inferrule [Use-I]
+    {E[e \mathop{!} \exists \overline{\tv}. ~ \sigma] \\ \G \th E[\exinst e {\overline{\tv}} \sigma] : \t}
+    {\G \th E[\einst e] : \t}
 \end{mathpar}
 
 The shape of a type scheme is $\exists \overline{\tv}. ~\sigma$, where
@@ -1292,14 +1307,14 @@ We also add a well-typed hole judgement (this is analogous to using $\ctrue$
 in suspended constraints semantics):
 \begin{mathpar}
   \inferrule*   
-    {\Gamma \vdash e : \tp}
-    {\Gamma \vdash \{ e : \tp \} : \t} 
+    {\G \th e : \tp}
+    {\G \th \{ e : \tp \} : \t} 
 \end{mathpar}
 Then we can define: 
 \begin{align*}
-  E[e \mathop{!} s] := \exists! s'.\; &s = s' \wedge \forall \Gamma,
-  \Gamma', \t, \tp. \\ 
-  &\quad \Gamma \vdash E[\Gamma' \vdash \{ e : \tp \} : \_] : \t \implies
+  E[e \mathop{!} s] := \exists! s'.\; &s = s' \wedge \forall \G,
+  \G', \t, \tp. \\ 
+  &\quad \G \th E[\G' \th \{ e : \tp \} : \_] : \t \implies
   \textsf{shape}(\tp) = s' 
 \end{align*}
 What is a shape? 

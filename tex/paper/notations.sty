@@ -59,7 +59,12 @@
 \newcommand{\tpoly}[2]{[#1]^{#2}}
 \newcommand{\tunit}{1}
 
+\renewcommand {\th}{\vdash}
+\newcommand {\mlexp}[3][\G]{#1 \th #2: #3}
+\newcommand {\mltyp}[3][\G]{#1 \th #2}
+\newcommand {\mlsub}[3][\G]{#1 \th #2 \le #3}
 \newcommand {\G}{\Gamma}
+\newcommand {\iton}{_{i=1}^n}
 
 \renewcommand{\@}{\;}
 
@@ -74,12 +79,14 @@
 \newcommand{\ematch}[2]{\Match #1 \With #2}
 \newcommand{\ecase}[3]{#1 \; #2 \Rightarrow #3}
 \newcommand{\efield}[2]{#1.#2}
-\newcommand{\eproj}[2]{#1.#2}
-\newcommand{\exfield}[3]{#1.#2.#3}
-\newcommand{\erecord}[1]{\{#1\}}
+\newcommand{\exfield}[3]{#1.#2/#3}
+%% Could be factored as
+%% \newcommand{\eproj}[3][]{#2.#3\ifthenelse{\equal{#1}{}}{}{/#1}}
+\newcommand{\erecord}[1]{\braces{#1}}
 
 \newcommand {\parens}[1]{(#1)}
 \newcommand {\braces}[1]{\{#1\}}
+\newcommand {\brackets}[1]{[#1]}
 \newcommand {\bbrackets}[1]{\llbracket #1\rrbracket}
 \newcommand {\angles}[1]{\langle #1\rangle}
 \newcommand {\highdelim}[2]{\left#1{#2\right}}
@@ -88,6 +95,9 @@
 \newcommand {\Angles}[1]{\highdelim\angles {#1}}
 \newcommand {\Bbrackets}[1]{\highdelim\bbrackets {#1}}
 \newcommand {\set}[1]{\braces{#1}}
+\newcommand {\where}[1]{\brackets {#1}}
+\newcommand {\is}{:=}
+
 
 \newcommand{\cinfer}[2]{\bbrackets {#1 : #2}}
 
@@ -147,6 +157,7 @@
 \defmetavar {\av} {\varepsilon}
 
 \newcommand{\all}[2]{\forall #1.\,#2}
+\newcommand{\exi}[2]{\exists #1.\,#2}
 
 \newcommand{\eqdef}{\mathrel{\triangleq}}
 \newcommand \uad [1][1ex]{\hskip #1}
