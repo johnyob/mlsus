@@ -793,7 +793,7 @@ has type $\tpoly \ts \av$ when $\av$ is an arbitrary (typically fresh)
 annotation variable and can thus be generalized. That is $\e$ can also be
 assigned the type scheme $\all \av \tpoly \ts \av$.
 
-Conversely, to instantiate an polytype expression, one must use an explicit
+Conversely, to instantiate a polytype expression, one must use an explicit
 unboxing operator $\einst \e$ that need not any type annotation.
 However, it requires $e$ to be of a polytype scheme $\all \av
 \tpoly \ts \av$ and then gives $\einst \e$ a type $\t$ that is an instance of
@@ -806,7 +806,7 @@ $\lambda$-bound variable $\x$ is assigned a monotype.  However, annotations
 can be used to freshen annotation variables.  An annotation $e : \t$ behaves
 as the application of a retyping function (one that behaves as the identity
 $(\t)$ of type $\all \tvs \t \to \tp$ to the expression $\e$. We usually
-omit annotation variables in type annotations, since they can be For
+omit annotation variables in type annotations, since they can be freshen. For
 instance, $\efun {\x : \tpoly \ts {}} {\einst \x}$ which is syntactic sugar
 for $\efun \x {\elet \x {\eapp {(\tpoly \ts {})} \x} {\einst \x}}$, is
 well-typed since the polytype annotation allows the introduction of a fresh
@@ -830,32 +830,32 @@ $\varepsilon$ variable.
 \Xalistair[]{Something about how information can flow from let bindings to
 use sites for principality checking}
 
-The very purpose of annotation variables is to distinguish known polymorphic
-polytypes from yet-unknown monomorphic ones as required by poly-directional
+The very purpose of annotation variables is to distinguish known, polymorphic
+polytypes from yet-unknown, monomorphic ones as required by poly-directional
 type ifnerence. 
 %
-With suspended constraint, any type information can be considered as known,
+With suspended constraints, any type information can be considered as known,
 so that we do not need the annotation variables any longer.
 
-Typechecking $\epoly e \ts$ is as simple as:
+Typechecking $\epoly e \ts$ is, intuitively:
 \begin{mathpar}
-\cinfer {\epoly e {\tfor {\overline{\cvb}} \t}} \cva \eqdef
+\cinfer {\epoly e {\tfor {\overline{\cvb}} \t}} \cva \wide\eqdef
   \Parens{\cfor {\overline{\cvb}} \cinfer e \t}
 \cand
    \cva = [\tfor {\overline{\cvb}} \t] 
 \end{mathpar}
 If $\e$ is already known to have the type $[\ts]$, then we can simply
-instantiate it.  However, if the type of $\e$ is not yet know, \ie.  it is a
+instantiate it.  However, if the type of $\e$ is not yet known, \ie  it is a
 (possibly constrained) type variable $\tv$: then, we must wait.  So we
-instead write the constraint as
+instead defined the typing constraint as:
 \begin{mathpar}
-\cinfer {\einst e} \cva \eqdef
+\cinfer {\einst e} \cva \wide\eqdef
     \cexists \cvb \cinfer e \cvb
 \cand
     \cmatch  \cvb {\cva} (\lambda [\ts]. ~ \ts \leq \cva)
 \end{mathpar}
-since waiting is harmeless, as the syspended constraint may immediately be
-discharged. 
+since waiting when $\cvb$ is known is harmeless, as the suspended constraint
+may immediately be discharged.
 
 By waiting for $e$'s type to be \emph{known}, we may ensure principal types
 without annotation variables. However, we still need to explain what it
