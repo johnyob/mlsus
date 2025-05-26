@@ -19,8 +19,9 @@
 
 \usepackage{marginnote}
 
-\title{Omnidirectional type inference with suspended constraints
-   for static overloading and first-class polytypes}
+\title{Omnidirectional type inference
+   %% with suspended constraints
+   for static overloading and sem-explicit first-class polymorphism}
 
 %% Was 
 %% \title{Omnidirectional type inference for \ML extensions}
@@ -47,7 +48,7 @@ variables have been instantiated.
 We illustrate the benefit of omnidirectional type inference for several
 advanced features present in the \OCaml language, including static
 overloading of record labels and datatype constructors on the one hand and
-semi-explicit polymorphism on the other hand.
+semi-explicit polymorphism on the other hand. 
 \end{abstract}
 
 \maketitle
@@ -75,11 +76,10 @@ common program transformations such as let-contraction and let-expansion,
 and permutation of the order or arguments.
 
 Over the years, many extensions of \ML have been proposed.  While some of
-them, such as flexible structural\Xdidier{I like structural (suggested by
-Alistair), but usually people call them flexible records, so I kept both, is
-this ok?} records, higher-kinded types, or dimensional types fits nicely
-into the \ML framework. Others such as GADTs, semi-explicit polymorphism, or
-overloading of datatype constructors and record fields, are 
+them, such as extensible records with row-polymorphism, higher-kinded types,
+or dimensional types fits nicely into the \ML framework. Others such as
+GADTs, semi-explicit polymorphism, or overloading of datatype constructors
+and record fields, are 
 \emph{fragile}, since they require to \emph{twist} the ML-style
 specification with some direct or indirect algorithmic flavor in order to
 preserve \emph{principality}.  Fragile extensions have all in common that
@@ -94,10 +94,7 @@ elaboration into the slightly weaker language that makes annotations
 mandatory, but itself fits nicely into the
 \ML framework. The elaboration then defines which annotations can be omitted
 and rebuilt from context, a point of view already taken in stratified type
-inference~\cite {Pottier-Regis-Gianas/stratified@popl06}
-\Xalistair{We could mention stratified type inference here, 
-which makes this idea more explicit}\Xdidier{@Alister: Is this enough, or
-you meant to explained what it does?}
+inference~\cite {Pottier-Regis-Gianas/stratified@popl06}.
 %
 The difficulty in fragile extensions lies in finding a specification that is
 sufficiently expressive, principled, intuitive for the user, and for which
@@ -118,12 +115,20 @@ Type inference is said in checking mode the expected type is present, and in
 (the usual) inference mode when it is absent. The checking mode allows to
 pass source type annotations but also previously inferred types such as the
 codomain of a function in an application position during type inference of
-the arguments.  The modes of operation are specified by typing rules.  Hence
-bidirectional type inference is a framework that can be instantiated
-differently, depending on the choice of modes in typing rules.
+the arguments.
+%
+Bidirectional type inference is a actually a framework that must be
+instantiated by a particular choice of modes for each of the language
+construct, while there is no optimal combination of modes for the whole set
+of language constructs. Once modes have been fixed, there are usually
+principal solutions to the type inference problem, but with respect to a
+specification that made non principal choices.
+%
 Bidirectional type inference has been largely used for languages with
 higher-rank polymorphism or subtyping~\TODO{citations}. Still, both \OCaml
 and \Haskell use a limited form of bidirectional type inference.
+%
+Besides, bidirection type 
 
 \Xalistair{I think we could critise bidirectional more? Aside from a forced
 order, it suffers from scalability issues (rule duplication and lack of
@@ -192,10 +197,6 @@ reverse application functions.
 let e_4 = (fun r -> r.x) @@ {x = 1} 
 let e_5 = {x = 1} |> (fun r -> r.x) 
 \end{program}
-\Xalistair{We should make it clearer that we're talking about \OCaml with the 
-\code{-principal} flag. Since I suspect that many OCaml programmers rely on 
-the non-principal directional behaviour (I know I do)}\Xdidier {Not even so,
-because we cancel the default strategy, but yes we should say something}
 \OCaml  does not make any difference between
 \ocaml[indices]{e_1}, \ocaml[indices]{e_2}, or \ocaml[indices]{e_3}
 and consider all subexpressions in an application, including the function
@@ -270,19 +271,23 @@ incompleteness, which is actually two-fold:
 \item
   each ambiguity is solved independently of other yet unresolved ones;
 \end{enumerate}
-To illustrate the latter, the following example fails as ambiguous with
-poly-directional inference, while \ocaml{r} can only be of type
-\ocaml{int two}.  
+Let us consider two more examples: 
 \begin{program}[error]
-let e_6 r = (r.x = r.y)
+let e_6 r = (r.x, r.y)
+let e_7 r = r.x.x
 \end{program}
-Indeed, \ocaml{r} is monomorphic when typing the projection.  This source of
-incompleteness should wishfully be eliminated.
+\OCaml fails on both examples as ambiguous with poly-directional inference.
+However, \ocaml{r} can only be of type \ocaml{int two} in \ocaml{e_6},
+which is an instance of the former case of incompleteness, which should
+wishfully be eliminated. Our proposal with omnidirectional inference
+succeeds.
 
-On the opposite, the former is a reasonable design to keep type inference
-effective, since the complexity of general overloading is NP-hard even in
-the absence of let-polymorphism, as show by an encoding of 3-SAT problem as
-shown by~\citet {Chargueraud-Bodin-Dunfield-Riboulet/jfla2025}.
+Omnidirectional still fails on \ocaml{e_7}, which is an instance of the
+latter case of incompleteness. This is actually a reasonable design to keep
+type inference effective, since the complexity of general overloading is
+NP-hard even in the absence of let-polymorphism, as show by an encoding of
+3-SAT problem as shown by~\citet
+{Chargueraud-Bodin-Dunfield-Riboulet/jfla2025}.
 
 
 \paragraph{Omnidirectional type inference}
@@ -300,11 +305,9 @@ unification constraints, which can be solved in any order.  The difficulty
 originates from \ML let-polymorphism for which all known implementations
 choose to always infer the type of a let-binding, turn it into a type scheme
 that is assigned to the let-bound variable to extend the typing environment
-in which the body is then typed. The
-Hindley-Milner algorithm $\mathcal{J}$ or its variant $\mathcal{W}$\Xdidier
-{I meant to cite M not J, but I don't rememnber the details and  I 
-cannot find the citation for, so let's cite J instead.}, 
-or more flexible constraint solving algorithms all follow this strategy.
+in which the body is then typed. The Hindley-Milner algorithm $\mathcal{J}$,
+one of its variant $\mathcal{W}$ or $\mathcal{M}$, or more flexible
+constraint solving algorithms all follow this strategy.
 
 However, it is not mandatory.  In fact, typing constraints as presented
 in~\cite {Pottier-Remy/emlti} can be instantiated before they are fully
@@ -1422,7 +1425,7 @@ you can have more issues.
 \TODO
 {do we understand what to say precisely about bidirectional type inference?}
 
-\subsection{Principality tracking in OCaml}
+\subsection{Principality tracking in \OCaml}
 
 \Xdidier{The point of that is to enforce a directional type inference that
 is based on let-bindings. When we check that the level is generic, we check
