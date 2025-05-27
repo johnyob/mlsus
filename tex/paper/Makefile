@@ -1,6 +1,6 @@
 PRJ = suspended
 
-LATEXMK = latexmk -pdf -outdir=_build -auxdir=_build
+LATEXMK = latexmk -bibtex -pdf -outdir=_build -auxdir=_build
 
 SOURCES=$(shell find . -name '*.tex' -or -name '*.bib' -or -name '*.sty')
 
