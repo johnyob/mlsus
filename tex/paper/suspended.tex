@@ -383,7 +383,7 @@ application to various extensions for \ML.
 Our contributions are 
 \begin{enumerate*}
 \item
-  a new \emph{omnidirectional} novel type inference technique for
+  a novel \emph{omnidirectional} type inference technique for
   extensions of \ML with advanced features, based on two new devices,
   partial type schemes and suspended constraints;
 
@@ -778,6 +778,7 @@ disambiguate.}\Xdidier {behavior means sound an complete. Here you mean
 that we succeed when OCaml does with the same answer, but we also succeed
 with a correct answer when OCaml fails. Hence, we do not capture the OCaml behavior...}
 
+\Xgabriel{It would be nice to be able to show some code examples and explain how they work in our setting, informally -- or, sometimes, how the naive/simple elaboration is not enough.}
 
 \paragraph{Interaction with let-polymorphism}
 
@@ -901,8 +902,227 @@ suspended constraints.
 \section{Semantics of constraints}
 \label{sec:semantics}
 
+\begin{mathparfig}%
+  {fig:constraint-semantics}%
+  {Semantics of constraints (without suspended constraints)}
+  \begin{array}{rrl@{\hspace{8em}}l}
+    \semenv
+      & ::=
+      & \cdot
+        \mid \semenv, \alpha := \tau
+        \mid \semenv, x := \cabs \tv \c
+      & \text{Semantic environment}
+  \end{array}
+\\
+  \infer{ }
+  {\semenv \vdash \ctrue}
+
+  \infer
+  {\semenv \vdash \cone
+   \and
+   \semenv \vdash \ctwo}
+  {\semenv \vdash \cone \cand \ctwo}
+
+  \infer
+  {\semenv, \tv := \tau \vdash \c}
+  {\semenv \vdash \cexists \cv \c}
+
+  \infer
+  {\semenv(\tone) = \semenv(\ttwo)}
+  {\semenv \vdash \tone = \ttwo}
+\\
+  \infer
+  {\semenv \vdash \exists \tv. \cone
+   \\
+   \semenv, x :=  \cabs \tv \cone \vdash \ctwo}
+  {\semenv \vdash \cletin x {\cabs \tv \cone} \ctwo}
+
+  \infer
+  {\semenv(x) = \cabs \tv \c
+   \\
+   \semenv, \alpha := \t \vdash \c}
+  {\semenv \vdash \cinst x \t}
+\end{mathparfig}
+
+The semantics of constraints is given, as is standard, by a satisfiability judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied by the solution, or valuation, $\semenv$. The semantic environment $\semenv$ maps type variables to types, and term variables to constraint abstractions.
+
+The judgment is defined, for all constraint-formers except suspended constraints, in \cref{fig:constraint-semantics}. $\ctrue$ is satisfied in any environment, and $\cfalse$ in none. An environment $\semenv$ satisfies $\cone \cand \ctwo$ if it satisfies both $\cone$ and $\ctwo$. The existential rule $\semenv \vdash \exists \tv \c$ requires that $\semenv$ provides a ``solution'' for $\tv$: it maps it to a type $\tau$ that satisfies the expected constraints in $\c$. Finally, a unification constraint holds if both sides are mapped to the exact same type.
+
+This semantics feels a bit tautological -- the rules above, which omit suspended constraints, are fairly obvious. It is a useful exercise to ensure that we can give an explanation of each constraint-former in our mathematical meta-language that is reasonably simple and declarative. It will be used to specify the soundness and completeness of the constraint generator, and to reason about the correctness of the solver.
+
+Closed constraints are either satisfiable in the empty semantic environment $(\cdot)$ or unsatisfiable. For example, consider the constraint $\exists \tv. \tv = \mathsf{int}$, its satisfiability is established by the following derivation:
+\begin{mathpar}
+  \infer
+  {\infer
+   {\mathsf{int} = \mathsf{int}}
+   {\cdot, \alpha := \mathsf{int} \vdash \tv = \mathsf{int}}}
+  {\cdot \vdash \exists \tv. \tv = \mathsf{int}}
+\end{mathpar}
+
+\pagebreak
+
+To extend these semantics to our suspended constraints, a first natural idea is to propose the following rule -- that we will call the ``natural semantics'' of suspended constraints.
+
+\begin{mathpar}
+  \infer
+  {\shape(\semenv(\tau)) = \sh,\theta
+    \\
+   \semenv_{\mid \Delta}, \theta \vdash f(\sh)}
+  {\semenv \vdash \cmatch \tau \Delta f}
+\end{mathpar}
+
+This rule says that a suspended constraint is satisfied by $\phi$ whenever $\phi$ can guess a way to complete $\tau$ into a non-variable type with some shape $\sh$, and the constraint $f(\sh)$ is satisfied by $\semenv$ -- restricted to the variables explicitly listed in the closure environment $\Delta$.
+
+For example, the constraint
+$\exists \tv \tvb. \tv = \tint \cand \cmatch \tv {} {(\lambda \_. \ctrue)}$ is satisfied as follows:
+\begin{mathpar}
+  \infer
+  {\infer
+   {\infer{\tint = \tint}{\cdot, \alpha := \tint \vdash \alpha = \tint} \\
+    \infer{\shape(\tint) = \tint
+     \\
+     \infer*{ }{\cdot, \tv := \tint \vdash \ctrue}
+    }
+    {\cdot, \alpha := \tint \vdash \cmatch \tv {} {(\lambda \_. \ctrue)}}
+    }
+   {\cdot, \alpha := \tint \vdash
+      \tv = \tint
+      \cand
+      \cmatch \tv {} {(\lambda \_. \ctrue)}}
+ }
+  {\cdot \vdash
+     \exists \tv. \tv = \tint
+     \cand
+     \cmatch \tv {} {(\lambda \_. \ctrue)}}
+\end{mathpar}
+
+Unfortunately, this semantics is not satisfying because it does not match our intution for suspended constraints, which is that they should resolve to a concrete constraint when its matchee $\t$ becomes \emph{known} from the rest of constraint. Consider for example the constraint $\cexists \cv
+\cmatch \cv \cv (\lambda \_.~ \cv = \tint)$.  This constraint does not
+unify $\cv$ outside the suspended constraint, but once it is scheduled,
+the variable $\cv$ must be unified with the type $\tint$. So our
+informal solver suggests that this constraint is unsatisfiable since
+$\cv$ is never unified outside the match constraint. Yet we can use the
+above rule to show that this constraint is satisfiable:
+\begin{mathpar}
+  \inferrule*
+    {
+      \inferrule*
+        {
+          \tint = \tint \\
+          \inferrule*
+            {\tint = \tint} {\cv := \tint \vdash \cv
+            = \tint}
+        }
+        {\cv := \tint \vdash \cmatch \cv \cv (\lambda \_. ~ \cv
+        = \tint)}
+    }
+    {\cdot \vdash \cexists \cv \cmatch \cv \cv (\lambda \_.~ \cv = \tint)}
+\end{mathpar}
+
+This semantics let us \emph{guess} types instead of requiring that they are \emph{known}. A reasonable solver (that does not attempt to guess or backtrack) cannot match it. It also breaks principality: consider the function $\efun x (x.2)$, which projects on its second argument, the semantics of the generated constraint would let us ``guess'' any size for the tuple type of $x$, and there is no most general choice.\Xalistair{Maybe we could show a bit of the constraint, simplified.}
+
+Instead we propose \emph{contextual} semantics to capture a non-guessing semantics for suspended constraints. First we introduce a simplified version of the natural rule
+  \begin{mathpar}
+    \infer
+    {\shape(\t) = \sh, \theta
+     \\
+     \semenv_{\mid \Delta}, \theta \vdash f(\sh)
+    }
+    {\semenv \vdash \cmatch \t \Delta f}
+\end{mathpar}
+which only applies when $\tau$ already has a shape. In the natural rule we would take the shape of $\semenv{\tau}$, which contains parts that have been ``guess'' from $\semenv$; here the shape must already be known in the constraint.
+
+The interesting part comes with the \emph{contextual} rule that follows, which is not syntax-directed:
+  \begin{mathpar}
+    \infer
+    {\c[\tv !]
+     \\
+      \semenv \vdash \C[\tv = \t \cand \cmatch \t \Delta f]
+    }
+    {\semenv \vdash \C[\cmatch \tv \Delta f]}
+  \end{mathpar}
+
+This rule lets us substitute the matchee variable $\tv$ by a more defined type $\t$, whenever the side-condition $C[\alpha !]$ holds. This condition, whose definition follows (and is rather technical), expresses that the context $\C$ constrains the solutions of $\tv$ to have a \emph{unique} shape. In other words, we can guess a shape, as in the natural semantics, but only if the constraint context around it $\C[\square]$ enforces that there is a unique solution.
+
+Consider our previous examples:
+\begin{mathpar}
+\exists \tv. \tv = \tint
+  \cand
+  \cmatch \tv {} {(\lambda \_. \ctrue)}
+
+\cexists \cv \cmatch \cv \cv (\lambda \_.~ \cv = \tint)
+\end{mathpar}
+
+In the first example, we apply the contextual rule with the context $\C := (\exists \tv. \tv = \tint \cand \square)$. Any solution $\phi$ of this part of the constraint necessarily has $\phi(\tv) = \tint$, therefore the shape of $\tv$ is uniquely determined. The contextual rule is thus applicable and the example is satisfiable.
+
+In the second example, the context around the suspended constraint is empty ($\C[\square] = \square$), so any solution $\semenv$ satisfies it, and $\alpha$ can take an arbitrary shape in this context. The contextual rule is therefore not applicable, and the example is not satisfiable, as we intend. Let us now define the $\C[\alpha!]$ condition.
+
+\begin{definition}
+  A type variable $\cv$ is \emph{uniquely known}
+  within the context $\cctx[-]$, written $\cctx[\cv !]$,
+  iff there exists a unique shape $\sh$ such that, for all assignments $\semenv, \semenvp$, then $\semenv \vdash \cctx[\semenvp \vdash \ctrue]$ implies that
+  $\shape(\semenvp(\tv))$ is $(\sh, \theta)$ for some $\theta$.
+
+  In other words:
+  \begin{mathpar}
+    \begin{array}{l}
+    \exists! \sh, \quad \forall \semenv, \semenvp,
+      \quad \exists \theta, \\ \qquad
+      \semenv \vdash \c[\semenvp \vdash \ctrue] \implies
+    \shape(\semenvp(\cv)) = (\sh, \theta)
+    \end{array}
+  \end{mathpar}
+\end{definition}
+
+\TODO{Explain the notation $\semenv \vdash \C[\semenvp \vdash \c]$.}
+
+\TODO{Extra examples:
+  \begin{itemize}
+  \item dependencies
+  \item circular dependencies
+  \item nested suspended constraints
+  \end{itemize}
+}
+
+\TODO{A figure that summarizes everything about the contextual rules so far.}
+
+\TODO{Discuss well-foundedness.}
+
+
+\Xgabriel{(We stopped here with Alistair.)}
+
+\hline
+
+
+\Xgabriel{Maybe reuse what's below.}
+Our conclusion is that the na\"ive semantics should be rejected in favour
+for the semantics of our informal solver. Our intent with suspended
+constraints is that the blocking variable should not be guessed out of thin
+air, but deduced from the surrounding context without knowledge of the
+constraint generated by the handler.
+
+The idea, inspired by type systems that require principality (such as
+FreezeML), is to stipulate that the only satisfying assignments for the
+context of the suspended constraint requires $\cv$ to be assigned to some
+type with a unique type constructor.
+\Xalistair[]{This doesn't read entirely correctly, we want a unique
+constructor for all assignments}. 
+
+
+\TODO{Show the natural-semantics rule for suspended constraints,
+  explain that (1) it is not our intention for this typing construct (it admits ``guesses out of thin air'') (2) a non-guessing solver cannot be complete with respect to it.}
+
+\TODO{Show the contextual semantics,
+  first an informal explanation of $\c[\tv !]$,
+  then show the full definition, then discuss the fine-grained
+  points on examples.
+}
+
+\TODO{Discuss well-foundedness.}
+
 \Xdidier{We are missing an introduction to the semantics of constraints}
 
+\XXX{}
 
 A na\"ive denotation semantics for suspended constraints would be to simply
 apply the assignment of $\cva$ to $f$. More formally,
@@ -999,42 +1219,6 @@ timestamp semantics.
 {derive precise declarative semantics for the language features of
 Section 2.}
 
-\begin{mathparfig}%
-  {fig:constraint-semantics}%
-  {Semantics of constraints (without suspended constraints)}
-  \begin{array}{rrl@{\hspace{8em}}l}
-    \semenv
-      & ::=
-      & \cdot \mid \semenv, \alpha := \tau
-      & \text{Semantic environment}
-    \\[2em]
-    \square,\semmetav &&& \text{Linear constraint meta-variable}
-    \\
-    \semmetaenv
-      & ::=
-      & \cdot \mid \semmetaenv, (\semenv \vdash \semmetav)
-      & \text{Linear meta-variable environment}
-    \\[2em]
-  \end{array}
-\\
-  \infer
-  {\semenv(\tone) = \semenv(\ttwo)}
-  {\cdot; \semenv \vdash \tone = \ttwo}
-
-  \infer
-  {\semmetaenv_1; \semenv \vdash \cone
-   \and
-   \semmetaenv_2; \semenv \vdash \ctwo}
-  {\semmetaenv_1 \uplus \semmetaenv_2; \semenv \vdash \cone \cand \ctwo}
-
-  \infer
-  {\semmetaenv; \semenv[\alpha := \tau] \vdash \c}
-  {\semmetaenv; \semenv \vdash \cexists \cv \c}
-
-  \infer
-  { }
-  {(\semenv \vdash \semmetav) ; \semenv \vdash \semmetav}
-\end{mathparfig}
 
 Meta-substitution lemma: if $\semmetav$ occurs exactly once in $\c$, then
 $\semmetaenv, (\semenvp \vdash \semmetav); \semenv \vdash C$ and $\semenvp
