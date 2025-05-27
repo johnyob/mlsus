@@ -52,14 +52,15 @@
 \newcommand{\tv}{\tva}
 \newcommand{\tvs}{\bar\tv}
 \newcommand{\tva}{\alpha}
+\newcommand{\tvas}{\bar \tva}
 \newcommand{\tvb}{\beta}
 \newcommand{\tvbs}{\bar\tvb}
 \newcommand{\tvc}{\gamma}
 \newcommand{\tvcs}{\bar\tvc}
 \newcommand{\tarrow}{\to}
 \newcommand{\tfor}[2]{\forall {#1}.\,{#2}}
-\newcommand{\tpoly}[2]{[#1]^{#2}}
-\newcommand{\tunit}{1}
+\newcommand{\tpoly}[1]{[#1]}
+\newcommand{\tapoly}[2]{\tpoly{#1}^{#2}}
 
 \renewcommand {\th}{\vdash}
 \newcommand {\mlexp}[3][\G]{#1 \th #2: #3}
@@ -155,6 +156,9 @@
 \defmetavar {\x} {x}
 %% Type schemes
 \defmetavar {\ts} {\sigma}
+\defmetavar {\ty} {\tau}
+\newcommand {\tss} {\bar\ts}
+\newcommand {\tys} {\bar\ty}
 %% Annotation variables
 \defmetavar {\av} {\varepsilon}
 
@@ -165,4 +169,5 @@
 \newcommand \uad [1][1ex]{\hskip #1}
 \newcommand \wide[2][\;]{#1 #2 #1}
 \newcommand \Wide[2][\uad]{#1 #2 #1}
-
+\newcommand \ftv [1]{\textsf{ftv}(#1)}
+\newcommand \cpoly [2]{#1\;\angles{#2}}

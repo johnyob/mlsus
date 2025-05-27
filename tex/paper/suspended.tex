@@ -810,24 +810,24 @@ polymorphically.
 Semi-explicit first-class polymorphism \citep{Garrigue-Remy/poly-ml} uses
 \textit{annotated types} to track the origins of polymorphic types.
 
-The type constructor $\tpoly \ts \av$ that boxes a polymorphic type
+The type constructor $\tapoly \ts \av$ that boxes a polymorphic type
 $\ts$ turning it into a \textit{polytype} is actually annotated with
-an annotation variable $\av$.  Once boxed, the polytype $\tpoly
+an annotation variable $\av$.  Once boxed, the polytype $\tapoly
 \ts \av$ is considered a monotype.  This permits impredicative
 polymorphism. Annotations variables may be generalized as over
-variables and $\all \av \tpoly \ts \av$ is a type scheme.
+variables and $\all \av \tapoly \ts \av$ is a type scheme.
 
 The introduction form for polytypes is a boxing operator $\epoly
 \e \ts$ with an explicitly polytype annotation $\ts$. The resulting expression
-has type $\tpoly \ts \av$ when $\av$ is an arbitrary (typically fresh)
+has type $\tapoly \ts \av$ when $\av$ is an arbitrary (typically fresh)
 annotation variable and can thus be generalized. That is $\e$ can also be
-assigned the type scheme $\all \av \tpoly \ts \av$.
+assigned the type scheme $\all \av \tapoly \ts \av$.
 
 Conversely, to instantiate a polytype expression, one must use an explicit
 unboxing operator $\einst \e$ that need not any type annotation.
 However, it requires $e$ to be of a polytype scheme $\all \av
-\tpoly \ts \av$ and then gives $\einst \e$ a type $\t$ that is an instance of
-$\ts$.  In particular, $\einst \e$ is ill-typed if $\e$ has type $\tpoly \ts
+\tapoly \ts \av$ and then gives $\einst \e$ a type $\t$ that is an instance of
+$\ts$.  In particular, $\einst \e$ is ill-typed if $\e$ has type $\tapoly \ts
 \av$ and $\av$ cannot be generalized.  It is the polymorphism of $\av$ that
 ensures that the polytype is indeed known and not being inferred.
 
@@ -837,8 +837,8 @@ can be used to freshen annotation variables.  An annotation $e : \t$ behaves
 as the application of a retyping function (one that behaves as the identity
 $(\t)$ of type $\all \tvs \t \to \tp$ to the expression $\e$. We usually
 omit annotation variables in type annotations, since they can be freshen. For
-instance, $\efun {\x : \tpoly \ts {}} {\einst \x}$ which is syntactic sugar
-for $\efun \x {\elet \x {\eapp {(\tpoly \ts {})} \x} {\einst \x}}$, is
+instance, $\efun {\x : \tapoly \ts {}} {\einst \x}$ which is syntactic sugar
+for $\efun \x {\elet \x {\eapp {(\tapoly \ts {})} \x} {\einst \x}}$, is
 well-typed since the polytype annotation allows the introduction of a fresh
 variable annotation which can be generalized.
 
@@ -846,11 +846,11 @@ variable annotation which can be generalized.
 %% Old version
 Principality is tracked using generalization.  This is done by tracking the
 polymorphism of labels. Type schemes quantify not only over type variables
-but $\varepsilon$ variables. As a result, a term $e$ with the type $\tpoly
+but $\varepsilon$ variables. As a result, a term $e$ with the type $\tapoly
 \ts \varepsilon$ for some fresh $\varepsilon$ may be generalized to
-$\tfor \varepsilon {\tpoly \ts \varepsilon}$.  The typing rule for
-$\einst e$ in fact requires $e$'s type to be $\tfor \varepsilon {\tpoly
-\ts \varepsilon}$, not just a plain polytype $\tpoly \ts
+$\tfor \varepsilon {\tapoly \ts \varepsilon}$.  The typing rule for
+$\einst e$ in fact requires $e$'s type to be $\tfor \varepsilon {\tapoly
+\ts \varepsilon}$, not just a plain polytype $\tapoly \ts
 \varepsilon$. The rational is that a label is polymorphic if and only if it
 is principally known and not inferred.  This is why the introduction form
 for polytypes $\epoly e \ts$ is able to introduce a \textit{fresh}
@@ -1317,10 +1317,19 @@ $\parens {a}{}_{i=1}^n$
     {\G \th E[\einst e] : \t}
 \end{mathpar}
 
-The shape of a type scheme is $\exists \overline{\tv}. ~\sigma$, where
-$\overline{\tv}$ gives the closure.  We write $\langle \overline{\t},
-\exists \overline{\tv}. ~ \sigma \rangle$ for the type scheme
-$\sigma[\overline{\tv := \t}]$.
+The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
+$\tpoly \ts$ abstracted over the monormorphic parts. It is the minimal
+closed type expression $\exi \tvas {\tpoly {\all \tvbs \t}}$ (up to the
+ordering of variables) such that there exists types $\tys$ such that
+$\t\where {\tvas \is \tys}$ is equal to $\ts$.
+%
+Closed, means that $\tvas$ is equal to the free type variables
+$\ftv \ts$ of $\ts$. The minimality condition is equivalent to the fact that
+any suffix of a non-variable node in $\t$ leads to a polymorphic type
+variable, \ie a variable in $\tvbs$.
+%
+When $\exi \tvs \ts$ is a polytype skeleton, we write $\cpoly \tys \ts$ for
+the type $\tpoly \ts \where {\tvs \is \tys}$.
 
 We also add a well-typed hole judgement (this is analogous to using $\ctrue$
 in suspended constraints semantics):
@@ -1337,20 +1346,18 @@ Then we can define:
   \textsf{shape}(\tp) = s
 \end{align*}
 What is a shape? 
+\begin{mathpar}
+  s \wide\bnfis \Pi^n \mid \exi \tvs \tpoly \ts
+\end{mathpar}
+where $\exi \tvs \tpoly \ts$ is a polytype shape. 
 
-\begin{align*}
-  s \bnfis \Pi^n \mid \exists \overline{\tv}. ~ [\sigma]
-\end{align*}
-\Xdidier {The polytype shape, should is not be any $\exi \tvs \ts$. $\ts$
-but only those of the form $\all \tvbs \t$ such that every node of $\t$
-leads to a polymorphic variable in $\tvbs$ or is a monormorphic variable in
-$\tvs$}
-
-Shapes are equal modulo alpha equivalence / removal of redundant variables. 
+Shapes are equal modulo alpha equivalence and the removal of useless
+polymorphic type variables. There do not have useless existential vairables.
 Shapes are only defined for n-ary tuples and polytypes.
 
 \begin{example}
 Let us give  a typing derivation for \ocaml{e_6}.
+
 
 \Xdidier {Start by the explicit typing derivations.  Then for
 \ocaml{e_6} show that each of the two annotations are optional one after the
