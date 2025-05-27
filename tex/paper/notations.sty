@@ -86,7 +86,7 @@
 \newcommand{\efield}[2]{#1.#2}
 \newcommand{\exfield}[3]{#1.#3/#2}
 %% Could be factored as
-%% \newcommand{\eproj}[3][]{#2.#3\ifthenelse{\equal{#1}{}}{}{/#1}}
+\newcommand{\eproj}[3][]{#2.#3\ifthenelse{\equal{#1}{}}{}{/#1}}
 \newcommand{\erecord}[1]{\braces{#1}}
 
 \newcommand {\parens}[1]{(#1)}
@@ -100,6 +100,7 @@
 \newcommand {\Angles}[1]{\highdelim\angles {#1}}
 \newcommand {\Bbrackets}[1]{\highdelim\bbrackets {#1}}
 \newcommand {\set}[1]{\braces{#1}}
+\newcommand {\eset}{\emptyset}
 \newcommand {\where}[1]{\brackets {#1}}
 \newcommand {\is}{:=}
 
@@ -173,3 +174,5 @@
 \newcommand \Wide[2][\uad]{#1 #2 #1}
 \newcommand \ftv [1]{\textsf{ftv}(#1)}
 \newcommand \cpoly [2]{#1\;\angles{#2}}
+\newcommand \ehole {\square}
+\newcommand \emagic[1]{\set{#1}}

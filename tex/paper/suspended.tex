@@ -1091,7 +1091,6 @@ In the second example, the context around the suspended constraint is empty ($\C
 
 \Xgabriel{(We stopped here with Alistair.)}
 
-\hline
 
 
 \Xgabriel{Maybe reuse what's below.}
@@ -1122,7 +1121,6 @@ constructor for all assignments}.
 
 \Xdidier{We are missing an introduction to the semantics of constraints}
 
-\XXX{}
 
 A na\"ive denotation semantics for suspended constraints would be to simply
 apply the assignment of $\cva$ to $f$. More formally,
@@ -1481,11 +1479,11 @@ $\parens {a}{}_{i=1}^n$
   \inferrule[Proj-X]
     {\G \th \e : \Pi\iton \ti \\
      1 \leq j \leq n}
-    {\G \th \exfield \e j n : \tj}
+    {\G \th \exfield \e n j : \tj}
 
   \inferrule[Proj-I]
     {E[e \mathop{!} \Pi^n] \\
-     \G \th E[\exfield e j n] : \t}
+     \G \th E[\exfield e n j] : \t}
     {\G \th E[\efield e j] : \t}
     
   \inferrule [Poly]
@@ -1529,8 +1527,7 @@ in suspended constraints semantics):
 Then we can define: 
 \begin{align*}
   E[e \mathop{!} s] \wide\eqdef
-  \forall \G,
-  \G', \t, \tp.  \G \th E[\G' \th \{ e : \tp \} : \_] : \t \implies
+  \forall \G, \t, \tp.  \G \th E[\emagic{e : \tp}] : \t \implies
   \textsf{shape}(\tp) = s
 \end{align*}
 What is a shape? 
@@ -1543,9 +1540,14 @@ Shapes are equal modulo alpha equivalence and the removal of useless
 polymorphic type variables. There do not have useless existential vairables.
 Shapes are only defined for n-ary tuples and polytypes.
 
+
 \begin{example}
 Let us give  a typing derivation for \ocaml{e_6}.
-
+\Xdidier {In fact, the current proposal does not include overloading
+of nominal record fields... I thought we wanted to do this.
+Do we then need to change the examples in the introduction?
+But I am not sure I can create examples analoguous to $e_6$ and $e_7$.
+}
 
 \Xdidier {Start by the explicit typing derivations.  Then for
 \ocaml{e_6} show that each of the two annotations are optional one after the
@@ -1557,6 +1559,39 @@ We show that there is no typing derivation for \ocaml{e_7}.
 \Xdidier {We first give a
 fully annotated typing derivation, The, we show that whichever annotation we
 try to remove first, its shape is not determined.}
+\end{example}
+
+\begin{example}
+Let us show that the expression $e$ equal to $\efun \x {\eproj \x k}$ is
+ambigous, \ie that it does not typecheck.
+Let $e_n$ be the explicitly annotated version $\efun r {\eproj[n] \x
+i}$. for $n \le k$.
+We have  the following derivation:
+\begin{mathpar}
+\infer*[right=Fun]{
+          \infer*[Right=Proj-X]
+                {\x : \Pi\iton \ti \th \x : \Pi\iton \ti}
+                {r : \Pi\iton \ti \th \eproj[n] \x k : \t_k}
+}{%             --------------------------------------------
+    \eset \th \efun \x  \eproj[n] \x k : \t_k
+}
+\end{mathpar}
+If there is a derivation of $\efun r {\eproj \x i}$ then
+there must be one of the form:
+\begin{mathpar}
+\infer {
+                        E \where {\x ! \Pi\iton} \\
+                \eset \th E \where {\eproj[n] \x k} : \t_k
+}{%             -------------------------------------------
+                  \eset \th E \where {\eproj \x k} : \t_k
+}
+\end{mathpar}
+where $E$ is the term $\efun \x \ehole$.
+
+Hence, if suffices to show that $E \where {\x ! \Pi\iton}$ does not hold.
+For that, it suffices to find two derivations of $E \where {\emagic {\x}}$
+with different shape for the type of $\x$.  Indeed, contructor $\Pi\iton$
+for $n\ge k$ is a possible shape for $n \ge k$.
 \end{example}
 
 \section{Solving constraints}
