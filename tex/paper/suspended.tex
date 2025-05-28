@@ -780,32 +780,6 @@ with a correct answer when OCaml fails. Hence, we do not capture the OCaml behav
 
 \Xgabriel{It would be nice to be able to show some code examples and explain how they work in our setting, informally -- or, sometimes, how the naive/simple elaboration is not enough.}
 
-\paragraph{Interaction with let-polymorphism}
-
-%% Our intuition is not entirely correct here.
-
-While the above constraint generation already improves on
-OCaml's current inference approach, it is not powerful enough to capture the
-simple idea that to resolve an ambiguous constructor we must use contextual
-information to show there is a unique type constructor $\F$ for the
-application.
-
-We demonstrate this is with the following example:
-\begin{program}
-let foo =
-  let f x = match x with L -> 1 in
-  f (L : m)
-\end{program}
-With the above contraint generation, we would keep the type of \code{x}
-as a generalizable variable, thus the application of \code{f} would not
-resolve this ambiguity, requiring an annotation at the definition.
-
-We require some way of splitting the head of the type from the type itself,
-treating the head of the variable monomorphically and the rest
-polymorphically.
-\Xalistair{An explaination of kinded(1) types here }
-
-
 \subsection{Semi-explicit first-class polymorphism}
 
 \label {sec/constraints/polytypes}
@@ -902,6 +876,8 @@ suspended constraints.
 \section{Semantics of constraints}
 \label{sec:semantics}
 
+\subsection{Standard semantics}
+
 \begin{mathparfig}%
   {fig:constraint-semantics}%
   {Semantics of constraints (without suspended constraints)}
@@ -959,7 +935,7 @@ Closed constraints are either satisfiable in the empty semantic environment $(\c
   {\cdot \vdash \exists \tv. \tv = \mathsf{int}}
 \end{mathpar}
 
-\pagebreak
+\subsection{Semantics for suspended constraints}
 
 To extend these semantics to our suspended constraints, a first natural idea is to propose the following rule -- that we will call the ``natural semantics'' of suspended constraints.
 
@@ -1023,18 +999,18 @@ This semantics let us \emph{guess} types instead of requiring that they are \emp
 
 Instead we propose \emph{contextual} semantics to capture a non-guessing semantics for suspended constraints. First we introduce a simplified version of the natural rule
   \begin{mathpar}
-    \infer
+    \infer[susp-open]
     {\shape(\t) = \sh, \theta
      \\
      \semenv_{\mid \Delta}, \theta \vdash f(\sh)
     }
     {\semenv \vdash \cmatch \t \Delta f}
 \end{mathpar}
-which only applies when $\tau$ already has a shape. In the natural rule we would take the shape of $\semenv{\tau}$, which contains parts that have been ``guess'' from $\semenv$; here the shape must already be known in the constraint.
+which only applies when $\tau$ already has a shape. In the natural rule we would take the shape of $\semenv(\tau)$, which contains parts that have been ``guessed'' in $\semenv$; here the shape must already be known in the constraint.
 
 The interesting part comes with the \emph{contextual} rule that follows, which is not syntax-directed:
   \begin{mathpar}
-    \infer
+    \infer[susp-ctx]
     {\c[\tv !]
      \\
       \semenv \vdash \C[\tv = \t \cand \cmatch \t \Delta f]
@@ -1072,17 +1048,45 @@ In the second example, the context around the suspended constraint is empty ($\C
     \shape(\semenvp(\cv)) = (\sh, \theta)
     \end{array}
   \end{mathpar}
+
+  The notation $\semenv \vdash \c[\semenvp \vdash \cp]$ means that there is a derivation of the satisfiability judgment for $\c[\cp]$ where, the subderivation at the hole of $\c[\square]$ is a derivation of $\semenvp \vdash \cp$. We define it formally in \cref{fig:TODO}.
 \end{definition}
 
-\TODO{Explain the notation $\semenv \vdash \C[\semenvp \vdash \c]$.}
+Notice that the rule \Rule{susp-ctx} has $\C[\tv!]$ as a premise, which in turn uses the judgment $\semenv \vdash \c[\semenvp \vdash \ctrue]$ in negative position, so we must check that our satisfiability judgment remains well-founded. Informally, the reason for well-foundedness is that the conclusion of \Rule{susp-ctx}, which is $\semenv \vdash \C[\cmatch \tv \Delta f]$, is strictly larger than the negatively-occurring judgment $\semenv \vdash \C[\ctrue]$. We discuss well-foundedness in more details in \cref{sec:TODO}.
 
-\TODO{Extra examples:
-  \begin{itemize}
-  \item dependencies
-  \item circular dependencies
-  \item nested suspended constraints
-  \end{itemize}
-}
+\subsection{Examples}
+
+Consider for example the constraint
+$$
+  \exists \tva \tvb.
+  \left({\begin{array}{l}
+    \cmatch \tva {\tvb} {(\cabs \_ {\tvb = \tbool})} \\
+    {} \cand \cmatch \tvb {} {(\cabs \_ \ctrue)} \\
+    {} \cand \tva = \tint
+  \end{array}\right)}
+$$
+
+To prove that this constraint is satisfiable we can use the \Rule{susp-ctx} twice, once with a hole around the suspension on $\tva$, and once with a hole around the suspension on $\tvb$. In fact this can be done in any order:
+\begin{itemize}
+\item If you focus on $\tva$ first, it is easy to prove that the context around it, $(\square \cand \cmatchdots \tvb \cand \tva = \tint)$, imposes a unique solution thanks to $\tva = \tint$. Then we use the $\Rule{susp-ctx}$ rule in the context 
+$(\cmatch \tint {\beta} {(\cabs \_ {\beta = \tbool})}) \cand \square \cand \tva = \tint)$, and we have to prove that $\tvb$ is uniquely determined in this context. This is in turn proved by using the conjunction rule followed by \Rule{susp-open}, which gives us access to the unification $\tvb = \tbool$.
+\item If you focus on $\tvb$ first, proving that $\tvb$ is uniquely determined in the context $(\cmatch \tva \tvb {(\cabs \_ {\tvb = \tbool})} \cand \square \cand \tva = \tint)$ requires using the \Rule{susp-ctx} again as in the case above. Then we end up with the constraint $(\cmatchdots \tva \cand \cmatchdots \tbool \cand \tva = \tint)$, and we can use \Rule{susp-ctx} yet another time on $\alpha$.
+\end{itemize}
+
+On the other hand, the following constraint has circular dependencies:
+$$
+  \exists \tva \tvb.
+  \left({\begin{array}{l}
+    \cmatch \tva {\tvb} {(\cabs \_ {\tvb = \tbool})} \\
+    {} \cand \cmatch \tvb {\tva} {(\cabs \_ {\tva = \tint})}
+  \end{array}\right)}
+$$
+
+This constraint can be proved satisfiable with the ``natural semantics'' that we proposed earlier, by guessing the instantiation $\tva := \tint, \tvb := \tbool$. Our solver fails on it, and so does our contextual semantics. Without loss of generality, suppose that we try to use \Rule{susp-ctx} on $\tva$ first: we get to prove $\C[\tva !]$ for the context $\C := (\square \cand \cmatch \tvb \tva {(\cabs \_ {\tva = \tint})})$: we have to prove that there exists a unique head structure for $\alpha$ (presumably $\tint$) such that $\C[\ctrue]$ is satisfiable. But this does not hold, as the constraint $(\cmatch \tvb \tva {(\cabs \_ {\tva = \tint})})$ cannot be solved: we cannot use the \Rule{susp-open} rule yet as $\beta$ has no head, and we cannot use the \Rule{susp-ctx} rule as the empty context $\square$ does not uniquely constrain $\tvb$.
+
+\subsection{Technical details}
+
+\TODO{Explain the notation $\semenv \vdash \C[\semenvp \vdash \c]$.}
 
 \TODO{A figure that summarizes everything about the contextual rules so far.}
 
@@ -1706,7 +1710,37 @@ This is symmetric hecne similar to the previous case.
 
 % Partial generics and instances 
 
+\paragraph{Interaction with let-polymorphism}
+\Xgabriel{This was moved from the introduction, it's related to ``choice points'' below.}
+
+%% Our intuition is not entirely correct here.
+
+While the above constraint generation already improves on
+OCaml's current inference approach, it is not powerful enough to capture the
+simple idea that to resolve an ambiguous constructor we must use contextual
+information to show there is a unique type constructor $\F$ for the
+application.
+
+We demonstrate this is with the following example:
+\begin{program}
+let foo =
+  let f x = match x with L -> 1 in
+  f (L : m)
+\end{program}
+With the above contraint generation, we would keep the type of \code{x}
+as a generalizable variable, thus the application of \code{f} would not
+resolve this ambiguity, requiring an annotation at the definition.
+
+We require some way of splitting the head of the type from the type itself,
+treating the head of the variable monomorphically and the rest
+polymorphically.
+\Xalistair{An explaination of kinded(1) types here }
+
+
+\subsection{Choice points}
+
 \subsection{Default clauses}
+
 
 \section{Semi-unification Prototype}
 
