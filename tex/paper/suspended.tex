@@ -822,7 +822,7 @@ an annotation variable $\av$.  Once boxed, the polytype $\tapoly
 polymorphism. Annotations variables may be generalized as over
 variables and $\all \av \tapoly \ts \av$ is a type scheme.
 
-The introduction form for polytypes is a boxing operator $\epoly
+The introduction form for polytypes is a boxing operator $\expoly
 \e \ts$ with an explicitly polytype annotation $\ts$. The resulting expression
 has type $\tapoly \ts \av$ when $\av$ is an arbitrary (typically fresh)
 annotation variable and can thus be generalized. That is $\e$ can also be
@@ -858,7 +858,7 @@ $\einst e$ in fact requires $e$'s type to be $\tfor \varepsilon {\tapoly
 \ts \varepsilon}$, not just a plain polytype $\tapoly \ts
 \varepsilon$. The rational is that a label is polymorphic if and only if it
 is principally known and not inferred.  This is why the introduction form
-for polytypes $\epoly e \ts$ is able to introduce a \textit{fresh}
+for polytypes $\expoly e \ts$ is able to introduce a \textit{fresh}
 $\varepsilon$ variable.
 \end{version}
 
@@ -873,9 +873,9 @@ type ifnerence.
 With suspended constraints, any type information can be considered as known,
 so that we do not need the annotation variables any longer.
 
-Typechecking $\epoly e \ts$ is, intuitively:
+Typechecking $\expoly e \ts$ is, intuitively:
 \begin{mathpar}
-\cinfer {\epoly e {\tfor {\overline{\cvb}} \t}} \cva \wide\eqdef
+\cinfer {\expoly e {\tfor {\overline{\cvb}} \t}} \cva \wide\eqdef
   \Parens{\cfor {\overline{\cvb}} \cinfer e \t}
 \cand
    \cva = [\tfor {\overline{\cvb}} \t] 
@@ -1359,7 +1359,7 @@ principality. We return to this pragmatic tradeoff in Section
       \mid & (\eone, \ldots, \en)
         \mid \efield e j
         \mid \exfield e n j \\
-      \mid & \epoly e { \exi \tvs. \ts }
+      \mid & \expoly e { \exi \tvs. \ts }
         \mid \einst e
         \mid \exinst e \tvs \ts
     \end{bnfalign}
@@ -1389,7 +1389,7 @@ bindings $\elet x \eone \etwo$. Our extensions include:
   $\efield e i$.  
 
   \item For semi-explicit first-class polymorphism, we have the boxing
-  construct $\epoly e \sigma$ and the unboxing construct $\einst e$.
+  construct $\expoly e \sigma$ and the unboxing construct $\einst e$.
 \end{enumerate}
 Each construct that endangers principality has an explicitly annotated
 counterpart.  
@@ -1489,7 +1489,7 @@ $\parens {a}{}_{i=1}^n$
   \inferrule [Poly]
     {\G \th \e : \sigma[\overline{\tv := \t}] \\
      \G \th \overline{\t}}
-    {\G \th \epoly \e { \exists \overline{\tv}. ~ \sigma } :
+    {\G \th \expoly \e { \exists \overline{\tv}. ~ \sigma } :
       [\sigma[\overline{\tv := \t}]]}
 
   \inferrule [Use-X]
@@ -1566,32 +1566,106 @@ Let us show that the expression $e$ equal to $\efun \x {\eproj \x k}$ is
 ambigous, \ie that it does not typecheck.
 Let $e_n$ be the explicitly annotated version $\efun r {\eproj[n] \x
 i}$. for $n \le k$.
-We have  the following derivation:
-\begin{mathpar}
-\infer*[right=Fun]{
-          \infer*[Right=Proj-X]
-                {\x : \Pi\iton \ti \th \x : \Pi\iton \ti}
-                {r : \Pi\iton \ti \th \eproj[n] \x k : \t_k}
-}{%             --------------------------------------------
-    \eset \th \efun \x  \eproj[n] \x k : \t_k
-}
-\end{mathpar}
 If there is a derivation of $\efun r {\eproj \x i}$ then
 there must be one of the form:
 \begin{mathpar}
-\infer {
+\infer*[Right=Proj-I]{
                         E \where {\x ! \Pi\iton} \\
                 \eset \th E \where {\eproj[n] \x k} : \t_k
 }{%             -------------------------------------------
                   \eset \th E \where {\eproj \x k} : \t_k
 }
 \end{mathpar}
-where $E$ is the term $\efun \x \ehole$.
+where $E$ is the term $\efun \x \ehole$, which is the largest possible
+context. (If there is one with a smaller $E$, there is also one with a
+larger $E$.)
 
-Hence, if suffices to show that $E \where {\x ! \Pi\iton}$ does not hold.
-For that, it suffices to find two derivations of $E \where {\emagic {\x}}$
-with different shape for the type of $\x$.  Indeed, contructor $\Pi\iton$
-for $n\ge k$ is a possible shape for $n \ge k$.
+We have  the following derivation:
+\begin{mathpar}
+\infer* [Right=Fun]{
+          \infer*[Right=Proj-X]
+                {\x : \Pi\iton \ti \th \x : \Pi\iton \ti}
+                {r : \Pi\iton \ti \th \eproj[n] \x k : \t_k}
+}{%             --------------------------------------------
+                 \eset \th E \where{\eproj[n] \x k} : \t_k
+}
+\end{mathpar}
+However, $E \where {\x ! \Pi\iton}$ does not hold.
+Indeed, we have $\eset \th E \where {\emagic {\x :\t_n}} : \wild$
+for any $\t_n$ of the form $\Pi\iton \tys$ and $n \ge k$. 
+Hence, $\Pi\iton[k]$ and $\Pi\iton[k+1]$ are two possible shapes
+for the type of $\x$. 
+\end{example}
+
+\begin{example}
+\locallabelreset
+Let us show that the expression $e$ equal to $\th \eapp {(\efun \x {\eproj
+\x  k})} {(1, 2)} : \tint$.
+Let $k$ and $n$ be $1$ and $2$.
+Let $E$ be the context $\th \eapp {(\efun \x \ehole} {(1, 2)} : \tint$.  We
+have the derivation:
+\begin{mathpar}
+\infer* [Right=Proj-I]{
+                        E \where {\x ! \Pi\iton} \\
+                \eset \th E \where {\eproj[n] \x k} : \t_k
+}{%             ------------------------------------------- 
+                  \eset \th E \where {\eproj \x k} : \t_k
+}
+\end{mathpar}
+Indeed, $\eset \th E \where {\eproj[n] \x k} : \t_k$ obviously holds.
+Therefore, it just remains to show $E \where {x ! \Pi\iton}$~\llabel C.
+Asume $\eset \th E \where{\emagic {\x : \tp}} : \wild$. Since
+$\x: \Pi\iton (\tint,\tint)$ is bound in the context at the hole $E$,
+we this have not other choice but $\t$ equal to $\Pi\iton (\tint,\tint)$,
+which proves~\lref C. 
+\end{example}
+
+\Xdidier {We should also allow use implicit creation of
+polytypes. Otherwise, we cannot encode polyparams---and we cannot write the
+following example pattern..., whicch we cannot either write with tuples, I
+think}
+\begin{example}
+\newcommand{\tyid}{\ty_{\kwd{id}}}
+Let us show that the expression $e$ equal to $\elet \x {\epoly {\efun z z}}
+{(\eapp {\einst \x} 1, \eapp {\einst \x} \eunit)}$.  Let $\tyid$ be $\tpoly
+{\all \tv \tv \to \tv}$.  Clearly, we have $\elet \x {\epoly [\tyid] {\efun
+z z}} {(\eapp {\einst[\tyid] \x} 1, \eapp {\einst[\tyid] \x} \eunit)}$.
+This is actually the only possible fully annotated derivation.
+%
+To show that $e$ is typable, we must be able to make all annotations
+optional.  There must be a final step that will introduce the first
+annotation, and we have three possible choices, one for each of of the three
+positions with an annotation that must be removed. We reason by cases on the
+last position of focus $\E$:
+\begin{description}
+
+\item [Case $\Ez$ is $\elet \x \ehole (\eapp {\einst \x} 1, \eapp {\einst
+\x} \eunit)$.]
+
+The derivation ends with
+\begin{mathpar}
+\infer*[Right=Let]{
+              \E \where {\epoly {\efun z z}! \tpoly \tyid} \\
+               \eset \th \E \where {\epoly{\efun z z}} : \t
+}{%            ---------------------------------------------
+                \eset \th \E \where {\epoly{\efun z z}} : \t
+}
+\end{mathpar}
+Hence, we must show 
+
+\item [$\E$ is to $\elet \x \epoly {\efun z z} (\eapp {\einst
+\ehole} 1, \eapp {\einst \x} \eunit)$.]
+
+The derivation must end with:
+\begin{mathpar}
+
+\end{mathpar}
+
+\item [$\E$ is $\elet \x \epoly {\efun z z} (\eapp {\einst
+\ehole} 1, \eapp {\einst \x} \eunit)$.]
+This is symmetric hecne similar to the previous case. 
+
+\end{description}
 \end{example}
 
 \section{Solving constraints}
