@@ -950,7 +950,7 @@ To extend these semantics to our suspended constraints, a first natural idea is 
 This rule says that a suspended constraint is satisfied by $\phi$ whenever $\phi$ can guess a way to complete $\tau$ into a non-variable type with some shape $\sh$, and the constraint $f(\sh)$ is satisfied by $\semenv$ -- restricted to the variables explicitly listed in the closure environment $\Delta$.
 
 For example, the constraint
-$\exists \tv \tvb. \tv = \tint \cand \cmatch \tv {} {(\lambda \_. \ctrue)}$ is satisfied as follows:
+$\exists \tv \tvb. \tv = \tint \cand \cmatch \tv {} {(\lambda \wild. \ctrue)}$ is satisfied as follows:
 \begin{mathpar}
   \infer
   {\infer
@@ -959,21 +959,21 @@ $\exists \tv \tvb. \tv = \tint \cand \cmatch \tv {} {(\lambda \_. \ctrue)}$ is s
      \\
      \infer*{ }{\cdot, \tv := \tint \vdash \ctrue}
     }
-    {\cdot, \alpha := \tint \vdash \cmatch \tv {} {(\lambda \_. \ctrue)}}
+    {\cdot, \alpha := \tint \vdash \cmatch \tv {} {(\lambda \wild. \ctrue)}}
     }
    {\cdot, \alpha := \tint \vdash
       \tv = \tint
       \cand
-      \cmatch \tv {} {(\lambda \_. \ctrue)}}
+      \cmatch \tv {} {(\lambda \wild. \ctrue)}}
  }
   {\cdot \vdash
      \exists \tv. \tv = \tint
      \cand
-     \cmatch \tv {} {(\lambda \_. \ctrue)}}
+     \cmatch \tv {} {(\lambda \wild. \ctrue)}}
 \end{mathpar}
 
 Unfortunately, this semantics is not satisfying because it does not match our intution for suspended constraints, which is that they should resolve to a concrete constraint when its matchee $\t$ becomes \emph{known} from the rest of constraint. Consider for example the constraint $\cexists \cv
-\cmatch \cv \cv (\lambda \_.~ \cv = \tint)$.  This constraint does not
+\cmatch \cv \cv (\lambda \wild.~ \cv = \tint)$.  This constraint does not
 unify $\cv$ outside the suspended constraint, but once it is scheduled,
 the variable $\cv$ must be unified with the type $\tint$. So our
 informal solver suggests that this constraint is unsatisfiable since
@@ -989,10 +989,10 @@ above rule to show that this constraint is satisfiable:
             {\tint = \tint} {\cv := \tint \vdash \cv
             = \tint}
         }
-        {\cv := \tint \vdash \cmatch \cv \cv (\lambda \_. ~ \cv
+        {\cv := \tint \vdash \cmatch \cv \cv (\lambda \wild. ~ \cv
         = \tint)}
     }
-    {\cdot \vdash \cexists \cv \cmatch \cv \cv (\lambda \_.~ \cv = \tint)}
+    {\cdot \vdash \cexists \cv \cmatch \cv \cv (\lambda \wild.~ \cv = \tint)}
 \end{mathpar}
 
 This semantics let us \emph{guess} types instead of requiring that they are \emph{known}. A reasonable solver (that does not attempt to guess or backtrack) cannot match it. It also breaks principality: consider the function $\efun x (x.2)$, which projects on its second argument, the semantics of the generated constraint would let us ``guess'' any size for the tuple type of $x$, and there is no most general choice.\Xalistair{Maybe we could show a bit of the constraint, simplified.}
@@ -1024,9 +1024,9 @@ Consider our previous examples:
 \begin{mathpar}
 \exists \tv. \tv = \tint
   \cand
-  \cmatch \tv {} {(\lambda \_. \ctrue)}
+  \cmatch \tv {} {(\lambda \wild. \ctrue)}
 
-\cexists \cv \cmatch \cv \cv (\lambda \_.~ \cv = \tint)
+\cexists \cv \cmatch \cv \cv (\lambda \wild.~ \cv = \tint)
 \end{mathpar}
 
 In the first example, we apply the contextual rule with the context $\C := (\exists \tv. \tv = \tint \cand \square)$. Any solution $\phi$ of this part of the constraint necessarily has $\phi(\tv) = \tint$, therefore the shape of $\tv$ is uniquely determined. The contextual rule is thus applicable and the example is satisfiable.
@@ -1060,8 +1060,8 @@ Consider for example the constraint
 $$
   \exists \tva \tvb.
   \left({\begin{array}{l}
-    \cmatch \tva {\tvb} {(\cabs \_ {\tvb = \tbool})} \\
-    {} \cand \cmatch \tvb {} {(\cabs \_ \ctrue)} \\
+    \cmatch \tva {\tvb} {(\cabs \wild {\tvb = \tbool})} \\
+    {} \cand \cmatch \tvb {} {(\cabs \wild \ctrue)} \\
     {} \cand \tva = \tint
   \end{array}\right)}
 $$
@@ -1069,20 +1069,20 @@ $$
 To prove that this constraint is satisfiable we can use the \Rule{susp-ctx} twice, once with a hole around the suspension on $\tva$, and once with a hole around the suspension on $\tvb$. In fact this can be done in any order:
 \begin{itemize}
 \item If you focus on $\tva$ first, it is easy to prove that the context around it, $(\square \cand \cmatchdots \tvb \cand \tva = \tint)$, imposes a unique solution thanks to $\tva = \tint$. Then we use the $\Rule{susp-ctx}$ rule in the context 
-$(\cmatch \tint {\beta} {(\cabs \_ {\beta = \tbool})}) \cand \square \cand \tva = \tint)$, and we have to prove that $\tvb$ is uniquely determined in this context. This is in turn proved by using the conjunction rule followed by \Rule{susp-open}, which gives us access to the unification $\tvb = \tbool$.
-\item If you focus on $\tvb$ first, proving that $\tvb$ is uniquely determined in the context $(\cmatch \tva \tvb {(\cabs \_ {\tvb = \tbool})} \cand \square \cand \tva = \tint)$ requires using the \Rule{susp-ctx} again as in the case above. Then we end up with the constraint $(\cmatchdots \tva \cand \cmatchdots \tbool \cand \tva = \tint)$, and we can use \Rule{susp-ctx} yet another time on $\alpha$.
+$(\cmatch \tint {\beta} {(\cabs \wild {\beta = \tbool})}) \cand \square \cand \tva = \tint)$, and we have to prove that $\tvb$ is uniquely determined in this context. This is in turn proved by using the conjunction rule followed by \Rule{susp-open}, which gives us access to the unification $\tvb = \tbool$.
+\item If you focus on $\tvb$ first, proving that $\tvb$ is uniquely determined in the context $(\cmatch \tva \tvb {(\cabs \wild {\tvb = \tbool})} \cand \square \cand \tva = \tint)$ requires using the \Rule{susp-ctx} again as in the case above. Then we end up with the constraint $(\cmatchdots \tva \cand \cmatchdots \tbool \cand \tva = \tint)$, and we can use \Rule{susp-ctx} yet another time on $\alpha$.
 \end{itemize}
 
 On the other hand, the following constraint has circular dependencies:
 $$
   \exists \tva \tvb.
   \left({\begin{array}{l}
-    \cmatch \tva {\tvb} {(\cabs \_ {\tvb = \tbool})} \\
-    {} \cand \cmatch \tvb {\tva} {(\cabs \_ {\tva = \tint})}
+    \cmatch \tva {\tvb} {(\cabs \wild {\tvb = \tbool})} \\
+    {} \cand \cmatch \tvb {\tva} {(\cabs \wild {\tva = \tint})}
   \end{array}\right)}
 $$
 
-This constraint can be proved satisfiable with the ``natural semantics'' that we proposed earlier, by guessing the instantiation $\tva := \tint, \tvb := \tbool$. Our solver fails on it, and so does our contextual semantics. Without loss of generality, suppose that we try to use \Rule{susp-ctx} on $\tva$ first: we get to prove $\C[\tva !]$ for the context $\C := (\square \cand \cmatch \tvb \tva {(\cabs \_ {\tva = \tint})})$: we have to prove that there exists a unique head structure for $\alpha$ (presumably $\tint$) such that $\C[\ctrue]$ is satisfiable. But this does not hold, as the constraint $(\cmatch \tvb \tva {(\cabs \_ {\tva = \tint})})$ cannot be solved: we cannot use the \Rule{susp-open} rule yet as $\beta$ has no head, and we cannot use the \Rule{susp-ctx} rule as the empty context $\square$ does not uniquely constrain $\tvb$.
+This constraint can be proved satisfiable with the ``natural semantics'' that we proposed earlier, by guessing the instantiation $\tva := \tint, \tvb := \tbool$. Our solver fails on it, and so does our contextual semantics. Without loss of generality, suppose that we try to use \Rule{susp-ctx} on $\tva$ first: we get to prove $\C[\tva !]$ for the context $\C := (\square \cand \cmatch \tvb \tva {(\cabs \wild {\tva = \tint})})$: we have to prove that there exists a unique head structure for $\alpha$ (presumably $\tint$) such that $\C[\ctrue]$ is satisfiable. But this does not hold, as the constraint $(\cmatch \tvb \tva {(\cabs \wild {\tva = \tint})})$ cannot be solved: we cannot use the \Rule{susp-open} rule yet as $\beta$ has no head, and we cannot use the \Rule{susp-ctx} rule as the empty context $\square$ does not uniquely constrain $\tvb$.
 
 \subsection{Technical details}
 
