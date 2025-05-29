@@ -1446,13 +1446,14 @@ principality. We return to this pragmatic tradeoff in Section
   \eapp \eone \etwo \and
   \elet x \eone \etwo \and
   (e : \t) \andcr
-  \erecord { \overline{l = e} } \and
-  \efield e l \and
-  \exfield e \F l \andcr
+  \erecord {\overline{\elab = e} } \and
+  \efield e \elab \and
+  \exfield e \F \elab \andcr
    (\eone, \ldots, \en) \and
    \efield e j \and
    \exfield e n j \andcr
-   \expoly e { \exi \tvs. \ts } \and
+   \epoly e \and
+   \epoly[\exi \tvs. \ts] e  \and
    \einst e \and
    \exinst e \tvs \ts
 }\\[1ex]
@@ -1477,7 +1478,10 @@ principality. We return to this pragmatic tradeoff in Section
 
 \paragraph{Terms}
 
-In Figure ??, we give the grammar for our calculus. Terms include all of the
+\Xdidier{Records are in the syntax, but not in the typing rules}
+
+In \cref {fig/syntax}, we give the grammar for our calculus. Terms
+include all of the
 \ML calculus: variables $x$, the unit literal $\eunit$, lambda abstractions
 $\efun x e$, applications $\eapp \eone \etwo$, annotations $(e : \t)$ and
 let bindings $\elet x \eone \etwo$. Our extensions include:
@@ -1493,32 +1497,34 @@ let bindings $\elet x \eone \etwo$. Our extensions include:
 
 \item
   For semi-explicit first-class polymorphism, we have the boxing construct
-  $\expoly e \sigma$ and the unboxing construct $\einst e$.
+  $\epoly \e$  and the unboxing construct $\einst e$.
+
 \end{enumerate}
-Each construct that endangers principality has an explicitly annotated
-counterpart.  
+Each construct that endangers principality (written $\e^i$) has an
+explicitly annotated counterpart (written $\e^x$) that is $\eproj [\F] \e
+\elab$, $\eproj [n] \e j$, $\epoly [\exi \tvs \ts] \e$, or $\einst [\exi
+\tvs \ts] \e$.
 
 \paragraph{Types}
 
 As usual, types are split into monotypes (or just types) and type
-scehems. Types $\t$ include the variables $\tv$, the unit type $1$,
-functions $\tone \to \ttwo$, $n$-ary products $\Pi_{i = 1}^n \ti$ and
-nominal record types $\overline{\t} \Fapp$. Types schemes $\sigma$ extend
-monotypes allowing the universal quantification of zero or more type
-variables $\tfor {\overline{\tv}} \t$. We write $\tv, \beta, \gamma$,
-etc. for type variables. We also have polytypes
-\textit{without the labels} $[\sigma]$ as monotypes. 
+scehems. Types $\t$ include the variables $\tv$, the unit type $1$, function
+types $\tone \to \ttwo$, $n$-ary product types $\Pi_{i = 1}^n \ti$ and
+nominal record types $\tys \F$. Type schemes $\sigma$ extend monotypes
+allowing the universal quantification of zero or more type variables $\all
+\tvs \t$. We write $\tv, \tvb, \tvc$, \etc for type variables.  We also have
+polytypes \textit{without the labels} $[\ts]$ as monotypes.
 
 \paragraph{Typing contexts}
 
 Tying contexts $\Gamma$ are an ordered sequence of expression variable
 typings $x : \sigma$ and universally quantified type variables. Our
-presentation of \ML differs from most traditional ones that permit type
-variables to ``float around''. Instead, we explicitly track the type
-variables in scope in the type context $\Gamma$.
+presentation of \ML explicitly tracks the type variables in scope in the type
+context $\G$. (This may differ from traditional presentations that permit type
+variables to ``float around''.)
+
 
 \paragraph{Typing}
-
 
 \Xdidier
 {I added implicit creation of polytypes. This is required for polyparams. It
@@ -1540,8 +1546,6 @@ rather than from $e$. }
 
 % Semi-explicit first-class polymorphism 
 % Shapes of polytypes -- explain canonicalization / defunctionalization process 
-
-\newcommand{\vparens}[1]{\mathop{\parens{#1}}\limits}
 
 \begin{mathparfig}{fig/typing}{Typing rules}
   \inferrule[Var]
@@ -1613,30 +1617,31 @@ rather than from $e$. }
     {\G \th E[\einst e] : \t}
 \end{mathparfig}
 
-The typing judgement $\G \th \e : \ts$ states that in context $\G$
-expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
-{fig/typing}.
+As usual, the typing judgment $\G \th \e : \ts$ states that in context
+$\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on
+\cref {fig/typing}. Typing rules for fully annotated terms are unsurprising.
 
-Typing judgments for fully annotated terms as as usual an unsurprising.
 However, typing rules for terms with omitted type annotations are
-non-composition and are specify in two steps.  We first request a typing
-where with an implicit annotation and then show that the annotation is fully
-determined from context around the expression. 
+non-compositional as they depends on a surrounding one-hold context
+$\E$. Hence, they assert that an expression $\G \th \E \where {\e^i}: \t$
+where $\e^i$ is an expression with an implicit type annotation.
+%
+We first request a typing for the expression with an explicit annotation $\G
+\th \E \where {\e^i}: \t$ where $\e^i$.  We then requests that (the
+shape of) the annotation is fully determined from context, either from the
+type of the expression, which we write $\eshape \E \e s$, or from the type
+of the hole, which we write $\Eshape \E \e s$.
 
-We write $\E$ for one-hole expression contexts.  We write $\e^x$ for an
-expression with a topmost annotation such as the projection, the creation of
-a polytype or the use of a polytype, and $\e^i$ its implicit counterpart
-when the annotation has been omitted.
-
-In order to show that $\G \th \E \where {\e^i} \th \t$ we must first show
-$\G \th \E \where {e^x} \th \t$ and then show that the context $\E$ and $\E$
-and the expression $\e$ taken together ensure that the annotation, \ie the
-shape $s$ of the annotation is fully dertermined, either from the expression
-$\e$ which we write $\eshape \E \e s$, or from the context $\E$, which we
-write $\Eshape \E \e s$.
-
+Shapes are one of the following form:n
+\begin{mathpar}
+s \is \exi \tvs \ts \mid \Pi^n \mid \F \mid \sbot
+\end{mathpar}
+where $\exi \tvs \ts$ is a shape (as defined above).  The shape of a
+variable is undefined (which we write $\sbot$).  The shape of a non-variable
+monotype $\tys \F$ is $\F$.
+%
 The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
-$\tpoly \ts$ abstracted over the monormorphic parts. It is the minimal
+$\tpoly \ts$ abstracted over the monomorphic parts. It is the minimal
 closed type expression $\exi \tvas {\tpoly {\all \tvbs \t}}$ (up to the
 ordering of variables) such that there exists types $\tys$ such that
 $\t\where {\tvas \is \tys}$ is equal to $\ts$.
@@ -1649,20 +1654,11 @@ variable, \ie a variable in $\tvbs$.
 When $\exi \tvs \ts$ is a polytype skeleton, we write $\cpoly \tys \ts$ for
 the polytype $\tpoly \ts \where {\tvs \is \tys}$.
 
-The shape of a non-variable monotype $\tys \F$ is $\F$.
-The shape of a variable is undefied (say $\sbot$).
-\begin{mathpar}
-s \is \exi \tvs \ts \mid \Pi^n \mid \F \mid \sbot
-\end{mathpar}
-where $\exi \tvs \ts$ is a shape (as defined above).
-
-\Xdidier {We may wish to extend the definition of shapes to all non-variabl
+\Xdidier {We may wish to extend the definition of shapes to all non-variable
 types, letting it be the top constructor. This will carry a better
 intuition, even though the current presentation is correct.}
 
-
-
-In order to describe the judgmnents $\eshape \E \e s$ and
+In order to describe the judgments $\eshape \E \e s$ and
 $\Eshape \E \e s$, we introduce a cast operation $\ecase \e \t \tp$
 which allows an expression $\e$ of type $\t$ to be seen with type $\tp$.
 That is the typing rule for casts is 
@@ -1687,21 +1683,21 @@ to be determined from the context or the expression:
 \end{tabular}}
 \end{mathpar}
 These states that the shape $s$ of expression $\e$ in context $\E$ is
-determined by the expression $\e$, in the formar case, or by the context
+determined by the expression $\e$, in the former case, or by the context
 $\E$ in the latter case.
 
 Shapes are equal modulo alpha equivalence and the removal of useless
-polymorphic type variables. There do not have useless existential vairables.
+polymorphic type variables. There do not have useless existential variables.
 Shapes are only defined for n-ary tuples and polytypes.
 
 
 \Xdidier {In fact, the current proposal does not include overloading
 of nominal record fields... I thought we wanted to do this.
 Do we then need to change the examples in the introduction?
-Besides, I don't think we can reproduce the examples analoguous to $e_6$ and
+Besides, I don't think we can reproduce the examples analogous to $e_6$ and
 $e_7$ with structural tuples.}
 
-The following lemma shows that we can always take a larget context
+The following lemma shows that we can always take a larger context
 $\E$ for implicit rules \Rule {Proj-I}, \Rule {Use-I} and \Rule {Poly-I}. 
 \begin{lemma}
 \newcommand {\Eab}{\parens{\Ea\where \Eb}}
@@ -1716,7 +1712,7 @@ That is, there is always a derivation using only toplevel contexts.
 We now illustrate the typing of implicit constructs with a few examples.
 \begin{example}
 To illustrate a simple case of non-typability, we show that the expression $e$
-equal to $\efun \x {\eproj \x k}$ is ambigous, \ie that it does not
+equal to $\efun \x {\eproj \x k}$ is ambiguous, \ie that it does not
 typecheck.
 %
 Let $e_n$ be the explicitly annotated version $\efun r
@@ -1753,7 +1749,7 @@ for the type of $\x$.
 
 \begin{example}
 \locallabelreset
-We now illustrate a non-ambigous example, showing that the
+We now illustrate a non-ambiguous example, showing that the
 expression $e$ equal to $\th \eapp {(\efun \x {\eproj
 \x  k})} {(1, 2)} : \tint$.
 
@@ -1770,15 +1766,15 @@ have the derivation:
 \end{mathpar}
 Indeed, $\eset \th E \where {\eproj[n] \x k} : \t_k$ obviously holds.
 Therefore, it just remains to show $\eshape E \x {\Pi\iton}$~\llabel C.
-Asume $\eset \th \E \where{\ecast \x \typ \typp} : \t$. Since
+Assume $\eset \th \E \where{\ecast \x \typ \typp} : \t$. Since
 $\x: \Pi\iton (\tint,\tint)$ is bound in the context at the hole $E$,
 there is no other choice but $\tp$ equal to $\Pi\iton (\tint,\tint)$,
 hence $\tshape \t = \Pi\iton$, which proves~\lref C. 
 \end{example}
 
-The following example of non-typability illustratesis how the typing rules
-still forces to reject typing of exressions whose annotations would
-be unambiguous. This is intended, to prevent us from haveing to focus
+The following example of non-typability illustrates is how the typing rules
+still forces to reject typing of expressions whose annotations would
+be unambiguous. This is intended, to prevent us from having to focus
 at several annotation simultaneously. Our typing rules enforces the
 resolution of annotation, locally, one construct at a time. 
 
@@ -1999,4 +1995,5 @@ heuristics to refine it, a two-phase process. It's fine.}
 % LocalWords:  GADTs typechecked codomain typechecking subexpressions Bodin
 % LocalWords:  monomorphic subexpression Dunfield Riboulet jfla subtyping
 % LocalWords:  greek Chargueraud typable monotype polytype Garrigue Remy
-% LocalWords:  impredicative polytypes
+% LocalWords:  impredicative polytypes minimality RCL ary Proj toplevel
+% LocalWords:  typability
