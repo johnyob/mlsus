@@ -19,9 +19,10 @@
 
 \usepackage{marginnote}
 
-\title{Omnidirectional type inference
+\title{Omnidirectional type inference for fragile \ML type features}
    %% with suspended constraints
-   for static overloading and sem-explicit first-class polymorphism}
+   %%for static overloading and semi-explicit first-class polymorphism
+}
 
 %% Was 
 %% \title{Omnidirectional type inference for \ML extensions}
@@ -31,7 +32,7 @@
 \Xgabriel{On the title, I still prefer ``for ML extensions'' or ``with suspended constraint'' to the mouthful that we have here.}
 
 \begin{abstract}
-We propose a new concept of \emph{omnidirectional} type inference, which is
+We propose a new concept of \emph{omnidirectional} type inference, which is 
 the ability to resolve \ML-style typing constraints in disorder, by
 contrast with all known implementations that always typecheck the
 bindings before the bodies of let-expressions.
@@ -79,26 +80,28 @@ it enjoys the principal type property and more importantly is closed by
 common program transformations such as let-contraction and let-expansion,
 and permutation of the order or arguments.
 
-Over the years, many extensions of \ML have been proposed.  While some of
-them, such as extensible records with row-polymorphism, higher-kinded types,
-or dimensional types fits nicely into the \ML framework. Others such as
-GADTs, semi-explicit polymorphism, or overloading of datatype constructors
-and record fields, are 
-\emph{fragile}, since they require to \emph{twist} the ML-style
-specification with some direct or indirect algorithmic flavor in order to
-preserve \emph{principality}.  Fragile extensions have all in common that
-they introduce new constructs that require explicit type annotations that
-may sometimes but not always be omitted. We call then \emph{fragile} as they
-claim completeness but for a more or less ad-hoc specification that is a
-restriction of a more natural specification designed especially to reject
-exampples that would brak completeness, but also many others.
-Unsurprisingly, they have historically pose challenges to the preservation
-of principal types.  Fragile extensions can actually be viewed as an
-elaboration into the slightly weaker language that makes annotations
-mandatory, but itself fits nicely into the
-\ML framework. The elaboration then defines which annotations can be omitted
-and rebuilt from context, a point of view already taken in stratified type
-inference~\cite {Pottier-Regis-Gianas/stratified@popl06}.
+Over the years, many extensions of \ML have been proposed. Some of the new
+constructs, such as extensible records with row-polymorphism, higher-kinded
+types, or dimensional types, fit nicely into the \ML framework. Others such
+as GADTs, semi-explicit polymorphism, first-class modules or static
+overloading of datatype constructors and record fields, are \emph{fragile},
+since they require to twist the ML-style specification with some direct or
+indirect algorithmic flavor in order to preserve
+\emph{principality}. Fragile conststructs have all in common that their
+syntax includes explicit type annotations which may sometimes but not always
+be omitted. We call them \emph{fragile} as they have a natural specification
+for which they are \emph{not} complete; they are only complete for
+a (more or less ad-hoc) restriction of this specification, designed
+especially to reject examples that would break completeness, but also many
+others.  Unsurprisingly, they have historically posed challenges to the
+preservation of principal types.
+
+Fragile constructs can be elaborated into their non-fragile but less
+cumbersome to use counterpart, where explicit type annotations are
+mandatory. Those fit nicely into the \ML framework. The elaboration then
+defines which annotations can be omitted and rebuilt from context, a point
+of view already taken in stratified type inference~\cite
+{Pottier-Regis-Gianas/stratified@popl06}.
 %
 The difficulty in fragile extensions lies in finding a specification that is
 sufficiently expressive, principled, intuitive for the user, and for which
@@ -126,7 +129,7 @@ instantiated by a particular choice of modes for each of the language
 construct, while there is no optimal combination of modes for the whole set
 of language constructs. Once modes have been fixed, there are usually
 principal solutions to the type inference problem, but with respect to a
-specification that made non principal choices.
+specification that made non-principal choices.
 %
 Bidirectional type inference has been largely used for languages with
 higher-rank polymorphism or subtyping~\TODO{citations}. Still, both \OCaml
@@ -147,9 +150,9 @@ in the remaining cases where it is incomplete. }
 \OCaml uses another mechanism for propagation of type
 information, based on polymorphism, which actually enforces an ordering in
 the typechecking of let-bindings, where the (polymorphic part of) a the
-bound expression must be typed before the body of the let-expression.  We
+bound expression must be typed before the body of the let-expression.  \Xgabriel[We
 call it \emph{poly-directional} type inference, which is to be understood as
-the direction of \emph{polymorphism} and not in multiple directions.
+the direction of \emph{polymorphism} and not in multiple directions.]{Yeah, not a good term. Use-directional? Def-use-directional? Instance-directional? Let-directional?}
 Initially introduced with the extension of \ML with semi-explicit
 first-class polymorphism~\cite {Garrigue-Remy/poly-ml}, it has also been used
 for the overloading of record fields, which we use for illustration here
@@ -162,7 +165,7 @@ type one = {x : int}
 type 'a two = {x : 'a; y : int}
 \end{program}
 This can be thought of as defining two abstract types \ocaml{foo} and
-\ocaml{bar} with two access \ocaml{(_:one).x} and \ocaml{(_:two).x} of
+\ocaml{bar} with two accessors \ocaml{(_:one).x} and \ocaml{(_:two).x} of
 respective types \ocaml{(one -> int)} and \ocaml{(two -> int)}, among
 others.
 %
@@ -230,24 +233,22 @@ function?  There are examples when the former is a better choice and others
 when the latter is preferable---but typing rules have to choose one of the
 two alternative forever.  One may also allow information to flow between
 multiple arguments passed to the same function, or on the opposite disallow
-it entirety. Again, there is not best choice. We eventually have a complete
+it entirety. Again, there is no best choice. We eventually have a complete
 algorithm with respect to a spec that made somewhat arbitrary choices.
 
-Poly-directional type inference seems a better fit for \ML, since it
-relies on polymorphism which is the essence of \ML. Still, it does not even
-allow to propagate user-type annotations! 
-\Xalistair{Examples here?}
-Thus \OCaml, which use
-poly-directional type inference as the primary mechanisms also added a weak
-form of bidirectional propagation. 
-\Xalistair{Example of bidirectionality in OCaml here?}
-Besides, the implementation of
-poly-directional type inference has an algorithmic cost, since the addition
-of variable annotations requires to reread dags as trees destroying the
-sharing that naturally resulting from unification, which may increase the
-size of types and the cost of type inference. For that reason, the implement
-of \OCaml cheats and is incomplete by default and the user must explicitly
-require the most expensive computation of principal types when desired.
+Poly-directional type inference seems a better fit for \ML, since it relies
+on polymorphism which is the essence of \ML. Still, it does not even allow
+to propagate user-provided type annotations!  \Xalistair{Examples here?}
+Thus \OCaml, which use poly-directional type inference as the primary
+mechanisms also added a weak form of bidirectional propagation.
+\Xalistair{Example of bidirectionality in OCaml here?} Besides, the
+implementation of poly-directional type inference has an algorithmic cost:
+for technical reasons, variable annotations must un-share types
+(from acyclic graphs as naturally produced by unification to trees), which
+may increase the size of types and the cost of type inference. For that
+reason, the implementation of \OCaml cheats and is incomplete by default and
+the user must explicitly pass the \texttt{-principal} flag to require the
+more expensive computation of principal types when desired.
 
 \paragraph{Incompleteness of directional type inference}
 
