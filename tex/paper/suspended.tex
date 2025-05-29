@@ -532,43 +532,34 @@ misunderstanding. We should discuss it. However, this is not so important.
 My point about efficient implementation is that we do not have anything to
 validate that the implementation is efficient for the moment.}
 
-\begin{mathparfig}[t]%
+\begin{bnffig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
-\def \is{&::=&}
-\def \crmid {\\&&\mid&}
-\def \nois{&&}
-\def \tag{&&}
-\begin{tabular*}{\linewidth}{C~R=;;R;;LL~r}&
-\cva, \cvb, \cvc \nois
-\tag   Type variables
-\\&
-\t  \is
+\entry[Type variables]{\cva, \cvb, \cvc}{}{}
+\\
+\entry[Constraint types]{\t}{
      \cv \mid \overline{\t} \Fapp ~ \mid \ldots
-\tag   Constraint types
-\\&
-\Fapp \is
-\tunit \mid \cdot \tarrow \cdot \mid \dots
-\tag   Type constructors
-\\[1ex]&
-C  \is
+}\\
+\entry [Type constructors]{\Fapp}{
+         \tunit
+  \and   \cdot \tarrow \cdot
+  \and   \dots
+}\\
+\entry[Constraints]{\C}{
         \ctrue
-        \mid \cfalse
-        \mid \Cone \cand \Ctwo
-        \mid \cexists \cv C
-        \mid \cunif \tone \ttwo
-\tag Constraints
-\crmid  \cletin x {\clam \cv \Cone} {\Ctwo}
-        \mid  \cinst \x \t
-      \crmid  \cmatch \cv \D  \hf
-\\&
-\sh \is \overline{\tv} \Fapp ~ \mid \ldots
-\tag   Shapes
-\\&
-\D \is
-\tag {\TODO{Missing definition}}
-\end{tabular*}
-\end{mathparfig}
+  \and  \cfalse
+  \and  \Cone \cand \Ctwo
+  \and  \cexists \cv C
+  \and  \cunif \tone \ttwo
+  \nextline
+  \and  \cletin x {\clam \cv \Cone} {\Ctwo}
+  \and  \cinst \x \t
+  \And  \cmatch \cv \D  \hf
+}\\
+\entry[Shapes] \sh {\tvs \F \and \ldots}
+\\
+\entry \D {\eset \and \D, \tv \and \D, \x}
+\end{bnffig}
 
 % Syntax!
 
@@ -1446,32 +1437,42 @@ assuming the tuple has arity $j$. While appealing, such defaults compromise
 principality. We return to this pragmatic tradeoff in Section
 \ref{sec:implementation}.
 
-\[
-\begin{bnf}
-  \bnflabel{Terms} & 
-    \begin{bnfalign}
-      e \bnfis & x \mid () \mid \efun x e \mid \eapp \eone \etwo \mid \elet
-      x \eone \etwo \mid (e : \t) \\ 
-      \mid & \erecord { \overline{l = e} }
-        \mid \efield e l
-        \mid \exfield e \F l \\ 
-      \mid & (\eone, \ldots, \en)
-        \mid \efield e j
-        \mid \exfield e n j \\
-      \mid & \expoly e { \exi \tvs. \ts }
-        \mid \einst e
-        \mid \exinst e \tvs \ts
-    \end{bnfalign}
-    \\
-  \bnflabel{Types} & 
-    \begin{bnfalign}
-      \t \bnfis & \tv \mid 1 \mid \tone \to \ttwo \mid \overline{\t} \Fapp ~ \mid \Pi_{i = 1}^n \ti \mid [\sigma] 
-    \end{bnfalign}
-    \\ 
-  \bnflabel{Type schemes} & \sigma \bnfis \t \mid \tfor \tv \sigma \\
-  \bnflabel{Contexts} & \Gamma \bnfis \cdot \mid \Gamma, x : \sigma \mid \Gamma, \tv 
-\end{bnf}
-\]
+\begin{bnffig}{fig/syntax}{Syntax of types and terms}
+\entry[Terms]{\e}{
+  x \and
+  () \and
+  \efun x e \and
+  \eapp \eone \etwo \and
+  \elet x \eone \etwo \and
+  (e : \t) \andcr
+  \erecord { \overline{l = e} } \and
+  \efield e l \and
+  \exfield e \F l \andcr
+   (\eone, \ldots, \en) \and
+   \efield e j \and
+   \exfield e n j \andcr
+   \expoly e { \exi \tvs. \ts } \and
+   \einst e \and
+   \exinst e \tvs \ts
+}\\[1ex]
+\entry[Types]{\t}{
+   \tv \and
+   1 \and
+   \tya \to \tyb \and
+   \ts \F \and
+   \Pi_{i = 1}^n \ti \and
+   \tpoly {\exi \tvs \ts}
+}\\
+\entry[Type schemes]{\ts}{
+     \t \and
+     \tfor \tv \ts 
+}\\
+\entry[Contexts]{\G}{
+   \eset \and
+   \G, x : \ts \and
+   \G, \tv 
+}\\
+\end{bnffig}
 
 \paragraph{Terms}
 
@@ -1507,15 +1508,16 @@ variables $\tfor {\overline{\tv}} \t$. We write $\tv, \beta, \gamma$,
 etc. for type variables. We also have polytypes
 \textit{without the labels} $[\sigma]$ as monotypes. 
 
-\paragraph{Contexts}
+\paragraph{Typing contexts}
 
-Contexts $\Gamma$ are an ordered sequence of expression variable typings $x
-: \sigma$ and universally quantified type variables. Our presentation of \ML
-differs from most traditional ones that permit type variables to ``float
-around''. Instead, we explicitly track the type variables in scope in the
-type context $\Gamma$.
+Tying contexts $\Gamma$ are an ordered sequence of expression variable
+typings $x : \sigma$ and universally quantified type variables. Our
+presentation of \ML differs from most traditional ones that permit type
+variables to ``float around''. Instead, we explicitly track the type
+variables in scope in the type context $\Gamma$.
 
 \paragraph{Typing}
+
 
 \Xdidier
 {I added implicit creation of polytypes. This is required for polyparams. It
@@ -1538,12 +1540,9 @@ rather than from $e$. }
 % Semi-explicit first-class polymorphism 
 % Shapes of polytypes -- explain canonicalization / defunctionalization process 
 
-
 \newcommand{\vparens}[1]{\mathop{\parens{#1}}\limits}
 
-$\parens {a}{}_{i=1}^n$
-
-\begin{mathpar}
+\begin{mathparfig}{fig/typing}{Typing rules}
   \inferrule[Var]
     {x : \sigma \in \G}
     {\G \th x : \sigma}
@@ -1604,15 +1603,30 @@ $\parens {a}{}_{i=1}^n$
     {\G \th \epoly \e : \tpoly {\ts \where {\tvs \is \tys}}}
 
   \inferrule [Use-X]
-    {\G \th e : [\sigma[\overline{\tv := \t}]] \\ \G \th
-    \sigma[\overline{\tv := \t}] \leq \tp} 
-    {\G \th \exinst e {\overline{\tv}} \sigma : \tp }
+    {\G \th \e : \ts \where {\tvs \is \tys}}
+    {\G \th \exinst e {\overline{\tv}} \sigma : \ts \where {\tvs \is \tys}}
 
   \inferrule [Use-I]
     {\eshape E  \e {\tpoly{\exi \tvs \ts}} \\
      \G \th E[\exinst e \tvs \ts] : \t}
     {\G \th E[\einst e] : \t}
-\end{mathpar}
+\end{mathparfig}
+
+The typing judgement $\G \th \e : \ts$ states that in context $\G$
+expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
+{fig/typing}.
+
+Typing judgments for fully annotated terms as as usual an unsurprising.
+However, typing rules for terms with omitted type annotations are
+non-composition and specify when an whole expression $\E \where \e^x$ with
+an explicitly annotation expression $\e^x$ that is well typed in a context
+$\E$ can be omitted turn into an implicitly typed expresion $\e^i$ so that
+$\E \where {\e^i}$ is still well-typed. In each case, this requires the
+context $\E$ and the expression $\e$ taken together ensure that the
+annotation, \ie the shape $s$ of the annotation is fully dertermined, either
+from the expression $\e$ which we write $\eshape \E \e s$, or from the
+context $\E$, which we write $\Eshape \E \e s$.
+
 The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
 $\tpoly \ts$ abstracted over the monormorphic parts. It is the minimal
 closed type expression $\exi \tvas {\tpoly {\all \tvbs \t}}$ (up to the
@@ -1625,33 +1639,47 @@ any suffix of a non-variable node in $\t$ leads to a polymorphic type
 variable, \ie a variable in $\tvbs$.
 %
 When $\exi \tvs \ts$ is a polytype skeleton, we write $\cpoly \tys \ts$ for
-the type $\tpoly \ts \where {\tvs \is \tys}$.
+the polytype $\tpoly \ts \where {\tvs \is \tys}$.
 
-We also add a well-typed hole judgement (this is analogous to using $\ctrue$
-in suspended constraints semantics):
+The shape of a non-variable monotype $\tys \F$ is $\F$.
+The shape of a variable is undefied (say $\sbot$).
 \begin{mathpar}
-  \inferrule[Hole]  
-    {\G \th e : \t}
-    {\G \th \thole e \t \tp : \tp} 
+s \is \exi \tvs \ts \mid \Pi^n \mid \F \mid \sbot
 \end{mathpar}
-Then we can define:
-\begin{mathpar}
-\eshape E \e s \wide\eqdef
-  \forall \G, \t, \tp.  \G \th E[\emagic{e : \typ} : \typ] : \t \implies
-  \textsf{shape}(\typ) = s
-  
-\Eshape E \e s \wide\eqdef
-  \forall \G, \t, \tp.  \G \th E[\emagic{e : \tp} : \typp] : \t \implies
-  \textsf{shape}(\typp) = s
-\end{mathpar}
-What is a shape? 
-\begin{mathpar}
-  s \wide\bnfis \Pi^n \mid \exi \tvs \tpoly \ts
-\end{mathpar}
-where $\exi \tvs \tpoly \ts$ is a polytype shape.
+where $\exi \tvs \ts$ is a shape (as defined above).
+
 \Xdidier {We may wish to extend the definition of shapes to all non-variabl
 types, letting it be the top constructor. This will carry a better
 intuition, even though the current presentation is correct.}
+
+
+
+In order to describe the judgmnents $\eshape \E \e s$ and
+$\Eshape \E \e s$, we introduce a cast operation $\ecase \e \t \tp$
+which allows an expression $\e$ of type $\t$ to be seen with type $\tp$.
+That is the typing rule for casts is 
+\begin{mathpar}
+  \inferrule[Cast]  
+    {\G \th e : \t}
+    {\G \th \ecast e \t \tp : \tp} 
+\end{mathpar}
+Casts are not allowed on source terms and are just a device for the
+definition of unavoidable shapes. Finally, we define
+\begin{mathpar}
+\def \Eqdef {&\eqdef&}
+{\begin{tabular}{RCL}
+\eshape E \e s \Eqdef
+  \forall \G, \t, \tp, \uad
+  \G \th E \where {\ecast \e \typ \typp} : \t \implies \tshape \typ = s
+\\[1ex]
+\Eshape E \e s \Eqdef
+  \forall \G, \t, \tp, \uad  \G \th E\where{\ecast \e \typ \typp} : \t \implies
+  \tshape \typp = s
+\end{tabular}}
+\end{mathpar}
+These states that the shape $s$ of expression $\e$ in context $\E$ is
+determined by the expression $\e$, in the formar case, or by the context
+$\E$ in the latter case.
 
 Shapes are equal modulo alpha equivalence and the removal of useless
 polymorphic type variables. There do not have useless existential vairables.

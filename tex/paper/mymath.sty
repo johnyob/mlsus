@@ -71,3 +71,27 @@
    {\end{array}}
 
 \newcommand {\emath}[1]{\ensuremath{#1}}
+
+\newcommand {\bnf@entry}[3][]
+  {\bnf@flushentry \gdef\@bnf@entry {&&#1}
+   &\ifempty{#2}{&&}{#2\bnf@is}
+   #3\bnf@flushentry}
+\def \bnf@empty{\gdef \@bnf@entry{}}\bnf@empty
+\def \bnf@is {&::=&}
+\def \bnf@mid {\mid}
+\def \bnf@flushentry{\@bnf@entry \bnf@empty}
+\def \bnf@andcr{\bnf@flushentry \\&&\bnf@mid&}
+\def \bnf@nextline #1{\bnf@andcr \ifthenelse {\equal{#1}{\bnf@mid}}{}{#1}}
+
+
+\newenvironment{bnffig}[3][htb!]
+{\begin{mathparfig}[#1]{#2}{#3}
+   \let \entry \bnf@entry
+   \let \is \bnf@is
+   \let \and \bnf@mid
+   \let \andcr \bnf@andcr
+   \let \And \bnf@andcr
+   \let \nextline \bnf@nextline
+   \begin{tabular*}{\linewidth}{C~R=;;R;;LL~r}}
+  {\end{tabular*}\end{mathparfig}}
+
