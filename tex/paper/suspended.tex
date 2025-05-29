@@ -554,7 +554,8 @@ validate that the implementation is efficient for the moment.}
   \nextline
   \and  \cletin x {\clam \cv \Cone} {\Ctwo}
   \and  \cinst \x \t
-  \And  \cmatch \cv \D  \hf
+  \nextline
+  \and  \cmatch \cv \D  \hf
 }\\
 \entry[Shapes] \sh {\tvs \F \and \ldots}
 \\
@@ -1618,14 +1619,21 @@ expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
 
 Typing judgments for fully annotated terms as as usual an unsurprising.
 However, typing rules for terms with omitted type annotations are
-non-composition and specify when an whole expression $\E \where \e^x$ with
-an explicitly annotation expression $\e^x$ that is well typed in a context
-$\E$ can be omitted turn into an implicitly typed expresion $\e^i$ so that
-$\E \where {\e^i}$ is still well-typed. In each case, this requires the
-context $\E$ and the expression $\e$ taken together ensure that the
-annotation, \ie the shape $s$ of the annotation is fully dertermined, either
-from the expression $\e$ which we write $\eshape \E \e s$, or from the
-context $\E$, which we write $\Eshape \E \e s$.
+non-composition and are specify in two steps.  We first request a typing
+where with an implicit annotation and then show that the annotation is fully
+determined from context around the expression. 
+
+We write $\E$ for one-hole expression contexts.  We write $\e^x$ for an
+expression with a topmost annotation such as the projection, the creation of
+a polytype or the use of a polytype, and $\e^i$ its implicit counterpart
+when the annotation has been omitted.
+
+In order to show that $\G \th \E \where {\e^i} \th \t$ we must first show
+$\G \th \E \where {e^x} \th \t$ and then show that the context $\E$ and $\E$
+and the expression $\e$ taken together ensure that the annotation, \ie the
+shape $s$ of the annotation is fully dertermined, either from the expression
+$\e$ which we write $\eshape \E \e s$, or from the context $\E$, which we
+write $\Eshape \E \e s$.
 
 The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
 $\tpoly \ts$ abstracted over the monormorphic parts. It is the minimal
@@ -1664,7 +1672,8 @@ That is the typing rule for casts is
     {\G \th \ecast e \t \tp : \tp} 
 \end{mathpar}
 Casts are not allowed on source terms and are just a device for the
-definition of unavoidable shapes. Finally, we define
+definition of unavoidable shapes. Finally, we define it means for a shape
+to be determined from the context or the expression: 
 \begin{mathpar}
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
@@ -1692,7 +1701,7 @@ Do we then need to change the examples in the introduction?
 Besides, I don't think we can reproduce the examples analoguous to $e_6$ and
 $e_7$ with structural tuples.}
 
-The following lemma shows that we can always take the larget context
+The following lemma shows that we can always take a larget context
 $\E$ for implicit rules \Rule {Proj-I}, \Rule {Use-I} and \Rule {Poly-I}. 
 \begin{lemma}
 \newcommand {\Eab}{\parens{\Ea\where \Eb}}
@@ -1702,8 +1711,9 @@ Assume $\eshape \Eb e s$ and $\G \th \Ea \Where {\Ga \th \Eb \where {\e^x} :
 \begin{proof}[Proof Sketch]
 Formally, can be proved by induction on $\Ea$. 
 \end{proof}
+That is, there is always a derivation using only toplevel contexts. 
 
-We illustration the typing of implicit constructs with several examples.
+We now illustrate the typing of implicit constructs with a few examples.
 \begin{example}
 To illustrate a simple case of non-typability, we show that the expression $e$
 equal to $\efun \x {\eproj \x k}$ is ambigous, \ie that it does not
@@ -1748,7 +1758,7 @@ expression $e$ equal to $\th \eapp {(\efun \x {\eproj
 \x  k})} {(1, 2)} : \tint$.
 
 Let $k$ and $n$ be $1$ and $2$.
-Let $E$ be the context $\th \eapp {(\efun \x \ehole} {(1, 2)} : \tint$.  We
+Let $E$ be the context $\th \eapp {(\efun \x \ehole)} {(1, 2)} : \tint$.  We
 have the derivation:
 \begin{mathpar}
 \infer* [Right=Proj-I]{
@@ -1760,36 +1770,38 @@ have the derivation:
 \end{mathpar}
 Indeed, $\eset \th E \where {\eproj[n] \x k} : \t_k$ obviously holds.
 Therefore, it just remains to show $\eshape E \x {\Pi\iton}$~\llabel C.
-Asume $\eset \th E \where{\emagic {\x : \tp}} : \wild$. Since
+Asume $\eset \th \E \where{\ecast \x \typ \typp} : \t$. Since
 $\x: \Pi\iton (\tint,\tint)$ is bound in the context at the hole $E$,
-we this have not other choice but $\t$ equal to $\Pi\iton (\tint,\tint)$,
-which proves~\lref C. 
+there is no other choice but $\tp$ equal to $\Pi\iton (\tint,\tint)$,
+hence $\tshape \t = \Pi\iton$, which proves~\lref C. 
 \end{example}
+
+The following example of non-typability illustratesis how the typing rules
+still forces to reject typing of exressions whose annotations would
+be unambiguous. This is intended, to prevent us from haveing to focus
+at several annotation simultaneously. Our typing rules enforces the
+resolution of annotation, locally, one construct at a time. 
 
 \begin{example}
 \newcommand{\tyid}{\ty_{\kwd{id}}}
 \newcommand {\epid}[1][]{\epoly[#1]{\efun z z}}
-A more interesting example of non-typability is how the typing rules forces
-us to still reject some examples that have a unique solution.
-
 Let $\tyid$ be $\tpoly{\all \tv \tv \to \tv}$. 
-
-Let us show that the expression $e$ equal to $\elet \x {\epoly {\efun z z}}
-{(\eapp {\einst \x} 1, \eapp {\einst \x} \eunit)}$.  Let $\tyid$ be $\tpoly
-{\all \tv \tv \to \tv}$.  Clearly, we have $\elet \x {\epoly [\tyid] {\efun
-z z}} {(\eapp {\einst[\tyid] \x} 1, \eapp {\einst[\tyid] \x} \eunit)}$.
-This is actually the only possible fully annotated derivation.
+%
+We show that the expression $e$ equal to $\elet \x {\epoly {\efun z z}}
+{(\eapp {\einst \x} 1, \eapp {\einst \x} \eunit)}$ is rejected as ambiguous.
+Let $\tyid$ be $\tpoly {\all \tv \tv \to \tv}$.  Clearly, we have $\elet \x
+{\epoly [\tyid] {\efun z z}} {(\eapp {\einst[\tyid] \x} 1, \eapp
+{\einst[\tyid] \x} \eunit)}$.  This is actually the only possible fully
+annotated derivation.
 %
 To show that $e$ is typable, we must be able to make all annotations
-optional.  There must be a final step that will introduce the first
-annotation, and we have three possible choices, one for each of of the three
-positions with an annotation that must be removed. We reason by cases on the
-last position of focus $\E$:
-\begin{description}
-
-\item [Case $\Ez$ is $\elet \x \ehole (\eapp {\einst \x} 1, \eapp {\einst
-  \x} \eunit)$.] 
-
+optional, sequentially.  Therefore, the final step, which will eliminate the
+last annotation has a single point of focus $\E{\e^x}$, which could be any
+of the three positions with an annotation.  We consider each case
+independently, and show that it is actually not typable.
+\proofcase
+{$\E$ is $\elet \x \ehole (\eapp {\einst \x} 1, \eapp {\einst \x}\eunit)$}
+%
 If this holds, we should have a derivation that ends with
 \begin{mathpar}
 \infer*[Right=Poly-I]{
@@ -1804,10 +1816,10 @@ Indeed, the following judgment $\eset \th \E \where {\epid [s]}: \t$ where
 $s$ is either $\all \tv \tv \to \tv$ or $\all \tv (\tv\to\tv) \to
 \tv\to\tv$. Hence, this case cannot occur. 
 
-\item
-  [$\E$ is to $\elet \x \epid (\eapp {\einst \ehole} 1, \eapp
-  {\einst \x} \eunit)$.]
-
+\proofcase
+{$\E$ is
+ $\elet \x \epid (\eapp {\einst \ehole} 1, \eapp {\einst \x} \eunit)$}
+%
 The derivation must end with:
 \begin{mathpar}
 \infer*[Right=Proj-X]{
@@ -1817,14 +1829,12 @@ The derivation must end with:
                     \eset \th \E \where {\einst \x} : \t
 }
 \end{mathpar}
-However, $\eshape \E \x \tyid$ does not hold. 
+However, $\eshape \E \x \tyid$ does not hold (the proof is similar to the
+previous case). 
 
-\item
-  [$\E$ is $\elet \x \epoly {\efun z z} (\eapp {\einst \ehole} 1, \eapp
-  {\einst \x} \eunit)$.]  This is symmetric to the previous
-  case, which cannot hold either.
-
-\end{description}
+\proofcase {$\E$ is  $\elet \x \epoly {\efun z z} (\eapp {\einst \ehole} 1, \eapp
+{\einst \x} \eunit)$} This is symmetric to the previous case, which cannot
+hold either.
 \end{example}
 
 \section{Solving constraints}
