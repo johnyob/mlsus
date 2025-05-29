@@ -80,7 +80,7 @@
 \newcommand{\econstr}[2]{#1 \@ #2}
 \newcommand{\einst}[2][]{\angles {#2\ifempty{#1}{}{:#1}}}
 \newcommand{\exinst}[3]{\angles {#1 : \exists {#2}. \, #3}}
-\newcommand{\epoly}[2][]{[#2]\ifempty{#1}{}{:#1}}
+\newcommand{\epoly}[2][]{[#2\ifempty{#1}{}{:#1}]}
 \newcommand{\expoly}[2]{\epoly {#1:#2}}
 \newcommand{\eunit}{()}
 \newcommand{\efun}[2]{\lambda #1. \, #2}
@@ -183,3 +183,6 @@
 \newcommand \ehole {\square}
 \newcommand \emagic[1]{\set{#1}}
 \newcommand \wild {{\_}}
+\newcommand \eshape[3]{#1 \emagic {#2 \triangleright #3}}
+\newcommand \Eshape[3]{#1 \emagic {#2 \triangleleft #3}}
+\newcommand \thole [3]{e  : #2 \bowtie #3}

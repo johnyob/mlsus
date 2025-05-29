@@ -1584,21 +1584,18 @@ $\parens {a}{}_{i=1}^n$
     {\G \th \exfield \e n j : \tj}
 
   \inferrule[Proj-I]
-    {E[e \mathop{!} \Pi^n] \\
+    {\eshape E e {\Pi^n} \\
      \G \th E[\exfield e n j] : \t}
     {\G \th E[\efield e j] : \t}
     
   \inferrule [Poly-X]
-    {\G \th \e : \sigma[\overline{\tv := \t}] \\
-     \G \th \overline{\t}}
-    {\G \th \expoly \e { \exists \overline{\tv}. ~ \sigma } :
-      [\sigma[\overline{\tv := \t}]]}
+    {\G \th \e : \ts\where {\tvs \is \tys}}
+    {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
 
   \inferrule [Poly-I]
-    {\G \th \e : \sigma[\overline{\tv := \t}] \\
-     \G \th \overline{\t}}
-    {\G \th \expoly \e { \exists \overline{\tv}. ~ \sigma } :
-      [\sigma[\overline{\tv := \t}]]}
+    {\Eshape \E \e {\tpoly {\exi \tvs \ts}} \\
+     \G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
+    {\G \th \epoly \e : \tpoly {\ts \where {\tvs \is \tys}}}
 
   \inferrule [Use-X]
     {\G \th e : [\sigma[\overline{\tv := \t}]] \\ \G \th
@@ -1606,11 +1603,10 @@ $\parens {a}{}_{i=1}^n$
     {\G \th \exinst e {\overline{\tv}} \sigma : \tp }
 
   \inferrule [Use-I]
-    {E[e \mathop{!} \exists \overline{\tv}. ~ \sigma] \\
-     \G \th E[\exinst e {\overline{\tv}} \sigma] : \t}
+    {\eshape E  \e {\tpoly{\exi \tvs \ts}} \\
+     \G \th E[\exinst e \tvs \ts] : \t}
     {\G \th E[\einst e] : \t}
 \end{mathpar}
-
 The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
 $\tpoly \ts$ abstracted over the monormorphic parts. It is the minimal
 closed type expression $\exi \tvas {\tpoly {\all \tvbs \t}}$ (up to the
@@ -1629,15 +1625,19 @@ We also add a well-typed hole judgement (this is analogous to using $\ctrue$
 in suspended constraints semantics):
 \begin{mathpar}
   \inferrule[Hole]  
-    {\G \th e : \tp}
-    {\G \th \{ e : \tp \} : \t} 
+    {\G \th e : \t}
+    {\G \th \thole e \t \tp : \tp} 
 \end{mathpar}
-Then we can define: 
-\begin{align*}
-  E[e \mathop{!} s] \wide\eqdef
-  \forall \G, \t, \tp.  \G \th E[\emagic{e : \tp}] : \t \implies
-  \textsf{shape}(\tp) = s
-\end{align*}
+Then we can define:
+\begin{mathpar}
+\eshape E \e s \wide\eqdef
+  \forall \G, \t, \tp.  \G \th E[\emagic{e : \typ} : \typ] : \t \implies
+  \textsf{shape}(\typ) = s
+  
+\Eshape E \e s \wide\eqdef
+  \forall \G, \t, \tp.  \G \th E[\emagic{e : \tp} : \typp] : \t \implies
+  \textsf{shape}(\typp) = s
+\end{mathpar}
 What is a shape? 
 \begin{mathpar}
   s \wide\bnfis \Pi^n \mid \exi \tvs \tpoly \ts
