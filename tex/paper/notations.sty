@@ -70,9 +70,7 @@
 \newcommand {\mlexp}[3][\G]{#1 \th #2: #3}
 \newcommand {\mltyp}[3][\G]{#1 \th #2}
 \newcommand {\mlsub}[3][\G]{#1 \th #2 \le #3}
-\newcommand {\G}{\Gamma}
 \newcommand {\iton}[1][n]{_{i=1}^{#1}}
-
 \renewcommand{\@}{\;}
 
 \newcommand{\ifempty}[3]{\ifthenelse{\equal{#1}{}}{#2}{#3}}
@@ -103,10 +101,12 @@
 \newcommand {\Parens}[1]{\highdelim\parens {#1}}
 \newcommand {\Braces}[1]{\highdelim\braces {#1}}
 \newcommand {\Angles}[1]{\highdelim\angles {#1}}
+\newcommand {\Brackets}[1]{\highdelim\brackets {#1}}
 \newcommand {\Bbrackets}[1]{\highdelim\bbrackets {#1}}
 \newcommand {\set}[1]{\braces{#1}}
 \newcommand {\eset}{\emptyset}
 \newcommand {\where}[1]{\brackets {#1}}
+\newcommand {\Where}[1]{\Brackets {#1}}
 \newcommand {\is}{:=}
 
 
@@ -170,6 +170,8 @@
 \newcommand {\tys} {\bar\ty}
 %% Annotation variables
 \defmetavar {\av} {\varepsilon}
+\defmetavar {\G} {\Gamma}
+
 
 \newcommand{\all}[2]{\forall #1.\,#2}
 \newcommand{\exi}[2]{\exists #1.\,#2}
@@ -183,6 +185,6 @@
 \newcommand \ehole {\square}
 \newcommand \emagic[1]{\set{#1}}
 \newcommand \wild {{\_}}
-\newcommand \eshape[3]{#1 \emagic {#2 \triangleright #3}}
-\newcommand \Eshape[3]{#1 \emagic {#2 \triangleleft #3}}
+\newcommand \eshape[3]{#1 \where {#2 \triangleright #3}}
+\newcommand \Eshape[3]{#1 \where {#2 \triangleleft #3}}
 \newcommand \thole [3]{e  : #2 \bowtie #3}
