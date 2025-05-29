@@ -1124,11 +1124,11 @@ $\semenv \vdash \C[\ctrue]$. We discuss well-foundedness in more details in
 Consider for example the constraint
 $$
   \exists \tva \tvb.
-  \left(\begin{array}{l}
+  \Parens{\begin{array}{l}
     \cmatch \tva {\tvb} {(\cabs \wild {\tvb = \tbool})} \\
     {} \cand \cmatch \tvb {} {(\cabs \wild \ctrue)} \\
     {} \cand \tva = \tint
-  \end{array}\right)
+  \end{array}}
 $$
 
 To prove that this constraint is satisfiable we can use the \Rule{susp-ctx}
@@ -1588,7 +1588,13 @@ $\parens {a}{}_{i=1}^n$
      \G \th E[\exfield e n j] : \t}
     {\G \th E[\efield e j] : \t}
     
-  \inferrule [Poly]
+  \inferrule [Poly-X]
+    {\G \th \e : \sigma[\overline{\tv := \t}] \\
+     \G \th \overline{\t}}
+    {\G \th \expoly \e { \exists \overline{\tv}. ~ \sigma } :
+      [\sigma[\overline{\tv := \t}]]}
+
+  \inferrule [Poly-I]
     {\G \th \e : \sigma[\overline{\tv := \t}] \\
      \G \th \overline{\t}}
     {\G \th \expoly \e { \exists \overline{\tv}. ~ \sigma } :
