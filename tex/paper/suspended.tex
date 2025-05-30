@@ -1082,9 +1082,9 @@ intend. Let us now define the $\C[\alpha!]$ condition.
 
 \begin{definition}
   A type variable $\cv$ is \emph{uniquely known} within the context
-  $\cctx[-]$, written $\cctx[\cv !]$, iff there exists a unique shape $\sh$
+  $\C[-]$, written $\C[\cv !]$, iff there exists a unique shape $\sh$
   such that, for all assignments $\semenv, \semenvp$, then $\semenv \vdash
-  \cctx[\semenvp \vdash \ctrue]$ implies that $\shape(\semenvp(\tv))$ is
+  \C[\semenvp \vdash \ctrue]$ implies that $\shape(\semenvp(\tv))$ is
   $(\sh, \theta)$ for some $\theta$.
 
   In other words:
@@ -1092,7 +1092,7 @@ intend. Let us now define the $\C[\alpha!]$ condition.
     \begin{array}{l}
     \exists! \sh, \quad \forall \semenv, \semenvp,
       \quad \exists \theta, \\ \qquad
-      \semenv \vdash \c[\semenvp \vdash \ctrue] \implies
+      \semenv \vdash \C[\semenvp \vdash \ctrue] \implies
     \shape(\semenvp(\cv)) = (\sh, \theta)
     \end{array}
   \end{mathpar}
@@ -1211,6 +1211,7 @@ the complexity is restricted only to the definition of this context judgment.
 
 \subsubsection{Well-foundedness}\label{par:well-foundedness}
 
+\Xdidier{Please write an example of infinite-depth constraint.}
 
 \TODO{Explain the notation $\semenv \vdash \C[\semenvp \vdash \c]$.}
 
