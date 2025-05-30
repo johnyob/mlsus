@@ -21,7 +21,10 @@
 
 \title{Omnidirectional type inference
   for fragile \ML type features
+   %% : fragile yet principal
    %% for \ML extensions
+   %% for a better propagation of type annotations
+   %% for principality
    %% with suspended constraints
    %% for static overloading and semi-explicit first-class polymorphism
 }
@@ -88,7 +91,7 @@ concept in more details on the first occurrence.}
 overloading and polytypes} }
 
 \begin{version}[Titles]{\True}
-\textbf{Omniidirectional type inference\ldots}
+\textbf{Omnidirectional type inference\ldots}
 \begin{itemize}
 \item for fragile \ML type features 
 \item for a better propagration of type information 
@@ -117,9 +120,10 @@ record fields, are \emph{fragile}, since they require to twist the
 ML-style specification with some direct or indirect algorithmic flavor
 in order to preserve \emph{principality}. This (more or less ad-hoc)
 restriction in the specification is designed especially to reject
-examples that would break completeness, but it also rejects many
+examples that would break completeness with respect to the
+type-checker implementation, but it also rejects many
 others.\Xgabriel{I would like to explain more here, it is not obvious
- why completeness-breaking examples also endanger principality.}
+  why completeness-breaking examples also endanger principality.}
 Unsurprisingly, they have historically posed challenges to the
 preservation of principal types.
 
@@ -173,29 +177,20 @@ higher-rank polymorphism or subtyping~\TODO{citations}. Still, both \OCaml
 and \Haskell only use a limited form of bidirectional type inference.
 
 
-\paragraph{Pi-directional type inference}
+\paragraph{PI-directional type inference}
+\Xalistair{Could also be G-directional, for Generalization.}
 
-\Xgabriel[We call it \emph{poly-directional} type inference, which is to be
-understood as 
-the direction of \emph{polymorphism} and not in multiple directions.]{Yeah,
-not a good term. Use-directional? Def-use-directional? Instance-directional?
-Let-directional?} 
-\Xdidier{I agree that we rather need other term, but I just do not known which
-one. In fact, I think \emph{pi-directional} does the job, as it stands
-for polyomrphic-instance orientation and avoids the meaning of poly which is
-similar to omni. I've changed it everywere to see how it works.}
-
-\OCaml uses another mechanism for propagation of type
-information, based on polymorphism, which actually enforces an ordering in
-the typechecking of let-bindings, where the (polymorphic part of) a the
-bound expression must be typed before the body of the let-expression.  We
-call it \textbf{pi}-directional type inference, to mean that \textbf
-polymorphic expressions must be typed before their \textbf instances.
-Initially introduced with the extension of \ML with semi-explicit
-first-class polymorphism~\cite {Garrigue-Remy/poly-ml}, it has also been
-used for the overloading of record fields, which we use for illustration
-here as it is simpler.\footnote {Semi-explicit polymorphism will be
-discussed in \cref{sec/constraints/polytypes}.}
+\OCaml uses another mechanism for propagation of type information,
+based on polymorphism, which actually enforces an ordering in the
+typechecking of let-bindings, where the (polymorphic part of) a the
+bound expression must be typed before the body of the let-expression.
+We call it \textbf{PI}-directional type inference, to mean that
+\textbf polymorphic expressions must be typed before their \textbf
+instances.  Initially introduced with the extension of \ML with
+semi-explicit first-class polymorphism~\cite {Garrigue-Remy/poly-ml},
+it has also been used for the overloading of record fields, which we
+use for illustration here as it is simpler.\footnote {Semi-explicit
+  polymorphism will be discussed in \cref{sec/constraints/polytypes}.}
 
 The user may define two records with overlapping fields:
 \begin{program}[input]
@@ -274,13 +269,13 @@ multiple arguments passed to the same function, or on the opposite disallow
 it entirety. Again, there is no best choice. We eventually have a complete
 algorithm with respect to a spec that made somewhat arbitrary choices.
 
-Pi-directional type inference seems a better fit for \ML, since it relies
+PI-directional type inference seems a better fit for \ML, since it relies
 on polymorphism which is the essence of \ML. Still, it does not even allow
 to propagate user-provided type annotations!  \Xalistair{Examples here?}
-Thus \OCaml, which use pi-directional type inference as the primary
+Thus \OCaml, which use PI-directional type inference as the primary
 mechanisms also added a weak form of bidirectional propagation.
 \Xalistair{Example of bidirectionality in OCaml here?} Besides, the
-implementation of pi-directional type inference has an algorithmic cost:
+implementation of PI-directional type inference has an algorithmic cost:
 for technical reasons, variable annotations must un-share types
 (from acyclic graphs as naturally produced by unification to trees), which
 may increase the size of types and the cost of type inference. For that
@@ -290,7 +285,7 @@ more expensive computation of principal types when desired.
 
 \paragraph{Incompleteness of directional type inference}
 
-Both bidirectional and pi-directional type inference rely on an ordering
+Both bidirectional and PI-directional type inference rely on an ordering
 for type propagation that is partially specified, explicitly or implicitly,
 to take advantage of user-provided type annotations and already-inferred types
 to alleviated the need for extra annotations.
@@ -316,10 +311,11 @@ incompleteness, which is actually two-fold:
 \end{enumerate}
 Let us consider two more examples: 
 \begin{program}[error]
+let e_6 f = let g () = (f ()).x in (f : unit -> one); g ();;
 let e_6 r = (r.x, r.y)
 let e_7 r = r.x.x
 \end{program}
-\OCaml fails on both examples as ambiguous with pi-directional inference.
+\OCaml fails on both examples as ambiguous with PI-directional inference.
 However, \ocaml{r} can only be of type \ocaml{int two} in \ocaml{e_6}, which
 is an instance of the former case of incompleteness, which should wishfully
 be eliminated. Our proposal with omnidirectional inference succeeds
@@ -723,7 +719,7 @@ following error: ...
 
 OCaml's type checker relies on type information provided by the
 bidirectional\Xdidier{bidirectional is misleading here! In what sense ocaml
-is a bidirectional typechecker? It is in fact pi-directional. (poly means
+is a bidirectional typechecker? It is in fact PI-directional. (poly means
 polymorphism here)} \Xalistair{Agreed, will change} propagation of type
 information to resolve these 
 ambiguities. Annotating \code{x} with either \code{m} or \code{n} would
@@ -835,7 +831,7 @@ use sites for principality checking}\Xdidier{Not sure of what you have in
 mind}
 
 The very purpose of annotation variables is to distinguish known, polymorphic
-polytypes from yet-unknown, monomorphic ones as required by pi-directional
+polytypes from yet-unknown, monomorphic ones as required by PI-directional
 type ifnerence. 
 %
 With suspended constraints, any type information can be considered as known,
@@ -1212,6 +1208,14 @@ the complexity is restricted only to the definition of this context judgment.
 \subsubsection{Well-foundedness}\label{par:well-foundedness}
 
 \Xdidier{Please write an example of infinite-depth constraint.}
+
+\begin{program}
+let rec loop 'a =
+'a = int
+&& match 'a with (fun _ -> exists 'b. loop 'b)
+in
+exists 'a. loop 'a
+\end{program}
 
 \TODO{Explain the notation $\semenv \vdash \C[\semenvp \vdash \c]$.}
 
@@ -1939,8 +1943,16 @@ treating the head of the variable monomorphically and the rest
 polymorphically.
 \Xalistair{An explaination of kinded(1) types here }
 
-
 \subsection{Choice points}
+
+The current typing rules don't support back-propagation:
+
+\begin{program}
+fun (r1 : one) ->
+  let g r = r.x in
+  g r1
+\end{program}
+
 
 \subsection{Default clauses}
 
