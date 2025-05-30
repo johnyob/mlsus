@@ -1879,6 +1879,24 @@ previous case).
 hold either.
 \end{example}
 
+\begin{example}
+Let $\e$ be $\elet f {\efun \x {\eproj \x 1}} {\eapp f (1, 2)}$.
+We should that $\e$ is well-typed.
+$\e$ is of the form $\E \where {\x}$ where  $\E$ is the context $\elet f
+{\efun \x \ehole} {\eapp f (1, 2)}$.
+We have $\eset \th \E \where {\eproj[2] \x 1} : \tint$.
+Let us show that $\eshape \E \x {\Pi\iton[2](\tint, \tint)}$.
+%
+Assume $\eset \th \E \where {\ecast \x \typ \typp} : \t$.
+The type $\typ$ of $\x$ cannot be that of an arbitrary record, since
+there is not such type as a record of arbitrary size. Hence,
+$\typ$ must be a record of some shape $\Pi\iton$ for some size
+$n$. Since the codomain of $f$ must be a tuple of size~$2$, then $n$ must
+also be $2$. This shows that $\eshape \E \x {\Pi\iton[2]}$.
+
+Hence $\eset \th \e : \tint$.
+\end{example}
+
 \section{Solving constraints}
 \label{sec:solving}
 
