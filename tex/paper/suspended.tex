@@ -19,17 +19,14 @@
 
 \usepackage{marginnote}
 
-\title{Omnidirectional type inference for fragile \ML type features}
+\title{Omnidirectional type inference
+  for fragile \ML type features
+   %% for \ML extensions
    %% with suspended constraints
-   %%for static overloading and semi-explicit first-class polymorphism
-
-
-%% Was 
-%% \title{Omnidirectional type inference for \ML extensions}
+   %% for static overloading and semi-explicit first-class polymorphism
+}
 
 \begin{document}
-
-\Xgabriel{On the title, I still prefer ``for ML extensions'' or ``with suspended constraint'' to the mouthful that we have here.}
 
 \begin{abstract}
 We propose a new concept of \emph{omnidirectional} type inference, which is 
@@ -97,7 +94,7 @@ preservation of principal types.
 
 Fragile conststructs have all in common that their syntax includes
 explicit type annotations which may sometimes but not always be
-omitted. The return type of overload data constructors can be
+omitted. The return type of overloaded data constructors can be
 annotated; polymorphic expressions can be annotated with a type
 scheme; first-class module expressions with a module signature; for
 GADTs, the type of the \texttt{match} scrutinee can be annotated to
@@ -298,6 +295,8 @@ be eliminated. Our proposal with omnidirectional inference succeeds
   the context. Even where there is a single type declaration with a given
   field/constructor we require an annotation.}
 
+\Xgabriel{I would prefer to have less questionable examples, where type information comes from the body of the let-binding rather than closed-world reasoning. This could also be helpful to give a concrete intuition of partial type schemes.}
+
 Omnidirectional still fails on \ocaml{e_7}, which is an instance of the
 latter case of incompleteness. This is actually a reasonable design to keep
 type inference effective, since the complexity of general overloading is
@@ -348,11 +347,23 @@ Omnidirectional type inference for \ML thus relies on two key technical devices:
   inferring parts of a \texttt{let}-body to disambiguate its definition,
   without duplicating constraint-solving work.
 \end{enumerate*}
-Once the framework established, it just remains to be instantiated
-to each use case,
 
-
-
+These technical devices are introduced once and for all -- in a general
+framework of constraint-based type inference. Each fragile \ML construct can
+then be implemented as suspended constraints that expand to its robust
+counterpart once the annotation has been inferred. This generality comes at
+a cost, which is that everything is hard:
+\begin{itemize}
+\item Implementing partial types schemes (without duplicating
+  constraint-solving work) is hard.
+\item Giving an adequate semantics for suspended constraints is hard, as we
+  must capture declaratively the intuition that some type information must be
+  \emph{known} rather than \emph{guessed}.
+\end{itemize}
+In return, we found that the declarative semantics of suspended constraints
+immediately suggests a systematic way to present user-facing typing rules
+for each fragile construct, for which the implementation is correct and
+complete.
 
 \subsubsection* {Plan}
 
@@ -362,20 +373,19 @@ The rest of the paper is organized as follows.
   In \cref{sec:constraints}, we give an overview of suspended constraints
   and their application to various extensions for \ML.
 \item
-  In \cref{sec:semantics}, we describe the constructions for a
-  novel denotational semantics of suspended constraints.
+  In \cref{sec:semantics}, we describe suspended constraints and their semantics.
 \item
   In \cref{sec:language}, we define an extension of \ML featuring static
   overloading and semi-explicit first-class polymorphism along with its
-  typing rules.  Here we give the precise definition of the constraint
+  typing rules. Here we give the precise definition of the constraint
   generation translation and state the theorems of soundness and
   completeness.
 \item
   In \cref{sec:solving}, we provide a formal definition of our constraint
   solver as a series of non-deterministic rewriting rules.
-\item
-  In \cref{sec:implementation}, we describe an efficient implementation of
-  suspended constraints.
+\item In \cref{sec:implementation}, we describe an efficient implementation
+  of suspended constraints. We discuss some extensions of suspended
+  constraints that we have prototyped but whose theory is less clear.
 \item
   In \cref{sec:related-work} and \cref{sec:future-work}, we discuss related
   and futre work.
@@ -397,79 +407,24 @@ The rest of the paper is organized as follows.
 Our contributions are 
 \begin{enumerate*}
 \item
-  a novel \emph{omnidirectional} type inference technique for
+  A novel \emph{omnidirectional} type inference technique for
   extensions of \ML with advanced features, based on two new devices,
-  partial type schemes and suspended constraints;
+  suspended constraints and partial type schemes;
 
-  %% that require propagation of both
-  %% user-defined type annotations and already inferred types to make other
-  %% annotations optional, which is
-  %% \item
-  %% This is based on two new deviced:
-  %% \begin{enumerate*}[label=\textbf{(\theenumii)}]
-  %% \item
-  %%   We enable the ability to instantiate type scheme before they are fully
-  %%   resolved and and their incremental refinement which is propagated to their
-  %%   instances; 
-  %% \item
-  %%   We introduce suspended constraint, guarded by a type variable, that are
-  %%   discharged when their guard gets instantiated.
-  %% \end{enumerate*}
+\item A declarative semantics of suspended constraints that captures the
+  idea that they wait on information that must be propagated from the
+  context, not \emph{guessed}.
 
-\item
   This includes, in particular, a new declarative caracterisation of
   \emph{known} type information.
-  
 
 \item
-  A new more permissible type system for overloading of record fields and
-  semi-explicit first-class polymorphism, and
+  A complete yet efficient constraint-solving type inference algorithm.
 
-\item
-  a complete yet efficient constraint-solving type inference algorithm.
-  
+\item New declarative type systems for static overloading of constructors
+  and fields, and for semi-explicit first-class polymorphism, and their
+  implementation using suspended constraints.
 \end{enumerate*}
-
-
-\begin{version}{}
-\Xdidier {These are ``leftovers'' from the old introduction. Delete if/when
-useless}
-
-\subsection {Suspended constraints}
-
-
-TODO introduce suspended
-constraints. But: generalization becomes tricky.
-\begin{itemize}
-\item easy case: the choice is resolved while typing the definition
-\item hard case: an a-priori generalizable variable is captured in a frozen
-   constraint 
-\item question: what to do when the frozen variable is generalizable?
-\item another difficulty: supporting default clauses in the failure case
-\end{itemize}
-
-Different kind of difficulties:
-\begin{itemize}
-\item finding a reasonable declarative semantics for the behavior we want
-\item implementing a solver, which is quite hard
-\end{itemize}
-
-DR: Below are old comments: I think they no longer applied and can be
-deleted.
-\Xalistair{Is this the right introduction? All the features we describe
-below break principality usually. So our work is about principality. This is
-a way to guarantee principal types for these advanced features.}
-\Xdidier{All systems proposed have principal types. We just have more
-principal types, \ie principal types with respect to a specification that is
-more expressive} 
-
-\Xalistair{For tuples we added a projection rule that gives the size of the
-tuple. I imagine for polytypes there would be something like that.}
-\Xdidier {Yes indeed: in the explicit language, we could require the skeleton
-as a required annotation}
-
-\end{version}
-
 
 \section{Suspended constraints}
 \label{sec:constraints}
