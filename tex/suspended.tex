@@ -1424,8 +1424,8 @@ overloaded tuple projects \textit{\`a la \SML}: an expression $\efield e j$
 governed by the rule:
 \begin{mathpar}
   \infer
-    {\Gamma \vdash e : \Pi_{i = 1}^n \ti \and 1 \leq j \leq n}
-    {\Gamma \vdash \efield e j : \tj}
+    {\G \th \e : \Pi\iton \ti \and 1 \leq j \leq n}
+    {\G \th \efield \e j : \tj}
 \end{mathpar}
 admits many typings, as any tuple of at least size $j$ satisfies the
 premise. This multiplicity undermines principality.
@@ -1435,11 +1435,11 @@ premise. This multiplicity undermines principality.
 Our first insight is that partial type annotations often sufficies to
 recover principality. We refer to these annotations as \textit{shapes}. For
 example, explicitly annotating the tuple projection with its arity, as in
-$\exfield e n j$, disambiguates the expression:
+$\exfield \e n j$, disambiguates the expression:
 \begin{mathpar}
    \inferrule*
-      {\Gamma \vdash e : \Pi_{i = 1}^n \ti \\ 1 \leq j \leq n }
-      {\Gamma \vdash \exfield e n j : \tj}
+      {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n }
+      {\G \th \exfield \e n j : \tj}
 \end{mathpar}
 Yet, requiring users to write such annotations manually is impractical.
 
@@ -1467,17 +1467,16 @@ system remains incomplete due to the heuristic nature of the first phase.
 Specifying the notion of unique inferrability from context is
 tricky. Luckily, we can leverage many of the formal methods developed in the
 previous section -- in particular, the manipulation of contexts within the
-type derivation -- to prove uniqueness of shapes. Allowing us to
+derivation -- to prove uniqueness of shapes. Allowing us to
 systematically replace the ambiguous constructs with their disambiguated
 counterparts:
 \begin{mathpar}
   \inferrule*
-    {E[e \mathop{!} \Pi^n] \\ \Gamma \vdash E[\exfield e n j] : \t}
-    {\Gamma \vdash E[\efield e j] : \t}
+    {\eshape \E e {\Pi\iton \tvs} \\ \G \th E[\exfield \e n j] : \t}
+    {\G \th \E[\efield \e j] : \t}
 \end{mathpar}
 The intuition here is that the context $E$ is sufficiently large to
 constrain the shape of $e$'s type as a tuple of size $n$.
-\Xalistair{Some notation trickiness here }
 
 % Limitations
 
@@ -1495,7 +1494,7 @@ principality. We return to this pragmatic tradeoff in Section
   \efun x e \and
   \eapp \eone \etwo \and
   \elet x \eone \etwo \and
-  (e : \t) \andcr
+  (e : \exi \tvs \t) \andcr
   \erecord {\overline{\elab = e} } \and
   \efield e \elab \and
   \exfield e \F \elab \andcr
@@ -1511,7 +1510,7 @@ principality. We return to this pragmatic tradeoff in Section
    \tv \and
    1 \and
    \tya \to \tyb \and
-   \ts \F \and
+   \tys \F \and
    \Pi_{i = 1}^n \ti \and
    \tpoly {\exi \tvs \ts}
 }\\
@@ -1527,8 +1526,6 @@ principality. We return to this pragmatic tradeoff in Section
 \end{bnffig}
 
 \paragraph{Terms}
-
-\Xdidier{Records are in the syntax, but not in the typing rules}
 
 In \cref {fig/syntax}, we give the grammar for our calculus. Terms
 include all of the
@@ -1551,7 +1548,7 @@ let bindings $\elet x \eone \etwo$. Our extensions include:
 
 \end{enumerate}
 Each construct that endangers principality (written $\e^i$) has an
-explicitly annotated counterpart (written $\e^x$) that is $\eproj [\F] \e
+explicitly annotated counterpart (written $\e^x$) that is $\erecord {\overline{\ell / \F = \e}}$, $\eproj [\F] \e
 \elab$, $\eproj [n] \e j$, $\epoly [\exi \tvs \ts] \e$, or $\einst [\exi
 \tvs \ts] \e$.
 
@@ -2090,6 +2087,32 @@ Hence $\eset \th \e : \tint$.
 
 [Misrefolved conflitcs here]
 \end{example}
+\Xalistair{This proof is invalid, see below.}
+
+Here is a sketch that $\neg \eshape \E \x {\tint \times \tint}$.
+We have the following typing derivation
+for $\emptyset \th \E[\ecast \x \tva \tvb] : \tunit$:
+\begin{mathpar}
+  \infer
+    {
+    \infer
+      {
+	\infer
+	  {
+	    \infer
+	      {
+		\infer
+		  {~}
+		  {\tva, \tvb, x : \tva \th x : \tva}}
+	      {\tva, \tvb, x : \tva \th \ecast x \tva \tvb : \tvb}}
+	  {\tva, \tvb \th \efun x {\ecast x \tva \tvb : \tva \to \tvb}}}
+      {\emptyset \th \efun \x \ecast \x \tva \tvb : \tfor {\tva, \tvb} \tva \to \tvb} \\
+    \infer
+      {\ldots}
+      {f : \tfor {\tva, \tvb} \tva \to \tvb \th \eapp f (1, 2) : \tunit}}
+    {\emptyset \th \elet f {\efun \x {\ecast \x \tva \tvb}} {\eapp f (1, 2)} : \tunit}
+\end{mathpar}
+Yet $\shape(\alpha).1 = \sbot$.
 
 \section{Solving constraints}
 \label{sec:solving}
