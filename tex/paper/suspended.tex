@@ -32,7 +32,7 @@
 \begin{document}
 
 \begin{abstract}
-We propose a new concept of \emph{omnidirectional} type inference, which is 
+We propose a new concept of \emph{omnidirectional} type inference, which is
 the ability to resolve \ML-style typing constraints in disorder, by
 contrast with all known implementations that always typecheck the
 bindings before the bodies of let-expressions.
@@ -51,7 +51,7 @@ variables have been instantiated.
 We illustrate the benefit of omnidirectional type inference for several
 advanced features present in the \OCaml language, including static
 overloading of record labels and datatype constructors on the one hand and
-semi-explicit polymorphism on the other hand. 
+semi-explicit polymorphism on the other hand.
 \end{abstract}
 
 \maketitle
@@ -66,7 +66,7 @@ by \emph{\ML extensions}}
 
 \Xdidier{Other options:
 \begin{itemize}
-\item 
+\item
 introduce the world \emph{principality}: all extensions are
 elaboration like: the all allow a more complete approximation of the natural
 deifnition. That is they allow to be principal for a more principal
@@ -79,11 +79,11 @@ feature of all the extensions.
 \Xdidier
   {\emph{first-class polytypes} is not best,
    \emph{semi-explicit first-class polymorphism} is better but too long.
-   \emph{semi-explicit polytmorphism} or 
+   \emph{semi-explicit polytmorphism} or
    \emph{first-class polytmorphism} are both a but inexact....
    Which one should we use?
    Alistair says polytypes doesn't fit the definition of $\mathsf{rank}(k)$
-  types and I agree.} 
+  types and I agree.}
 
 \Xgabriel{I would use ``polytypes'' for concision, after defining the
 concept in more details on the first occurrence.}
@@ -93,9 +93,9 @@ overloading and polytypes} }
 \begin{version}[Titles]{\True}
 \textbf{Omnidirectional type inference\ldots}
 \begin{itemize}
-\item for fragile \ML type features 
-\item for a better propagration of type information 
-\item reduces the need for source type annotations 
+\item for fragile \ML type features
+\item for a better propagration of type information
+\item reduces the need for source type annotations
 \item for a more principal definition of principality
 \item for better typing of static overloading and polytypes
 \item for \ML extensions that require source type annotations
@@ -136,7 +136,7 @@ GADTs, the type of the \texttt{match} scrutinee can be annotated to
 a rigid type which will be refined by type equalities in each
 branch. To each fragile construct corresponds a robust construct where
 this type annotations is mandatory. The robust constructs fit nicely into
-the \ML 
+the \ML
 framework, but are significantly more cumbersome to use. Fragile
 constructs can be defined by elaboration into their robust
 counterpart. The elaboration determines which annotations can be
@@ -207,11 +207,11 @@ and we fall back in \ML. With overloading enabled, both definitions are
 visible and the compiler must statically choose one of them.
 %
 The question is which one to choose or, equivalently, which type to infer
-in the following three expressions? 
+in the following three expressions?
 \begin{program}[input]
 let e_1 r = r.x
 let e_2 = let r = {x = 1} in r.x
-let e_3 = (fun r -> r.x) {x = 1} 
+let e_3 = (fun r -> r.x) {x = 1}
 \end{program}
 To be able to resolve the overloading, the type of the projection should be
 \emph{known} to be either \ocaml{one} or \ocaml{'a two} when typing the
@@ -234,8 +234,8 @@ understand why \ocaml{e_3} fails, consider the equivalent versions of
 \ocaml{e_3} where \texttt{@@} and \ocaml{|>} are the application and the
 reverse application functions.
 \begin{program}[input,escapechar={}]
-let e_4 = (fun r -> r.x) @@ {x = 1} 
-let e_5 = {x = 1} |> (fun r -> r.x) 
+let e_4 = (fun r -> r.x) @@ {x = 1}
+let e_5 = {x = 1} |> (fun r -> r.x)
 \end{program}
 \OCaml  does not make any difference between
 \ocaml[indices]{e_1}, \ocaml[indices]{e_2}, or \ocaml[indices]{e_3}
@@ -248,7 +248,7 @@ in the subexpression \ocaml{r.x} is not-yet-known even if equal to
 \ocaml{one} since this is the lambda-bound variable \ocaml{r}, hence in the
 typing context, hence it is monomorphic.\footnote{Technically, all type
 nodes are annotated with a special of variables called annotation variables
-$\av$, so that we may distinguish between the polymorphic binding $\xa : 
+$\av$, so that we may distinguish between the polymorphic binding $\xa :
 \all \av. \t^\av$ that binds $r$ to the known (raw) type $\t$ and the monomorphic
 binding $\xb : \t^\av$ that binds $\xa$ to the unknown (raw) type $\t$.}
 
@@ -303,13 +303,13 @@ some core information to be taken into account when resolving ambiguities.
 However, the resolution of each ambiguity is another source of
 incompleteness, which is actually two-fold:
 \begin{enumerate}
-\item  
+\item
   the resolution is not always taking all contextual type information into
-  account.  
+  account.
 \item
   each ambiguity is solved independently of other yet unresolved ones;
 \end{enumerate}
-Let us consider two more examples: 
+Let us consider two more examples:
 \begin{program}[error]
 let e_6 f = let g () = (f ()).x in (f : unit -> one); g ();;
 let e_6 r = (r.x, r.y)
@@ -427,13 +427,13 @@ The rest of the paper is organized as follows.
   and far less technical
 \item
   Move the polytype (2.2) story to the introduction after the record field
-  story. 
+  story.
 \end{itemize}
 }
 
 \subsubsection* {Our contributions}
 
-Our contributions are 
+Our contributions are
 \begin{enumerate*}
 \item
   A novel \emph{omnidirectional} type inference technique for
@@ -466,8 +466,8 @@ want to conflict with your work}
 
 \Xdidier {We need examples before we did in the technical details.
 But since this section is still partly informal---no semantics, we may
-then still consider as part of the intro and not described 
-suspended constraints earlier} 
+then still consider as part of the intro and not described
+suspended constraints earlier}
 
 \Xdidier {The question is where do we put examples of programs that
 do not typecheck in \OCaml, are expected to typecheck and that we can
@@ -475,7 +475,7 @@ typecheck (without explaining how they typecheck) ?  I gave one example for
 record fields in the intro.  Should I also introduce semi-explicit
 polymorphism and give an example in the intro?}
 
-\Xalistair{I think it makes sense that this is the intro continued. As for 
+\Xalistair{I think it makes sense that this is the intro continued. As for
 examples, I think the intro has enough. We should put them in the relevant
 subsections  in this section.}\Xdidier {Or the other way round: I think we
 need examples early enough. Or keep it as is and say in the intro that we
@@ -491,7 +491,7 @@ $\C$ which is satisfiable if and only if the term $e$ is well-typed. In the
 second stage, the generated constraint $\C$ is solved (or shown to be
 unsatisfiable).
 
-% HMX 
+% HMX
 
 A foundational approach to constraint-based type inference is \HMX
 \cite{Odersky-Sulzmann-Wehr@tpos}---the Hindley-Milner system parameterized
@@ -522,7 +522,7 @@ we propagate it to all its instantiations. Currently, each propagation with
 redo the job, ignoring what had already be done ealier. Hence you get a
 factor of $n$ complexity that need not necessarily be there. Plus
 constraints are copied before being simplified. Another factor...}
-\Xalistair{The spec for the solver and my solver impl does not suffer from this, 
+\Xalistair{The spec for the solver and my solver impl does not suffer from this,
 it is able to track which new nodes need propagating and leaves the rest
 untouched.}\Xdidier {This is not what you told me when we talk. There may be
 misunderstanding. We should discuss it. However, this is not so important.
@@ -595,8 +595,8 @@ a suspended constraint is written as $\cmatch \t \D \hf$, where:
 \begin{enumerate}
 \item
   The matchee $\t$ is a type. The constraint remains suspended until the
-  shape of $\t$ is determined.  
-\item 
+  shape of $\t$ is determined.
+\item
   The handler $f$ is a meta function from shape ($\sh$) to constraints.
   Once the constraint is unblocked, this function is applied to generate the
   constraint to be solved.  Conceptually, $f$ represents a meta-level
@@ -612,10 +612,10 @@ a suspended constraint is written as $\cmatch \t \D \hf$, where:
 {Definition of $\shape(\t)$, a partial function from types to
 shape-substitution pairs $\langle \sh, \theta \rangle$}
 \shape(\tv) \eqdef
-    \bot 
+    \bot
 
 \shape(\overline{\t} \Fapp) \eqdef
-        \langle \overline{\tv} \Fapp, [\overline{\tv := \t}] \rangle 
+        \langle \overline{\tv} \Fapp, [\overline{\tv := \t}] \rangle
 \end{mathparfig}
 
 % Informal semantics
@@ -633,8 +633,8 @@ in supporting \emph{fragile} language features as defined above.
 These include:
 \begin{enumerate}
   \item Constructor and record label overloading for nominal algebraic
-  datatypes;  
-  \item Overloaded tuple projection in the style of \SML; 
+  datatypes;
+  \item Overloaded tuple projection in the style of \SML;
   \item Semi-explicit first-class polymorphism.
 \end{enumerate}
 We demonstrate how the typablity of each of these features can be elaborated
@@ -642,7 +642,7 @@ into constraints, formalized using a constraint generation function of the
 form $\cinfer e \tv$, which, given a term $e$ and expected type $\tv$,
 produces a constraint $C$ which is satisfiable if and only if $e$ is
 well-typed. A formal account of the semantics of suspended constraints and
-the declarative typing rules for these features is deferred to 
+the declarative typing rules for these features is deferred to
 \cref{sec:semantics} and \cref{sec:language}, respectively.
 
 % When solving $\cmatch \cv \Delta \hf$, the solver proceeds as follows:
@@ -683,9 +683,9 @@ the declarative typing rules for these features is deferred to
 % }
 
 % \Xgabriel{I care most about the semantics and implementation of the
-% constraint language.} 
+% constraint language.}
 % \Xdidier{It would be nice to have typing rules for the surface language, and
-% show that they match the constraints generated.} 
+% show that they match the constraints generated.}
 % \Xalistair{I agree.}
 
 % For each feature:
@@ -702,7 +702,7 @@ the declarative typing rules for these features is deferred to
 % Intro to the feature
 
 OCaml allows users to define data types with overloaded constructors or
-record fields. 
+record fields.
 \begin{program}
 type m = L
 type n = L
@@ -713,15 +713,15 @@ The type of \code{x} is ambiguous since OCaml could infer either the type
 there is no most general type for \code{x}. \Xdidier {It is not just a
 question of typing issue but of semantics: it should make a stratic choice
 of the implementation. Just speaking of it as a type issue is a bit
-misleading.} \Xalistair{I'll add something about how this ambiguity could have 
-runtime implications} As such, OCaml gives the 
+misleading.} \Xalistair{I'll add something about how this ambiguity could have
+runtime implications} As such, OCaml gives the
 following error: ...
 
 OCaml's type checker relies on type information provided by the
 bidirectional\Xdidier{bidirectional is misleading here! In what sense ocaml
 is a bidirectional typechecker? It is in fact PI-directional. (poly means
 polymorphism here)} \Xalistair{Agreed, will change} propagation of type
-information to resolve these 
+information to resolve these
 ambiguities. Annotating \code{x} with either \code{m} or \code{n} would
 produce a well-typed program.
 
@@ -734,7 +734,7 @@ constructor application $\econstr K e$, we generate the constraint:
   \cand
   \cmatch \cva {\cva, \cvb}
     \parens
-      {\clam {(\overline{\cvc} \Fapp)} 
+      {\clam {(\overline{\cvc} \Fapp)}
         {\cletin \sigma {\D(\F)(\mathsf{K})} {\sigma \leq \cvb \to \cva}}
       }
 \end{align*}
@@ -832,7 +832,7 @@ mind}
 
 The very purpose of annotation variables is to distinguish known, polymorphic
 polytypes from yet-unknown, monomorphic ones as required by PI-directional
-type ifnerence. 
+type ifnerence.
 %
 With suspended constraints, any type information can be considered as known,
 so that we do not need the annotation variables any longer.
@@ -842,7 +842,7 @@ Typechecking $\expoly e \ts$ is, intuitively:
 \cinfer {\expoly e {\tfor {\overline{\cvb}} \t}} \cva \wide\eqdef
   \Parens{\cfor {\overline{\cvb}} \cinfer e \t}
 \cand
-   \cva = [\tfor {\overline{\cvb}} \t] 
+   \cva = [\tfor {\overline{\cvb}} \t]
 \end{mathpar}
 If $\e$ is already known to have the type $[\ts]$, then we can simply
 instantiate it.  However, if the type of $\e$ is not yet known, \ie  it is a
@@ -1168,7 +1168,7 @@ the empty context $\square$ does not uniquely constrain $\tvb$.
 
 \subsection{Technical details}
 
-\subsubsection{Contextual judgments: $\semenv \vdash \c[\semenvp \vdash \cp]$}\label{par:contextual-judgments} 
+\subsubsection{Contextual judgments: $\semenv \vdash \c[\semenvp \vdash \cp]$}\label{par:contextual-judgments}
 
 This notation means that there is a derivation of the satisfiability
 judgment for $\c[\cp]$ where, the subderivation at the hole of
@@ -1201,7 +1201,7 @@ the complexity is restricted only to the definition of this context judgment.
 { }
 {\ctxindex{\deriv}{\square} := \deriv}
 
-\deriv :: \infer{foo}{bar} \implies \ctxindex{\deriv}{...} := 
+\deriv :: \infer{foo}{bar} \implies \ctxindex{\deriv}{...} :=
 \end{mathparfig}
 
 
@@ -1240,7 +1240,7 @@ FreezeML), is to stipulate that the only satisfying assignments for the
 context of the suspended constraint requires $\cv$ to be assigned to some
 type with a unique type constructor.
 \Xalistair[]{This doesn't read entirely correctly, we want a unique
-constructor for all assignments}. 
+constructor for all assignments}.
 
 
 \TODO{Show the natural-semantics rule for suspended constraints,
@@ -1264,7 +1264,7 @@ apply the assignment of $\cva$ to $f$. More formally,
 \begin{mathpar}
   \inferrule*
     {\semenv(\cva) = \overline{\t} \Fapp \\ \semenv_{\setminus
-    \Delta}[\overline{\cvb := \t}] \vdash f(\overline{\cvb} \Fapp)} 
+    \Delta}[\overline{\cvb := \t}] \vdash f(\overline{\cvb} \Fapp)}
     {\semenv \vdash \cmatch \cva \Delta f}
 \end{mathpar}
 However, our informal solver would be incomplete with respect to this
@@ -1310,7 +1310,7 @@ FreezeML), is to stipulate that the only satisfying assignments for the
 context of the suspended constraint requires $\cv$ to be assigned to some
 type with a unique type constructor.
 \Xalistair[]{This doesn't read entirely correctly, we want a unique
-constructor for all assignments}. 
+constructor for all assignments}.
 
 This motivates our next definition: the principal realisation of a type
 variable $\cv$ by some constraint context $\cctx[-]$.
@@ -1319,7 +1319,7 @@ variable $\cv$ by some constraint context $\cctx[-]$.
   A type variable $\cv$ is principally realised with the constructor $\F$
   by the context $\cctx[-]$, written $\cctx[\cv !] \rhd \F$,
   iff for all assignments $\semenv$, there exists an assignment $\semenvp$
-  for the 
+  for the
   hole such that $\semenv \vdash \cctx[\semenvp \vdash \ctrue]$ implies
   $\semenvp(\cv) = \overline{\t} \Fapp$
 \end{definition}
@@ -1358,10 +1358,10 @@ Section 2.}
 Meta-substitution lemma: if $\semmetav$ occurs exactly once in $\c$, then
 $\semmetaenv, (\semenvp \vdash \semmetav); \semenv \vdash C$ and $\semenvp
 \vdash \cp$ if and only if $\semmetaenv; \semenv \vdash \c[\semmetav :=
-\cp]$. 
+\cp]$.
 
 Convention: we write $\c[\cp]$ for $\c[\square := \cp]$. In particular
-$\c[\square] = \c$ when $\square$ occurs once in $\c$. 
+$\c[\square] = \c$ when $\square$ occurs once in $\c$.
 
 Next steps:
 \begin{itemize}
@@ -1371,7 +1371,7 @@ Next steps:
     \begin{array}{l}
     \exists! \F, \quad \forall \semenv, \semenvp,\\ \qquad (\semenvp \vdash
     \square); \semenv \vdash \c[\square] \implies
-    \mathsf{head}(\semenvp(\cv)) = \F 
+    \mathsf{head}(\semenvp(\cv)) = \F
     \end{array}
   \end{mathpar}
 \item and finally the global rule
@@ -1380,7 +1380,7 @@ Next steps:
     {\c[\cva !]
       \and \semenvp(\cva) = \overline{\t} \Fapp
       \and \semmetaenv, (\semenvp, \overline{\cvb := \t} \vdash
-      \square)\vdash \c[f(\overline{\cvb} \Fapp)] } 
+      \square)\vdash \c[f(\overline{\cvb} \Fapp)] }
     {\semmetaenv, (\semenvp \vdash \square); \semenv \vdash \c[\cmatch \cva \Delta f]}
   \end{mathpar}
 \end{itemize}
@@ -1395,7 +1395,7 @@ syntactically directed by $\c$ anymore.
 \section{The language}
 \label{sec:language}
 
-% Running example: tuple projection disambiguation 
+% Running example: tuple projection disambiguation
 
 % We need a spec, but this itself is hard
 
@@ -1413,13 +1413,13 @@ static overloading \citep{TODO} and first-class polymorphism
 principality or require intricate menachisms -- such as labelled types -- to
 do so.
 
-% Why do naive approaches not guarantee principal types. 
+% Why do naive approaches not guarantee principal types.
 
 Na\"ive specifications, though accessible, often lack principal types. Take
 overloaded tuple projects \textit{\`a la \SML}: an expression $\efield e j$
 governed by the rule:
 \begin{mathpar}
-  \infer 
+  \infer
     {\Gamma \vdash e : \Pi_{i = 1}^n \ti \and 1 \leq j \leq n}
     {\Gamma \vdash \efield e j : \tj}
 \end{mathpar}
@@ -1433,11 +1433,11 @@ recover principality. We refer to these annotations as \textit{shapes}. For
 example, explicitly annotating the tuple projection with its arity, as in
 $\exfield e n j$, disambiguates the expression:
 \begin{mathpar}
-   \inferrule* 
+   \inferrule*
       {\Gamma \vdash e : \Pi_{i = 1}^n \ti \\ 1 \leq j \leq n }
       {\Gamma \vdash \exfield e n j : \tj}
 \end{mathpar}
-Yet, requiring users to write such annotations manually is impractical. 
+Yet, requiring users to write such annotations manually is impractical.
 
 % Inference of shapes
 
@@ -1447,7 +1447,7 @@ approach ensures principality by construction and yields a clear
 specification with predictable annotability requirements for the everyday
 programmer.
 
-% A note on stratified type inference 
+% A note on stratified type inference
 
 The idea of leveraging a principled core language with inference of shapes
 is not novel. \textit{Stratified type inference} [??]  pursued a similar
@@ -1467,7 +1467,7 @@ type derivation -- to prove uniqueness of shapes. Allowing us to
 systematically replace the ambiguous constructs with their disambiguated
 counterparts:
 \begin{mathpar}
-  \inferrule* 
+  \inferrule*
     {E[e \mathop{!} \Pi^n] \\ \Gamma \vdash E[\exfield e n j] : \t}
     {\Gamma \vdash E[\efield e j] : \t}
 \end{mathpar}
@@ -1513,12 +1513,12 @@ principality. We return to this pragmatic tradeoff in Section
 }\\
 \entry[Type schemes]{\ts}{
      \t \and
-     \tfor \tv \ts 
+     \tfor \tv \ts
 }\\
 \entry[Contexts]{\G}{
    \eset \and
    \G, x : \ts \and
-   \G, \tv 
+   \G, \tv
 }\\
 \end{bnffig}
 
@@ -1539,7 +1539,7 @@ let bindings $\elet x \eone \etwo$. Our extensions include:
 
 \item
   Tuples $(\eone, \ldots, \en)$ with overloaded tuple projections
-  $\efield e i$.  
+  $\efield e i$.
 
 \item
   For semi-explicit first-class polymorphism, we have the boxing construct
@@ -1559,7 +1559,7 @@ types $\tone \to \ttwo$, $n$-ary product types $\Pi_{i = 1}^n \ti$ and
 nominal record types $\tys \F$. Type schemes $\sigma$ extend monotypes
 allowing the universal quantification of zero or more type variables $\all
 \tvs \t$. We write $\tv, \tvb, \tvc$, \etc for type variables.  We also have
-polytypes \textit{without the labels} $[\ts]$ as monotypes.
+polytypes \textit{without the annotations} $[\ts]$ as monotypes.
 
 \paragraph{Typing contexts}
 
@@ -1571,27 +1571,6 @@ variables to ``float around''.)
 
 
 \paragraph{Typing}
-
-\Xdidier
-{I added implicit creation of polytypes. This is required for polyparams. It
-also allows to illustrate a constryct whose implicitness is from the context
-rather than from $e$. }
-
-
-% Shape of judgements (Well-formedness, instantiation and typing)
-
-% ML explainations: variables, unit, functions, let binders, instantiation 
-
-% Annotations
-
-% Static overloading 
-
-% Shape principality 
-% Abuse of notation remark -- well foundedness 
-% Judgement indexing 
-
-% Semi-explicit first-class polymorphism 
-% Shapes of polytypes -- explain canonicalization / defunctionalization process 
 
 \begin{mathparfig}{fig/typing}{Typing rules}
   \inferrule[Var]
@@ -1607,19 +1586,19 @@ rather than from $e$. }
     {\G \th \eone : \tone \to \ttwo \\
      \G \th \etwo : \tone}
     {\G \th \eapp \eone \etwo : \ttwo}
-  
+
   \inferrule[Unit]
     {}
     {\G \th () : 1}
 
   \inferrule[Annot]
-    {\G \th e : \t\where {\tvs \is \ts}}
-    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \ts}}
+    {\G \th e : \t\where {\tvs \is \tys}}
+    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
 
   \inferrule[Gen]
     {\G, \tv \th e : \sigma \\ \tv \disjoint \G}
     {\G \th e : \tfor \tv \sigma}
-  
+
   \inferrule[Inst]
     {\G \th e : \sigmaone \\
      \G \th \sigmaone \leq \sigmatwo}
@@ -1640,121 +1619,318 @@ rather than from $e$. }
     {\G \th \exfield \e n j : \tj}
 
   \inferrule[Proj-I]
-    {\eshape E e {\Pi^n} \\
+    {\eshape E e {\Pi\iton \tvs} \\
      \G \th E[\exfield e n j] : \t}
     {\G \th E[\efield e j] : \t}
-    
+
   \inferrule [Poly-X]
     {\G \th \e : \ts\where {\tvs \is \tys}}
     {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
 
   \inferrule [Poly-I]
-    {\Eshape \E \e {\tpoly {\exi \tvs \ts}} \\
-     \G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
-    {\G \th \epoly \e : \tpoly {\ts \where {\tvs \is \tys}}}
+    {\Eshape \E \e {{\exi \tvs \tpoly \ts}} \\
+     \G \th \E [\epoly[\exi \tvs \ts] \e] : \t}
+    {\G \th \E [\epoly \e] : \t}
 
   \inferrule [Use-X]
-    {\G \th \e : \ts \where {\tvs \is \tys}}
-    {\G \th \exinst e {\overline{\tv}} \sigma : \ts \where {\tvs \is \tys}}
+    {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
+    {\G \th \exinst e \tvs \sigma : \ts \where {\tvs \is \tys}}
 
   \inferrule [Use-I]
-    {\eshape E  \e {\tpoly{\exi \tvs \ts}} \\
+    {\eshape E  \e {\exi \tvs \tpoly \ts} \\
      \G \th E[\exinst e \tvs \ts] : \t}
     {\G \th E[\einst e] : \t}
+
+  \inferrule[Rcd-Assn]
+    {\G \th \e : \t \\
+     \G \th \elab \leq \t \to \tys \Fapp}
+    {\G \th \elab = \e : \tys \Fapp}
+
+  \inferrule[Rcd]
+    {\parens{\G \th \labi = \ei : \t}\iton}
+    {\G \th \erecord {\elaba = \eone; \ldots; \elab_n = \en} : \t}
+
+  \inferrule[Rcd-Proj]
+    {\G \th \e : \tp \\
+     \G \th \elab \leq \t \to \tp}
+    {\G \th \efield \e \elab : \t}
+
+  \inferrule[Lab-X]
+    {\elab / \F : \ts \in \D \\
+     \G \th \ts \leq \tsp}
+    {\G \th \elab / \F \leq \tsp}
+
+  \inferrule[Lab-I]
+    {\Lshape \Lab \elab \F \\
+      \G \th \Lab[\elab / \F] : \t}
+    {\G \th \Lab[\elab] : \t}
+
+\end{mathparfig}
+
+\begin{mathparfig}
+  {fig:inst-rel}
+  {Instantiation relation $\mlsub \ts \tsp$}
+
+  \infer[Inst-Refl]
+    {}
+    {\mlsub \t \t}
+
+  \infer[Inst-ForallL]
+    {\mltyp \t \\
+     \mlsub {\ts[\tv := \t]} \tsp}
+    {\mlsub {\tfor \tv \ts} \tsp}
+
+  \infer[Inst-ForallR]
+    {\tv \disjoint \G \\
+      \mlsub [\G, \tv] \ts \tsp}
+    {\mlsub \ts {\tfor \tv \tsp}}
 \end{mathparfig}
 
 As usual, the typing judgment $\G \th \e : \ts$ states that in context
 $\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on
-\cref {fig/typing}. Typing rules for fully annotated terms are unsurprising.
+\cref {fig/typing}.
 
+% Simple typing rules explained
+\Rule{Var} retrieves a the type scheme $\x : \ts$ from the context $\G$.
+Function types are introduced via lambda abstractions: in \Rule{Fun}, the
+system guesses a well-formed type $\tone$ for the type of $x$, typechecks
+the body $e$ is under the extended context $\G, \x : \tya$ producing the
+return type $\tyb$, and assigns the abstraction the function type
+$\tya \to \tyb$. Conversely, function types are eliminated by applications;
+in \Rule{App}, the type of the argument must match the function's parameter
+type $\tya$ and application returns the type $\tyb$. \Rule{Unit} asserts
+that $()$ has the unit type $\tunit$.
+
+% Gen/Inst explained
+\Rule{Gen} and \Rule{Inst} correspond to implicit \textit{generalization} and
+\textit{instantiation} respectively. Generalization universally quantifies a
+type variable $\tv$, introducing it as a fresh polymorphic variable
+in the typing context. In \Rule{Inst}, we specialize a type scheme $\tsa$ to
+$\tsb$ using the \emph{instantiation relation} given in \cref{fig:inst-rel}.
+This expresses that one type scheme is a polymorphic generalization of another.
+
+% Instantiation relation
+\Rule{Inst-Refl} trivially asserts that a monotype is an instance of itself.
+In \Rule{Inst-ForallL}, a universally quantified type on the left may be
+instantiated by substituting $\tv$ with any monotype to match the right hand
+side. Conversely, \Rule{Inst-ForallR} has a type scheme $\tfor \tv \ts$ on the
+right hand side. In this case, we introduce a fresh polymorphic type variable
+$\tv$ into the context to test whether the $\tsa$ is an instance of $\tsb$
+under any instantiation of $\tv$ -- this is essentially a form of skolemization
+
+% Let rule
+Let-polymorphism is handled by the \Rule{Let} rule, where a \textit{polymorphic}
+term can be bound. This allows a single definition to be instantiated differently
+at each use site -- an essential feature of \ML. In this rule, the term $\eone$
+has a polymorphic type scheme $\ts$, adds $\x : \ts$ into the context $\G$ to
+typecheck $\etwo$.
+
+% Annotations
+Annotations $(e : \exi \tvs \t)$ ensures that the type of $e$ is $\t$. The type
+variables $\tvs$ are \emph{flexibly} (or existentially) bound in $\t$, meaning that
+$\tvs$ may be unified with some types $\tys$ to produce a well-typed term. For instance,
+the term $(\efun x x + 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv := \tint$
+in \Rule{Annot}.
+
+% Contextual rules (Poly-*, Use-*, Proj-*)
+The typing rules for full annotated terms ($\e^x$) are unsurprising.
 However, typing rules for terms with omitted type annotations are
-non-compositional as they depends on a surrounding one-hold context
-$\E$. Hence, they assert that an expression $\G \th \E \where {\e^i}: \t$
-where $\e^i$ is an expression with an implicit type annotation.
+non-compositional as they depends on a surrounding one-hole context
+$\E$. Hence, they assert that the typability of the expression
+$\G \th \E \where {\e^i}: \t$ where $\e^i$ is an expression with an
+implicit type annotation.
 %
 We first request a typing for the expression with an explicit annotation $\G
-\th \E \where {\e^i}: \t$ where $\e^i$.  We then requests that (the
-shape of) the annotation is fully determined from context, either from the
-type of the expression, which we write $\eshape \E \e s$, or from the type
-of the hole, which we write $\Eshape \E \e s$.
+\th \E \where {\e^x}: \t$ where $\e^x$ is a fully annotated variant of $\e^i$.
+We then request that (the shape of) the annotation is fully determined from context,
+either from the type of the expression, which we write $\eshape \E \e \sh$, or from the type
+of the hole, which we write $\Eshape \E \e \sh$.
 
-Shapes are one of the following form:n
+% Shapes
+Shapes are one of the following form:
 \begin{mathpar}
-s \is \exi \tvs \ts \mid \Pi^n \mid \F \mid \sbot
+  \sh \is \tunit
+      \mid \tva \to \tvb
+      \mid \Pi\iton \tvs
+      \mid \tvs \Fapp ~
+      \mid \exi \tvs \tpoly \ts
 \end{mathpar}
-where $\exi \tvs \ts$ is a shape (as defined above).  The shape of a
-variable is undefined (which we write $\sbot$).  The shape of a non-variable
-monotype $\tys \F$ is $\F$.
+The shape of a variable is undefined (as in \cref{fig:shape-fn-def-typing}).
+The shape of the unit type $\tunit$ is $\tunit$. Monotypes that contain
+nested types, such as the function type $\t \to \tp$, have the shape of
+their top-level type constructor with their children replaced by variables,
+\ie $\tva \to \tvb$.
 %
 The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
 $\tpoly \ts$ abstracted over the monomorphic parts. It is the minimal
 closed type expression $\exi \tvas {\tpoly {\all \tvbs \t}}$ (up to the
 ordering of variables) such that there exists types $\tys$ such that
-$\t\where {\tvas \is \tys}$ is equal to $\ts$.
+$\tfor \tvbs \t \where {\tvas \is \tys}$ is equal to $\ts$.
 %
 Closed, means that $\tvas$ is equal to the free type variables
 $\ftv \ts$ of $\ts$. The minimality condition is equivalent to the fact that
 any suffix of a non-variable node in $\t$ leads to a polymorphic type
 variable, \ie a variable in $\tvbs$.
 %
-When $\exi \tvs \ts$ is a polytype skeleton, we write $\cpoly \tys \ts$ for
+When $\exi \tvs \tpoly \ts$ is a polytype skeleton, we write $\cpoly \tys \ts$ for
 the polytype $\tpoly \ts \where {\tvs \is \tys}$.
+
+\begin{mathparfig}[t]
+{fig:shape-fn-def-typing}
+{Definition of $\shape(\t)$, a partial function from types to
+shape-substitution pairs $\langle \sh, \theta \rangle$, extended for all
+types defined in the calculus}
+  \shape(\tv) \eqdef \bot
+
+  \shape(1) \eqdef 1
+
+  \shape(\t \to \tp) \eqdef \langle \tv \to \tv', [\tv := \t, \tv' := \tp] \rangle
+
+  \shape(\Pi\iton \tys) \eqdef \langle \Pi\iton \tvs, \where {\tvs := \tys} \rangle
+
+  \shape(\tys \Fapp) \eqdef
+	\langle \tvs \Fapp, \where {\tvs := \tys} \rangle
+
+  \shape(\tpoly \ts) \eqdef \langle \exi \tvs \tpoly \ts, \where {\tvs := \tys} \rangle
+\end{mathparfig}
 
 \Xdidier {We may wish to extend the definition of shapes to all non-variable
 types, letting it be the top constructor. This will carry a better
 intuition, even though the current presentation is correct.}
+\Xalistair{I've done this above -- yet I feel the definition for $\tpoly \ts$ is not
+not formal enough}
 
-In order to describe the judgments $\eshape \E \e s$ and
-$\Eshape \E \e s$, we introduce a cast operation $\ecase \e \t \tp$
+In order to describe the judgments $\eshape \E \e \sh$ and
+$\Eshape \E \e \sh$, we introduce a cast operation $\ecast \e \t \tp$
 which allows an expression $\e$ of type $\t$ to be seen with type $\tp$.
-That is the typing rule for casts is 
+That is the typing rule for casts is
 \begin{mathpar}
-  \inferrule[Cast]  
+  \inferrule[Cast]
     {\G \th e : \t}
-    {\G \th \ecast e \t \tp : \tp} 
+    {\G \th \ecast e \t \tp : \tp}
 \end{mathpar}
 Casts are not allowed on source terms and are just a device for the
 definition of unavoidable shapes. Finally, we define it means for a shape
-to be determined from the context or the expression: 
+to be determined from the context or the expression:
 \begin{mathpar}
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
-\eshape E \e s \Eqdef
+\eshape E \e \sh \Eqdef
   \forall \G, \t, \tp, \uad
-  \G \th E \where {\ecast \e \typ \typp} : \t \implies \tshape \typ = s
+  \G \th E \where {\ecast \e \typ \typp} : \t \implies \shape(\typ).1 = \sh
 \\[1ex]
-\Eshape E \e s \Eqdef
+\Eshape E \e \sh \Eqdef
   \forall \G, \t, \tp, \uad  \G \th E\where{\ecast \e \typ \typp} : \t \implies
-  \tshape \typp = s
+  \shape(\typp).1 = \sh
 \end{tabular}}
 \end{mathpar}
-These states that the shape $s$ of expression $\e$ in context $\E$ is
+These states that the shape $\sh$ of expression $\e$ in context $\E$ is
 determined by the expression $\e$, in the former case, or by the context
 $\E$ in the latter case.
 
 Shapes are equal modulo alpha equivalence and the removal of useless
-polymorphic type variables. There do not have useless existential variables.
-Shapes are only defined for n-ary tuples and polytypes.
+polymorphic type variables. They do not have useless existential variables.
 
 
-\Xdidier {In fact, the current proposal does not include overloading
-of nominal record fields... I thought we wanted to do this.
-Do we then need to change the examples in the introduction?
-Besides, I don't think we can reproduce the examples analogous to $e_6$ and
-$e_7$ with structural tuples.}
+% Expression-based implicit rules
+The implicit rule \Rule{Proj-I} types the projection $\eproj \e j$ provided the
+context $\E$ \emph{infers} that the shape of $\e$ must be a tuple with arity $n$.
+Similarly, \Rule{Use-I} permits instantiating a polytype in $\einst e$ if
+the context $\E$ infers that the type of $\e$ must be a polytype with skeleton
+$\exi \tvs \tpoly \ts$. The rule \Rule{Poly-I} types the implicit boxing
+construct $\epoly \e$ by \emph{checking} the expected type of $\epoly \e$ in the
+context $\E$ is a polytype with the skeleton $\exi \tvs \tpoly \ts$. This rule
+differs from the previous two as the shape is determined by the expected type
+within the context as opposed to the inferred type of $\e$.
 
+
+% Labels
+We adopt a similar non-compositional approach for elaborating overloaded labels,
+whether in record projection ($\efield e \elab$) or record construction
+($\erecord {\overline{\elab = \e}}$). Here, a one-hole label context $\Lab$
+provides the surrounding context in which a label $\elab$ appears, and we require
+that the record type $\F$ associated with $\elab$ is uniquely determined.
+This is expressed by the judgment $\Lshape \Lab \elab \F$.
+
+\begin{mathpar}
+  \begin{array}{rrl@{\hspace{8em}}l}
+   \Lab
+      & \bnfis
+      & \E[\e.\square]
+	\mid \E[\erecord {\elaba = \eone; \ldots; \square = \ei ; \ldots; \elab_n = \en }]
+      & \text{Label contexts}
+  \end{array}
+
+\end{mathpar}
+
+This judgement holds if either:
+\begin{enumerate*}
+  \item The label $\elab$ can be uniquely resolved to a record type $\F$ in the typing
+	context, written $\eshape \Lab {\elab ~} \F$.
+  \item The context $\Lab$ infers that $\elab$ must be instantiated to the record type
+	$\tys \Fapp$, written $\Eshape \Lab \elab \F$.
+\end{enumerate*}
+
+\begin{mathpar}
+  \Lshape \Lab \elab \F \eqdef \eshape \Lab \elab \F \vee \Eshape \Lab \elab \F
+\end{mathpar}
+
+The first case applies when the record type is uniquely determined by the syntax of the
+context, without needing shape inference. There are two main subcases:
+\begin{enumerate*}
+  \item In a record projection context $\E[\e.\elab]$, if the label $\elab$ is not
+	overloaded, then the (record) typing context $\D$ assigns a unqiue record
+	type $\F$ to $\elab$.
+  \item In a record expression $\E [\erecord {\elab_1 = \eone; \ldots; \elab_n = \en}]$,
+	if the set of labels ${ \elab_1, \ldots, \elab_n }$ uniquely identifies a record
+	type $\F$ in the typing context $\D$.
+\end{enumerate*}
+
+\begin{mathpar}
+  \infer[Lab-Uniq-Proj]
+    {l \mathop{!} \F \in  \Delta}
+    {\eshape {\E[\e.\square]} \elab \F}
+
+  \infer[Lab-Uniq-Rcd]
+    {\bar \elab \mathop{!} \F \in \Delta}
+    {\eshape
+      {\E[\erecord {\elaba = \eone; \ldots; \square = \ei; \ldots;  \elab_n = \en }]}
+      \elab
+      \F }
+\end{mathpar}
+
+To support the second case, we introduce a magic label judgment (\Rule{Lab-Magic}) that
+behaves analogously to the cast operator in expression contexts. It enables us to
+assume a hole $\square : \t$ in label position may be instantiated to a function type
+$\tp \to \t$
+
+\begin{mathpar}
+
+  \infer[Lab-Magic]
+    { }
+    {\G \th \square : \t \leq \tp \to \t}
+
+  \\
+  \Eshape \Lab \elab \F \eqdef \forall \G, \t, \tp, \G \th \Lab[\square : \tp] : \t \implies \shape(\tp).1 = \tvs \F
+
+\end{mathpar}
+
+% Contexts can be the entire term
 The following lemma shows that we can always take a larger context
-$\E$ for implicit rules \Rule {Proj-I}, \Rule {Use-I} and \Rule {Poly-I}. 
+$\E$ or $\Lab$ for implicit rules \Rule {Proj-I}, \Rule {Use-I}, \Rule {Poly-I}
+and \Rule{Lab-I}.
+That is, there is always a derivation using only toplevel contexts.
 \begin{lemma}
 \newcommand {\Eab}{\parens{\Ea\where \Eb}}
-Assume $\eshape \Eb e s$ and $\G \th \Ea \Where {\Ga \th \Eb \where {\e^x} :
-\t} \t$, then $\eshape \Eab e s$ and $\G \th \Eab\where {\e^i} \t$.
+Assume $\eshape \Eb \e \sh$ and $\G \th \Ea \Where {\Ga \th \Eb \where {\e^x} :
+  \tya} \t$, then $\eshape \Eab \e \sh$ and $\G \th \Eab\where {\e^i} : \t$.
+  Similarly, for label contexts, assuming $\Lshape \Lab \elab \F$ and $\G \th \E [\Ga \th \Lab[\elab] : \tya] : \t$, then $\Lshape {(\E[\Lab])} \elab \F$ and $\G \th (\E[\Lab])[\elab] : \tau$.
 \end{lemma}
 \begin{proof}[Proof Sketch]
-Formally, can be proved by induction on $\Ea$. 
+Formally, can be proved by induction on $\Ea$ and $\E$, respectively.
 \end{proof}
-That is, there is always a derivation using only toplevel contexts. 
 
+% Examples
 We now illustrate the typing of implicit constructs with a few examples.
 \begin{example}
 To illustrate a simple case of non-typability, we show that the expression $e$
@@ -1788,9 +1964,9 @@ We have  the following derivation:
 \end{mathpar}
 However, $\eshape E  \x {\Pi\iton}$ does not hold.
 Indeed, we have $\eset \th E \where {\emagic {\x :\t_n}} : \wild$
-for any $\t_n$ of the form $\Pi\iton \tys$ and $n \ge k$. 
+for any $\t_n$ of the form $\Pi\iton \tys$ and $n \ge k$.
 Hence, $\Pi\iton[k]$ and $\Pi\iton[k+1]$ are two possible shapes
-for the type of $\x$. 
+for the type of $\x$.
 \end{example}
 
 \begin{example}
@@ -1806,7 +1982,7 @@ have the derivation:
 \infer* [Right=Proj-I]{
                         \eshape E \x {\Pi\iton} \\
                 \eset \th E \where {\eproj[n] \x k} : \t_k
-}{%             ------------------------------------------- 
+}{%             -------------------------------------------
                   \eset \th E \where {\eproj \x k} : \t_k
 }
 \end{mathpar}
@@ -1815,19 +1991,19 @@ Therefore, it just remains to show $\eshape E \x {\Pi\iton}$~\llabel C.
 Assume $\eset \th \E \where{\ecast \x \typ \typp} : \t$. Since
 $\x: \Pi\iton (\tint,\tint)$ is bound in the context at the hole $E$,
 there is no other choice but $\tp$ equal to $\Pi\iton (\tint,\tint)$,
-hence $\tshape \t = \Pi\iton$, which proves~\lref C. 
+hence $\tshape \t = \Pi\iton$, which proves~\lref C.
 \end{example}
 
 The following example of non-typability illustrates is how the typing rules
 still forces to reject typing of expressions whose annotations would
 be unambiguous. This is intended, to prevent us from having to focus
 at several annotation simultaneously. Our typing rules enforces the
-resolution of annotation, locally, one construct at a time. 
+resolution of annotation, locally, one construct at a time.
 
 \begin{example}
 \newcommand{\tyid}{\ty_{\kwd{id}}}
 \newcommand {\epid}[1][]{\epoly[#1]{\efun z z}}
-Let $\tyid$ be $\tpoly{\all \tv \tv \to \tv}$. 
+Let $\tyid$ be $\tpoly{\all \tv \tv \to \tv}$.
 %
 We show that the expression $e$ equal to $\elet \x {\epoly {\efun z z}}
 {(\eapp {\einst \x} 1, \eapp {\einst \x} \eunit)}$ is rejected as ambiguous.
@@ -1849,14 +2025,14 @@ If this holds, we should have a derivation that ends with
 \infer*[Right=Poly-I]{
                          \Eshape \E \epid \tyid \\
                   \eset \th \E \where {\epid [\tyid]}: \t
-}{%               --------------------------------------- 
+}{%               ---------------------------------------
                        \eset \th \E \where \epid : \t
 }
 \end{mathpar}
 However, $\Eshape \E {\epoly {\efun z z}} {\tpoly \tyid}$ does not hold.
 Indeed, the following judgment $\eset \th \E \where {\epid [s]}: \t$ where
 $s$ is either $\all \tv \tv \to \tv$ or $\all \tv (\tv\to\tv) \to
-\tv\to\tv$. Hence, this case cannot occur. 
+\tv\to\tv$. Hence, this case cannot occur.
 
 \proofcase
 {$\E$ is
@@ -1867,12 +2043,12 @@ The derivation must end with:
 \infer*[Right=Proj-X]{
                           \eshape \E \x \tyid \\
                 \eset \th \E \where {\einst[\tyid] \x} : \t
-}{%             ------------------------------------------- 
+}{%             -------------------------------------------
                     \eset \th \E \where {\einst \x} : \t
 }
 \end{mathpar}
 However, $\eshape \E \x \tyid$ does not hold (the proof is similar to the
-previous case). 
+previous case).
 
 \proofcase {$\E$ is  $\elet \x \epoly {\efun z z} (\eapp {\einst \ehole} 1, \eapp
 {\einst \x} \eunit)$} This is symmetric to the previous case, which cannot
@@ -1903,37 +2079,37 @@ Hence $\eset \th \e : \tint$.
 \TODO
 {a declarative solver.}
 
-% Intro 
+% Intro
 
-% Shape of solver 
+% Shape of solver
 
 % Constraint contexts (and their use in solving)
 
-% Solved forms 
+% Solved forms
 
-% Unification 
+% Unification
 
-% Solver rules 
+% Solver rules
 
-% Explainations for the main rules 
+% Explainations for the main rules
 
 % Term variable constraints
 
-% Suspended match constraints 
+% Suspended match constraints
 
-% Metatheory 
+% Metatheory
 
 
 \section{HM Prototype and discussion}
 \label{sec:implementation}
 
-% Generalization trees 
+% Generalization trees
 
-% Lazy generalization 
+% Lazy generalization
 
-% Schedulers 
+% Schedulers
 
-% Partial generics and instances 
+% Partial generics and instances
 
 \paragraph{Interaction with let-polymorphism}
 \Xgabriel{This was moved from the introduction, it's related to ``choice points'' below.}
@@ -2017,7 +2193,7 @@ abandon local let generalization.}
 \subsection{Bi-directional type inference}
 
 \Xgabriel{Our approach should have better properties for disambiguation, but
-which ones?} 
+which ones?}
 
 In the simply-typed case our system works better. But with generalization
 you can have more issues.
