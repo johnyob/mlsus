@@ -1100,7 +1100,7 @@ intend. Let us now define the $\C[\alpha!]$ condition.
   The notation $\semenv \vdash \c[\semenvp \vdash \cp]$ means that there is
   a derivation of the satisfiability judgment for $\c[\cp]$ where, the
   subderivation at the hole of $\c[\square]$ is a derivation of $\semenvp
-  \vdash \cp$. We define it formally in \cref{fig:TODO}.
+  \vdash \cp$. We define it formally in \cref{par:contextual-judgments}.
 \end{definition}
 
 Notice that the rule \Rule{susp-ctx} has $\C[\tv!]$ as a premise, which in
@@ -1110,7 +1110,7 @@ well-founded. Informally, the reason for well-foundedness is that the
 conclusion of \Rule{susp-ctx}, which is $\semenv \vdash \C[\cmatch \tv
 \Delta f]$, is strictly larger than the negatively-occurring judgment
 $\semenv \vdash \C[\ctrue]$. We discuss well-foundedness in more details in
-\cref{sec:TODO}.
+\cref{par:well-foundedness}.
 
 \subsection{Examples}
 
@@ -1171,6 +1171,46 @@ yet as $\beta$ has no head, and we cannot use the \Rule{susp-ctx} rule as
 the empty context $\square$ does not uniquely constrain $\tvb$.
 
 \subsection{Technical details}
+
+\subsubsection{Contextual judgments: $\semenv \vdash \c[\semenvp \vdash \cp]$}\label{par:contextual-judgments} 
+
+This notation means that there is a derivation of the satisfiability
+judgment for $\c[\cp]$ where, the subderivation at the hole of
+$\c[\square]$ is a derivation of $\semenvp \vdash \cp$. We considered
+two approaches to define it precisely:
+\begin{enumerate}
+\item We could introduce a notion of holes or meta-variables in the
+  judgment: $\semenv \vdash \c[\semenvp \vdash \cp]$ is defined as the
+  conjunction of $\semenvp \vdash \cp$ and
+  $\semenv \vdash \c[\semenvp \vdash \square]$, and the latter is
+  a particular case of a judgment $\semmetaenv; \semenv \vdash \c$
+  where $\semmetaenv$ is a context of linear meta-variables such as
+  $\square$.
+\item Or we can compute the subderivation $\derivp$ of
+  $\semenvp \vdash \cp$ after the fact, by extracting it from
+  a derivation $\deriv$ of $\semenv \vdash \c[\cp]$: we define this as
+  an ``indexing'' operation $\ctxindex{\deriv}{\C}$.
+\end{enumerate}
+
+The meta-context approach has the downside that we have to thread the
+imposing meta-context $\semmetaenv$ in all our judgments and their
+typing rules. We thus propose to use context indexing instead, so that
+the complexity is restricted only to the definition of this context judgment.
+
+\begin{mathparfig}%
+  {fig:context-indexing}%
+  {Context indexing}
+
+\infer
+{ }
+{\ctxindex{\deriv}{\square} := \deriv}
+
+\deriv :: \infer{foo}{bar} \implies \ctxindex{\deriv}{...} := 
+\end{mathparfig}
+
+
+\subsubsection{Well-foundedness}\label{par:well-foundedness}
+
 
 \TODO{Explain the notation $\semenv \vdash \C[\semenvp \vdash \c]$.}
 
@@ -1793,7 +1833,7 @@ annotated derivation.
 %
 To show that $e$ is typable, we must be able to make all annotations
 optional, sequentially.  Therefore, the final step, which will eliminate the
-last annotation has a single point of focus $\E{\e^x}$, which could be any
+last annotation has a single point of focus \Xgabriel[$\E{\e^x}$]{?}, which could be any
 of the three positions with an annotation.  We consider each case
 independently, and show that it is actually not typable.
 \proofcase
