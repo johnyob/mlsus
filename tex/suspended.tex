@@ -2083,13 +2083,9 @@ $\typ$ must be a record of some shape $\Pi\iton$ for some size
 $n$. Since the codomain of $f$ must be a tuple of size~$2$, then $n$ must
 also be $2$. This shows that $\eshape \E \x {\Pi\iton[2]}$.
 
-Hence $\eset \th \e : \tint$.
-
-[Misrefolved conflitcs here]
-\end{example}
 \Xalistair{This proof is invalid, see below.}
 
-Here is a sketch that $\neg \eshape \E \x {\tint \times \tint}$.
+Here is a sketch that $\neg \eshape \E \x {\Pi\iton[2]}$.
 We have the following typing derivation
 for $\emptyset \th \E[\ecast \x \tva \tvb] : \tunit$:
 \begin{mathpar}
@@ -2102,7 +2098,7 @@ for $\emptyset \th \E[\ecast \x \tva \tvb] : \tunit$:
 	    \infer
 	      {
 		\infer
-		  {~}
+		  {}
 		  {\tva, \tvb, x : \tva \th x : \tva}}
 	      {\tva, \tvb, x : \tva \th \ecast x \tva \tvb : \tvb}}
 	  {\tva, \tvb \th \efun x {\ecast x \tva \tvb : \tva \to \tvb}}}
@@ -2113,6 +2109,19 @@ for $\emptyset \th \E[\ecast \x \tva \tvb] : \tunit$:
     {\emptyset \th \elet f {\efun \x {\ecast \x \tva \tvb}} {\eapp f (1, 2)} : \tunit}
 \end{mathpar}
 Yet $\shape(\alpha).1 = \sbot$.
+
+\Xdidier{Yes, I found it as well, but lost my text in the merge: I was
+proposing the following as a fix}
+
+I was suggestingf to replace the premises of rule \Rule {Proj-I} by
+\begin{mathpar}
+\G \th E[\exfield e n j] : \t
+
+(\G \th E[\exfield e k j] : \t \implies k = n)
+\end{mathpar}
+This will force $\x$ to be a product, and therefore a pair.
+(It might force us to infer more, however.)
+\end{example}
 
 \section{Solving constraints}
 \label{sec:solving}
