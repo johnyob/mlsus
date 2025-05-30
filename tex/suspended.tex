@@ -1201,13 +1201,51 @@ the complexity is restricted only to the definition of this context judgment.
   {fig:context-indexing}%
   {Context indexing}
 
-\infer
-{ }
-{\ctxindex{\deriv}{\square} := \deriv}
+  \ctxindex \deriv \square \eqdef \deriv
 
-\deriv :: \infer{foo}{bar} \implies \ctxindex{\deriv}{...} :=
+  \deriv :: \infer
+    {\semenv \th \cone \\
+      \derivp :: \semenv \th \ctwo }
+    {\semenv \th \cone \cand \ctwo}
+  \implies
+  \ctxindex \deriv {\cone \cand \C} \eqdef \ctxindex \derivp \C
+
+  \deriv :: \infer
+    {\derivp :: \semenv \th \cone \\
+      \semenv \th \ctwo}
+    {\semenv \th \cone \cand \ctwo}
+  \implies
+  \ctxindex \deriv \C \cand \ctwo \eqdef \ctxindex \derivp \C
+
+  \deriv :: \infer
+    {\derivp :: \semenv, \tv := \t \th \c}
+    {\semenv \th \cexists \tv \c}
+  \implies
+  \ctxindex \deriv {\cexists \tv \C} \eqdef \ctxindex \derivp \C
+
+  \deriv :: \infer
+    {\derivp :: \semenv \th \cexists \tv \cone \\
+      \semenv, x := \cabs \tv \cone \th \ctwo}
+    {\semenv \th \cletin x {\cabs \tv \cone} \ctwo}
+  \implies
+  \ctxindex \deriv {\cletin x {\cabs \tv \C} \ctwo} \eqdef \ctxindex \derivp {\cexists \tv \C}
+
+  \deriv :: \infer
+    {\semenv \th \cexists \tv \cone \\
+      \derivp :: \semenv, x := \cabs \tv \cone \th \ctwo}
+    {\semenv \th \cletin x {\cabs \tv \cone} \ctwo}
+  \implies
+  \ctxindex \deriv {\cletin x {\cabs \tv \cone} \C} \eqdef \ctxindex \derivp \C
+
 \end{mathparfig}
-
+\Xalistair{I started sketching the semantics for indexing within a hole, yet
+it is not entirely clear what the semantics should be for let-constraints. We
+could consider multi-hole contexts (for each duplicate), we could consider the
+satisfiability check $\cexists \tv \cone$. So far, I've gone for the latter}
+\Xalistair{For backwards propagation, we could try picking
+a single hole (either satisfiability or instance), thus some instance constraints
+could propagate. But we'd need to existentially pick the hole of interest before
+the universal quantifier the unicity predicate}
 
 \subsubsection{Well-foundedness}\label{par:well-foundedness}
 
