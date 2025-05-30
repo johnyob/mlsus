@@ -80,32 +80,40 @@ it enjoys the principal type property and more importantly is closed by
 common program transformations such as let-contraction and let-expansion,
 and permutation of the order or arguments.
 
-Over the years, many extensions of \ML have been proposed. Some of the new
-constructs, such as extensible records with row-polymorphism, higher-kinded
-types, or dimensional types, fit nicely into the \ML framework. Others such
-as GADTs, semi-explicit polymorphism, first-class modules or static
-overloading of datatype constructors and record fields, are \emph{fragile},
-since they require to twist the ML-style specification with some direct or
-indirect algorithmic flavor in order to preserve
-\emph{principality}. Fragile conststructs have all in common that their
-syntax includes explicit type annotations which may sometimes but not always
-be omitted. We call them \emph{fragile} as they have a natural specification
-for which they are \emph{not} complete; they are only complete for
-a (more or less ad-hoc) restriction of this specification, designed
-especially to reject examples that would break completeness, but also many
-others.  Unsurprisingly, they have historically posed challenges to the
+Over the years, many extensions of \ML have been proposed. Some of the
+new constructs, such as extensible records with row-polymorphism,
+higher-kinded types, or dimensional types, fit nicely into the \ML
+framework. Others such as GADTs, semi-explicit polymorphism,
+first-class modules or static overloading of datatype constructors and
+record fields, are \emph{fragile}, since they require to twist the
+ML-style specification with some direct or indirect algorithmic flavor
+in order to preserve \emph{principality}. This (more or less ad-hoc)
+restriction in the specification is designed especially to reject
+examples that would break completeness, but it also rejects many
+others.\Xgabriel{I would like to explain more here, it is not obvious
+ why completeness-breaking examples also endanger principality.}
+Unsurprisingly, they have historically posed challenges to the
 preservation of principal types.
 
-Fragile constructs can be elaborated into their non-fragile but less
-cumbersome to use counterpart, where explicit type annotations are
-mandatory. Those fit nicely into the \ML framework. The elaboration then
-defines which annotations can be omitted and rebuilt from context, a point
-of view already taken in stratified type inference~\cite
+Fragile conststructs have all in common that their syntax includes
+explicit type annotations which may sometimes but not always be
+omitted. The return type of overload data constructors can be
+annotated; polymorphic expressions can be annotated with a type
+scheme; first-class module expressions with a module signature; for
+GADTs, the type of the \texttt{match} scrutinee can be annotated to
+a rigid type which will be refined by type equalities in each
+branch. To each fragile construct corresponds a robust construct where
+this type annotations is mandatory. Those fit nicely into the \ML
+framework, but are significantly more cumbersome to use. Fragile
+constructs can be defined by elaboration into their robust
+counterpart. The elaboration determines which annotations can be
+omitted and rebuilt from context, a point of view already taken in
+stratified type inference~\cite
 {Pottier-Regis-Gianas/stratified@popl06}.
 %
-The difficulty in fragile extensions lies in finding a specification that is
-sufficiently expressive, principled, intuitive for the user, and for which
-we have a complete and effective elaboration algorithm.
+The difficulty of fragile constructs lies in finding a specification
+that is sufficiently expressive, principled, intuitive for the user,
+and for which we have a complete and effective elaboration algorithm.
 
 The solutions proposed so far all enforce some ordering in which type
 inference is performed, which can then be used to propagate both inferred
@@ -282,10 +290,13 @@ let e_6 r = (r.x, r.y)
 let e_7 r = r.x.x
 \end{program}
 \OCaml fails on both examples as ambiguous with poly-directional inference.
-However, \ocaml{r} can only be of type \ocaml{int two} in \ocaml{e_6},
-which is an instance of the former case of incompleteness, which should
-wishfully be eliminated. Our proposal with omnidirectional inference
-succeeds.
+However, \ocaml{r} can only be of type \ocaml{int two} in \ocaml{e_6}, which
+is an instance of the former case of incompleteness, which should wishfully
+be eliminated. Our proposal with omnidirectional inference succeeds
+\Xgabriel{Does it? My implementation with Olivier would reject this example,
+  because it is not robust to the addition of additional type definitions in
+  the context. Even where there is a single type declaration with a given
+  field/constructor we require an annotation.}
 
 Omnidirectional still fails on \ocaml{e_7}, which is an instance of the
 latter case of incompleteness. This is actually a reasonable design to keep
@@ -297,44 +308,45 @@ NP-hard even in the absence of let-polymorphism, as show by an encoding of
 
 \paragraph{Omnidirectional type inference}
 
-We propose to use omnidirectional type inference to eliminate the first
-source of incompleteness.  Our proposal with omnidirectional type inference
-will correctly type all examples above (from \ocaml{e_1} to
-\ocaml{e_6})\ignorespaces
-\INFO {See \url
-{https://gitlab.inria.fr/remy/semiun/-/blob/main/su/examples/record_fields.ml}}
----without any default strategy mechanism.
+The idea of \emph{omnidirectional} type inference is to take all program
+core-expression constraints into account before resolving ambiguities. This
+requires typing constraint to be solved in disorder.
 
-A type inference system without polymorphism, would be solely based on
-unification constraints, which can be solved in any order.  The difficulty
-originates from \ML let-polymorphism for which all known implementations
-choose to always infer the type of a let-binding, turn it into a type scheme
-that is assigned to the let-bound variable to extend the typing environment
-in which the body is then typed. The Hindley-Milner algorithm $\mathcal{J}$,
-one of its variant $\mathcal{W}$ or $\mathcal{M}$, or more flexible
-constraint solving algorithms all follow this strategy.
+This approach eliminates the first source of incompleteness we mentioned
+above. Our proposal with omnidirectional type inference will correctly type
+all examples above (from \ocaml{e_1} to \ocaml{e_6})\ignorespaces \INFO {See
+  \url
+  {https://gitlab.inria.fr/remy/semiun/-/blob/main/su/examples/record_fields.ml}} ---without
+any default strategy mechanism.
 
-However, it is not mandatory.  In fact, typing constraints as presented
+In absence of polymorphism, type inference is solely based on unification
+constraints which can be solved in any order; omnidirectional inference is
+natural and easy to implement. The difficulty originates from \ML
+let-polymorphism for which all known implementations choose to always infer
+the type of a let-binding, turn it into a type scheme that is assigned to
+the let-bound variable to extend the typing environment in which the body is
+then typed. The Hindley-Milner algorithm $\mathcal{J}$, one of its variant
+$\mathcal{W}$ or $\mathcal{M}$, or more flexible constraint solving
+algorithms all follow this strategy.
+
+However, it is not mandatory. In fact, typing constraints as presented
 in~\cite {Pottier-Remy/emlti} can be instantiated before they are fully
 solved, although this comes at the cost of duplicating some computation.
 Still, this shows that the let-binding ordering is a convenience, not a
 requirement.
 
-Allowing typing constraint to be solved in disorder, type inference become
-\emph{omnidirectional}.  This allows to take all program core-expression
-constraints into account before resolving ambiguities.  This requires two
-technical devices, hence two problems to solve:
+Omnidirectional type inference for \ML thus relies on two key technical devices:
 \begin{enumerate*}
 \item
-  we first must work with partial types schemes, \ie we the ability
-  to instantiate type schemes that are not yet fully determined and
-  consequently revisit their instances when their are being refined,
-  incrementally.
-\item
-  we then must allow \emph{suspended match constraints} as a way to suspend
+  We introduce \emph{suspended match constraints} as a way to suspend
   ambiguity resolution until sufficient information has been found from
   context so that they can be discharged and hopefully resolved.
-
+\item
+  We work with partial types schemes, \ie we the ability to instantiate type
+  schemes that are not yet fully determined and consequently revisit their
+  instances when their are being refined, incrementally. This allows
+  inferring parts of a \texttt{let}-body to disambiguate its definition,
+  without duplicating constraint-solving work.
 \end{enumerate*}
 Once the framework established, it just remains to be instantiated
 to each use case,
