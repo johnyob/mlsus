@@ -27,6 +27,7 @@
 \newcommand{\cexists}[2]{\exists {#1}.\, #2}
 \newcommand{\cfor}[2]{\forall {#1}.\, #2}
 \newcommand{\cand}{\wedge}
+\newcommand{\cAnd}{\bigwedge}
 \newcommand{\cunif}[2]{{#1} = {#2}}
 \newcommand{\cinst}[2]{#1 \; #2}
 \newcommand{\cletin}[3]{\Let #1 = #2 \In #3}
@@ -72,6 +73,7 @@
 \newcommand{\tunit}{1}
 \newcommand{\tint}{\mathsf{int}}
 \newcommand{\tbool}{\mathsf{bool}}
+\newcommand{\fvs}[1]{\mathsf{fv}({#1})}
 
 \renewcommand {\th}{\vdash}
 \newcommand {\mlexp}[3][\G]{#1 \th #2: #3}
@@ -99,6 +101,8 @@
 \newcommand{\eproj}[3][]{#2.#3\ifempty{#1}{}{/#1}}
 \newcommand{\erecord}[1]{\braces{#1}}
 \defmetavar{\elab}{\ell}
+\newcommand{\eannot}[3]{\parens {#1 : \exi #2 #3}}
+\newcommand{\etuple}[1]{\parens{#1}}
 
 \newcommand {\parens}[1]{(#1)}
 \newcommand {\braces}[1]{\{#1\}}
@@ -111,6 +115,7 @@
 \newcommand {\Angles}[1]{\highdelim\angles {#1}}
 \newcommand {\Brackets}[1]{\highdelim\brackets {#1}}
 \newcommand {\Bbrackets}[1]{\highdelim\bbrackets {#1}}
+\newcommand {\floor}[1]{\lfloor #1 \rfloor}
 \newcommand {\set}[1]{\braces{#1}}
 \newcommand {\eset}{\emptyset}
 \newcommand {\where}[1]{\brackets {#1}}
@@ -118,7 +123,7 @@
 \newcommand {\is}{:=}
 
 
-\newcommand{\cinfer}[2]{\bbrackets {#1 : #2}}
+\newcommand{\cinfer}[2]{\bbrackets {{#1} : {#2}}}
 
 %% \newcommand{\TODO}{\textcolor{red}{TODO}}
 \newcommand{\disjoint}{\mathop{\#}}

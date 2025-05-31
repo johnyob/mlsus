@@ -1806,6 +1806,9 @@ Shapes are one of the following form:
       \mid \tvs \Fapp ~
       \mid \exi \tvs \tpoly \ts
 \end{mathpar}
+\Xalistair{This syntax is a bit odd for polytypes as no other shape quantifies
+over its monomorphic part}
+
 The shape of a variable is undefined (as in \cref{fig:shape-fn-def-typing}).
 The shape of the unit type $\tunit$ is $\tunit$. Monotypes that contain
 nested types, such as the function type $\t \to \tp$, have the shape of
@@ -2162,6 +2165,110 @@ This will force $\x$ to be a product, and therefore a pair.
 
   \Xalistair{I don't think this would fix it, since the issue isn't with the $\G \th \E[\exfield \e n j] : \t$ premise but the $\eshape \E \e \sh$ premise}
 \end{example}
+
+\subsection{Constraint generation}
+\label{sec:constraint-gen}
+
+% Intro
+We now present the formal translation from terms $\e$ to constraints $\C$,
+such that the resulting constraint is satisfiable if and only if the term is
+well typed. The translation is defined as a function $\cinfer \e \t$, where $\e$
+is the term to be translated and $\t$ is the expected type of $\e$.
+
+% Explanation of expected type
+The expected type $\t$ is permitted to contain type variables, which can be
+existentially bound in order to perform type inference. The models of constraint
+$\cinfer \e \t$ interpret the free variables of $\t$ such that
+$\t$ becomes a valid type of $\e$. For example, to infer the entire type of $\e$
+we may pick a fresh type variable $\tv$ for $\t$.
+
+\begin{mathparfig}
+  {fig:constraint-gen}
+  {The constraint generation translation for ??}
+
+  \cinfer x \t \eqdef \cinst x \t
+
+  \cinfer {()} \t \eqdef \cunif \t \tunit
+
+  \cinfer {\efun \x \e} \t \eqdef
+    \cexists {\tva, \tvb} \cunif \t {\tva \to \tvb}
+    \cand \cletin \x {\cabs \tvc {\cunif \tvc \tva}} {\cinfer \e \tvb}
+
+  \cinfer {\eapp \eone \etwo} \t \eqdef
+    \cexists {\tva, \tvb} \cinfer \eone \tva \cand \cinfer \etwo \tvb
+    \cand \cunif \tva {\tvb \to \t}
+
+  \cinfer {\elet \x \eone \etwo} \t \eqdef
+    \cletin \x {\cabs \tva {\cinfer \eone \tva}} {\cinfer \etwo \t}
+
+  \cinfer {\eannot \e \tvs \tp} \t \eqdef \cexists \tvs \cunif \t \tp \cand \cinfer \e \tp
+
+  \cinfer {\etuple {\eone, \ldots, \en}} \t \eqdef \cexists \tvs \cunif \t {\Pi\iton \tvs}
+    \cand \cAnd \iton \cinfer \ei {\tv_i}
+
+  \cinfer {\exfield \e j n} \t \eqdef \cexists {\tv, \tvbs} \cunif \tva {\Pi\iton \tvbs}
+    \cand \cinfer \e \tva
+    \cand \cunif \t {\tvb_j}
+
+  \cinfer {\efield \e j} \t \eqdef \cexists \tv \cinfer \e \tv
+    \cand \cmatch \tv {\fvs \t} {(\lambda (\Pi \iton \tvbs).~ \cunif \t {\tvb_j})}
+
+  \cinfer {\expoly \e {\exi \tvbs \tfor \tvs \tp}} \t \eqdef \cexists {\tvbs}
+    (\cfor \tvs \cinfer \e \tp)
+    \cand \cunif \t {\tpoly {\tfor \tvs \tp}}
+
+  \cinfer {\einst \e} \t \eqdef \cexists \tva
+    \cinfer \e \tva
+    \cand \cmatch \tva {\fvs \t} {(\lambda (\exi \tvbs \tpoly \ts).~ \ts \leq \t)}
+
+  \cinfer {\efield \e \elab} \t \eqdef \cexists \tv \cinfer \e \tv
+    \cand \bbrackets {\elab \mathop{!} \tv}
+    \cand \bbrackets {\elab \leq \t \to \tv}
+
+  \cinfer {\erecord {\overline{\elab = \e}}} \t \eqdef
+    \bbrackets {\bar \elab \mathop{!} \t}
+    \cand \cAnd \iton \bbrackets {\elab = \e : \t}
+
+  \bbrackets {\elab = \e : \t} \eqdef \cexists \tv \cinfer \e \tv
+    \cand \bbrackets {\elab \leq \tv \to \t}
+
+  \bbrackets {\elab \leq \t \to \tp} \eqdef
+    \cmatch \tp {\fvs \t} {(\lambda (\tvs \Fapp).~ \cletin \ts {\D(\elab/\F)} \ts \leq \t \to \tvs \Fapp)}
+\end{mathparfig}
+\Xalistair{We need a cute name for our calculus -- we could go for
+$\textsf{ML}_\textsf{sus}$ (or symbol for the subscript)}
+
+% Explanation of constraint gen cases
+% Simple constraint gen
+The function $\cinfer - {\mathop{=}}$ is defined in \cref{fig:constraint-gen}.
+We assume that all variables $\tv_i$ existentially bound by the translation are fresh.
+Unsurprisingly, variables generate an instantiation constraint. Unit $()$ requires
+the type $\t$ to be $\tunit$. Function generate a constraint that binds two fresh
+flexible type variables for the argument and return types. We use a $\Let$ constraint
+to bind the argument in the constraint generated for the body of the function. The
+$\Let$ constraint is monomorphic since $\tv_3$ is fully constrained by type variables
+defined outside the abstraction's scope and therefore cannot be generalized. Function
+application binds two fresh flexible type variables for the function and argument types
+and ensures $\tv$ is the return type of the function. Let terms generate a polymorphic
+let constraint; $\cabs \tv {\cinfer \e \tv}$ is a principal constraint abstraction for $\e$:
+its intended interpretation is the set of all types that $\e$ admits.
+
+% New constraint gen cases
+\TODO{Explain new constraint gen cases}
+
+
+% Soundness/completeness of constraint gen
+The translation is sound and complete with respect to ?? typing rules. That is to say, the term $e$ is well-typed if and only if $\llbracket e : \alpha \rrbracket$ is satisfiable.
+%
+\begin{theorem}{(Constraint generation is sound and complete)}
+  Given a well-formed assignment $\semenv$. Then $\semenv \th \cinfer \e \tv$
+  if and only if $\floor \semenv \th \e : \semenv(\tv)$.
+\end{theorem}
+\Xalistair{Our type system has well-formedness conditions (that typically
+make proving this result (using a ground semantics for constraints), difficult)}
+
+
+
 
 \section{Solving constraints}
 \label{sec:solving}
