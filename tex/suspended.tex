@@ -1661,7 +1661,7 @@ variables to ``float around''.)
     {\eshape E e {\Pi\iton \tvs} \\
      \G \th E[\exfield e n j] : \t}
     {\G \th E[\efield e j] : \t}
-    
+
   %% \inferrule [Use-X]
   %%   {\G \th \e : \tpoly {\ts \where {\tvs \is \tys}}}
   %%   {\G \th \einst[\exi \tvs \ts] \e : \ts \where {\tvs \is \tys}}
@@ -2159,6 +2159,8 @@ I was suggestingf to replace the premises of rule \Rule {Proj-I} by
 \end{mathpar}
 This will force $\x$ to be a product, and therefore a pair.
 (It might force us to infer more, however.)
+
+  \Xalistair{I don't think this would fix it, since the issue isn't with the $\G \th \E[\exfield \e n j] : \t$ premise but the $\eshape \E \e \sh$ premise}
 \end{example}
 
 \section{Solving constraints}
