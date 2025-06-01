@@ -802,23 +802,27 @@ $\tfor \av {\tapoly \ts \av}$.
 
 
 % Boxing
+
 The introduction form for polytypes is a boxing operator $\expoly
 \e \ts$ with an explicit polytype annotation $\ts$. The resulting expression
 has type $\tapoly \ts \av$ where $\av$ is an arbitrary (typically fresh)
 annotation variable. The variable can thus be generalized.
-That is $\expoly \e \ts$ can also be assigned the type scheme $\all \av \tapoly \ts \av$.
+That is $\expoly \e \ts$ can also be assigned the type scheme $\all \av
+\tapoly \ts \av$. 
 
 % Unboxing (principality restriction)
+
 Conversely, to instantiate a polytype expression, one must use an explicit
-unboxing operator $\einst \e$, which requires no accompanying type annotation.
-However, the operator requires $e$ to have a polytype scheme of the form $\all \av
-\tapoly \ts \av$ and then assigns $\einst \e$ the type $\t$ that is an instance of
-$\ts$. If, by constrast, $\e$ hash the type $\tapoly \ts \av$ for some non-generalizable
-annotation variable $\av$, then $\einst \e$ is ill-typed.
-It is precisely the polymorphism of $\av$ that ensures that the
-polytype is indeed known and not being inferred.
+unboxing operator $\einst \e$, which requires no accompanying type
+annotation.  However, the operator requires $e$ to have a polytype scheme of
+the form $\all \av \tapoly \ts \av$ and then assigns $\einst \e$ the type
+$\t$ that is an instance of $\ts$. If, by constrast, $\e$ hash the type
+$\tapoly \ts \av$ for some non-generalizable annotation variable $\av$, then
+$\einst \e$ is ill-typed.  It is precisely the polymorphism of $\av$ that
+ensures that the polytype is indeed known and not being inferred.
 
 % Example ill-typed term
+
 In particular $\efun \x {\einst \x}$ is not typable, since the
 $\lambda$-bound variable $\x$ is assigned a monotype. Consequently, the
 only admissible type for $\x$ is $x : \tapoly \ts \av$ for some $\ts$ and $\av$.
@@ -827,6 +831,7 @@ typing $\einst \x$, it cannot be generalized prior to unboxing, rendering the
 term ill-typed.
 
 % Annotations
+
 However, type annotations can be used to freshen annotation variables.
 We usually omit annotation variables in annotations, since we can
 implicitly introduce fresh ones in their place. For example,
@@ -852,12 +857,13 @@ $\varepsilon$ variable.
 \end{version}
 
 % Short commings of annotation variables
-The very purpose of annotation variables is to distinguish \emph{known}, polymorphic
-polytypes from yet-unknown, monomorphic ones. However, they are somewhat difficult to
-understand and sensitive to the placement of type annotation, an artifact of
-the fixed directionality of generalization in \geninst-directional inference. For instance,
-the following two terms differ only in the position
-of the annotation, yet only the first is well-typed.
+
+The very purpose of annotation variables is to distinguish \emph{known},
+polymorphic polytypes from yet-unknown, monomorphic ones. However, they are
+somewhat difficult to understand and sensitive to the placement of type
+annotation, an artifact of the fixed directionality of generalization in
+\geninst-directional inference. For instance, the following two terms differ
+only in the position of the annotation, yet only the first is well-typed.
 \begin{mathpar}
   \efun f {\eapp {\einst {(f : \tpoly {\tfor \tv {\tv \to \tv}})}} f}
   \\
@@ -865,14 +871,17 @@ of the annotation, yet only the first is well-typed.
 \end{mathpar}
 The difference lies in how generalization and annotation variables interact.
 In the first term, the annotation occurs in an unboxing operator introducing
-fresh annotation variables and may therefore be generalized to the type scheme $\tfor \av {\tapoly {\tfor \tv {\tv \to \tv}} \av}$,
-enabling unboxing to proceed. Whereas, the second term applies the annotation
-to the argument $f$, which fixes $f$'s type to the monotype $\tapoly {\tfor \tv {\tv \to \tv}} \ava$
-for some fresh annotation variable $\ava$. Because this type is assigned to $f$ at its binding site,
-$\ava$ is bound in the context when typing $\einst f$, and cannot be generalized. As
-unboxing requires a generalized polytype, the second term is ill-typed despite the annotation.
+fresh annotation variables and may therefore be generalized to the type
+scheme $\tfor \av {\tapoly {\tfor \tv {\tv \to \tv}} \av}$, enabling
+unboxing to proceed. Whereas, the second term applies the annotation to the
+argument $f$, which fixes $f$'s type to the monotype $\tapoly {\tfor \tv
+{\tv \to \tv}} \ava$ for some fresh annotation variable $\ava$. Because this
+type is assigned to $f$ at its binding site, $\ava$ is bound in the context
+when typing $\einst f$, and cannot be generalized. As unboxing requires a
+generalized polytype, the second term is ill-typed despite the annotation.
 
 % Suspended match constraints fixes this
+
 Suspended match constraints eliminate this sensitivity to directionality,
 by allowing any type information to be treated as known --- rendering annotation
 variables unnecessary.
@@ -895,7 +904,8 @@ information is available.  We capture this behaviour in the following constraint
 \end{mathpar}
 Here, the match constraint $\cmatchdots \tvb$ suspends the instantiation
 until $\tvb$ is resolved to be a known polytype. If it is already known, the
-constraint discharges immediately and behaves like a standard instantiation constraint.
+constraint discharges immediately and behaves like a standard instantiation
+constraint. 
 %
 By waiting for $e$'s type to be \emph{known}, we may ensure principal types
 without annotation variables.
