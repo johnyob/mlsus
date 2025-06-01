@@ -1485,6 +1485,90 @@ semantics is exploited using the meta-language as opposed to a flaw in the
 object language \ie constraints.
 
 \paragraph{Interaction with polymorphism}
+\Xalistair{I'm not too sure this belongs here, but I think
+it is a tricky part of our semantics}
+
+Suspended constraints interact subtly with polymorphism
+and let-generalisation. Though our semantics appears modular,
+it is carefully crafted to give us the desired properties.
+%
+% Partially generalised type schemes (example)
+To illustrate, let us consider again \code{e}$_{10}$:
+\begin{program}[input]
+  type three = { x : int; y : int }
+  ...
+  let e$_{10}$ r = let x = r.x in x + r.y
+\end{program}
+A simplified typing constraint for this program is:
+\begin{mathpar}
+  \cexists \tv
+    \cletin x {\cabs \tvb {\cmatch \tva {\tvb} {(\lambda (\tvcs \Fapp).~ \ldots )}}}
+      \cinst x \tint \cand \cunif \tv {\mathsf{three}}
+\end{mathpar}
+Here, $\tv$ is \code{r}'s type. The constraint suspends
+until the shape of \code{r}'s type becomes available, which occurs when typing
+\code{r.y} using closed-world reasoning of records.
+
+% Generalisation
+At the point of generalising \code{x}, the type $\tvb$
+remains unknown: it is captured by a suspended match constraint
+and has not yet been refined. We must nevertheless assign a type
+scheme to $x$, yielding $\tfor \tvb \tvb$.
+This appears unsound -- $\tvb$ is generalised despite depending on
+unresolved information. However, $\tvb$ is not `fully' generalised in
+the traditional sense: it may be (and is) further constrained once the match
+constraint is discharged.
+
+To support this, we introduce our second novel mechanism
+for omnidirectional type inference: \emph{partial type schemes}.
+Such type schemes (\ie $x$'s scheme) delay commitment to certain quantifications,
+allowing generalised variables like $\tvb$ to be later refined (\eg, to \code{int})
+once suspended constraints are discharged. We defer the solver-level
+details of this mechanism to \cref{sec:solver, sec:implementation}.
+At the semantic level, we simply note that partially generalised schemes
+arise naturally from the interaction of suspended constraints and let-abstractions.
+
+% Backpropagation
+A further subtle--but crucial--feature of our semantics is its support for \emph{backpropagation}.
+%
+PI-directional inference, as exemplified by \OCaml, performs inference is a strictly
+let-directional manner:
+each let-binding is inferred using only local information, and
+generalisation forms a boundary that prevents information from later
+use sites from influencing the generalised type--this is why polymorphic
+type information is considered `known'.
+
+For example, the following program is rejected by \OCaml:
+\begin{program}[input]
+  let e$_{11}$ = let f r = r.x in f ({ x = 1; y = 1 })
+\end{program}
+Yet this example ought to be well-typed: the type of \code{f}'s
+argument is unambiguously the record type \code{three}. The reason
+this is ill-typed is that PI-directional inference cannot propagate
+the known type of the record (\ie \code{three}) \textbf{back} to
+\code{f}'s type.
+
+In constract, our approach permits such refinement.
+The (simplified) constraint generated when typing \code{e}$_{11}$ is:
+\begin{mathpar}
+  \cexists \tv
+  \cletin f {\cabs \delta {\cexists {\tvb, \tvc}
+    \cunif \delta {\tvb \to \tvc}
+    \cand \cmatch \tvb {\tvc} {(\ldots)}}}
+    {\cinst f {(\mathsf{three} \to \tv)}}
+\end{mathpar}
+
+Here type information flows from an instance constraint ($\cinst f {(\mathsf{three} \to \tv)}$)
+into a potentially generalisable variable $\tvb$ within the constraint abstraction.
+At generalisation time, $\tvb$ remains abstract. However, at the use site, the
+instance type \code{three} is known, and thus uniquely determines the shape
+of $\tvb$ to be $\mathsf{three}$. The unicity predicate can be used to show that no
+other shape can be inferred, without the constraint being unsatisfiable.
+
+This controlled backpropagation allows us to resolve the suspended constraint
+\emph{without} requiring $\tvb$ to be marked as a non-generalisable variable.
+
+\TODO{derivation}
 
 \paragraph{Summary}
 To recap, the semantics of suspended constraints is governed by three
