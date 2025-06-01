@@ -641,16 +641,17 @@ validate that the implementation is efficient for the moment.}
 \end{bnffig}
 
 % Syntax!
+
 Building on this foundation, we adopt a constraint language that includes
 both term and type variables. Its syntax is given
 in~\Cref{fig:constraint-syntax}. 
 %
-The constraint language contains tautologic constraints ($\ctrue$), unsatisfiable
-constraints ($\cfalse$), and logical conjunctions ($\cone \cand \ctwo$). The constraint
-form $\cunif \tone \ttwo$ asserts that the types $\tone$ and $\ttwo$ are equal.
-The constraint form $\cexists \tv \c$ binds an existentially quantified type
-variable $\tv$ in $\c$, while the constraint $\cfor \tv \c$ binds $\tv$
-universally.
+The constraint language contains tautologic constraints ($\ctrue$),
+unsatisfiable constraints ($\cfalse$), and logical conjunctions ($\cone
+\cand \ctwo$). The constraint form $\cunif \tone \ttwo$ asserts that the
+types $\tone$ and $\ttwo$ are equal.  The constraint form $\cexists \tv \c$
+binds an existentially quantified type variable $\tv$ in $\c$, while the
+constraint $\cfor \tv \c$ binds $\tv$ universally.
 %
 For convenience, we use the notation $\ts \leq \t$ as syntactic sugar for
 the constraint $\cexists \tvs \cunif \tp \t$, where $\ts$ is a universally
@@ -658,24 +659,30 @@ quantified type $\tfor \tvs \tp$; its intended meaning is the instantiation
 of the polymorphic type $\ts$.
 
 % Constraint abstractions
+
 There are two constructs that deal with the introduction and elimination of
 constraint abstractions. As the name suggests, a constraint abstraction
 $\cabs \tv \c$ can simply be seen as a function which when applied to some
-type $\t$ returns $\c \where {\tv := \t}$. Constraint abstractions are introduced by
-a let-construct $\cletin \x {\cabs \tv \cone} \ctwo$ which binds the
-constraint abstraction to the term variable $\x$ in $\ctwo$---additionally
-ensuring the abstraction is satisfiable. They are eliminated using the
-application constraint $\capp \x \t$ which applies the type $\t$ to the
-abstraction bound to $x$.
+type $\t$ returns $\c \where {\tv := \t}$. Constraint abstractions are
+introduced by a let-construct $\cletin \x {\cabs \tv \cone} \ctwo$ which
+binds the constraint abstraction to the term variable $\x$ in
+$\ctwo$---additionally ensuring the abstraction is satisfiable. They are
+eliminated using the application constraint $\capp \x \t$ which applies the
+type $\t$ to the abstraction bound to $x$.
+
+\Xdidier {Since you write $\capp \x \t$, instead of $\x \le \t$, then I
+would write the abstraction as $\cletin {\capp \x \tv} \Cone \Ctwo$
+instead of $\cletin {\cabs \tv \Cone} \Ctwo$.}
 
 % Suspended match constraints
 
 Finally, we introduce \textit{suspended match
-constraints}\footnote{Previously dubbed `frozen constraints' \citep{TODO}}.
+constraints}\footnote {Previously dubbed `frozen constraints' \citep{TODO}}.
 These constraints defer constraint generation until the \textit{shape}, \eg
-its top-level constructor, of a type becomes known (through unification), at
-which point they match on the shape to generate a new constraint. Formally,
-a suspended constraint is written as $\cmatch \t \D \hf$, where:
+the top-level constructor, of a type becomes known (through unification), at
+which point the constraint is matched on the shape to generate a new
+constraint. Formally, a suspended constraint is written as $\cmatch \t \D
+\hf$, where: 
 \begin{enumerate}
 \item
   The matchee $\t$ is a type. The constraint remains suspended until the
@@ -690,6 +697,10 @@ a suspended constraint is written as $\cmatch \t \D \hf$, where:
   permitted to reference.  The role of $\D$ in constraint solving is
   discussed further in \cref{sec:solving}.
 \end{enumerate}
+
+\Xdidier{Why make $f$ a meta-function, and not just a concrete
+function $\efun p \C$ where $p$ is a shape pattern that matches in
+the shape and binds underlying type variables $\tvs$ to types $\tys$?}
 
 \begin{mathparfig}[t]
 {fig:shape-fn-def}
@@ -723,6 +734,11 @@ These include:
   \Xalistair{I think its worth noting that \SML also relies on static
     overloading, but I'm not too sure whether its worth putting
     this feature in our calculus (which is now quite large)}
+  \Xdidier{We will have to discuss this in the related works. We thus need
+  to understand how they solved it, ie. their spec, which I do not know.}
+  \Xdidier{I agree that we should not include it. The place to mention it
+  depends on what we will have to say and how they compare with record
+  tuples.}
 \end{enumerate}
 We demonstrate how the typablity of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
@@ -794,7 +810,7 @@ Semi-explicit first-class polymorphism \citep{Garrigue-Remy/poly-ml} uses
 The type constructor $\tapoly \ts \av$ boxes a polymorphic type
 $\ts$ turning it into a \textit{polytype} annotated with the annotation
 variable $\av$.  Once boxed, the polytype $\tapoly \ts \av$ is considered
-a monotype, thereby enabling impredicative polymorphism. Annotations variables
+a monotype, thereby enabling impredicative polymorphism. Annotation variables
 may themselves be generalized, yielding type schemes such as
 $\tfor \av {\tapoly \ts \av}$.
 
@@ -802,11 +818,15 @@ $\tfor \av {\tapoly \ts \av}$.
 % Boxing
 
 The introduction form for polytypes is a boxing operator $\expoly
-\e \ts$ with an explicit polytype annotation $\ts$. The resulting expression
-has type $\tapoly \ts \av$ where $\av$ is an arbitrary (typically fresh)
-annotation variable. The variable can thus be generalized.
-That is $\expoly \e \ts$ can also be assigned the type scheme $\all \av
-\tapoly \ts \av$. 
+\e {\exi \tvs \ts}$ with an explicit polytype annotation $\exi \tvs \ts$
+where $\tvs$ are type variables that are free in $\ts$.
+%
+The resulting expression has type $\tapoly {\ts \where {\tvs \is \tys}} \av$
+where $\av$ is an arbitrary (typically fresh) annotation variable and $\tys$
+are arbritraty types that may be used in place of the free variables $\tvs$.
+The annotation variable $\av$ can thus be generalized.  That is $\expoly \e
+{\exi \tvs \ts}$ can also be assigned the type scheme $\all \av {\tapoly {\ts
+\where {\tvs \is \tys}} \av}$.
 
 % Unboxing (principality restriction)
 
@@ -814,7 +834,7 @@ Conversely, to instantiate a polytype expression, one must use an explicit
 unboxing operator $\einst \e$, which requires no accompanying type
 annotation.  However, the operator requires $e$ to have a polytype scheme of
 the form $\all \av \tapoly \ts \av$ and then assigns $\einst \e$ the type
-$\t$ that is an instance of $\ts$. If, by constrast, $\e$ hash the type
+$\t$ that is an instance of $\ts$. If, by constrast, $\e$ has the type
 $\tapoly \ts \av$ for some non-generalizable annotation variable $\av$, then
 $\einst \e$ is ill-typed.  It is precisely the polymorphism of $\av$ that
 ensures that the polytype is indeed known and not being inferred.
@@ -858,14 +878,16 @@ $\varepsilon$ variable.
 
 The very purpose of annotation variables is to distinguish \emph{known},
 polymorphic polytypes from yet-unknown, monomorphic ones. However, they are
-somewhat difficult to understand and sensitive to the placement of type
+\Xdidier[somewhat difficult to understand and]{I would cut this as I
+somewhat disagree...}  sensitive to the placement of type
 annotation, an artifact of the fixed directionality of generalization in
 \geninst-directional inference. For instance, the following two terms differ
-only in the position of the annotation, yet only the first is well-typed.
+only in the position of the annotation, yet only the one on the left-hand
+side is well-typed.
 \begin{mathpar}
-  \efun f {\eapp {\einst {(f : \tpoly {\tfor \tv {\tv \to \tv}})}} f}
-  \\
-  \efun f {\eapp {\einst f} {(f : \tpoly {\tfor \tv {\tv \to \tv}})}}
+ \efun f {\eapp {\einst {(f : \tpoly {\tfor \tv {\tv \to \tv}})}} f}
+
+\efun f {\eapp {\einst f} {(f : \tpoly {\tfor \tv {\tv \to \tv}})}}
 \end{mathpar}
 The difference lies in how generalization and annotation variables interact.
 In the first term, the annotation occurs in an unboxing operator introducing
@@ -881,7 +903,7 @@ generalized polytype, the second term is ill-typed despite the annotation.
 % Suspended match constraints fixes this
 
 Suspended match constraints eliminate this sensitivity to directionality,
-by allowing any type information to be treated as known --- rendering annotation
+by allowing any type information to be treated as known---rendering annotation
 variables unnecessary.
 Typechecking $\expoly e \ts$ is, intuitively:
 \begin{mathpar}
@@ -900,7 +922,7 @@ information is available.  We capture this behaviour in the following constraint
 \cand
     \cmatch  \tvb {\tva} (\lambda \tpoly \ts. ~ \ts \leq \tva)
 \end{mathpar}
-Here, the match constraint $\cmatchdots \tvb$ suspends the instantiation
+Here, the match constraint $(\cmatchdots \tvb)$ suspends the instantiation
 until $\tvb$ is resolved to be a known polytype. If it is already known, the
 constraint discharges immediately and behaves like a standard instantiation
 constraint. 
@@ -911,46 +933,51 @@ without annotation variables.
 \subsection{Static overloading of constuctors and record labels}
 
 % What do we mean by static overloading?
+
 \emph{Static overloading} denotes a form of overloading in which resolution is
-performed entirely at compile time, enabling the compiler to select a
-unique implementation without relying on runtime information --- in constrast to
-\emph{dynamic overloading}, whic defers resolution to runtime via mechanisms such as
-dictionary-passing or dynamic dispatch.
+performed entirely at compile time, enabling the compiler to select a unique
+implementation without relying on runtime information---in contrast to
+\emph{dynamic overloading}, which defers resolution to runtime via
+mechanisms such as dictionary-passing or dynamic dispatch.
 
 % Other languages
+
 Many languages offer statically resolved overloading to avoid the overhead
 of dynamic dispatch. C++ and Java resolve overloaded functions through
 compile-time specialization based on argument types. Conversely, languages
-like Rust and Haskell primarily employ dynamic overloading via traits and type classes,
-respectively, which can incur runtime overhead unless optimized away by monomorphization
-and aggressive inlining.
+like Rust and Haskell primarily employ dynamic overloading via traits and
+type classes, respectively, which can incur runtime overhead unless
+optimized away by monomorphization and aggressive inlining.
 
 % How it relates to OCaml?
-\OCaml supports a limited yet useful form of static overloading for record labels
-and data type constructors.
+\OCaml supports a limited yet useful form of static overloading for record
+labels and data type constructors.
 \begin{program}[input]
-  type three = { x : int; y : int }
-  type four = { y : int; z : int }
-  type five = { x : int; z : int }
+  type three = {x : int; y : int}
+  type four  = {y : int; z : int}
+  type five  = {x : int; z : int}
 \end{program}
-
+\programjoin
 \begin{program}[input]
   type m = L | M
   type n = L
 \end{program}
 
 % OCaml's approach (PI-directionality)
+
 When encountering overloaded labels or constructors, \OCaml resolves ambiguity
 using local type information. This process is underpinned by \geninst-directional
 inference, where type constructors carry annotation variables $\av$, written
-$\tys \Fapp^\av$, to track which types are \emph{known}. As discussed in \cref{TODO},
-this mechanism allows one to deduce known types from generalized type constructors
-$\tfor \av {\tys \Fapp^\av}$.
+$\tys \Fapp^\av$, to track which types are \emph{known}. As discussed in
+\cref{TODO}, this mechanism allows one to deduce known types from
+generalized type constructors $\tfor \av {\tys \Fapp^\av}$.
 
 % A note on bidirectional expected type propagation
+
 Because static overloading involves more intricate flows of information than
-polytype instance, \OCaml completements \geninst-directionality with a limited form
-of bidirectional propagation of expected types. This allows the following to be well-typed:
+polytype instance, \OCaml complements \geninst-directionality with a
+limited form of bidirectional propagation of expected types. This allows the
+following to be well-typed:
 \begin{program}[input]
   let e_8 = (function (L : m) | _ -> 1) L
 \end{program}
@@ -959,7 +986,7 @@ of bidirectional propagation of expected types. This allows the following to be 
 Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to resolve
 ambiguities in record types. For instance:
 \begin{program}[input]
-  let e_9 = fun { x; z } -> { x = -z; z = x }
+  let e_9 = fun {x; z} -> {x = -z; z = x}
 \end{program}
 \programjoin
 \begin{program}[output]
@@ -982,17 +1009,15 @@ defined compatible type. For example:
 The expression is compatiable with both \code{four} and \code{five},
 since each defines a field \code{z}. But \code{five} is chosen simply
 because it appears later in the source.
-We do not treat this behaviour as principal; according, we provide
+We do not treat this behaviour as principal; accordingly, we provide
 no formalisation of such ``default'' rules, though their implementation is
 discussed further in \cref{sec:implementation}.
 
 This fallback mechanism highlights the directionality of \OCaml inference.
-Once the compiler selects a type, it commits to it -- even if that choice
+Once the compiler selects a type, it commits to it---even if that choice
 causes errors downstream:
 \begin{program}[input]
-  let e$_{10}$ = fun r ->
-    let x (* infers [five] *) = r.x in
-    x + r.y
+  let e$_{10}$ = fun r -> let x (* infers [five] *) = r.x in x + r.y
 \end{program}
 \programjoin
 \begin{program}[error]
@@ -1001,11 +1026,11 @@ causes errors downstream:
 \end{program}
 
 % Record field disambiguation in suspended constraints
-We propose an alternative account of static overloading using suspended match constraints.
-For example, in the case of an ambiguous record projection $\efield \e \elab$, we generate the
-typing constraint:
-\begin{align*}
-\cinfer {\efield \e \elab} \tva &=
+We propose an alternative account of static overloading using suspended
+match constraints.  For example, in the case of an ambiguous record
+projection $\efield \e \elab$, we generate the typing constraint:
+\begin{mathpar}
+\cinfer {\efield \e \elab} \tva \wide\eqdef
   \cexists \tvb \cinfer \e \tvb
   \cand
   \cmatch \tvb {\cva, \cvb}
@@ -1013,44 +1038,51 @@ typing constraint:
       {\clam {(\bar \tvc \Fapp)}
 	{\cletin \ts {\Omega(\elab / \F)} {\ts \leq \tva \to \tvb}}
       }
-\end{align*}
-This constraint defers resolution until more information is available: specifically, until the
-type constructor of $\tvb$ of the record expression $\e$ is known.
+\end{mathpar}
+This constraint defers resolution until more information is available:
+specifically, until the type constructor of $\tvb$ of the record expression
+$\e$ is known.
 
-We assume a global typing environment $\Omega$, which provides type scheme declarations for
+We assume a global typing environment $\Omega$, which provides type scheme
+declarations for 
 constructors and record fields. These are written in the form:
 \begin{mathpar}
-  \K : \tfor \tvs \t \to \tvs \Fapp \\
+  \K : \tfor \tvs \t \to \tvs \Fapp
+  
   \elab : \tfor \tvs \t \to \tvs \Fapp
 \end{mathpar}
+Since constructors and labels may be overloaded across distinct type
+constructors, $\Omega$ may contain multiple such schemes for a given
+constructor or label.  However, within a given data type, we assume that
+each constructor or label is uniquely defined. Thus, we write $\Omega(\elab
+/ \F)$ or $\Omega(\K / \F)$ to denote the unique type scheme associated with
+a specific label or constructor in the context of the type $\F$.
 
-Since constructors and labels may be overloaded across distinct type constructors,
-$\Omega$ may contain multiple such schemes for a given constructor or label.
-However, within a given data type, we assume that each constructor or label is uniquely
-defined. Thus, we write $\Omega(\elab / \F)$ or $\Omega(\K / \F)$ to denote the unique
-type scheme associated with a specific label of constructor in the context of the type $\F$.
+Once the record type of $\tvb$ is known, the suspended constraint
+$(\cmatchdots \tvb)$ triggers the matching clause, which retrieves the
+appropriate type scheme for $\elab$ from $\Omega$, scoped to the
+corresponding type $\F$. It then instantiates this scheme and imposes the
+resulting constraints on the argument and return types of the label.
 
-Once the record type of $\tvb$ is known, the suspended constraint $\cmatchdots \tvb$
-triggers the matching clause, which retrieves the appropriate type scheme for $\elab$
-from $\Omega$, scoped to the corresponding type $\F$. It then instantiates this scheme
-and imposes the resulting constraints on the argument and return types of the label.
-
-\Xgabriel{It would be nice to be able to show some code examples and explain how they work in our
-setting, informally -- or, sometimes, how the naive/simple elaboration is not enough.}
+\Xgabriel{It would be nice to be able to show some code examples and explain
+how they work in our setting, informally -- or, sometimes, how the
+naive/simple elaboration is not enough.}
 \TODO{Do some typing constraints for the examples presented in this section}
 
 % Suspended constraints are better
-As seen in the examples above, this approach is faithful to \OCaml's current behaviour
-\footnote{modulo default disambiguation rules}, and in fact improves on it: certain
-expressions, such as  \code{e}$_{10}$ are well-typed under our account but rejected
-by \OCaml's current type checker.
+
+As seen in the examples above, this approach is faithful to \OCaml's current
+behaviour\footnote {modulo default disambiguation rules.}, and in fact
+improves on it: certain expressions, such as \code{e}$_{10}$ are well-typed
+under our account but rejected by \OCaml's current type checker.
 
 % Next section
+
 Suspended constraints offer a robust mechanism for dealing with extensions of
 \ML that depend on a notion of \emph{known} type information. What remains
 is to formalize this notion: that is, to give a precise semantics for when
 a type variable is considered \emph{known}, and how suspended constraints
-are discharges accordingly.
+are discharged accordingly.
 
 
 \section{Semantics of constraints}

@@ -62,3 +62,15 @@ module E9 (Env : Dir) = struct
     g (fun r -> r.x) 
 end
 
+module type Fields = sig
+  type three = {x : int; y : int}
+  type four  = {y : int; z : int}
+  type five  = {x : int; z : int}
+  type m = L | M
+  type n = L
+end
+
+module F10 (Env : Fields) = struct
+  open Env
+  let e10 = fun r -> let x = r.x in x + r.y
+end

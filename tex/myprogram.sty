@@ -84,7 +84,9 @@
 }
 
 \newcommand{\programjoin}[1][0ex]
-    {\vspace{-\lst@belowskip-\lst@aboveskip-#1}}
+    {\@tempdima #1\advance \@tempdima by -\lst@belowskip
+     %% \advance \@tempdima by -\lst@aboveskip
+    \vspace{\@tempdima}}
 \let \lst \lstinline
 
 \newcommand{\halfline}[1][1ex]{\vadjust{\vspace {-#1}}}
