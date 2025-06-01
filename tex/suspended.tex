@@ -612,7 +612,7 @@ validate that the implementation is efficient for the moment.}
 \begin{bnffig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
-  \entry[Type variables]{\cva, \cvb, \cvc}{}
+  \emptyentry[Type variables]{\cva, \cvb, \cvc}{}
 \\
 \entry[Constraint types]{\t}{
      \cv \mid \overline{\t} \Fapp ~ \mid \ldots
@@ -639,13 +639,11 @@ validate that the implementation is efficient for the moment.}
 \\
 \entry[Closure contexts] \D {\eset \and \D, \tv \and \D, \x}
 \end{bnffig}
-\Xalistair{There is an issue with the above figure, namely type varialbes
-shouldn't have a $::=$. I tried fixing this, may fix later, alternatively,
-Didier, if you could fix it, that would be great!}
 
 % Syntax!
 Building on this foundation, we adopt a constraint language that includes
-both term and type variables. Its syntax is given in~\Cref{fig:constraint-syntax}.
+both term and type variables. Its syntax is given
+in~\Cref{fig:constraint-syntax}. 
 %
 The constraint language contains tautologic constraints ($\ctrue$), unsatisfiable
 constraints ($\cfalse$), and logical conjunctions ($\cone \cand \ctwo$). The constraint

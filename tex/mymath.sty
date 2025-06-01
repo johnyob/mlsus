@@ -61,10 +61,12 @@
 
 \newcommand {\emath}[1]{\ensuremath{#1}}
 
+\newcommand {\bnf@emptyentry}[2][]
+  {\bnf@flushentry \gdef\@bnf@entry {&&#1}
+   & #2&&\bnf@flushentry}
 \newcommand {\bnf@entry}[3][]
   {\bnf@flushentry \gdef\@bnf@entry {&&#1}
-   &\ifempty{#2}{&&}{#2\bnf@is}
-   #3\bnf@flushentry}
+   & #2\bnf@is #3\bnf@flushentry}
 \def \bnf@empty{\gdef \@bnf@entry{}}\bnf@empty
 \def \bnf@is {&::=&}
 \def \bnf@mid {\mid}
@@ -74,6 +76,7 @@
 
 \newenvironment{bnfgrammar}
   {\let \entry \bnf@entry
+   \let \emptyentry \bnf@emptyentry
    \let \is \bnf@is
    \let \and \bnf@mid
    \let \andcr \bnf@andcr
