@@ -99,7 +99,7 @@ overloading and polytypes} }
 \newcommand {\Optional}[1]{{\em [#1]}}
 \newcommand {\likes}[1]{\hfill\textbf{#1}}
 Vote by capitalizing or uncapitalizing
-your initial in the macro \likes{a, d, g}. 
+your initial in the macro \likes{a, d, g}.
 
 \medskip
 \noindent \textbf{Omnidirectional type inference}
@@ -143,7 +143,7 @@ types, or dimensional types, fit perfectly into the \ML framework. Others
 such as GADTs, semi-explicit polymorphism, first-class modules or static
 overloading of datatype constructors and record fields, are
 \emph{fragile}, as they sometimes require explicit type
-annotations. 
+annotations.
 In order to minimize the need for type anotations, their specifications have
 been twisted with some direct or indirect algorithmic flavor in order to
 preserve \emph{principality}.
@@ -212,7 +212,7 @@ based on polymorphism, which actually enforces an ordering in the
 typechecking of let-bindings, where the (polymorphic part of) a the
 bound expression must be typed before the body of the let-expression.
 We call it \textbf{\geninst}-directional type inference, to mean that
-polymorphic expressions must be typed before their 
+polymorphic expressions must be typed before their
 instances.  Initially introduced with the extension of \ML with
 semi-explicit first-class polymorphism~\cite {Garrigue-Remy/poly-ml},
 it has also been used for the overloading of record fields, which we
@@ -227,7 +227,7 @@ type two = {x : int; y : int}
 This can be thought of as defining two abstract types \ocaml{'a foo} and
 \ocaml{bar} with two accessor functions \ocaml{(_ : 'a one).x} and
 \ocaml{(_:two).x} of respective types \ocaml{('a one -> 'a)} and
-\ocaml{(two -> int)}, among others. 
+\ocaml{(two -> int)}, among others.
 %
 In the absence of overloading the latter definition would hide the former
 and we fall back in \ML. With overloading enabled, both definitions are
@@ -302,7 +302,7 @@ algorithm with respect to a spec that made somewhat arbitrary choices.
 on polymorphism which is the essence of \ML. Still, it does not even allow
 to propagate user-provided type annotations from a function to its argument!
 For example, the following would be rejected as ambiguous with
-\geninst-directinal type inference alone: 
+\geninst-directinal type inference alone:
 \begin{program}[error]
 let g : ('a one -> int) -> int = fun f -> f {x = 1} in g (fun r -> r.x)
 \end{program}
@@ -310,7 +310,7 @@ However,, \OCaml, which use \geninst-directional type inference as the primary
 mechanism, also uses a weak form of bidirectional propagation,
 by passing the expected type of the argument so that
 \ocaml{(fun r -> r.x)} is typed with the expected type
-\ocaml{('a one -> int)} and this considered non-ambiguous. 
+\ocaml{('a one -> int)} and this considered non-ambiguous.
 %
 Besides, the implementation of \geninst-directional type inference has an
 algorithmic cost: for technical reasons, variable annotations must un-share
@@ -365,7 +365,7 @@ we should learn that \ocaml{r} is of type \ocaml{two} and since it is
 $\lambda$-bound, this should then make the first projection unambiguous.
 The failure is a matter of solving the constraint in the right order, which
 should wishfully be eliminated by omnidirectional type inference.
-This illustrates case~\ref {item/order}. 
+This illustrates case~\ref {item/order}.
 %
 In
 \ocaml{e_7}, the only possible type is \ocaml{one} if we take into account
@@ -375,7 +375,7 @@ the projection into account before we have resolved the projection as non
 amnbiguous.
 
 Our proposal with omnidirectional type inference\Xdidier {Mine} succeeds
-on both \ocaml{e_6} and \ocaml{e_7}. 
+on both \ocaml{e_6} and \ocaml{e_7}.
 \Xgabriel{Does it? My implementation with Olivier would reject this example,
   because it is not robust to the addition of additional type definitions in
   the context. Even where there is a single type declaration with a given
@@ -399,7 +399,7 @@ other is actually a reasonable design to keep type inference effective,
 since the complexity of general overloading without such a restriction is
 NP-hard, even in the absence of let-polymorphism, as shown by an encoding of
 3-SAT problem as shown by~\citet
-{Chargueraud-Bodin-Dunfield-Riboulet/jfla2025}. 
+{Chargueraud-Bodin-Dunfield-Riboulet/jfla2025}.
 
 \paragraph{Omnidirectional type inference}
 
@@ -527,7 +527,7 @@ Our contributions are
   implementation using suspended constraints.
 \end{enumerate*}
 
-\section{Suspended constraints}
+\section{Suspended constraints: an overview}
 \label{sec:constraints}
 
 \begin{version}{}
@@ -644,7 +644,7 @@ validate that the implementation is efficient for the moment.}
 
 Building on this foundation, we adopt a constraint language that includes
 both term and type variables. Its syntax is given
-in~\Cref{fig:constraint-syntax}. 
+in~\Cref{fig:constraint-syntax}.
 %
 The constraint language contains tautologic constraints ($\ctrue$),
 unsatisfiable constraints ($\cfalse$), and logical conjunctions ($\cone
@@ -682,7 +682,7 @@ These constraints defer constraint generation until the \textit{shape}, \eg
 the top-level constructor, of a type becomes known (through unification), at
 which point the constraint is matched on the shape to generate a new
 constraint. Formally, a suspended constraint is written as $\cmatch \t \D
-\hf$, where: 
+\hf$, where:
 \begin{enumerate}
 \item
   The matchee $\t$ is a type. The constraint remains suspended until the
@@ -925,7 +925,7 @@ information is available.  We capture this behaviour in the following constraint
 Here, the match constraint $(\cmatchdots \tvb)$ suspends the instantiation
 until $\tvb$ is resolved to be a known polytype. If it is already known, the
 constraint discharges immediately and behaves like a standard instantiation
-constraint. 
+constraint.
 %
 By waiting for $e$'s type to be \emph{known}, we may ensure principal types
 without annotation variables.
@@ -1044,13 +1044,12 @@ specifically, until the type constructor of $\tvb$ of the record expression
 $\e$ is known.
 
 We assume a global typing environment $\Omega$, which provides type scheme
-declarations for 
+declarations for
 constructors and record fields. These are written in the form:
-\begin{mathpar}
-  \K : \tfor \tvs \t \to \tvs \Fapp
-  
-  \elab : \tfor \tvs \t \to \tvs \Fapp
-\end{mathpar}
+\begin{align*}
+  \K : \tfor \tvs \t \to \tvs \Fapp &\in \Omega \\
+  \elab : \tfor \tvs \t \to \tvs \Fapp &\in \Omega
+\end{align*}
 Since constructors and labels may be overloaded across distinct type
 constructors, $\Omega$ may contain multiple such schemes for a given
 constructor or label.  However, within a given data type, we assume that
@@ -1085,129 +1084,152 @@ a type variable is considered \emph{known}, and how suspended constraints
 are discharged accordingly.
 
 
-\section{Semantics of constraints}
+\section{Semantics of suspended constraints}
 \label{sec:semantics}
 
-\subsection{Standard semantics}
-
-\begin{mathparfig}%
-  {fig:constraint-semantics}%
-  {Semantics of constraints (without suspended constraints)}
-  \begin{array}{rrl@{\hspace{8em}}l}
-    \semenv
-      & ::=
-      & \cdot
-        \mid \semenv, \alpha := \tau
-        \mid \semenv, x := \cabs \tv \c
-      & \text{Semantic environment}
-  \end{array}
-\\
-  \infer{ }
-  {\semenv \vdash \ctrue}
-
-  \infer
-  {\semenv \vdash \cone
-   \and
-   \semenv \vdash \ctwo}
-  {\semenv \vdash \cone \cand \ctwo}
-
-  \infer
-  {\semenv, \tv := \tau \vdash \c}
-  {\semenv \vdash \cexists \cv \c}
-
-  \infer
-  {\semenv(\tone) = \semenv(\ttwo)}
-  {\semenv \vdash \tone = \ttwo}
-\\
-  \infer
-  {\semenv \vdash \exists \tv. \cone
-   \\
-   \semenv, x :=  \cabs \tv \cone \vdash \ctwo}
-  {\semenv \vdash \cletin x {\cabs \tv \cone} \ctwo}
-
-  \infer
-  {\semenv(x) = \cabs \tv \c
-   \\
-   \semenv, \alpha := \t \vdash \c}
-  {\semenv \vdash \cinst x \t}
-\end{mathparfig}
-
+% Judgement shape
 The semantics of constraints is given, as is standard, by a satisfiability
 judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied
 by the solution, or valuation, $\semenv$. The semantic environment $\semenv$
-maps type variables to types, and term variables to constraint abstractions.
+maps type variables to \emph{ground} types, and term variables to constraint abstractions.
 
+% Definition exampled
 The judgment is defined, for all constraint-formers except suspended
 constraints, in \cref{fig:constraint-semantics}. $\ctrue$ is satisfied in
 any environment, and $\cfalse$ in none. An environment $\semenv$ satisfies
 $\cone \cand \ctwo$ if it satisfies both $\cone$ and $\ctwo$. The
-existential rule $\semenv \vdash \exists \tv \c$ requires that $\semenv$
-provides a ``solution'' for $\tv$: it maps it to a type $\tau$ that
-satisfies the expected constraints in $\c$. Finally, a unification
-constraint holds if both sides are mapped to the exact same type.
+existential rule $\semenv \vdash \cexists \tv \c$ requires that $\semenv$
+provides a ``solution'' for $\tv$: it maps it to a type $\t$ that
+satisfies the expected constraints in $\c$. The universal constraint
+$\cfor \tv \c$ requires $\c$ to be satisfiable under any type mapped to $\tv$
+in $\semenv$. A unification constraint holds if both sides are
+mapped to the exact same type under the environment.
 
-This semantics feels a bit tautological -- the rules above, which omit
-suspended constraints, are fairly obvious. It is a useful exercise to ensure
+The rule for let-bindings reflects that the constraint abstraction $\cabs \tv \c$
+must first be \emph{satisfiable}, checking that $\cone$ holds under some instantiation
+of its bound variable; then the resulting constraint abstraction is bound to $\x$ in $\semenv$
+and may sunsequently be used in $\ctwo$.
+
+Application of a constraint abstraction $\cinst x \t$ is interpreted as follows:
+if the envirment maps $\x$ to an abstraction $\cabs \tv \c$, then applying
+$\t$ to $\x$ succeeds just when the body $\c$ of the abstraction is satisfied
+after sunstituting $\tv$ for $\t$.
+
+\begin{mathparfig}%
+  {fig:constraint-semantics}%
+  {Semantics of constraints (without suspended constraints)}
+
+  \begin{bnfgrammar}
+    \entry[Semantic environment]{\semenv}{
+      \cdot
+      \and \semenv, \tv := \t
+      \and \semenv, \x := \cabs \tv \c
+    }
+  \end{bnfgrammar}
+
+\\
+  \infer[True]
+    { }
+    {\semenv \vdash \ctrue}
+
+  \infer[Conj]
+    {\semenv \vdash \cone \\
+     \semenv \vdash \ctwo}
+    {\semenv \vdash \cone \cand \ctwo}
+
+  \infer[Exists]
+    {\semenv, \tv := \tau \vdash \c}
+    {\semenv \vdash \cexists \cv \c}
+
+  \infer[Forall]
+    {\forall \t, ~ \semenv, \tv := \t \vdash \c}
+    {\semenv \vdash \tfor \tv \c}
+
+  \infer[Unif]
+    {\semenv(\tone) = \semenv(\ttwo)}
+    {\semenv \vdash \cunif \tone \ttwo}
+
+  \infer[Let]
+    {\semenv \vdash \exists \tv. \cone \\
+     \semenv, \x :=  \cabs \tv \cone \vdash \ctwo}
+    {\semenv \vdash \cletin \x {\cabs \tv \cone} \ctwo}
+
+  \infer[App]
+    {\semenv(x) = \cabs \tv \c \\
+     \semenv, \alpha := \semenv(\t) \vdash \c}
+    {\semenv \vdash \cinst x \t}
+\end{mathparfig}
+
+% Why this semantics is useful
+While this semantics feels a bit tautological -- the rules above, which omit
+suspended constraints, are straightforward. It is a useful exercise to ensure
 that we can give an explanation of each constraint-former in our
-mathematical meta-language that is reasonably simple and declarative. It
-will be used to specify the soundness and completeness of the constraint
-generator, and to reason about the correctness of the solver.
+mathematical meta-language that is reasonably simple and declarative.
+This specification is essential for proving properties of type inference,
+such as the soundness and completeness of the constraint generator --
+as well as for reasoning about the correctness of the solver.
 
+% Example
 Closed constraints are either satisfiable in the empty semantic environment
-$(\cdot)$ or unsatisfiable. For example, consider the constraint $\exists
-\tv. \tv = \mathsf{int}$, its satisfiability is established by the following
+$(\cdot)$ or unsatisfiable. For example, consider the constraint $\cexists \tv {\cunif \tv \tint}$,
+its satisfiability is established by the following
 derivation:
 \begin{mathpar}
   \infer
-  {\infer
-   {\mathsf{int} = \mathsf{int}}
-   {\cdot, \alpha := \mathsf{int} \vdash \tv = \mathsf{int}}}
-  {\cdot \vdash \exists \tv. \tv = \mathsf{int}}
+    {\infer
+      {\tint = \tint}
+      {\cdot, \tv := \tint \vdash \cunif \tv \tint}}
+  {\cdot \vdash \cexists \tv \cunif \tv \tint}
 \end{mathpar}
 
-\subsection{Semantics for suspended constraints}
+\subsection{Suspended constraints}
 
+% Natural semantics
 To extend these semantics to our suspended constraints, a first natural idea
-is to propose the following rule -- that we will call the ``natural
-semantics'' of suspended constraints.
+is to propose the following rule -- henceforth referred to as the \emph{natural semantics}
+of suspended constraints:
 
 \begin{mathpar}
-  \infer
-  {\shape(\semenv(\tau)) = \sh,\theta
-    \\
+  \infer[Susp-Nat]
+  {\shape(\semenv(\tau)) = \angles {\sh,\theta} \\
    \semenv_{\mid \Delta}, \theta \vdash f(\sh)}
   {\semenv \vdash \cmatch \tau \Delta f}
 \end{mathpar}
 
-This rule says that a suspended constraint is satisfied by $\phi$ whenever
-$\phi$ can guess a way to complete $\tau$ into a non-variable type with some
-shape $\sh$, and the constraint $f(\sh)$ is satisfied by $\semenv$ --
-restricted to the variables explicitly listed in the closure environment
-$\Delta$.
+% Explain the rule
+This rule states that a suspended constraint is satisfied by $\semenv$
+whenever $\semenv$ resolves $\t$ to a non-variable type with
+some shape $\sh$, with a corresponding substitution $\theta$ for its subcomponents.
+The match case $f(\sh)$ is then checked for satisfiability under an environment
+restricted to the closure context $\D$, denoted $\semenv_{\mid \D}$, extended
+with the shape binding substitution $\theta$. In effect, $\sh$ supplies the
+structural information needed to discharge the match constraint, while $\theta$
+ensures the correct scoping of its constituents.
 
-For example, the constraint $\exists \tv \tvb. \tv = \tint \cand \cmatch \tv
-{} {(\lambda \wild. \ctrue)}$ is satisfied as follows:
+% Good example
+For example, the constraint $\cexists \tv \cunif \tv \tint \cand \cmatch \tv
+{} {(\lambda \wild.~ \ctrue)}$ is satisfied as follows:
 \begin{mathpar}
   \infer
   {\infer
-   {\infer{\tint = \tint}{\cdot, \alpha := \tint \vdash \alpha = \tint} \\
-    \infer{\shape(\tint) = \tint
-     \\
+   {\infer{\tint = \tint}{\cdot, \tv := \tint \vdash \cunif \tv \tint} \\
+    \infer{\shape(\tint) = \angles {\tint, []} \\
      \infer*{ }{\cdot, \tv := \tint \vdash \ctrue}
     }
-    {\cdot, \alpha := \tint \vdash \cmatch \tv {} {(\lambda \wild. \ctrue)}}
+    {\cdot, \tv := \tint \vdash \cmatch \tv {} {(\lambda \wild.~ \ctrue)}}
     }
-   {\cdot, \alpha := \tint \vdash
-      \tv = \tint
+   {\cdot, \tv := \tint \vdash
+      \cunif \tv \tint
       \cand
-      \cmatch \tv {} {(\lambda \wild. \ctrue)}}
+      \cmatch \tv {} {(\lambda \wild.~ \ctrue)}}
  }
   {\cdot \vdash
-     \exists \tv. \tv = \tint
+     \cexists \tv \cunif \tv \tint
      \cand
-     \cmatch \tv {} {(\lambda \wild. \ctrue)}}
+     \cmatch \tv {} {(\lambda \wild.~ \ctrue)}}
 \end{mathpar}
 
+% The problem
 Unfortunately, this semantics is not satisfying because it does not match
 our intution for suspended constraints, which is that they should resolve to
 a concrete constraint when its matchee $\t$ becomes \emph{known} from the
@@ -1237,47 +1259,56 @@ above rule to show that this constraint is satisfiable:
 This semantics let us \emph{guess} types instead of requiring that they are
 \emph{known}. A reasonable solver (that does not attempt to guess or
 backtrack) cannot match it. It also breaks principality: consider the
-function $\efun x (x.2)$, which projects on its second argument, the
-semantics of the generated constraint would let us ``guess'' any size for
-the tuple type of $x$, and there is no most general choice.\Xalistair{Maybe
+function $\efun \x \efield \x z$, which projects the field $z$, the
+semantics of the generated constraint would let us ``guess'' any record type
+with the field $z$ for the type of $x$, and may be no most general choice.\Xalistair{Maybe
 we could show a bit of the constraint, simplified.}
 
-Instead we propose \emph{contextual} semantics to capture a non-guessing
-semantics for suspended constraints. First we introduce a simplified version
-of the natural rule
+% Contextual semantics
+Rather than relying on the guesswork inherent in the natural semantics,
+we adopt a \emph{contextual} semantics. This formulation ensures
+the shape is \emph{known} from the surrounding context.
+% Open/use rule for suspended constraints
+First we introduce a simplified variant of the natural rule (\Rule{Susp-Nat}):
   \begin{mathpar}
-    \infer[susp-open]
-    {\shape(\t) = \sh, \theta
-     \\
-     \semenv_{\mid \Delta}, \theta \vdash f(\sh)
+    \infer[Susp-Use]
+    {\shape(\t) = \angles {\sh, \theta} \\
+     \semenv_{\mid \Delta}, \semenv(\theta) \vdash f(\sh)
     }
     {\semenv \vdash \cmatch \t \Delta f}
 \end{mathpar}
-which only applies when $\tau$ already has a shape. In the natural rule we
-would take the shape of $\semenv(\tau)$, which contains parts that have been
-``guessed'' in $\semenv$; here the shape must already be known in the
-constraint.
+Here the rule \Rule{Susp-Use} only applies when $\tau$ already has a shape.
+Unlike the natural rule, which takes the shape of $\semenv(\tau)$, which may contain
+parts that have been ``guessed'' in $\semenv$, this version demands that the shape
+$\sh$ of $\t$ must already be known in the constraint (statically).
 
-The interesting part comes with the \emph{contextual} rule that follows,
-which is not syntax-directed:
+% Contextual rule
+The key innovation of the contextual semantics lies in the following rule, which---unlike
+the others---is not syntax-directed:
   \begin{mathpar}
-    \infer[susp-ctx]
-    {\c[\tv !]
-     \\
-      \semenv \vdash \C[\tv = \t \cand \cmatch \t \Delta f]
+    \infer[Susp-Ctx]
+    {\Cshape \C \tv \sh \\
+      \semenv \vdash \C[\cexists {\fvs \sh} \cunif \tv \sh \cand \cmatch \sh \Delta f]
     }
     {\semenv \vdash \C[\cmatch \tv \Delta f]}
   \end{mathpar}
 
 This rule lets us substitute the matchee variable $\tv$ by a more defined
-type $\t$, whenever the side-condition $C[\alpha !]$ holds. This condition,
-whose definition follows (and is rather technical), expresses that the
-context $\C$ constrains the solutions of $\tv$ to have a \emph{unique}
-shape. In other words, we can guess a shape, as in the natural semantics,
-but only if the constraint context around it $\C[\square]$ enforces that
-there is a unique solution.
+shape $\sh$, provided the constraint context $\C$ determines $\tv$ to have
+precisely this shape. The side-condition $\Cshape \C \tv \sh$ ensures this precisely:
+expresses that the context $\C$ constrains the solutions of $\tv$ to have a \emph{unique}
+shape $\sh$, modulo alpha-equivalence of shapes. The formal definition of this condition,
+which is somewhat technical, will be introduced later.
 
-Consider our previous examples:
+In other words, we can guess a shape, as in the natural semantics,
+but only if ambient constraint context $\C[\square]$ guarantees that
+there is a unique shape to guess.
+% Examples
+We illustrate the contextual semantics for suspended constraints
+with a series of examples.
+
+\begin{example}
+Consider the examples from before:
 \begin{mathpar}
 \exists \tv. \tv = \tint
   \cand
@@ -1289,50 +1320,19 @@ Consider our previous examples:
 In the first example, we apply the contextual rule with the context $\C :=
 (\exists \tv. \tv = \tint \cand \square)$. Any solution $\phi$ of this part
 of the constraint necessarily has $\phi(\tv) = \tint$, therefore the shape
-of $\tv$ is uniquely determined. The contextual rule is thus applicable and
-the example is satisfiable.
+of $\tv$ is uniquely determined. The side condition of \Rule{Susp-Ctx}
+rule is therefore satisfied , and the suspended constraint can
+be resolved.
 
-In the second example, the context around the suspended constraint is empty
-($\C[\square] = \square$), so any solution $\semenv$ satisfies it, and
-$\alpha$ can take an arbitrary shape in this context. The contextual rule is
-therefore not applicable, and the example is not satisfiable, as we
-intend. Let us now define the $\C[\alpha!]$ condition.
+In constrast, the second example has no contextual information around
+the suspended constraint ($\C[\square] = \square$), so any solution
+$\semenv$ satisfies it, and $\tv$ can take an arbitrary shape in this context.
+Consequently, the uniqueness condition fails, the \Rule{Susp-Ctx} rule
+cannot be applied, and the constraint remains unsatisfiable -- as we intend.
+\end{example}
 
-\begin{definition}
-  A type variable $\cv$ is \emph{uniquely known} within the context
-  $\C[-]$, written $\C[\cv !]$, iff there exists a unique shape $\sh$
-  such that, for all assignments $\semenv, \semenvp$, then $\semenv \vdash
-  \C[\semenvp \vdash \ctrue]$ implies that $\shape(\semenvp(\tv))$ is
-  $(\sh, \theta)$ for some $\theta$.
-
-  In other words:
-  \begin{mathpar}
-    \begin{array}{l}
-    \exists! \sh, \quad \forall \semenv, \semenvp,
-      \quad \exists \theta, \\ \qquad
-      \semenv \vdash \C[\semenvp \vdash \ctrue] \implies
-    \shape(\semenvp(\cv)) = (\sh, \theta)
-    \end{array}
-  \end{mathpar}
-
-  The notation $\semenv \vdash \c[\semenvp \vdash \cp]$ means that there is
-  a derivation of the satisfiability judgment for $\c[\cp]$ where, the
-  subderivation at the hole of $\c[\square]$ is a derivation of $\semenvp
-  \vdash \cp$. We define it formally in \cref{par:contextual-judgments}.
-\end{definition}
-
-Notice that the rule \Rule{susp-ctx} has $\C[\tv!]$ as a premise, which in
-turn uses the judgment $\semenv \vdash \c[\semenvp \vdash \ctrue]$ in
-negative position, so we must check that our satisfiability judgment remains
-well-founded. Informally, the reason for well-foundedness is that the
-conclusion of \Rule{susp-ctx}, which is $\semenv \vdash \C[\cmatch \tv
-\Delta f]$, is strictly larger than the negatively-occurring judgment
-$\semenv \vdash \C[\ctrue]$. We discuss well-foundedness in more details in
-\cref{par:well-foundedness}.
-
-\subsection{Examples}
-
-Consider for example the constraint
+\begin{example}
+Consider the more intricate example:
 $$
   \exists \tva \tvb.
   \Parens{\begin{array}{l}
@@ -1342,7 +1342,7 @@ $$
   \end{array}}
 $$
 
-To prove that this constraint is satisfiable we can use the \Rule{susp-ctx}
+To prove that this constraint is satisfiable we can use the \Rule{Susp-Ctx}
 twice, once with a hole around the suspension on $\tva$, and once with a
 hole around the suspension on $\tvb$. In fact this can be done in any order:
 \begin{itemize}
@@ -1350,23 +1350,29 @@ hole around the suspension on $\tvb$. In fact this can be done in any order:
   If you focus on $\tva$ first, it is easy to prove that the context around
   it, $(\square \cand \cmatchdots \tvb \cand \tva = \tint)$, imposes a
   unique solution thanks to $\tva = \tint$. Then we use the
-  $\Rule{susp-ctx}$ rule in the context $(\cmatch \tint {\beta} {(\cabs
+  $\Rule{Susp-Ctx}$ rule in the context $(\cmatch \tint {\beta} {(\cabs
   \wild {\beta = \tbool})}) \cand \square \cand \tva = \tint)$, and we have
   to prove that $\tvb$ is uniquely determined in this context. This is in
-  turn proved by using the conjunction rule followed by \Rule{susp-open},
+  turn proved by using the conjunction rule followed by \Rule{Susp-Use},
   which gives us access to the unification $\tvb = \tbool$.
 
 \item
   If you focus on $\tvb$ first, proving that $\tvb$ is uniquely determined
   in the context $(\cmatch \tva \tvb {(\cabs \wild {\tvb = \tbool})} \cand
-  \square \cand \tva = \tint)$ requires using the \Rule{susp-ctx} again as
+  \square \cand \tva = \tint)$ requires using the \Rule{Susp-Ctx} again as
   in the case above. Then we end up with the constraint $(\cmatchdots \tva
   \cand \cmatchdots \tbool \cand \tva = \tint)$, and we can use
-  \Rule{susp-ctx} yet another time on $\alpha$.
+  \Rule{Susp-Ctx} yet another time on $\alpha$.
 
 \end{itemize}
 
-On the other hand, the following constraint has circular dependencies:
+This example illustrates that the declarative semantics supports arbitrary orders
+of resolution for suspended constraints---as long as the contextual conditions are
+met. This flexibility accommodates both top-down and bottom-up reasoning styles.
+\end{example}
+
+\begin{example}
+Finally, let us consider a constraint with a cyclic dependency between match constraints:
 $$
   \exists \tva \tvb.
   \left(\begin{array}{l}
@@ -1379,115 +1385,187 @@ This constraint can be proved satisfiable with the ``natural semantics''
 that we proposed earlier, by guessing the instantiation $\tva := \tint, \tvb
 := \tbool$. Our solver fails on it, and so does our contextual
 semantics. Without loss of generality, suppose that we try to use
-\Rule{susp-ctx} on $\tva$ first: we get to prove $\C[\tva !]$ for the
+\Rule{Susp-Ctx} on $\tva$ first: we get to prove $\Cshape \C \tva \tint$ for the
 context $\C := (\square \cand \cmatch \tvb \tva {(\cabs \wild {\tva =
-\tint})})$: we have to prove that there exists a unique head structure for
-$\alpha$ (presumably $\tint$) such that $\C[\ctrue]$ is satisfiable. But
+\tint})})$: we have to prove that $\tint$ is a unique head structure for
+$\tva$ such that $\C[\ldots]$ is satisfiable. But
 this does not hold, as the constraint $(\cmatch \tvb \tva {(\cabs \wild
-{\tva = \tint})})$ cannot be solved: we cannot use the \Rule{susp-open} rule
-yet as $\beta$ has no head, and we cannot use the \Rule{susp-ctx} rule as
+{\tva = \tint})})$ cannot be solved: we cannot use the \Rule{Susp-Use} rule
+yet as $\beta$ has no head, and we cannot use the \Rule{Susp-Ctx} rule as
 the empty context $\square$ does not uniquely constrain $\tvb$.
+
+This example illustrates a key distinction between the natural and contextual semantics:
+while the former allows unconstrained guessing, the latter requires well-foundedness in constraint
+dependencies, ensuring that resolutions are guided by contextual information rather than arbitrary choice.
+\end{example}
 
 \subsection{Technical details}
 
-\subsubsection{Contextual judgments: $\semenv \vdash \c[\semenvp \vdash \cp]$}\label{par:contextual-judgments}
+Having motivated and illustrated the semantics of suspended constraints,
+we now turn to some of the more technical details before summarizing the
+rules. We begin defining the so-called unicity predicate, the condition
+under which a variable's shape can be considered uniquely determined by
+a context.
 
-This notation means that there is a derivation of the satisfiability
-judgment for $\c[\cp]$ where, the subderivation at the hole of
-$\c[\square]$ is a derivation of $\semenvp \vdash \cp$. We considered
-two approaches to define it precisely:
-\begin{enumerate}
-\item We could introduce a notion of holes or meta-variables in the
-  judgment: $\semenv \vdash \c[\semenvp \vdash \cp]$ is defined as the
-  conjunction of $\semenvp \vdash \cp$ and
-  $\semenv \vdash \c[\semenvp \vdash \square]$, and the latter is
-  a particular case of a judgment $\semmetaenv; \semenv \vdash \c$
-  where $\semmetaenv$ is a context of linear meta-variables such as
-  $\square$.
-\item Or we can compute the subderivation $\derivp$ of
-  $\semenvp \vdash \cp$ after the fact, by extracting it from
-  a derivation $\deriv$ of $\semenv \vdash \c[\cp]$: we define this as
-  an ``indexing'' operation $\ctxindex{\deriv}{\C}$.
-\end{enumerate}
+\paragraph{Unicity predicate}
+A key ingredient of the contextual rule \Rule{Susp-Ctx} is determining
+when a type variable's shape is uniquely fixed by its surrounding
+constraint context. We formalize this using the unicity predicate
+$\Cshape \C \tv \sh$, which expresses that within the context
+$\C[\square]$, the variable $\tv$ must have shape $\sh$ in any
+satisfying assignment.
 
-The meta-context approach has the downside that we have to thread the
-imposing meta-context $\semmetaenv$ in all our judgments and their
-typing rules. We thus propose to use context indexing instead, so that
-the complexity is restricted only to the definition of this context judgment.
+\begin{definition}
+  A type variable $\tv$ has a \emph{uniquely known} shape within the context
+  $\C[\square]$, written $\Cshape \C \tv \sh$, iff for all assignments $\semenv$ and shapes
+  $\shp$, then $\semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp]$ implies
+  that $\sh$ and $\shp$ are equal modulo alpha equivalence.
 
-\begin{mathparfig}%
-  {fig:context-indexing}%
-  {Context indexing}
+  In other words:
+  \begin{mathpar}
+    \begin{array}{l}
+    \Cshape \C \tv \sh \eqdef \forall \semenv, \shp, \quad
+      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies \sh =_{\setminus \alpha} \shp
+    \end{array}
+  \end{mathpar}
 
-  \ctxindex \deriv \square \eqdef \deriv
+  This condition ensures that we’re not guessing a shape arbitrarily;
+  the shape must already be determined by the ambient constraint.
+  That’s what justifies applying \Rule{Susp-Ctx}.
+\end{definition}
 
-  \deriv :: \infer
-    {\semenv \th \cone \\
-      \derivp :: \semenv \th \ctwo }
-    {\semenv \th \cone \cand \ctwo}
-  \implies
-  \ctxindex \deriv {\cone \cand \C} \eqdef \ctxindex \derivp \C
 
-  \deriv :: \infer
-    {\derivp :: \semenv \th \cone \\
-      \semenv \th \ctwo}
-    {\semenv \th \cone \cand \ctwo}
-  \implies
-  \ctxindex \deriv \C \cand \ctwo \eqdef \ctxindex \derivp \C
 
-  \deriv :: \infer
-    {\derivp :: \semenv, \tv := \t \th \c}
-    {\semenv \th \cexists \tv \c}
-  \implies
-  \ctxindex \deriv {\cexists \tv \C} \eqdef \ctxindex \derivp \C
+\paragraph{Well-foundedness}
+The astute reader may have noticed a compilication resulting
+from our definition of the unicity predicate:
+$\Cshape \C \tv \sh$ contains a negative occurrence of the
+satisfiability judgement, in order to express that $\sh$
+is unique among all solutions of the ambient context $\C$.
+%
+This negative occurrence means that \emph{a priori}, the rules
+from \cref{fig:constraint-semantic} including \Rule{Susp-Use}, \Rule{Susp-Ctx}
+do not form an inductive definition in the usual sense.
 
-  \deriv :: \infer
-    {\derivp :: \semenv \th \cexists \tv \cone \\
-      \semenv, x := \cabs \tv \cone \th \ctwo}
-    {\semenv \th \cletin x {\cabs \tv \cone} \ctwo}
-  \implies
-  \ctxindex \deriv {\cletin x {\cabs \tv \C} \ctwo} \eqdef \ctxindex \derivp {\cexists \tv \C}
+This is not merely a technical quirk: it threatens the foundational
+structure of the semantics. If left unaddressed, it would prevent
+us from interpreting the rules as a well-behaved inference system.
 
-  \deriv :: \infer
-    {\semenv \th \cexists \tv \cone \\
-      \derivp :: \semenv, x := \cabs \tv \cone \th \ctwo}
-    {\semenv \th \cletin x {\cabs \tv \cone} \ctwo}
-  \implies
-  \ctxindex \deriv {\cletin x {\cabs \tv \cone} \C} \eqdef \ctxindex \derivp \C
+However, it can easily be resolved by obersving that the rules, while not
+syntactically well-founded, can be defined in a decreasing way with some
+defined measure $|-|$. Informally, the reason for well-foundedness is that the
+conclusion of \Rule{Susp-Ctx}, which is $\semenv \vdash \C[\cmatch \tv
+\Delta f]$, is structurally larger than the negatively-occurring judgment
+$\semenvp \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp]$.
 
+Instead of consdering the rules defined above as a \emph{single}
+inductive definition, we consider them to determine a function
+$\bbrackets -$ from constraints $\c$ to sets of valuations $\semenv$.
+The satisfiability relation is defined as
+$\semenv \vdash \c \iff \semenv \in \bbrackets \c$.
+We can prove that $\bbrackets \c$ is well-defined by
+metered recursion of $\c$. Furthermore, we show that the
+inference rules we have so far defined hold and are
+invertable. We give the full details for this in \cref{appendix:wf}
+This ensures that the semantics is well-defined, even if not syntactically
+inductive.
+
+That said, well-foundedness doesn't preclude infinite derivations in
+practice. For example, the constraint
+$$
+  \c_\text{loop} \eqdef \cexists \tv \cunif \tv \tint
+    \cand \cmatch \tv {} {(\lambda \wild.~ \c_\text{loop})}
+$$
+unfolds into an infinite sequence of match constraints, and thus has no
+finite proof as satisfiability. This form of non-termination in the
+semantics is exploited using the meta-language as opposed to a flaw in the
+object language \ie constraints.
+
+\paragraph{Interaction with polymorphism}
+
+\paragraph{Summary}
+To recap, the semantics of suspended constraints is governed by three
+principles:
+\begin{enumerate*}
+  \item If the shape of the matchee is statically known, we use it
+    directly via \Rule{Susp-Use}
+  \item If not, we may guess the shape--but only when the context ensures
+    the shape is unique, via the $\Cshape \C \tv \sh$ condition and \Rule{Susp-Ctx}
+  \item If the shape cannot be uniquely inferred from the context, the constraint
+    is unsatisfiable.
+\end{enumerate*}
+
+These rules, together with the base rules from \cref{fig:constraint-semantics},
+define the full semantics. For convenience, we collect all the rules pertaining to
+the satisfiability judgement in \cref{fig:contextual-semantics}
+
+\begin{mathparfig}
+  {fig:contextual-semantics}
+  {Semantics of constraints including suspended constraints}
+
+  \begin{bnfgrammar}
+    \entry[Semantic environment]{\semenv}{
+      \cdot
+      \and \semenv, \tv := \t
+      \and \semenv, \x := \cabs \tv \c
+    }
+  \end{bnfgrammar}
+
+\\
+  \infer[True]
+    { }
+    {\semenv \vdash \ctrue}
+
+  \infer[Conj]
+    {\semenv \vdash \cone \\
+     \semenv \vdash \ctwo}
+    {\semenv \vdash \cone \cand \ctwo}
+
+  \infer[Exists]
+    {\semenv, \tv := \tau \vdash \c}
+    {\semenv \vdash \cexists \cv \c}
+
+  \infer[Forall]
+    {\forall \t, ~ \semenv, \tv := \t \vdash \c}
+    {\semenv \vdash \tfor \tv \c}
+
+  \infer[Unif]
+    {\semenv(\tone) = \semenv(\ttwo)}
+    {\semenv \vdash \cunif \tone \ttwo}
+
+  \infer[Let]
+    {\semenv \vdash \exists \tv. \cone \\
+     \semenv, \x :=  \cabs \tv \cone \vdash \ctwo}
+    {\semenv \vdash \cletin \x {\cabs \tv \cone} \ctwo}
+
+  \infer[App]
+    {\semenv(x) = \cabs \tv \c \\
+     \semenv, \alpha := \semenv(\t) \vdash \c}
+    {\semenv \vdash \cinst x \t}
+
+  \infer[Susp-Use]
+    {\shape(\t) = \angles {\sh, \theta} \\
+     \semenv_{\mid \Delta}, \semenv(\theta) \vdash f(\sh)
+    }
+    {\semenv \vdash \cmatch \t \Delta f}
+
+  \infer[Susp-Ctx]
+    {\Cshape \C \tv \sh \\
+      \semenv \vdash \C[\cexists {\fvs \sh} \cunif \tv \sh \cand \cmatch \sh \Delta f]
+    }
+    {\semenv \vdash \C[\cmatch \tv \Delta f]}
+  \\
+
+  \Cshape \C \tv \sh \eqdef \forall \semenv, \shp, \quad
+      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies \sh =_{\setminus \alpha} \shp
 \end{mathparfig}
-\Xalistair{I started sketching the semantics for indexing within a hole, yet
-it is not entirely clear what the semantics should be for let-constraints. We
-could consider multi-hole contexts (for each duplicate), we could consider the
-satisfiability check $\cexists \tv \cone$. So far, I've gone for the latter}
-\Xalistair{For backwards propagation, we could try picking
-a single hole (either satisfiability or instance), thus some instance constraints
-could propagate. But we'd need to existentially pick the hole of interest before
-the universal quantifier the unicity predicate}
 
-\subsubsection{Well-foundedness}\label{par:well-foundedness}
+% Contextual semantics is cool, and our approach extends to type systems
+Together, these rules define a flexible but principled system for constraint resolution,
+capable of both deferring and resolving shape information as determined by the constraint context.
+Importantly, the same style of contextual reasoning extends naturally to the static semantics of terms.
 
-\Xdidier{Please write an example of infinite-depth constraint.}
-
-\begin{program}
-let rec loop 'a =
-'a = int
-&& match 'a with (fun _ -> exists 'b. loop 'b)
-in
-exists 'a. loop 'a
-\end{program}
-
-\TODO{Explain the notation $\semenv \vdash \C[\semenvp \vdash \c]$.}
-
-\TODO{A figure that summarizes everything about the contextual rules so far.}
-
-\TODO{Discuss well-foundedness.}
-
-
-\Xgabriel{(We stopped here with Alistair.)}
-
-
-
+\begin{version}{}
 \Xgabriel{Maybe reuse what's below.}
 Our conclusion is that the na\"ive semantics should be rejected in favour
 for the semantics of our informal solver. Our intent with suspended
@@ -1652,6 +1730,7 @@ that the $\cp$ sub-derivation has the valuation $\semenvp$. Note that, after
 the the global rule is added, the derivations of this judgment are not
 syntactically directed by $\c$ anymore.
 
+\end{version}
 \section{The language}
 \label{sec:language}
 
