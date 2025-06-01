@@ -59,17 +59,6 @@
 \newcolumntype{=}{@{\extracolsep{0em}}}
 \newcolumntype{Z}{~c=}
 
-\newcommand{\bnflabel}[1]{\textit{#1}}
-\newcommand{\bnfis}{::=}
-\newenvironment{bnf}
-   {\renewcommand{\arraystretch}{1.2}%
-    \begin{array}{@{}r@{\quad}l@{}}}
-   {\end{array}}
-\newenvironment{bnfalign}
-   {\renewcommand{\arraystretch}{1}%
-    \begin{array}[t]{@{}>{{}}r<{{}}@{}l@{}}}
-   {\end{array}}
-
 \newcommand {\emath}[1]{\ensuremath{#1}}
 
 \newcommand {\bnf@entry}[3][]
@@ -83,16 +72,18 @@
 \def \bnf@andcr{\bnf@flushentry \\&&\bnf@mid&}
 \def \bnf@nextline #1{\bnf@andcr \ifthenelse {\equal{#1}{\bnf@mid}}{}{#1}}
 
-
-\newenvironment{bnffig}[3][htb!]
-{\begin{mathparfig}[#1]{#2}{#3}
-   \let \entry \bnf@entry
+\newenvironment{bnfgrammar}
+  {\let \entry \bnf@entry
    \let \is \bnf@is
    \let \and \bnf@mid
    \let \andcr \bnf@andcr
    \let \And \bnf@andcr
    \let \nextline \bnf@nextline
    \begin{tabular*}{\linewidth}{C~R=;;R;;LL~r}}
-  {\end{tabular*}\end{mathparfig}}
+ {\end{tabular*}}
+
+\newenvironment{bnffig}[3][htb!]
+  {\begin{mathparfig}[#1]{#2}{#3}\begin{bnfgrammar}}
+  {\end{bnfgrammar}\end{mathparfig}}
 
 \newcommand{\proofcase}[2][Case]{\par\smallskip\noindent\emph{#1 #2.}}

@@ -20,7 +20,7 @@
 \usepackage{marginnote}
 
 \title{Omnidirectional type inference
-  for fragile \ML type features
+   for fragile \ML type features
    %% : fragile yet principal
    %% for \ML extensions
    %% for a better propagation of type annotations
@@ -530,7 +530,8 @@ Our contributions are
 \section{Suspended constraints}
 \label{sec:constraints}
 
-
+\begin{version}{}
+% Old comments
 \TODO{PLAN: Only the constraint syntax, not constraint-solving yet. The
 point is to show examples in a concrete way.}
 \Xalistair{Some of this probably belongs in the intro @Didier, but I didn't
@@ -552,6 +553,7 @@ examples, I think the intro has enough. We should put them in the relevant
 subsections  in this section.}\Xdidier {Or the other way round: I think we
 need examples early enough. Or keep it as is and say in the intro that we
 leave polytype examples, which are more involved for this section.}
+\end{version}
 
 % Constraint-based approach
 
@@ -565,14 +567,16 @@ unsatisfiable).
 
 % HMX
 
-A foundational approach to constraint-based type inference is \HMX
+A key framework for constraint-based type inference is \HMX
 \cite{Odersky-Sulzmann-Wehr@tpos}---the Hindley-Milner system parameterized
 by a constraint domain $X$, allowing constraints to appear within types. Our
-work is inspired by the presentation of HMX by \citet{Pottier-Remy/emlti}
-who fully decoupled constraint generation from constraint solving.  Their
-key insight for the reduction of type inference to constraint solving is the
-inclusion of term variables in the language of constraints.
+work is inspired by the presentation of \HMX by \citet{Pottier-Remy/emlti}
+who fully decoupled constraint generation from constraint solving. The
+central innovation in their system for the reduction of type inference to
+constraint solving is the inclusion of term variables in the language of
+constraints.
 
+\begin{version}{}
 % Life is hard
 \Xalistair{This paragraph now feels out of place -- nonetheless I think we
 need state how difficult this was :/}\Xdidier {It could be move to the
@@ -594,17 +598,21 @@ we propagate it to all its instantiations. Currently, each propagation with
 redo the job, ignoring what had already be done ealier. Hence you get a
 factor of $n$ complexity that need not necessarily be there. Plus
 constraints are copied before being simplified. Another factor...}
+
 \Xalistair{The spec for the solver and my solver impl does not suffer from this,
 it is able to track which new nodes need propagating and leaves the rest
-untouched.}\Xdidier {This is not what you told me when we talk. There may be
+untouched.}
+
+\Xdidier {This is not what you told me when we talk. There may be
 misunderstanding. We should discuss it. However, this is not so important.
 My point about efficient implementation is that we do not have anything to
 validate that the implementation is efficient for the moment.}
+\end{version}
 
 \begin{bnffig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
-\entry[Type variables]{\cva, \cvb, \cvc}{}{}
+  \entry[Type variables]{\cva, \cvb, \cvc}{}
 \\
 \entry[Constraint types]{\t}{
      \cv \mid \overline{\t} \Fapp ~ \mid \ldots
@@ -618,42 +626,48 @@ validate that the implementation is efficient for the moment.}
         \ctrue
   \and  \cfalse
   \and  \Cone \cand \Ctwo
-  \and  \cexists \cv C
+  \and  \cexists \cv \c
+  \and 	\cfor \tv \c
   \and  \cunif \tone \ttwo
   \nextline
-  \and  \cletin x {\clam \cv \Cone} {\Ctwo}
+  \and  \cletin \x {\clam \cv \Cone} {\Ctwo}
   \and  \cinst \x \t
   \nextline
-  \and  \cmatch \cv \D  \hf
+  \and  \cmatch \t  \D  \hf
 }\\
 \entry[Shapes] \sh {\tvs \F \and \ldots}
 \\
-\entry \D {\eset \and \D, \tv \and \D, \x}
+\entry[Closure contexts] \D {\eset \and \D, \tv \and \D, \x}
 \end{bnffig}
+\Xalistair{There is an issue with the above figure, namely type varialbes
+shouldn't have a $::=$. I tried fixing this, may fix later, alternatively,
+Didier, if you could fix it, that would be great!}
 
 % Syntax!
-
-We begin by introducing the syntax of constraints
-in~\Cref{fig:constraint-syntax}.  The constraint language contains
-tautologic constraints ($\ctrue$), unsatisfiable constraints ($\cfalse$),
-and logical conjunctions ($\Cone \cand \Ctwo$). The constraint form $\tone =
-\ttwo$ asserts that the types $\tone$ and $\ttwo$ are equal.  The constraint
-form $\cexists \tv C$ binds an existentially quantified type variable $\tv$
-in $C$.
-
-\Xdidier {What about the instantiation constraint? $\sigma \leq \t$?
-(\string\leq\space should be macroified)}
+Building on this foundation, we adopt a constraint language that includes
+both term and type variables. Its syntax is given in~\Cref{fig:constraint-syntax}.
+%
+The constraint language contains tautologic constraints ($\ctrue$), unsatisfiable
+constraints ($\cfalse$), and logical conjunctions ($\cone \cand \ctwo$). The constraint
+form $\cunif \tone \ttwo$ asserts that the types $\tone$ and $\ttwo$ are equal.
+The constraint form $\cexists \tv \c$ binds an existentially quantified type
+variable $\tv$ in $\c$, while the constraint $\cfor \tv \c$ binds $\tv$
+universally.
+%
+For convenience, we use the notation $\ts \leq \t$ as syntactic sugar for
+the constraint $\cexists \tvs \cunif \tp \t$, where $\ts$ is a universally
+quantified type $\tfor \tvs \tp$; its intended meaning is the instantiation
+of the polymorphic type $\ts$.
 
 % Constraint abstractions
-
 There are two constructs that deal with the introduction and elimination of
 constraint abstractions. As the name suggests, a constraint abstraction
-$\cabs \tv C$ can simply be seen as a function which when applied to some
-type $\t$ returns $C[\tv := \t]$. Constraint abstractions are introduced by
-a let-construct $\cletin x {\cabs \tv \Cone} \Ctwo$ which binds the
-constraint abstraction to the term variable $x$ in $\Ctwo$---additionally
+$\cabs \tv \c$ can simply be seen as a function which when applied to some
+type $\t$ returns $\c \where {\tv := \t}$. Constraint abstractions are introduced by
+a let-construct $\cletin \x {\cabs \tv \cone} \ctwo$ which binds the
+constraint abstraction to the term variable $\x$ in $\ctwo$---additionally
 ensuring the abstraction is satisfiable. They are eliminated using the
-application constraint $\capp x \t$ which applies the type $\t$ to the
+application constraint $\capp \x \t$ which applies the type $\t$ to the
 abstraction bound to $x$.
 
 % Suspended match constraints
@@ -704,10 +718,13 @@ The remainder of this section illustrates the role of suspended constraints
 in supporting \emph{fragile} language features as defined above.
 These include:
 \begin{enumerate}
+  \item Semi-explicit first-class polymorphism.
   \item Constructor and record label overloading for nominal algebraic
   datatypes;
   \item Overloaded tuple projection in the style of \SML;
-  \item Semi-explicit first-class polymorphism.
+  \Xalistair{I think its worth noting that \SML also relies on static
+    overloading, but I'm not too sure whether its worth putting
+    this feature in our calculus (which is now quite large)}
 \end{enumerate}
 We demonstrate how the typablity of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
@@ -769,119 +786,55 @@ the declarative typing rules for these features is deferred to
 % We will provide *precise* declarative semantics in the ``Semantics of
 % constraints'' section.
 
-\subsection{Static overloading of constuctors and record labels}
-
-% Intro to the feature
-
-OCaml allows users to define data types with overloaded constructors or
-record fields.
-\begin{program}
-type m = L
-type n = L
-let x = L
-\end{program}
-The type of \code{x} is ambiguous since OCaml could infer either the type
-\code{m} or the type \code{n}. This amounts to a principality issue, since
-there is no most general type for \code{x}. \Xdidier {It is not just a
-question of typing issue but of semantics: it should make a stratic choice
-of the implementation. Just speaking of it as a type issue is a bit
-misleading.} \Xalistair{I'll add something about how this ambiguity could have
-runtime implications} As such, OCaml gives the
-following error: ...
-
-OCaml's type checker relies on type information provided by the
-bidirectional\Xdidier{bidirectional is misleading here! In what sense ocaml
-is a bidirectional typechecker? It is in fact \geninst-directional. (poly means
-polymorphism here)} \Xalistair{Agreed, will change} propagation of type
-information to resolve these
-ambiguities. Annotating \code{x} with either \code{m} or \code{n} would
-produce a well-typed program.
-
-% Constructor disambiguation in suspended constraints
-We propose an alternative approach: suspended constraints. For the ambiguous
-constructor application $\econstr K e$, we generate the constraint:
-\begin{align*}
-\cinfer {\econstr K e} \cva &=
-  \cexists \cvb \cinfer e \cvb
-  \cand
-  \cmatch \cva {\cva, \cvb}
-    \parens
-      {\clam {(\overline{\cvc} \Fapp)}
-        {\cletin \sigma {\D(\F)(\mathsf{K})} {\sigma \leq \cvb \to \cva}}
-      }
-\end{align*}
-where the function $\clam {(\overline{\cvc} \Fapp)} {\cletin \sigma
-{\D(\F)(\mathsf{K})} {\sigma \leq \cvb \to \cva}}$ looks up the type scheme
-associated with the constructor using the type name $\F$ in the environment
-($\Delta(\F)(\mathsf{K})$). \Xdidier{I don't really understand what you
-mean. The prefix notation for types does not help. At least, we should write
-$\lambda \parens{\bar \cvc \Fapp}. \ldots$. Still, I think it would help
-to use a postfix notation in the formal presentation. In fact
-$\bar \cvc(\Fapp)$ would not parse in \OCaml. And if $\D(\F)$ is supposed to
-be a type $\t$, what does $\t(K)$ mean?
-}
-\Xalistair
-{$\D(\F)(\K)$ looks up the type scheme associated with the constructor $\K$
-in the definition of $\F$ in the context $\D$ (although this metavar has now
-been taken by closures...)}\Xdidier {I agree with what it should mean. But
-then $\D(F)$ should be explained. Mathematically, $\D$ is a list and
-$\F$ is just a constructor so $\D(\F)$ does not mean anything.}
-
-\Xdidier {We haven't seen the instantiation constraint $\sigma \leq \cvb
-\to \cva$ yet}
-
-We require a unique type for each type constructor in a given algebraic data
-type definition, thus there is no ambiguity with this mapping, despite there
-potentially being many constructors in the environment named $\mathsf{K}$.
-
-This not only correctly encodes OCaml's current behaviour, but does better.
-\Xdidier {Omitting the final default pass called in case of failure to
-disambiguate.}\Xdidier {behavior means sound an complete. Here you mean
-that we succeed when OCaml does with the same answer, but we also succeed
-with a correct answer when OCaml fails. Hence, we do not capture the OCaml behavior...}
-
-\Xgabriel{It would be nice to be able to show some code examples and explain how they work in our setting, informally -- or, sometimes, how the naive/simple elaboration is not enough.}
-
 \subsection{Semi-explicit first-class polymorphism}
-
 \label {sec/constraints/polytypes}
 
-% Polytypes (and some stuff about labelled types)
-
+% Intro (and annotations)
 Semi-explicit first-class polymorphism \citep{Garrigue-Remy/poly-ml} uses
 \textit{annotated types} to track the origins of polymorphic types.
+%
+The type constructor $\tapoly \ts \av$ boxes a polymorphic type
+$\ts$ turning it into a \textit{polytype} annotated with the annotation
+variable $\av$.  Once boxed, the polytype $\tapoly \ts \av$ is considered
+a monotype, thereby enabling impredicative polymorphism. Annotations variables
+may themselves be generalized, yielding type schemes such as
+$\tfor \av {\tapoly \ts \av}$.
 
-The type constructor $\tapoly \ts \av$ that boxes a polymorphic type
-$\ts$ turning it into a \textit{polytype} is actually annotated with
-an annotation variable $\av$.  Once boxed, the polytype $\tapoly
-\ts \av$ is considered a monotype.  This permits impredicative
-polymorphism. Annotations variables may be generalized as over
-variables and $\all \av \tapoly \ts \av$ is a type scheme.
 
+% Boxing
 The introduction form for polytypes is a boxing operator $\expoly
-\e \ts$ with an explicitly polytype annotation $\ts$. The resulting expression
-has type $\tapoly \ts \av$ when $\av$ is an arbitrary (typically fresh)
-annotation variable and can thus be generalized. That is $\e$ can also be
-assigned the type scheme $\all \av \tapoly \ts \av$.
+\e \ts$ with an explicit polytype annotation $\ts$. The resulting expression
+has type $\tapoly \ts \av$ where $\av$ is an arbitrary (typically fresh)
+annotation variable. The variable can thus be generalized.
+That is $\expoly \e \ts$ can also be assigned the type scheme $\all \av \tapoly \ts \av$.
 
+% Unboxing (principality restriction)
 Conversely, to instantiate a polytype expression, one must use an explicit
-unboxing operator $\einst \e$ that need not any type annotation.
-However, it requires $e$ to be of a polytype scheme $\all \av
-\tapoly \ts \av$ and then gives $\einst \e$ a type $\t$ that is an instance of
-$\ts$.  In particular, $\einst \e$ is ill-typed if $\e$ has type $\tapoly \ts
-\av$ and $\av$ cannot be generalized.  It is the polymorphism of $\av$ that
-ensures that the polytype is indeed known and not being inferred.
+unboxing operator $\einst \e$, which requires no accompanying type annotation.
+However, the operator requires $e$ to have a polytype scheme of the form $\all \av
+\tapoly \ts \av$ and then assigns $\einst \e$ the type $\t$ that is an instance of
+$\ts$. If, by constrast, $\e$ hash the type $\tapoly \ts \av$ for some non-generalizable
+annotation variable $\av$, then $\einst \e$ is ill-typed.
+It is precisely the polymorphism of $\av$ that ensures that the
+polytype is indeed known and not being inferred.
 
+% Example ill-typed term
 In particular $\efun \x {\einst \x}$ is not typable, since the
-$\lambda$-bound variable $\x$ is assigned a monotype.  However, annotations
-can be used to freshen annotation variables.  An annotation $e : \t$ behaves
-as the application of a retyping function (one that behaves as the identity
-$(\t)$ of type $\all \tvs \t \to \tp$ to the expression $\e$. We usually
-omit annotation variables in type annotations, since they can be freshen. For
-instance, $\efun {\x : \tapoly \ts {}} {\einst \x}$ which is syntactic sugar
-for $\efun \x {\elet \x {\eapp {(\tapoly \ts {})} \x} {\einst \x}}$, is
-well-typed since the polytype annotation allows the introduction of a fresh
-variable annotation which can be generalized.
+$\lambda$-bound variable $\x$ is assigned a monotype. Consequently, the
+only admissible type for $\x$ is $x : \tapoly \ts \av$ for some $\ts$ and $\av$.
+However, since $\av$ is bound in the surrounding context at the point of
+typing $\einst \x$, it cannot be generalized prior to unboxing, rendering the
+term ill-typed.
+
+% Annotations
+However, type annotations can be used to freshen annotation variables.
+We usually omit annotation variables in annotations, since we can
+implicitly introduce fresh ones in their place. For example,
+$\efun {\x : \tapoly \ts {}} {\einst \x}$ which is syntactic sugar
+for $\efun \x {\elet \x {(\x : \tapoly \ts {})} {\einst \x}}$, is
+well-typed because the explicit annotation introduces a fresh
+variable annotation $\ava$, which can then be generalized, yielding
+$\tfor \ava {\tapoly \ts \ava}$.
 
 \begin{version}{}
 %% Old version
@@ -898,41 +851,198 @@ for polytypes $\expoly e \ts$ is able to introduce a \textit{fresh}
 $\varepsilon$ variable.
 \end{version}
 
-\Xalistair[]{Something about how information can flow from let bindings to
-use sites for principality checking}\Xdidier{Not sure of what you have in
-mind}
+% Short commings of annotation variables
+The very purpose of annotation variables is to distinguish \emph{known}, polymorphic
+polytypes from yet-unknown, monomorphic ones. However, they are somewhat difficult to
+understand and sensitive to the placement of type annotation, an artifact of
+the fixed directionality of generalization in \geninst-directional inference. For instance,
+the following two terms differ only in the position
+of the annotation, yet only the first is well-typed.
+\begin{mathpar}
+  \efun f {\eapp {\einst {(f : \tpoly {\tfor \tv {\tv \to \tv}})}} f}
+  \\
+  \efun f {\eapp {\einst f} {(f : \tpoly {\tfor \tv {\tv \to \tv}})}}
+\end{mathpar}
+The difference lies in how generalization and annotation variables interact.
+In the first term, the annotation occurs in an unboxing operator introducing
+fresh annotation variables and may therefore be generalized to the type scheme $\tfor \av {\tapoly {\tfor \tv {\tv \to \tv}} \av}$,
+enabling unboxing to proceed. Whereas, the second term applies the annotation
+to the argument $f$, which fixes $f$'s type to the monotype $\tapoly {\tfor \tv {\tv \to \tv}} \ava$
+for some fresh annotation variable $\ava$. Because this type is assigned to $f$ at its binding site,
+$\ava$ is bound in the context when typing $\einst f$, and cannot be generalized. As
+unboxing requires a generalized polytype, the second term is ill-typed despite the annotation.
 
-The very purpose of annotation variables is to distinguish known, polymorphic
-polytypes from yet-unknown, monomorphic ones as required by \geninst-directional
-type ifnerence.
-%
-With suspended constraints, any type information can be considered as known,
-so that we do not need the annotation variables any longer.
-
+% Suspended match constraints fixes this
+Suspended match constraints eliminate this sensitivity to directionality,
+by allowing any type information to be treated as known --- rendering annotation
+variables unnecessary.
 Typechecking $\expoly e \ts$ is, intuitively:
 \begin{mathpar}
-\cinfer {\expoly e {\tfor {\overline{\cvb}} \t}} \cva \wide\eqdef
-  \Parens{\cfor {\overline{\cvb}} \cinfer e \t}
+\cinfer {\expoly \e {\tfor {\tvbs} \t}} \tva \wide\eqdef
+  \parens{\cfor \tvbs \cinfer \e \t}
 \cand
-   \cva = [\tfor {\overline{\cvb}} \t]
+   \cva = \tpoly {\tfor \tvbs \t}
 \end{mathpar}
 If $\e$ is already known to have the type $[\ts]$, then we can simply
 instantiate it.  However, if the type of $\e$ is not yet known, \ie  it is a
-(possibly constrained) type variable $\tv$: then, we must wait.  So we
-instead defined the typing constraint as:
+(possibly constrained) type variable $\tv$: then, we must defer until more
+information is available.  We capture this behaviour in the following constraint:
 \begin{mathpar}
-\cinfer {\einst e} \cva \wide\eqdef
-    \cexists \cvb \cinfer e \cvb
+\cinfer {\einst \e} \tva \wide\eqdef
+    \cexists \tvb \cinfer \e \tvb
 \cand
-    \cmatch  \cvb {\cva} (\lambda [\ts]. ~ \ts \leq \cva)
+    \cmatch  \tvb {\tva} (\lambda \tpoly \ts. ~ \ts \leq \tva)
 \end{mathpar}
-since waiting when $\cvb$ is known is harmeless, as the suspended constraint
-may immediately be discharged.
-
+Here, the match constraint $\cmatchdots \tvb$ suspends the instantiation
+until $\tvb$ is resolved to be a known polytype. If it is already known, the
+constraint discharges immediately and behaves like a standard instantiation constraint.
+%
 By waiting for $e$'s type to be \emph{known}, we may ensure principal types
-without annotation variables. However, we still need to explain what it
-means for a variable to be \emph{known}, that is, give the semantics of
-suspended constraints.
+without annotation variables.
+
+\subsection{Static overloading of constuctors and record labels}
+
+% What do we mean by static overloading?
+\emph{Static overloading} denotes a form of overloading in which resolution is
+performed entirely at compile time, enabling the compiler to select a
+unique implementation without relying on runtime information --- in constrast to
+\emph{dynamic overloading}, whic defers resolution to runtime via mechanisms such as
+dictionary-passing or dynamic dispatch.
+
+% Other languages
+Many languages offer statically resolved overloading to avoid the overhead
+of dynamic dispatch. C++ and Java resolve overloaded functions through
+compile-time specialization based on argument types. Conversely, languages
+like Rust and Haskell primarily employ dynamic overloading via traits and type classes,
+respectively, which can incur runtime overhead unless optimized away by monomorphization
+and aggressive inlining.
+
+% How it relates to OCaml?
+\OCaml supports a limited yet useful form of static overloading for record labels
+and data type constructors.
+\begin{program}[input]
+  type three = { x : int; y : int }
+  type four = { y : int; z : int }
+  type five = { x : int; z : int }
+\end{program}
+
+\begin{program}[input]
+  type m = L | M
+  type n = L
+\end{program}
+
+% OCaml's approach (PI-directionality)
+When encountering overloaded labels or constructors, \OCaml resolves ambiguity
+using local type information. This process is underpinned by \geninst-directional
+inference, where type constructors carry annotation variables $\av$, written
+$\tys \Fapp^\av$, to track which types are \emph{known}. As discussed in \cref{TODO},
+this mechanism allows one to deduce known types from generalized type constructors
+$\tfor \av {\tys \Fapp^\av}$.
+
+% A note on bidirectional expected type propagation
+Because static overloading involves more intricate flows of information than
+polytype instance, \OCaml completements \geninst-directionality with a limited form
+of bidirectional propagation of expected types. This allows the following to be well-typed:
+\begin{program}[input]
+  let e_8 = (function (L : m) | _ -> 1) L
+\end{program}
+
+% Closed-world reasoning
+Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to resolve
+ambiguities in record types. For instance:
+\begin{program}[input]
+  let e_9 = fun { x; z } -> { x = -z; z = x }
+\end{program}
+\programjoin
+\begin{program}[output]
+  val e_9 : five -> five
+\end{program}
+Here, \code{x} and \code{y} appear together only in the type \code{five},
+allowing the type checker to unambiguously infer the type of \code{e_8} as \code{five -> five}.
+
+% Default rules
+If local type information and closed-world reasoning are insufficient,
+\OCaml falls back to a syntactic default: it selects the most recently
+defined compatible type. For example:
+\begin{program}[input]
+  let proj$_z$ = fun {z; _} -> z
+\end{program}
+\programjoin
+\begin{program}[output]
+  val proj$_z$ : five -> int
+\end{program}
+The expression is compatiable with both \code{four} and \code{five},
+since each defines a field \code{z}. But \code{five} is chosen simply
+because it appears later in the source.
+We do not treat this behaviour as principal; according, we provide
+no formalisation of such ``default'' rules, though their implementation is
+discussed further in \cref{sec:implementation}.
+
+This fallback mechanism highlights the directionality of \OCaml inference.
+Once the compiler selects a type, it commits to it -- even if that choice
+causes errors downstream:
+\begin{program}[input]
+  let e$_{10}$ = fun r ->
+    let x (* infers [five] *) = r.x in
+    x + r.y
+\end{program}
+\programjoin
+\begin{program}[error]
+  Error: The expression has type five
+	 There is no field y within type five
+\end{program}
+
+% Record field disambiguation in suspended constraints
+We propose an alternative account of static overloading using suspended match constraints.
+For example, in the case of an ambiguous record projection $\efield \e \elab$, we generate the
+typing constraint:
+\begin{align*}
+\cinfer {\efield \e \elab} \tva &=
+  \cexists \tvb \cinfer \e \tvb
+  \cand
+  \cmatch \tvb {\cva, \cvb}
+    \parens
+      {\clam {(\bar \tvc \Fapp)}
+	{\cletin \ts {\Omega(\elab / \F)} {\ts \leq \tva \to \tvb}}
+      }
+\end{align*}
+This constraint defers resolution until more information is available: specifically, until the
+type constructor of $\tvb$ of the record expression $\e$ is known.
+
+We assume a global typing environment $\Omega$, which provides type scheme declarations for
+constructors and record fields. These are written in the form:
+\begin{mathpar}
+  \K : \tfor \tvs \t \to \tvs \Fapp \\
+  \elab : \tfor \tvs \t \to \tvs \Fapp
+\end{mathpar}
+
+Since constructors and labels may be overloaded across distinct type constructors,
+$\Omega$ may contain multiple such schemes for a given constructor or label.
+However, within a given data type, we assume that each constructor or label is uniquely
+defined. Thus, we write $\Omega(\elab / \F)$ or $\Omega(\K / \F)$ to denote the unique
+type scheme associated with a specific label of constructor in the context of the type $\F$.
+
+Once the record type of $\tvb$ is known, the suspended constraint $\cmatchdots \tvb$
+triggers the matching clause, which retrieves the appropriate type scheme for $\elab$
+from $\Omega$, scoped to the corresponding type $\F$. It then instantiates this scheme
+and imposes the resulting constraints on the argument and return types of the label.
+
+\Xgabriel{It would be nice to be able to show some code examples and explain how they work in our
+setting, informally -- or, sometimes, how the naive/simple elaboration is not enough.}
+\TODO{Do some typing constraints for the examples presented in this section}
+
+% Suspended constraints are better
+As seen in the examples above, this approach is faithful to \OCaml's current behaviour
+\footnote{modulo default disambiguation rules}, and in fact improves on it: certain
+expressions, such as  \code{e}$_{10}$ are well-typed under our account but rejected
+by \OCaml's current type checker.
+
+% Next section
+Suspended constraints offer a robust mechanism for dealing with extensions of
+\ML that depend on a notion of \emph{known} type information. What remains
+is to formalize this notion: that is, to give a precise semantics for when
+a type variable is considered \emph{known}, and how suspended constraints
+are discharges accordingly.
 
 
 \section{Semantics of constraints}
@@ -1977,7 +2087,7 @@ This is expressed by the judgment $\Lshape \Lab \elab \F$.
 \begin{mathpar}
   \begin{array}{rrl@{\hspace{8em}}l}
    \Lab
-      & \bnfis
+      & ::=
       & \E[\e.\square]
 	\mid \E[\erecord {\elaba = \eone; \ldots; \square = \ei ; \ldots; \elab_n = \en }]
       & \text{Label contexts}
