@@ -4,6 +4,7 @@
 %% Mathpartir
 
 \usepackage{mathpartir}
+
 \newcommand{\mathparinit}{
 % spacing below and above mathpar blocks
 \abovedisplayskip .5em
@@ -35,13 +36,11 @@
        \label{\LABEL}
      \end{figure}}
 
-
-
-\newenvironment{mathline}
-   {\abovedisplayskip 0.1em
-    \belowdisplayskip 0.1em
-    \begin{mathpar}}
-   {\end{mathpar}}
+%% \newenvironment{mathline}
+%%    {\abovedisplayskip 0.1em
+%%     \belowdisplayskip 0.1em
+%%     \begin{mathpar}}
+%%    {\end{mathpar}}
 
 %% Arrays and tabular
 \usepackage{array}
@@ -74,7 +73,7 @@
 \def \bnf@andcr{\bnf@flushentry \\&&\bnf@mid&}
 \def \bnf@nextline #1{\bnf@andcr \ifthenelse {\equal{#1}{\bnf@mid}}{}{#1}}
 
-\newenvironment{bnfgrammar}
+\newenvironment{bnfgrammar}[1][]
   {\let \entry \bnf@entry
    \let \emptyentry \bnf@emptyentry
    \let \is \bnf@is
@@ -82,7 +81,8 @@
    \let \andcr \bnf@andcr
    \let \And \bnf@andcr
    \let \nextline \bnf@nextline
-   \begin{tabular*}{\linewidth}{C~R=;;R;;LL~r}}
+   #1\relax
+   \begin{tabular*}{\linewidth}{.C~R=;;R;;LL~r.}}
  {\end{tabular*}}
 
 \newenvironment{bnffig}[3][htb!]

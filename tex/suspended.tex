@@ -642,6 +642,8 @@ validate that the implementation is efficient for the moment.}
 \\
 \entry[Closure contexts] \D {\eset \and \D, \tv \and \D, \x}
 \end{bnffig}
+\Xdidier {It should be made clear somewhere whether our framework works with
+recursive types. Since it does, shouldn't we state it?}
 
 % Syntax!
 
@@ -1851,6 +1853,8 @@ syntactically directed by $\c$ anymore.
 \section{The language}
 \label{sec:language}
 
+\Xdidier{We need to add structure to this section, with subsections}
+
 % Running example: tuple projection disambiguation
 
 % We need a spec, but this itself is hard
@@ -1863,6 +1867,8 @@ use as a specification is itself an interesting problem!
 
 % Why is it hard? Examples of prev work:
 
+\Xdidier {This paragraph is repeating (or should be added to) the
+introduction} 
 Much work has been done on various extensions of \ML with features such as
 static overloading \citep{TODO} and first-class polymorphism
 \citep{TODO}. However, many of these approaches either fail to ensure
@@ -1884,7 +1890,7 @@ premise. This multiplicity undermines principality.
 
 % Partial annotations (shapes) to the rescue!
 
-Our first insight is that partial type annotations often sufficies to
+Our first insight is that partial type annotations often suffices to
 recover principality. We refer to these annotations as \textit{shapes}. For
 example, explicitly annotating the tuple projection with its arity, as in
 $\exfield \e n j$, disambiguates the expression:
@@ -1905,21 +1911,23 @@ programmer.
 
 % A note on stratified type inference
 
+\Xdidier {This paragraph should also fit into the introduction, I think}
 The idea of leveraging a principled core language with inference of shapes
-is not novel. \textit{Stratified type inference} [??]  pursued a similar
-goal (in the context of generalized algebraic data types). It operates in
-two phases: the first phase transforms the program into an intermediate
-language and generates shapes using \textit{bidirectional typing}; the
-second performs \HM type inference for the intermediate language. While the
-second phase is sound, complete and enjoys principal types, the overall
-system remains incomplete due to the heuristic nature of the first phase.
+is not novel. \textit{Stratified type inference}
+by~\citet{Pottier-Regis-Gianas/stratified@popl06} pursued a similar goal---in
+the context of generalized algebraic data types. It operates in two phases:
+the first phase transforms the program into an intermediate language and
+generates shapes using \textit{bidirectional typing}; the second performs
+\HM type inference for the intermediate language. While the second phase is
+sound, complete and enjoys principal types, the overall system remains
+incomplete due to the heuristic nature of the first phase.
 
 % How do we specify our intuition?
 
 Specifying the notion of unique inferrability from context is
 tricky. Luckily, we can leverage many of the formal methods developed in the
-previous section -- in particular, the manipulation of contexts within the
-derivation -- to prove uniqueness of shapes. Allowing us to
+previous section---in particular, the manipulation of contexts within the
+derivation=--to prove uniqueness of shapes. Allowing us to
 systematically replace the ambiguous constructs with their disambiguated
 counterparts:
 \begin{mathpar}
@@ -1933,11 +1941,13 @@ constrain the shape of $e$'s type as a tuple of size $n$.
 % Limitations
 
 The cheif limitation of our approach is that disambiguation can still
-require explicit annotations in inherently ambiguous scenarios. One solution
-is the use of sensible `defaults', such as resolving $\efield e j$ by
-assuming the tuple has arity $j$. While appealing, such defaults compromise
-principality. We return to this pragmatic tradeoff in Section
-\ref{sec:implementation}.
+require explicit annotations in inherently ambiguous scenarios.  This is
+fine. Another option would be the use of sensible ``defaults'', such as
+resolving $\efield e j$ by assuming the tuple has arity $j$. While
+appealing, such defaults compromise principality. We return to this
+pragmatic tradeoff in \cref{sec:implementation}.
+
+\subsection{The language and its core-\ML typing rules}
 
 \begin{bnffig}{fig/syntax}{Syntax of types and terms}
 \entry[Terms]{\e}{
@@ -1979,11 +1989,11 @@ principality. We return to this pragmatic tradeoff in Section
 
 \paragraph{Terms}
 
-In \cref {fig/syntax}, we give the grammar for our calculus. Terms
-include all of the
-\ML calculus: variables $x$, the unit literal $\eunit$, lambda abstractions
-$\efun x e$, applications $\eapp \eone \etwo$, annotations $(e : \t)$ and
-let bindings $\elet x \eone \etwo$. Our extensions include:
+In \cref {fig/syntax}, we give the grammar for our calculus. Terms include
+all of the \ML calculus: variables $x$, the unit literal $\eunit$,
+lambda-abstractions $\efun x e$, applications $\eapp \eone \etwo$,
+annotations $(e 
+: \t)$ and let-bindings $\elet x \eone \etwo$. Our extensions include:
 \begin{enumerate}
 \item
   Constructor and record label disambiguation, modelled using record
@@ -2007,7 +2017,7 @@ explicitly annotated counterpart (written $\e^x$) that is $\erecord {\overline{\
 \paragraph{Types}
 
 As usual, types are split into monotypes (or just types) and type
-scehems. Types $\t$ include the variables $\tv$, the unit type $1$, function
+schemes. Types $\t$ include the variables $\tv$, the unit type $1$, function
 types $\tone \to \ttwo$, $n$-ary product types $\Pi_{i = 1}^n \ti$ and
 nominal record types $\tys \F$. Type schemes $\sigma$ extend monotypes
 allowing the universal quantification of zero or more type variables $\all
@@ -2155,73 +2165,102 @@ As usual, the typing judgment $\G \th \e : \ts$ states that in context
 $\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on
 \cref {fig/typing}.
 
+\Xdidier{The are  also judgments $\G \th \ell : \ts$
+and $\G \th \ell = e : \ts$ where $\ell$ and $\ell = \e$ are not expressions
+and a judgment $\mlsub \ts \tsp$.}
+
 % Simple typing rules explained
-\Rule{Var} retrieves a the type scheme $\x : \ts$ from the context $\G$.
-Function types are introduced via lambda abstractions: in \Rule{Fun}, the
+
+\Xdidier {I am not sure that we need and will have space to read in details
+the typing rules of Core \ML}
+
+Rule \Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
+Function types are introduced via lambda abstractions: in Rule \Rule{Fun}, the
 system guesses a well-formed type $\tone$ for the type of $x$, typechecks
 the body $e$ is under the extended context $\G, \x : \tya$ producing the
 return type $\tyb$, and assigns the abstraction the function type
 $\tya \to \tyb$. Conversely, function types are eliminated by applications;
-in \Rule{App}, the type of the argument must match the function's parameter
-type $\tya$ and application returns the type $\tyb$. \Rule{Unit} asserts
+in Rule \Rule{App}, the type of the argument must match the function's parameter
+type $\tya$ and application returns the type $\tyb$. Rule \Rule{Unit} asserts
 that $()$ has the unit type $\tunit$.
 
 % Gen/Inst explained
-\Rule{Gen} and \Rule{Inst} correspond to implicit \textit{generalization} and
-\textit{instantiation} respectively. Generalization universally quantifies a
-type variable $\tv$, introducing it as a fresh polymorphic variable
-in the typing context. In \Rule{Inst}, we specialize a type scheme $\tsa$ to
-$\tsb$ using the \emph{instantiation relation} given in \cref{fig:inst-rel}.
-This expresses that one type scheme is a polymorphic generalization of another.
+
+Rules \Rule{Gen} and \Rule{Inst} correspond to implicit
+\textit{generalization} and \textit{instantiation} respectively.
+Generalization universally quantifies a type variable $\tv$, introducing it
+as a fresh polymorphic variable in the typing context. In \Rule{Inst}, we
+specialize a type scheme $\tsa$ to $\tsb$ using the \emph{instantiation
+relation} given in \cref{fig:inst-rel}.  This expresses that one type scheme
+is a polymorphic generalization of another.
 
 % Instantiation relation
-\Rule{Inst-Refl} trivially asserts that a monotype is an instance of itself.
-In \Rule{Inst-ForallL}, a universally quantified type on the left may be
+\Xdidier {Is there a reason to use an intermediate instantiation relation,
+rather than just a Rule \Rule {Inst}---since there is already a rule \Rule
+{Gen}, which we must keep?}
+
+Rules \Rule{Inst-Refl} trivially asserts that a monotype is an instance of
+itself. In \Rule{Inst-ForallL}, a universally quantified type on the left may be
 instantiated by substituting $\tv$ with any monotype to match the right hand
 side. Conversely, \Rule{Inst-ForallR} has a type scheme $\tfor \tv \ts$ on the
-right hand side. In this case, we introduce a fresh polymorphic type variable
+right-hand side. In this case, we introduce a fresh polymorphic type variable
 $\tv$ into the context to test whether the $\tsa$ is an instance of $\tsb$
-under any instantiation of $\tv$ -- this is essentially a form of skolemization
+under any instantiation of $\tv$---this is essentially a form of skolemization.
 
 % Let rule
+
 Let-polymorphism is handled by the \Rule{Let} rule, where a \textit{polymorphic}
 term can be bound. This allows a single definition to be instantiated differently
-at each use site -- an essential feature of \ML. In this rule, the term $\eone$
+at each use site---an essential feature of \ML. In this rule, the term $\eone$
 has a polymorphic type scheme $\ts$, adds $\x : \ts$ into the context $\G$ to
 typecheck $\etwo$.
 
 % Annotations
-Annotations $(e : \exi \tvs \t)$ ensures that the type of $e$ is $\t$. The type
-variables $\tvs$ are \emph{flexibly} (or existentially) bound in $\t$, meaning that
-$\tvs$ may be unified with some types $\tys$ to produce a well-typed term. For instance,
-the term $(\efun x x + 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv := \tint$
-in \Rule{Annot}.
+
+Annotations $(e : \exi \tvs \t)$ ensures that the type of $e$ is (an instance
+of) the type $\t$. The type variables $\tvs$ are
+\emph{flexibly} (or existentially) bound in $\t$, meaning that $\tvs$ may be
+unified with some types $\tys$ to produce a well-typed term. For instance,
+the term $(\efun x x + 1 : \exi \tv
+\tv \to
+\tv)$ is well-typed with $\tv := \tint$ in \Rule{Annot}.
 
 % Contextual rules (Poly-*, Use-*, Proj-*)
-The typing rules for full annotated terms ($\e^x$) are unsurprising.
+
+\subsection {Advanved typing}
+
+The typing rules for fully annotated terms ($\e^x$) are unsurprising.
 However, typing rules for terms with omitted type annotations are
-non-compositional as they depends on a surrounding one-hole context
-$\E$. Hence, they assert that the typability of the expression
-$\G \th \E \where {\e^i}: \t$ where $\e^i$ is an expression with an
-implicit type annotation.
+non-compositional as they depend on a surrounding one-hole context
+$\E$. Hence, they assert that the typability of the expression $\G \th \E
+\where {\e^i}: \t$ where $\e^i$ is an expression with an implicit type
+annotation.
 %
 We first request a typing for the expression with an explicit annotation $\G
 \th \E \where {\e^x}: \t$ where $\e^x$ is a fully annotated variant of $\e^i$.
-We then request that (the shape of) the annotation is fully determined from context,
-either from the type of the expression, which we write $\eshape \E \e \sh$, or from the type
-of the hole, which we write $\Eshape \E \e \sh$.
+We then request that (the shape of) the annotation is fully determined from
+context, either from the type of the expression, which we write $\eshape \E
+\e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
 
 % Shapes
 Shapes are one of the following form:
 \begin{mathpar}
-  \sh \is \tunit
-      \mid \tva \to \tvb
-      \mid \Pi\iton \tvs
-      \mid \tvs \Fapp ~
-      \mid \exi \tvs \tpoly \ts
+\begin{bnfgrammar}[\def \and {\wide\mid}]
+\entry{\sh}{
+       \tunit 
+  \and \tva \to \tvb
+  \and \Pi\iton \tvs
+  \and \tvs \F
+  \and \exi \tvs \tpoly \ts
+}
+\end{bnfgrammar}
 \end{mathpar}
 \Xalistair{This syntax is a bit odd for polytypes as no other shape quantifies
-over its monomorphic part}
+over its monomorphic part}\Xdidier{Initially, shapes where just
+constructors for me---not shallow terms}\Xdidier{The syntax is not enough:
+we should ensure that all type variables are disjoint, \ie. shape are
+equivalent to constructors..., even for polytypes thanks to the existence of
+a canonical representation}
 
 The shape of a variable is undefined (as in \cref{fig:shape-fn-def-typing}).
 The shape of the unit type $\tunit$ is $\tunit$. Monotypes that contain
@@ -2262,11 +2301,7 @@ types defined in the calculus}
   \shape(\tpoly \ts) \eqdef \langle \exi \tvs \tpoly \ts, \where {\tvs := \tys} \rangle
 \end{mathparfig}
 
-\Xdidier {We may wish to extend the definition of shapes to all non-variable
-types, letting it be the top constructor. This will carry a better
-intuition, even though the current presentation is correct.}
-\Xalistair{I've done this above -- yet I feel the definition for $\tpoly \ts$ is not
-not formal enough}
+\Xalistair{I feel the definition for $\tpoly \ts$ is not formal enough}
 
 In order to describe the judgments $\eshape \E \e \sh$ and
 $\Eshape \E \e \sh$, we introduce a cast operation $\ecast \e \t \tp$
@@ -2313,77 +2348,86 @@ within the context as opposed to the inferred type of $\e$.
 
 
 % Labels
+
 We adopt a similar non-compositional approach for elaborating overloaded labels,
 whether in record projection ($\efield e \elab$) or record construction
 ($\erecord {\overline{\elab = \e}}$). Here, a one-hole label context $\Lab$
 provides the surrounding context in which a label $\elab$ appears, and we require
 that the record type $\F$ associated with $\elab$ is uniquely determined.
-This is expressed by the judgment $\Lshape \Lab \elab \F$.
-
+This is expressed by the judgment $\Lshape \Lab \elab \F$, where
+the context $\Lab$ is as follows: 
 \begin{mathpar}
-  \begin{array}{rrl@{\hspace{8em}}l}
-   \Lab
-      & ::=
-      & \E[\e.\square]
-	\mid \E[\erecord {\elaba = \eone; \ldots; \square = \ei ; \ldots; \elab_n = \en }]
-      & \text{Label contexts}
-  \end{array}
-
+\begin{bnfgrammar}
+\entry [Label contexts]{\Lab}{
+    \E \where {\e.\square} \and
+    \E \where
+         {\erecord
+            {\elaba = \eone; \ldots; \square = \ei ; \ldots; \elab_n = \en}
+         }
+}
+\end{bnfgrammar}
 \end{mathpar}
-
-This judgement holds if either:
+The judgement $\Lshape \Lab \elab \F$holds if either:
 \begin{enumerate*}
-  \item The label $\elab$ can be uniquely resolved to a record type $\F$ in the typing
-	context, written $\eshape \Lab {\elab ~} \F$.
-  \item The context $\Lab$ infers that $\elab$ must be instantiated to the record type
-	$\tys \Fapp$, written $\Eshape \Lab \elab \F$.
+\item
+  the label $\elab$ can be uniquely resolved to a record type $\F$ in the
+  typing context, written $\eshape \Lab {\elab ~} \F$;
+\item
+  the context $\Lab$ infers that $\elab$ must be instantiated to the record
+  type $\tys \Fapp$, written $\Eshape \Lab \elab \F$.
 \end{enumerate*}
-
+We thus define:
 \begin{mathpar}
-  \Lshape \Lab \elab \F \eqdef \eshape \Lab \elab \F \vee \Eshape \Lab \elab \F
+  \Lshape \Lab \elab \F \Wide \eqdef
+     \eshape \Lab \elab \F \vee \Eshape \Lab \elab \F
 \end{mathpar}
-
-The first case applies when the record type is uniquely determined by the syntax of the
-context, without needing shape inference. There are two main subcases:
+The first case applies when the record type is uniquely determined by the
+syntax of the context, without needing shape inference. There are two main
+subcases:
 \begin{enumerate*}
-  \item In a record projection context $\E[\e.\elab]$, if the label $\elab$ is not
-	overloaded, then the (record) typing context $\D$ assigns a unqiue record
-	type $\F$ to $\elab$.
-  \item In a record expression $\E [\erecord {\elab_1 = \eone; \ldots; \elab_n = \en}]$,
-	if the set of labels ${ \elab_1, \ldots, \elab_n }$ uniquely identifies a record
-	type $\F$ in the typing context $\D$.
-\end{enumerate*}
+\item
+  in a record projection context $\E[\e.\elab]$, if the label $\elab$ is not
+  overloaded, then the (record) typing context $\D$ assigns a unqiue record
+  type $\F$ to $\elab$;  \Xdidier {What is a record typing contexte
+  $]D$?---I don't understand the rules below: why not use $\G$? How is
+  $\D$ related to $\E$ and $\e$?}
 
+\item
+  in a record expression $\E [\erecord {\elab_1 = \eone; \ldots; \elab_n =
+  \en}]$, if the set of labels ${ \elab_1, \ldots, \elab_n }$ uniquely
+  identifies a record type $\F$ in the typing context $\D$.
+\end{enumerate*}
 \begin{mathpar}
   \infer[Lab-Uniq-Proj]
-    {l \mathop{!} \F \in  \Delta}
+    {\elab \mathop{!} \F \in  \Delta}
     {\eshape {\E[\e.\square]} \elab \F}
 
   \infer[Lab-Uniq-Rcd]
     {\bar \elab \mathop{!} \F \in \Delta}
     {\eshape
-      {\E[\erecord {\elaba = \eone; \ldots; \square = \ei; \ldots;  \elab_n = \en }]}
-      \elab
-      \F }
+      {\E[\erecord
+            {\elaba = \eone; \ldots; \square = \ei; \ldots;  \elab_n = \en }]}
+      \elab \F }
 \end{mathpar}
 
-To support the second case, we introduce a magic label judgment (\Rule{Lab-Magic}) that
-behaves analogously to the cast operator in expression contexts. It enables us to
-assume a hole $\square : \t$ in label position may be instantiated to a function type
-$\tp \to \t$
-
+To support the second case, we introduce a casting label judgment
+(\Rule{Lab-Cast}) that behaves analogously to the cast operator in
+expression contexts. It enables us to assume a hole $\square : \t$ in label
+position may be instantiated to a function type $\tp \to \t$:
 \begin{mathpar}
-
-  \infer[Lab-Magic]
-    { }
+  \infer[Lab-Cast]
+    {}
     {\G \th \square : \t \leq \tp \to \t}
 
-  \\
-  \Eshape \Lab \elab \F \eqdef \forall \G, \t, \tp, \G \th \Lab[\square : \tp] : \t \implies \shape(\tp).1 = \tvs \F
-
+\Eshape \Lab \elab \F \Wide\eqdef
+   \forall \G, \t, \tp, \G \th \Lab[\square : \tp] : \t \implies
+        \shape(\tp).1 = \tvs \F
 \end{mathpar}
 
 % Contexts can be the entire term
+
+\subsection {Examples of typings}
+
 The following lemma shows that we can always take a larger context
 $\E$ or $\Lab$ for implicit rules \Rule {Proj-I}, \Rule {Use-I}, \Rule {Poly-I}
 and \Rule{Lab-I}.
