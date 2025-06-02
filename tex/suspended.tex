@@ -1287,9 +1287,19 @@ Here, the rule \Rule{Susp-Use} only applies when $\tau$ already has a shape.
 Unlike the natural rule, which takes the shape of $\semenv(\tau)$, which may
 contain parts that have been ``guessed'' in $\semenv$, this version demands
 that the shape $\sh$ of $\t$ must already be known in the constraint,
-statically. 
+statically.
+
+\Xdidier {The positioning is unclear: you say that this is a simplified case,
+of a rule that does not work, hence we read this as a temporary useless
+rule. But you use it later.  This should me made clearer.}
+\Xdidier {Right now this rule is not a subcase of \Rule {Susp-Ctx} but it
+would if you allowed $\C {\ty !\ty}$ and I think you should allow it since
+constraints should be substituable. It would be simple to treated is as a
+subcase, hence a shortcut for telling the story and writing derivations.}
+
 
 % Contextual rule
+
 The key innovation of the contextual semantics lies in the following rule, which---unlike
 the others---is not syntax-directed:
 \begin{mathpar}
@@ -1425,26 +1435,25 @@ satisfying assignment.
 
 \begin{definition}
   A type variable $\tv$ has a \emph{uniquely known} shape within the context
-  $\C[\square]$, written $\Cshape \C \tv \sh$, iff for all assignments $\semenv$ and shapes
+  $\C[\square]$, written $\Cshape \C \tv \sh$, iff for all assignments
+  $\semenv$ and shapes 
   $\shp$, then $\semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp]$ implies
   that $\sh$ and $\shp$ are equal modulo alpha equivalence.
-
+%
   In other words:
   \begin{mathpar}
-    \begin{array}{l}
-    \Cshape \C \tv \sh \eqdef \forall \semenv, \shp, \quad
-      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies \sh =_{\setminus \alpha} \shp
-    \end{array}
+    \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \shp, \uad
+      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies
+        \sh =_{\setminus \alpha} \shp
   \end{mathpar}
-
   This condition ensures that we’re not guessing a shape arbitrarily;
   the shape must already be determined by the ambient constraint.
-  That’s what justifies applying \Rule{Susp-Ctx}.
+  \Xdidier  [That’s what justifies applying \protect\Rule{Susp-Ctx}.]
+  {I would cut this, which is out of context or misplaced}
 \end{definition}
 
-
-
 \paragraph{Well-foundedness}
+
 The astute reader may have noticed a compilication resulting
 from our definition of the unicity predicate:
 $\Cshape \C \tv \sh$ contains a negative occurrence of the
@@ -1472,9 +1481,9 @@ $\bbrackets -$ from constraints $\c$ to sets of valuations $\semenv$.
 The satisfiability relation is defined as
 $\semenv \vdash \c \iff \semenv \in \bbrackets \c$.
 We can prove that $\bbrackets \c$ is well-defined by
-metered recursion of $\c$. Furthermore, we show that the
+metered recursion of~$\c$. Furthermore, we show that the
 inference rules we have so far defined hold and are
-invertable. We give the full details for this in \cref{appendix:wf}
+invertible.  We give the full details for this in \Cref{appendix:wf}.
 This ensures that the semantics is well-defined, even if not syntactically
 inductive.
 
@@ -1489,7 +1498,13 @@ finite proof as satisfiability. This form of non-termination in the
 semantics is exploited using the meta-language as opposed to a flaw in the
 object language \ie constraints.
 
+\Xdidier{I don't understand $\C_{\text{loop}}$: this cannot be written since
+there is not recursion in the language of constraints}.
+\Xdidier{Actually, I don't understand what $f$ is in the meta language and
+why we do not express is as a constraint}
+
 \paragraph{Interaction with polymorphism}
+
 \Xalistair{I'm not too sure this belongs here, but I think
 it is a tricky part of our semantics}
 
@@ -1519,37 +1534,44 @@ At the point of generalising \code{x}, the type $\tvb$
 remains unknown: it is captured by a suspended match constraint
 and has not yet been refined. We must nevertheless assign a type
 scheme to $x$, yielding $\tfor \tvb \tvb$.
-This appears unsound -- $\tvb$ is generalised despite depending on
+This appears unsound---$\tvb$ is generalised despite depending on
 unresolved information. However, $\tvb$ is not `fully' generalised in
 the traditional sense: it may be (and is) further constrained once the match
 constraint is discharged.
 
-To support this, we introduce our second novel mechanism
-for omnidirectional type inference: \emph{partial type schemes}.
-Such type schemes (\ie $x$'s scheme) delay commitment to certain quantifications,
-allowing generalised variables like $\tvb$ to be later refined (\eg, to \code{int})
-once suspended constraints are discharged. We defer the solver-level
-details of this mechanism to \cref{sec:solver, sec:implementation}.
-At the semantic level, we simply note that partially generalised schemes
-arise naturally from the interaction of suspended constraints and let-abstractions.
+To support this, we introduce our second novel mechanism for omnidirectional
+type inference: \emph{partial type schemes}.  Such type schemes (\ie $x$'s
+scheme) delay commitment to certain quantifications, allowing generalised
+variables like $\tvb$ to be later refined (\eg, to \code{int}) once
+suspended constraints are discharged. We defer the solver-level details of
+this mechanism to \cref{sec:solver, sec:implementation}.  At the semantic
+level, we simply note that partially generalised schemes arise naturally
+from the interaction of suspended constraints and let-abstractions.
 
 % Backpropagation
-A further subtle--but crucial--feature of our semantics is its support for \emph{backpropagation}.
-%
-PI-directional inference, as exemplified by \OCaml, performs inference is a strictly
-let-directional manner:
-each let-binding is inferred using only local information, and
-generalisation forms a boundary that prevents information from later
-use sites from influencing the generalised type--this is why polymorphic
-type information is considered `known'.
 
-For example, the following program is rejected by \OCaml:
+A further subtle---but crucial---feature of our semantics is its support for
+\emph{backpropagation}. 
+%
+\Geninst-directional inference, as exemplified by \OCaml, performs inference
+in a strictly let-directional manner:
+each let-binding is inferred using only local information,
+\Xdidier{not quite true---monorphic parts are non locally inferred, but
+they are not part of the known information}\Xdidier{This repeats, less
+precsisely, I think from what has been told in the introduction. Perhaps,
+the introduction should be more detailed, but repeateing it here, which a
+different story could be confusing} and generalisation forms a boundary that
+prevents information from later use sites from influencing the generalised
+type--this is why polymorphic type information is considered `known'.
+
+\Xdidier{Then, it should be added to the intro to criticize the \OCaml approach.}
+For example, the following program is rejected by \OCaml: 
 \begin{program}[input]
   let e$_{11}$ = let f r = r.x in f ({ x = 1; y = 1 })
 \end{program}
 Yet this example ought to be well-typed: the type of \code{f}'s
 argument is unambiguously the record type \code{three}. The reason
-this is ill-typed is that PI-directional inference cannot propagate
+this is ill-typed is that \geninst-directional inference cannot propagate
 the known type of the record (\ie \code{three}) \textbf{back} to
 \code{f}'s type.
 
@@ -1562,13 +1584,13 @@ The (simplified) constraint generated when typing \code{e}$_{11}$ is:
     \cand \cmatch \tvb {\tvc} {(\ldots)}}}
     {\cinst f {(\mathsf{three} \to \tv)}}
 \end{mathpar}
-
-Here type information flows from an instance constraint ($\cinst f {(\mathsf{three} \to \tv)}$)
-into a potentially generalisable variable $\tvb$ within the constraint abstraction.
-At generalisation time, $\tvb$ remains abstract. However, at the use site, the
-instance type \code{three} is known, and thus uniquely determines the shape
-of $\tvb$ to be $\mathsf{three}$. The unicity predicate can be used to show that no
-other shape can be inferred, without the constraint being unsatisfiable.
+Here, type information flows from an instance constraint ($\cinst f
+{(\mathsf{three} \to \tv)}$) into a potentially generalisable variable
+$\tvb$ within the constraint abstraction.  At generalisation time, $\tvb$
+remains abstract. However, at the use site, the instance type \code{three}
+is known, and thus uniquely determines the shape of $\tvb$ to be
+$\mathsf{three}$. The unicity predicate can be used to show that no other
+shape can be inferred, without the constraint being unsatisfiable.
 
 This controlled backpropagation allows us to resolve the suspended constraint
 \emph{without} requiring $\tvb$ to be marked as a non-generalisable variable.
@@ -1576,20 +1598,23 @@ This controlled backpropagation allows us to resolve the suspended constraint
 \TODO{derivation}
 
 \paragraph{Summary}
+
 To recap, the semantics of suspended constraints is governed by three
 principles:
 \begin{enumerate*}
   \item If the shape of the matchee is statically known, we use it
-    directly via \Rule{Susp-Use}
+    directly via \Rule{Susp-Use};
   \item If not, we may guess the shape--but only when the context ensures
-    the shape is unique, via the $\Cshape \C \tv \sh$ condition and \Rule{Susp-Ctx}
+    the shape is unique, via the $\Cshape \C \tv \sh$ condition and
+    \Rule{Susp-Ctx};
   \item If the shape cannot be uniquely inferred from the context, the constraint
     is unsatisfiable.
 \end{enumerate*}
 
-These rules, together with the base rules from \cref{fig:constraint-semantics},
-define the full semantics. For convenience, we collect all the rules pertaining to
-the satisfiability judgement in \cref{fig:contextual-semantics}
+These rules, together with the base rules from
+\cref{fig:constraint-semantics}, define the full semantics. For convenience,
+we collect all the rules pertaining to the satisfiability judgement in
+\cref{fig:contextual-semantics}.
 
 \begin{mathparfig}[t]
   {fig:contextual-semantics}
@@ -1602,7 +1627,7 @@ the satisfiability judgement in \cref{fig:contextual-semantics}
     }
   \end{bnfgrammar}
 \\
-  \infer[True]
+\infer[True]
     { }
     {\semenv \vdash \ctrue}
 
@@ -1640,14 +1665,16 @@ the satisfiability judgement in \cref{fig:contextual-semantics}
     {\semenv \vdash \cmatch \t \Delta f}
 
   \infer[Susp-Ctx]
-    {\Cshape \C \tv \sh \\
-      \semenv \vdash \C[\cexists {\fvs \sh} \cunif \tv \sh \cand \cmatch \sh \Delta f]
+    {\Cshape \C \tv \sh \\\\
+      \semenv \vdash \C[\cexists {\fvs \sh} \cunif \tv \sh \cand
+      \cmatch \sh \Delta f]
     }
     {\semenv \vdash \C[\cmatch \tv \Delta f]}
   \\
 
-  \Cshape \C \tv \sh \eqdef \forall \semenv, \shp, \quad
-      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies \sh =_{\setminus \alpha} \shp
+  \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \shp, \uad
+      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies
+            \sh =_{\setminus \alpha} \shp
 \end{mathparfig}
 
 % Contextual semantics is cool, and our approach extends to type systems
@@ -2830,6 +2857,12 @@ heuristics to refine it, a two-phase process. It's fine.}
 
 %% \bibliographystyle{ACM-Reference-Format}
 \bibliography{suspended}
+
+\appendix
+
+\section{Well-foundedness}
+\label {appendix:wf}
+\TODO{Show weel-foundedness of the constraint definition}
 
 \end{document}
 

@@ -7,7 +7,7 @@
 % #4: remark content
 \newcommand {\XXX}[4]{%
   \textcolor{#3}{\textbf{#2\space}}%
-  {\ifthenelse{\equal{#1}{}}{}%
+  {\ifthenelse{\equal{}{#1}}{}%
     {\textcolor{#3}{\textbf{[}}#1\textcolor{#3}{\textbf{]}}}}%
   \textcolor{#3}{\textbf{\{}#4\textbf{\}}}}
 \newcommand \NOXXX[4]{#1}
