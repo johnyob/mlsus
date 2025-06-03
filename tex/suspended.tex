@@ -1172,7 +1172,7 @@ that we can give an explanation of each constraint-former in our
 mathematical meta-language that is reasonably simple and declarative.
 This specification is essential for proving properties of type inference,
 such as the soundness and completeness of the constraint generator---as well
-as for reasoning about the correctness of the solver. 
+as for reasoning about the correctness of the solver.
 
 % Example
 
@@ -1205,7 +1205,7 @@ is to propose the following rule---henceforth referred to as the
 This rule states that a suspended constraint is satisfied by $\semenv$
 whenever $\semenv$ resolves $\t$ to a non-variable type with
 some shape $\sh$, with a corresponding substitution $\theta$ for its
-subcomponents. 
+subcomponents.
 The match case $f(\sh)$ is then checked for satisfiability under an environment
 restricted to the closure context~$\D$, denoted $\semenv_{\mid \D}$, extended
 with the shape binding substitution $\theta$. In effect, $\sh$ supplies the
@@ -1317,14 +1317,14 @@ shape $\sh$, provided the constraint context $\C$ determines $\tv$ to have
 precisely this shape. The side-condition $\Cshape \C \tv \sh$ ensures this
 precisely: it expresses that the context $\C$ constrains all
 the solutions of $\tv$ to have the \emph{same} shape $\sh$, modulo
-$\alpha$-equivalence of shapes. The 
+$\alpha$-equivalence of shapes. The
 formal definition of this condition, which is somewhat technical, will be
 introduced later.
 
 In other words, we can \emph{discover}\Xdidier{Was \emph{guess} but this is
-not the correct word, you do not guess in our sense, since there is no other 
+not the correct word, you do not guess in our sense, since there is no other
 choice even better we are force to make this choice. (\emph{use} would also
-be possible but I prefer \emph{doscover}} a shape, as in the natural semantics, 
+be possible but I prefer \emph{doscover}} a shape, as in the natural semantics,
 but only if ambient constraint context $\C[\square]$ guarantees that
 there is a unique possible shape.\Xdidier {was: a unique shape to guess.}
 % Examples
@@ -1438,7 +1438,7 @@ satisfying assignment.
 \begin{definition}
   A type variable $\tv$ has a \emph{uniquely known} shape within the context
   $\C[\square]$, written $\Cshape \C \tv \sh$, iff for all assignments
-  $\semenv$ and shapes 
+  $\semenv$ and shapes
   $\shp$, then $\semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp]$ implies
   that $\sh$ and $\shp$ are equal modulo alpha equivalence.
 %
@@ -1554,7 +1554,7 @@ from the interaction of suspended constraints and let-abstractions.
 
 \Xdidier {Can you also have backpropagation for tuples and polytypes?}
 A further subtle---but crucial---feature of our semantics is its support for
-\emph{backpropagation}. 
+\emph{backpropagation}.
 %
 \Geninst-directional inference, as exemplified by \OCaml, performs inference
 in a strictly let-directional manner:
@@ -1568,7 +1568,7 @@ prevents information from later use sites from influencing the generalised
 type--this is why polymorphic type information is considered `known'.
 
 \Xdidier{Then, it should be added to the intro to criticize the \OCaml approach.}
-For example, the following program is rejected by \OCaml: 
+For example, the following program is rejected by \OCaml:
 \begin{program}[input]
   let e$_{11}$ = let f r = r.x in f ({ x = 1; y = 1 })
 \end{program}
@@ -1869,7 +1869,7 @@ use as a specification is itself an interesting problem!
 % Why is it hard? Examples of prev work:
 
 \Xdidier {This paragraph is repeating (or should be added to) the
-introduction} 
+introduction}
 Much work has been done on various extensions of \ML with features such as
 static overloading \citep{TODO} and first-class polymorphism
 \citep{TODO}. However, many of these approaches either fail to ensure
@@ -1993,7 +1993,7 @@ pragmatic tradeoff in \cref{sec:implementation}.
 In \cref {fig/syntax}, we give the grammar for our calculus. Terms include
 all of the \ML calculus: variables $x$, the unit literal $\eunit$,
 lambda-abstractions $\efun x e$, applications $\eapp \eone \etwo$,
-annotations $(e 
+annotations $(e
 : \t)$ and let-bindings $\elet x \eone \etwo$. Our extensions include:
 \begin{enumerate}
 \item
@@ -2248,7 +2248,7 @@ Shapes are one of the following form:
 \begin{mathpar}
 \begin{bnfgrammar}[\def \and {\wide\mid}]
 \entry{\sh}{
-       \tunit 
+       \tunit
   \and \tva \to \tvb
   \and \Pi\iton \tvs
   \and \tvs \F
@@ -2321,10 +2321,10 @@ to be determined from the context or the expression:
 {\begin{tabular}{RCL}
 \eshape E \e \sh \Eqdef
   \forall \G, \t, \tp, \uad
-  \G \th E \where {\ecast \e \typ \typp} : \t \implies \shape(\typ).1 = \sh
+  \G \th E \where {\ecast \e \typ \typp} : \t \wedge \shape(\typ) \downarrow \implies \shape(\typ).1 = \sh
 \\[1ex]
 \Eshape E \e \sh \Eqdef
-  \forall \G, \t, \tp, \uad  \G \th E\where{\ecast \e \typ \typp} : \t \implies
+  \forall \G, \t, \tp, \uad  \G \th E\where{\ecast \e \typ \typp} : \t \wedge \shape(\typp) \downarrow \implies
   \shape(\typp).1 = \sh
 \end{tabular}}
 \end{mathpar}
@@ -2356,7 +2356,7 @@ whether in record projection ($\efield e \elab$) or record construction
 provides the surrounding context in which a label $\elab$ appears, and we require
 that the record type $\F$ associated with $\elab$ is uniquely determined.
 This is expressed by the judgment $\Lshape \Lab \elab \F$, where
-the context $\Lab$ is as follows: 
+the context $\Lab$ is as follows:
 \begin{mathpar}
 \begin{bnfgrammar}
 \entry [Label contexts]{\Lab}{
@@ -2626,8 +2626,8 @@ This will force $\x$ to be a product, and therefore a pair.
 $\G \th \E[\exfield \e n j] : \t$ premise but the $\eshape \E \e \sh$
 premise}
 \Xdidier{The right-hand side above is an attempt to replace the $\eshape \E
-\e \sh$, but I agree that this is likely not the right direction} 
- 
+\e \sh$, but I agree that this is likely not the right direction}
+
 Hoverver, I think the correct solution is rather to formalize the fact that
 shape should be shared by all instances and that the constraint solver
 should know than, \ie you idea of using a mornomirphic higher-order function
@@ -2958,7 +2958,7 @@ $\all \tv\hasshape\varphi. \tv$.
 
 We should have a global final check that shape variables are uniquely
 solved. And the same kind of mechanism to move on by solving shapes when
-uniquely determined. 
+uniquely determined.
 
 The unknown shaped variables would be introduced for each occurrence of
 fragile construct. These shapes would get unified when two types are
