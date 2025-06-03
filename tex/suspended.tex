@@ -1552,6 +1552,7 @@ from the interaction of suspended constraints and let-abstractions.
 
 % Backpropagation
 
+\Xdidier {Can you also have backpropagation for tuples and polytypes?}
 A further subtle---but crucial---feature of our semantics is its support for
 \emph{backpropagation}. 
 %
@@ -2621,15 +2622,21 @@ I was suggesting to replace the premises of rule \Rule {Proj-I} by
 This will force $\x$ to be a product, and therefore a pair.
 (It might force us to infer more, however.)
 
-  \Xalistair{I don't think this would fix it, since the issue isn't with the $\G \th \E[\exfield \e n j] : \t$ premise but the $\eshape \E \e \sh$ premise}
-
+\Xalistair{I don't think this would fix it, since the issue isn't with the
+$\G \th \E[\exfield \e n j] : \t$ premise but the $\eshape \E \e \sh$
+premise}
+\Xdidier{The right-hand side above is an attempt to replace the $\eshape \E
+\e \sh$, but I agree that this is likely not the right direction} 
+ 
 Hoverver, I think the correct solution is rather to formalize the fact that
 shape should be shared by all instances and that the constraint solver
 should know than, \ie you idea of using a mornomirphic higher-order function
 applied to polymorphic type variables, since this is really the intuition.
 
-
+\Xdidier{Yet an other attempt}
 \begin{version}{\blue\True}
+If we used row variables to typecheck tuples, then an we could force
+the row variabe
 There is an easy solution for tuples label, which is to use row variables
 and request that the row variable be allocated at the toplevel.
 \end{version}
@@ -2908,6 +2915,61 @@ heuristics to refine it, a two-phase process. It's fine.}
 \label {appendix:wf}
 \TODO{Show weel-foundedness of the constraint definition}
 
+
+%%% Below this line will is a draft
+\Draft{}{\end{document}}\color{blue}
+
+\section{DRAFT: a later TODO  list}
+
+\paragraph {Recursive types}
+
+We should be clear about whether we allow or disallow recursive types.  It
+would be a plus to allow them. This should be easy since we are working with
+constraints. The only difficulty that I see is with polytypes, but there
+should be canonical forms for polytype skeletons, so their equality should
+be easily checkable (after put into normal form).
+
+\section{DRAFT: shape variables}
+
+This solution might be very close or equal to your high-rank approach (as I
+got the intuition, but never saw the details).
+
+I wonder if introducing shapes and shape variables in the language of
+constraints would not simultaneously simplify the presentation and enable
+backpropagation.
+
+We now claim that backpropagation works for record fields
+(because of a closed word approach I think), but they still do not work
+for structural tuples and polytypes, do they?
+
+I think we should make backpropagation to work---this is the whole idea of
+omnidirectional.
+
+By introducing shape variables, we may specify that the type of a structural
+tuple is a tuple of unknown size, that is of the form $\Pi\varphi \tys$
+where $\varpi$ is any tuple shape/type constructor, that should be
+introduced at the toplevel. This can be let-bound to a type scheme
+$\all \tvs \Pi\varphi \tys$ where $\varphi$ is being shared.
+
+What we need is to speak about a type that has a toplevel symbol of unknown
+arity. This could be presented by a variable constraint by a shape
+\newcommand{\hasshape}{::}
+$\all \tv\hasshape\varphi. \tv$.
+
+We should have a global final check that shape variables are uniquely
+solved. And the same kind of mechanism to move on by solving shapes when
+uniquely determined. 
+
+The unknown shaped variables would be introduced for each occurrence of
+fragile construct. These shapes would get unified when two types are
+unified.
+
+This should be closed to the idea you had. What don't we try to implement
+it. Since we already introduce shapes at the meta-level to explain
+constraint resolutions, we could as well introduce them at the concrete
+level in the syntax of constraints.
+
+
 \end{document}
 
 % LocalWords:  omnidirectional typecheck polymorphism Hindley Milner kinded
@@ -2915,4 +2977,4 @@ heuristics to refine it, a two-phase process. It's fine.}
 % LocalWords:  monomorphic subexpression Dunfield Riboulet jfla subtyping
 % LocalWords:  greek Chargueraud typable monotype polytype Garrigue Remy
 % LocalWords:  impredicative polytypes minimality RCL ary Proj toplevel
-% LocalWords:  typability
+% LocalWords:  typability backpropagation arity
