@@ -19,7 +19,7 @@
 
 \usepackage{marginnote}
 
-\title{Omnidirectional type inference: 
+\title{Omnidirectional type inference:
    principality revisited \\ for advanced \ML extensions
 }
 
@@ -160,7 +160,7 @@ Then, accessing field \ocaml{x} of a record is non-ambiguous, since
 \begin{program}[input]
 let e_0 r = r.x
 \end{program}
-Indeed, there is a unique solution that \ocaml$r$ be of type \ocaml$'a foo$. 
+Indeed, there is a unique solution that \ocaml$r$ be of type \ocaml$'a foo$.
 The user may then define another record with overlapping fields:
 \begin{program}[input]
 type two = {x : int; y : int}
@@ -183,7 +183,7 @@ let e_3 = (fun r -> r.x) {x = 1}
 \end{program}
 To be able to resolve the overloading, the type of the projection should be
 \emph{known} to be either (an instance of) \ocaml{'a one} or \ocaml{one}
-when typing the projection.  In the new context, expression 
+when typing the projection.  In the new context, expression
 \ocaml[indices]{e_1} is clearly ambiguous since there is no clue on the type
 of \ocaml{r} and its typechecking fails\footnote {In fact, \OCaml uses a
 default resolution strategy instead of failing when the type is ambiguous,
@@ -313,7 +313,7 @@ where it fails as ambiguous, while omnidirectional type inference
 has a view on the whole program and know from the body of the let-binding
 that the instance of $getx$ must have type \ocaml"int one -> int" and is
 therefore its let-bound type (scheme) should be \ocaml$'a one -> 'a$ and is
-non-ambiguous. 
+non-ambiguous.
 
 In \ocaml{e_8}, the only possible type is \ocaml{one} if we take into account
 the return of the projection. This illustrates case~\ref {item/info}.
@@ -408,7 +408,7 @@ a cost, which is that everything is hard:
   \emph{known} rather than \emph{guessed}, but also that some programs
   that are semantically non-ambiguous (there is a unique fully-annotated
   version that is well-tyedp) must still be rejected as ambiguous to prevent
-  us from looking into suspended constraints. 
+  us from looking into suspended constraints.
 \end{itemize}
 In return, we found that the declarative semantics of suspended constraints
 immediately suggests a systematic way to present user-facing typing rules
@@ -569,7 +569,7 @@ validate that the implementation is efficient for the moment.}
 \entry [Type constructors]{\Fapp}{
          \tunit
   \and   \cdot \tarrow \cdot
-  \and   \Pi\iton 
+  \and   \Pi\iton
   \and   \dots
 }\\
 \entry[Constraints]{\C}{
@@ -1160,8 +1160,24 @@ is done by \Rule {Susp-Ctx}, which then allows \Rule {Susp-Use} to fire.
 
 We need to be clearer about the abstract function $f$. In particular,
 they should dispach on the shape of there argument, that is such that
-the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent. 
+the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent.
+  \Xalistair{This last statement makes no sense -- $\semenv$ doesn't operate on constraints
+  or shapes (according the the above redefinition of shapes, since they're closed).}
 \hparenclose
+
+
+\Xalistair{I prefer this definition of shape wrt the guarentees it gives
+  about scoping. Yet, the constraint semantics are wrong. For instance, by permitting the
+  metafunction to operate on types, it is possible that the two constraints
+  $\cunif \tv \tint \tlist \cand \cmatch \tv {} f$ differs from $\cmatch {\tint \tlist} {} f$
+  since the latter would permit the meta-function to `deeply' match on the type while the former
+  doesn't. This is why shapes were open shallow types.}
+
+\Xalistair{Also I'm more in agreement with you that perhaps $f$ shouldn't be a metafunction anymore
+  but a list of constraint cases $\lambda \bar c$ where each case is a pattern $p \to \c$.
+  However, I tried defining a notion of pattern and realised they'd have to be very dependent (e.g. in tuples, we'd
+  need to be able to match on the size and index its subcomponents). Did you have a simple way to achieve this in
+  mind?}
 \end{version}
 
 
@@ -1179,7 +1195,7 @@ is to propose the following rule---henceforth referred to as the
   {\shape {\semenv(\tau)} \defined \\
    \semenv_{\mid \Delta} \th f(\t)}
   {\semenv \vdash \cmatch \tau \Delta f}
-}  
+}
 \end{mathpar}
 % Explain the rule
 This rule states that a suspended constraint is satisfied by $\semenv$
@@ -2360,6 +2376,7 @@ A nonvariable monotype can be uniquely decomposed into a pair $\exi \tvs
 \deshaped \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
 $\exi \tvs \tyz$ is the shape of $\t$.  We then write $\t = \exi \tvs
 {\deshaped \tyz \tys}$.
+
 \end{version}
 
 In order to describe the judgments $\eshape \E \e \sh$ and
@@ -2449,7 +2466,7 @@ subcases:
 \item
   in a record projection context $\E[\e.\elab]$, if the label $\elab$ is not
   overloaded, then the global record typing context $\labenv$ assigns a
-  unqiue record type $\F$ to $\elab$;  
+  unqiue record type $\F$ to $\elab$;
 
 \item
   in a record expression $\E [\erecord {\elab_1 = \eone; \ldots; \elab_n =
