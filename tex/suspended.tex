@@ -569,6 +569,7 @@ validate that the implementation is efficient for the moment.}
 \entry [Type constructors]{\Fapp}{
          \tunit
   \and   \cdot \tarrow \cdot
+  \and   \Pi\iton 
   \and   \dots
 }\\
 \entry[Constraints]{\C}{
@@ -655,13 +656,12 @@ the shape and binds underlying type variables $\tvs$ to types $\tys$?}
 
 \begin{mathparfig}[t]
 {fig:shape-fn-def}
-{Definition of $\shape(\t)$, a partial function from types to
+{Definition of $\shape \t$, a partial function from types to
 shape-substitution pairs $\langle \sh, \theta \rangle$}
-\shape(\tv) \eqdef
-    \bot
+\shape \tv \eqdef \bot
 
-\shape(\overline{\t} \Fapp) \eqdef
-        \langle \overline{\tv} \Fapp, [\overline{\tv := \t}] \rangle
+\shape {\tys \F} \eqdef
+        \angles {\tvs \F, \where {\tvs \is \tys}}
 \end{mathparfig}
 
 % Informal semantics
@@ -1039,6 +1039,7 @@ are discharged accordingly.
 \label{sec:semantics}
 
 % Judgement shape
+
 The semantics of constraints is given, as is standard, by a satisfiability
 judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied
 by the solution, or valuation, $\semenv$. The semantic environment $\semenv$
@@ -1138,14 +1139,47 @@ derivation:
 
 % Natural semantics
 
+\begin{version}{\blue\True}
+\hparenopen
+\Xdidier{Treatment of shapes:}
+The treatment of shapes is too informal with respect to free variables: a
+shape $\sh$ should be the generalization of a symbol to cope with
+polytypes. Hence it should be a closed term $\exi \tvs \tvs \F$ and not an
+open term. Then, we may define the decomposition of a type by a shape $\t /
+{\F}$ or $\t/ \exi \tvs \tvs \F$ as the types $\tys$ such that $\t = (\tvs
+\F)\where {\tvs \is \tys}$.  $f$ used in match clauses should be functions
+from types to constraints.  They should receive a type which they can
+decomposed by pattern matching.
+
+Below, I propose \Alt {alternative
+formulations in red} followingf these rules. I would prefer to write $\t ?
+[\D] f$ rather than $\cmatch \t \D f$ since it is $f$ that pattern matches
+on $\tv$ while $\t ? [\D] f$ just means wait until $\t$ is a non variable to
+fire the constraint. The replacement of $\tv$ by $\t$ in $\tv ? [\D] f$
+is done by \Rule {Susp-Ctx}, which then allows \Rule {Susp-Use} to fire.
+
+We need to be clearer about the abstract function $f$. In particular,
+they should dispach on the shape of there argument, that is such that
+the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent. 
+\hparenclose
+\end{version}
+
+
 To extend these semantics to our suspended constraints, a first natural idea
 is to propose the following rule---henceforth referred to as the
 \emph{natural semantics} of suspended constraints:
 \begin{mathpar}
   \infer[Susp-Nat]
-  {\shape(\semenv(\tau)) = \angles {\sh,\theta} \\
+  {\shape {\semenv(\tau)} = \angles {\sh,\theta} \\
    \semenv_{\mid \Delta}, \theta \vdash f(\sh)}
   {\semenv \vdash \cmatch \tau \Delta f}
+
+\Alt{
+\infer[Susp-Nat/Alt]
+  {\shape {\semenv(\tau)} \defined \\
+   \semenv_{\mid \Delta} \th f(\t)}
+  {\semenv \vdash \cmatch \tau \Delta f}
+}  
 \end{mathpar}
 % Explain the rule
 This rule states that a suspended constraint is satisfied by $\semenv$
@@ -1165,7 +1199,7 @@ For example, the constraint $\cexists \tv \cunif \tv \tint \cand \cmatch \tv
   \infer*[Right=Conj]
    {\infer*[Left=Unif]
     {\tint = \tint}{\cdot, \tv := \tint \vdash \cunif \tv \tint} \\
-    \infer*[Right=Susp-Nat]{\shape(\tint) = \angles {\tint, []} \\
+    \infer*[Right=Susp-Nat]{\shape \tint = \angles {\tint, []} \\
      \infer*{}{\cdot, \tv := \tint \vdash \ctrue}
     }
     {\cdot, \tv := \tint \vdash \cmatch \tv {} {(\lambda \wild.~ \ctrue)}}
@@ -1226,10 +1260,18 @@ the shape is \emph{known} from the surrounding context.
 First, we introduce a simplified variant of the natural rule (\Rule{Susp-Nat}):
 \begin{mathpar}
   \infer[Susp-Use]
-    {\shape(\t) = \angles {\sh, \theta} \\
+    {\shape \t = \angles {\sh, \theta} \\
      \semenv_{\mid \Delta}, \semenv(\theta) \vdash f(\sh)
     }
     {\semenv \vdash \cmatch \t \Delta f}
+
+\Alt {
+  \infer[Susp-Use/Alt]
+    {\shape \t \defined \\
+     \semenv_{\mid \Delta}  \th f(\semenv (\t))
+    }
+    {\semenv \vdash \cmatch \t \Delta f}
+}
 \end{mathpar}
 Here, the rule \Rule{Susp-Use} only applies when $\tau$ already has a shape.
 Unlike the natural rule, which takes the shape of $\semenv(\tau)$, which may
@@ -1248,8 +1290,8 @@ subcase, hence a shortcut for telling the story and writing derivations.}
 
 % Contextual rule
 
-The key innovation of the contextual semantics lies in the following rule, which---unlike
-the others---is not syntax-directed:
+The key innovation of the contextual semantics lies in the following rule,
+which---unlike the others---is not syntax-directed:
 \begin{mathpar}
   \infer[Susp-Ctx]
     {\Cshape \C \tv \sh \\
@@ -1257,6 +1299,15 @@ the others---is not syntax-directed:
       \cmatch \sh \Delta f]
     }
     {\semenv \vdash \C[\cmatch \tv \Delta f]}
+
+\Alt{
+  \infer[Susp-Ctx]
+    {\Cshape \C \tv {\exi \tvs \sh} \\
+      \semenv \th
+         \C \where {\cexists \tvs \cunif \tva \sh \cand \cmatch \sh \Delta f}
+    }
+    {\semenv \vdash \C \where {\cmatch \tv \Delta f}}
+}
 \end{mathpar}
 This rule lets us substitute the matchee variable $\tv$ by a more defined
 shape $\sh$, provided the constraint context $\C$ determines $\tv$ to have
@@ -1277,7 +1328,7 @@ there is a unique possible shape.\Xdidier {was: a unique shape to guess.}
 We illustrate the contextual semantics for suspended constraints
 with a series of examples.
 \begin{example}
-Consider the two examples from before:\Xdidier{from above?}
+Consider the two examples from above:
 \begin{mathpar}
 \exists \tv. \tv = \tint
   \cand
@@ -1608,10 +1659,18 @@ we collect all the rules pertaining to the satisfiability judgement in
     {\semenv \vdash \cinst x \t}
 
   \infer[Susp-Use]
-    {\shape(\t) = \angles {\sh, \theta} \\
+    {\shape \t = \angles {\sh, \theta} \\
      \semenv_{\mid \Delta}, \semenv(\theta) \vdash f(\sh)
     }
     {\semenv \vdash \cmatch \t \Delta f}
+
+\Alt{
+  \infer[Susp-Use]
+    {\shape \t \defined \\
+     \semenv_{\mid \Delta} \th f(\semenv \semenv \t)
+    }
+    {\semenv \vdash \cmatch \t \Delta f}
+}
 
   \infer[Susp-Ctx]
     {\Cshape \C \tv \sh \\\\
@@ -1619,11 +1678,25 @@ we collect all the rules pertaining to the satisfiability judgement in
       \cmatch \sh \Delta f]
     }
     {\semenv \vdash \C[\cmatch \tv \Delta f]}
-  \\
 
+\Alt{
+  \infer[Susp-Ctx]
+    {\Cshape \C \tv \sh \\\\
+      \semenv \vdash \C[\cexists {\fvs \sh} \cunif \tv \sh \cand
+      \cmatch \sh \Delta f]
+    }
+    {\semenv \vdash \C[\cmatch \tv \Delta f]}
+}
+\\
+\Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \shp, \uad
+      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies
+            \sh =_{\setminus \alpha} \shp
+
+\Alt{
   \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \shp, \uad
       \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies
             \sh =_{\setminus \alpha} \shp
+}
 \end{mathparfig}
 
 % Contextual semantics is cool, and our approach extends to type systems
@@ -1797,6 +1870,8 @@ the the global rule is added, the derivations of this judgment are not
 syntactically directed by $\c$ anymore.
 
 \end{version}
+
+
 \section{The language}
 \label{sec:language}
 
@@ -1887,7 +1962,7 @@ constrain the shape of $e$'s type as a tuple of size $n$.
 
 % Limitations
 
-The cheif limitation of our approach is that disambiguation can still
+The chief limitation of our approach is that disambiguation can still
 require explicit annotations in inherently ambiguous scenarios.  This is
 fine. Another option would be the use of sensible ``defaults'', such as
 resolving $\efield e j$ by assuming the tuple has arity $j$. While
@@ -2108,13 +2183,11 @@ variables to ``float around''.)
     {\mlsub \ts {\tfor \tv \tsp}}
 \end{mathparfig}
 
-As usual, the typing judgment $\G \th \e : \ts$ states that in context
+As usual, the main typing judgment $\G \th \e : \ts$ states that in context
 $\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on
-\cref {fig/typing}.
-
-\Xdidier{The are  also judgments $\G \th \ell : \ts$
-and $\G \th \ell = e : \ts$ where $\ell$ and $\ell = \e$ are not expressions
-and a judgment $\mlsub \ts \tsp$.}
+\cref {fig/typing}.  They use auxiliary typing judgemnents $\G \th \elab :
+\ts$ and $\G \th \elab = \e : \ts$ and an instance typing judgement
+$\mlsub [\G] \ts \tsp$.
 
 % Simple typing rules explained
 
@@ -2174,7 +2247,7 @@ the term $(\efun x x + 1 : \exi \tv
 
 % Contextual rules (Poly-*, Use-*, Proj-*)
 
-\subsection {Advanved typing}
+\subsection {Shape-aware typing rules}
 
 The typing rules for fully annotated terms ($\e^x$) are unsurprising.
 However, typing rules for terms with omitted type annotations are
@@ -2190,6 +2263,9 @@ context, either from the type of the expression, which we write $\eshape \E
 \e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
 
 % Shapes
+
+\paragraph{Shapes -- old definition}
+
 Shapes are one of the following form:
 \begin{mathpar}
 \begin{bnfgrammar}[\def \and {\wide\mid}]
@@ -2205,9 +2281,10 @@ Shapes are one of the following form:
 \Xalistair{This syntax is a bit odd for polytypes as no other shape quantifies
 over its monomorphic part}\Xdidier{Initially, shapes where just
 constructors for me---not shallow terms}\Xdidier{The syntax is not enough:
-we should ensure that all type variables are disjoint, \ie. shape are
+we should ensure that all type variables are disjoint, so that shapes are
 equivalent to constructors..., even for polytypes thanks to the existence of
-a canonical representation}
+a canonical representation.}\Xdidier {Shapes should be closed, or we should
+be clearer with $\alpha$-conversion.}
 
 The shape of a variable is undefined (as in \cref{fig:shape-fn-def-typing}).
 The shape of the unit type $\tunit$ is $\tunit$. Monotypes that contain
@@ -2226,29 +2303,64 @@ $\ftv \ts$ of $\ts$. The minimality condition is equivalent to the fact that
 any suffix of a non-variable node in $\t$ leads to a polymorphic type
 variable, \ie a variable in $\tvbs$.
 %
-When $\exi \tvs \tpoly \ts$ is a polytype skeleton, we write $\cpoly \tys \ts$ for
-the polytype $\tpoly \ts \where {\tvs \is \tys}$.
+When $\exi \tvs \tpoly \ts$ is a polytype skeleton, we write $\cpoly \tys
+\ts$ for the polytype $\tpoly \ts \where {\tvs \is \tys}$.
 
 \begin{mathparfig}[t]
 {fig:shape-fn-def-typing}
-{Definition of $\shape(\t)$, a partial function from types to
+{Definition of $\shape \t$, a partial function from types to
 shape-substitution pairs $\langle \sh, \theta \rangle$, extended for all
 types defined in the calculus}
-  \shape(\tv) \eqdef \bot
+  \shape \tv \eqdef \bot
 
-  \shape(1) \eqdef 1
+  \shape 1 \eqdef 1
 
-  \shape(\t \to \tp) \eqdef \langle \tv \to \tv', [\tv := \t, \tv' := \tp] \rangle
+  \shape {\t \to \tp} \eqdef
+      \angles {\tv \to \tv', \where {\tv \is \t, \tv' \is \tp}}
 
-  \shape(\Pi\iton \tys) \eqdef \langle \Pi\iton \tvs, \where {\tvs := \tys} \rangle
+  \shape {\Pi\iton \tys} \eqdef
+      \angles {\Pi\iton \tvs, \where {\tvs \is \tys}}
 
-  \shape(\tys \Fapp) \eqdef
-	\langle \tvs \Fapp, \where {\tvs := \tys} \rangle
+  \shape {\tys \F} \eqdef
+      \angles {\tvs \F, \where {\tvs \is \tys}}
 
-  \shape(\tpoly \ts) \eqdef \langle \exi \tvs \tpoly \ts, \where {\tvs := \tys} \rangle
+  \shape {\tpoly \ts} \eqdef
+      \angles {\exi \tvs \tpoly \ts, \where {\tvs \is \tys}}
 \end{mathparfig}
 
 \Xalistair{I feel the definition for $\tpoly \ts$ is not formal enough}
+
+
+\begin{version}{\True}
+
+\subsection*{Shapes -- new definition}
+
+\blue
+
+We define the shape of a type $\t$ as a generalization of the notion of type
+constructor $\F$ to cope with polytypes. For that reason, we represent
+shapes as existentially quantified shallow linear types $\exi \tvs \t$.
+where $\tvs$ are the free variables of $\t$ and $\t$ is linear, \ie.  each
+type variable $\tv$ in $\tvs$ occurs eactly only once in $\t$, and $\t$ is a
+shallow type.  A shallow type that is not a polytype is one whose subterms
+are all variables.  A shallow polytype $\tpoly {\all \tvs \t}$ is such that
+all subterms that do not lead to a variable in $\tvs$ are variables.  The
+shape of a variable is undefined (which we write $\shape \t = \bot$).
+The shape of nonvarianle terms is is uniquely determined (up to
+$\alpha$-renaming, indeed).
+
+For example, the shape of a type $\tys \F$ is $\exi \tvs \tvs \F$ where
+$\tvs$ is a tuple of disjoint variables of length the arity of $\F$.  The
+shape of $\tpoly {\all \tv {(\tv \to \tv) \to \tvb \to \tvb}}$ is $\exi \tvb
+{\tpoly {\all \tv {(\tv \to \tv) \to \tvbp}}}$.  The shape is defined up to
+the ordering of quantifiers. We may require $\tvs$ to be be in their order
+of appearance in $\t$.
+
+A nonvariable monotype can be uniquely decomposed into a pair $\exi \tvs
+\deshaped \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
+$\exi \tvs \tyz$ is the shape of $\t$.  We then write $\t = \exi \tvs
+{\deshaped \tyz \tys}$.
+\end{version}
 
 In order to describe the judgments $\eshape \E \e \sh$ and
 $\Eshape \E \e \sh$, we introduce a cast operation $\ecast \e \t \tp$
@@ -2267,11 +2379,13 @@ to be determined from the context or the expression:
 {\begin{tabular}{RCL}
 \eshape E \e \sh \Eqdef
   \forall \G, \t, \tp, \uad
-  \G \th E \where {\ecast \e \typ \typp} : \t \wedge \shape(\typ) \downarrow \implies \shape(\typ).1 = \sh
+  \G \th E \where {\ecast \e \typ \typp} : \t \wedge \shape \typ \downarrow
+  \implies \shape \typ.1 = \sh
 \\[1ex]
 \Eshape E \e \sh \Eqdef
-  \forall \G, \t, \tp, \uad  \G \th E\where{\ecast \e \typ \typp} : \t \wedge \shape(\typp) \downarrow \implies
-  \shape(\typp).1 = \sh
+  \forall \G, \t, \tp, \uad
+      \G \th E\where{\ecast \e \typ \typp} : \t \wedge \shape \typp \downarrow
+      \implies \shape \typp.1 = \sh
 \end{tabular}}
 \end{mathpar}
 These states that the shape $\sh$ of expression $\e$ in context $\E$ is
@@ -2334,23 +2448,21 @@ subcases:
 \begin{enumerate*}
 \item
   in a record projection context $\E[\e.\elab]$, if the label $\elab$ is not
-  overloaded, then the (record) typing context $\D$ assigns a unqiue record
-  type $\F$ to $\elab$;  \Xdidier {What is a record typing contexte
-  $]D$?---I don't understand the rules below: why not use $\G$? How is
-  $\D$ related to $\E$ and $\e$?}
+  overloaded, then the global record typing context $\labenv$ assigns a
+  unqiue record type $\F$ to $\elab$;  
 
 \item
   in a record expression $\E [\erecord {\elab_1 = \eone; \ldots; \elab_n =
   \en}]$, if the set of labels ${ \elab_1, \ldots, \elab_n }$ uniquely
-  identifies a record type $\F$ in the typing context $\D$.
+  identifies a record type $\F$ in the typing context $\labenv$.
 \end{enumerate*}
 \begin{mathpar}
   \infer[Lab-Uniq-Proj]
-    {\elab \mathop{!} \F \in  \Delta}
+    {\elab \mathop{!} \F \in  \labenv}
     {\eshape {\E[\e.\square]} \elab \F}
 
   \infer[Lab-Uniq-Rcd]
-    {\bar \elab \mathop{!} \F \in \Delta}
+    {\bar \elab \mathop{!} \F \in \labenv}
     {\eshape
       {\E[\erecord
             {\elaba = \eone; \ldots; \square = \ei; \ldots;  \elab_n = \en }]}
@@ -2368,7 +2480,7 @@ position may be instantiated to a function type $\tp \to \t$:
 
 \Eshape \Lab \elab \F \Wide\eqdef
    \forall \G, \t, \tp, \G \th \Lab[\square : \tp] : \t \implies
-        \shape(\tp).1 = \tvs \F
+        \shape \tp.1 = \tvs \F
 \end{mathpar}
 
 % Contexts can be the entire term
@@ -2554,7 +2666,7 @@ for $\emptyset \th \E[\ecast \x \tva \tvb] : \tunit$:
       {f : \tfor {\tva, \tvb} \tva \to \tvb \th \eapp f (1, 2) : \tunit}}
     {\emptyset \th \elet f {\efun \x {\ecast \x \tva \tvb}} {\eapp f (1, 2)} : \tunit}
 \end{mathpar}
-Yet $\shape(\alpha).1 = \sbot$.
+Yet $\shape \tv.1 = \sbot$.
 \end{example}
 \Xdidier{Yes, I found this problem, but lost my text had been lost in the
 big merge (change of hierarchy): I was proposing the following as a fix}
