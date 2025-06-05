@@ -1161,12 +1161,10 @@ is done by \Rule {Susp-Ctx}, which then allows \Rule {Susp-Use} to fire.
 We need to be clearer about the abstract function $f$. In particular,
 they should dispach on the shape of there argument, that is such that
 the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent. 
-\end{hparens}
-
-the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent.
-  \Xalistair{This last statement makes no sense -- $\semenv$ doesn't operate on constraints
-  or shapes (according the the above redefinition of shapes, since they're closed).}
-\hparenclose
+\Xalistair
+  {This last statement makes no sense -- $\semenv$ doesn't operate on
+  constraints or shapes (according the the above redefinition of shapes,
+  since they're closed).}
 
 \Xalistair{I prefer this definition of shape wrt the guarentees it gives
   about scoping. Yet, the constraint semantics are wrong. For instance, by
@@ -1183,6 +1181,7 @@ the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent.
   realised they'd have to be very dependent (e.g. in tuples, we'd need to be
   able to match on the size and index its subcomponents). Did you have a
   simple way to achieve this in mind?}
+\end{hparens}
 \end{version}
 
 
