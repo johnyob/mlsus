@@ -1165,6 +1165,10 @@ the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent.
   {This last statement makes no sense -- $\semenv$ doesn't operate on
   constraints or shapes (according the the above redefinition of shapes,
   since they're closed).}
+\Xdidier
+  {Ah, I see: ground types ground types are not a subset of types?
+   Still, this is the idea though. Maybe we can stil extract a subsitution,
+   as before while keeping the new definitio of shapes.}
 
 \Xalistair{I prefer this definition of shape wrt the guarentees it gives
   about scoping. Yet, the constraint semantics are wrong. For instance, by
@@ -1173,6 +1177,10 @@ the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent.
   from $\cmatch {\tint \tlist} {} f$ since the latter would permit the
   meta-function to `deeply' match on the type while the former doesn't. This
   is why shapes were open shallow types.}
+\Xdidier
+  {I requested opaque functions to be \emph{parametric}---which should be
+   defined. But this was this idea to force them to not be able to look
+   deeper.}
 
 \Xalistair {Also I'm more in agreement with you that perhaps $f$ shouldn't
   be a metafunction anymore
