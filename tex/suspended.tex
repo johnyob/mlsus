@@ -1160,7 +1160,7 @@ is done by \Rule {Susp-Ctx}, which then allows \Rule {Susp-Use} to fire.
 
 We need to be clearer about the abstract function $f$. In particular,
 they should dispach on the shape of there argument, that is such that
-the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent. 
+the constraints $f (\semenv (\sh))$ and $\semenv (f (\sh))$ are equivalent. 
 \Xalistair
   {This last statement makes no sense -- $\semenv$ doesn't operate on
   constraints or shapes (according the the above redefinition of shapes,
@@ -1203,9 +1203,16 @@ is to propose the following rule---henceforth referred to as the
   {\semenv \vdash \cmatch \tau \Delta f}
 
 \Alt{
-\infer[Susp-Nat/Alt]
+\infer[Susp-Nat/Alt1]
   {\shape {\semenv(\tau)} \Defined \\
    \semenv_{\mid \Delta} \th f(\t)}
+  {\semenv \vdash \cmatch \tau \Delta f}
+}
+
+\Alt{
+\infer[Susp-Nat/Alt2]
+  {\shape {\semenv(\tau)} = \exi \tvs {\deshaped \typ \tys} \\
+   \semenv_{\mid \Delta}, \tvs \is \tys \th f(\tp)}
   {\semenv \vdash \cmatch \tau \Delta f}
 }
 \end{mathpar}
@@ -1294,9 +1301,17 @@ First, we introduce a simplified variant of the natural rule (\Rule{Susp-Nat}):
     {\semenv \vdash \cmatch \t \Delta f}
 
 \Alt {
-  \infer[Susp-Use/Alt]
+  \infer[Susp-Use/Alt1]
     {\shape \t \Defined \\
      \semenv_{\mid \Delta}  \th f(\semenv (\t))
+    }
+    {\semenv \vdash \cmatch \t \Delta f}
+}
+
+\Alt {
+  \infer[Susp-Use/Alt2]
+    {\shape {\semenv(\tau)} = \exi \tvs {\deshaped \typ \tys} \\
+     \semenv_{\mid \Delta},\tvs \is \tys  \th f(\tp)
     }
     {\semenv \vdash \cmatch \t \Delta f}
 }

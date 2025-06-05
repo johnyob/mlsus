@@ -6,12 +6,17 @@
         \leaders \hrule height\hparen@size \hfill #3%
         \leaders \hrule height\hparen@size \hfill \kern \z@%
         \hparen@end {#1}{#2}}}}
+
 \newcommand {\hparenopen}[1][]
-    {\vskip -\smallskipamount 
-     \hparen@line 10{#1}\ignorespaces}
+    {%\vskip -\smallskipamount
+     \par \nobreak
+     %% \noindent\nobreak
+     \hparen@line 10{#1}\par\nobreak \smallskip\nobreak
+     \ignorespaces}
 
 \newcommand {\hparenclose}[1][]
-    {\nobreak \vskip -\smallskipamount \nobreak 
-     \hparen@line 01{#1}\smallskip}
+    {%\nobreak \vskip -\smallskipamount \nobreak
+     \par\nobreak
+     \noindent \hparen@line 01{#1}\par\smallskip\ignorespaces}
 
 \newenvironment{hparens}{\hparenopen}{\hparenclose}
