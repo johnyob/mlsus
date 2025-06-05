@@ -1140,7 +1140,7 @@ derivation:
 % Natural semantics
 
 \begin{version}{\blue\True}
-\hparenopen
+\begin{hparens}
 \Xdidier{Treatment of shapes:}
 The treatment of shapes is too informal with respect to free variables: a
 shape $\sh$ should be the generalization of a symbol to cope with
@@ -1161,7 +1161,7 @@ is done by \Rule {Susp-Ctx}, which then allows \Rule {Susp-Use} to fire.
 We need to be clearer about the abstract function $f$. In particular,
 they should dispach on the shape of there argument, that is such that
 the constraints $f (\semenv \sh)$ and $\semenv (f (\sh))$ are equivalent. 
-\hparenclose
+\end{hparens}
 \end{version}
 
 
@@ -1176,7 +1176,7 @@ is to propose the following rule---henceforth referred to as the
 
 \Alt{
 \infer[Susp-Nat/Alt]
-  {\shape {\semenv(\tau)} \defined \\
+  {\shape {\semenv(\tau)} \Defined \\
    \semenv_{\mid \Delta} \th f(\t)}
   {\semenv \vdash \cmatch \tau \Delta f}
 }  
@@ -1267,7 +1267,7 @@ First, we introduce a simplified variant of the natural rule (\Rule{Susp-Nat}):
 
 \Alt {
   \infer[Susp-Use/Alt]
-    {\shape \t \defined \\
+    {\shape \t \Defined \\
      \semenv_{\mid \Delta}  \th f(\semenv (\t))
     }
     {\semenv \vdash \cmatch \t \Delta f}
@@ -1666,7 +1666,7 @@ we collect all the rules pertaining to the satisfiability judgement in
 
 \Alt{
   \infer[Susp-Use]
-    {\shape \t \defined \\
+    {\shape \t \Defined \\
      \semenv_{\mid \Delta} \th f(\semenv \semenv \t)
     }
     {\semenv \vdash \cmatch \t \Delta f}
@@ -2264,8 +2264,13 @@ context, either from the type of the expression, which we write $\eshape \E
 
 % Shapes
 
-\paragraph{Shapes -- old definition}
+%% exchange the boolean definition to see the old definition
 
+\newcommand{\ShapesNewVersion}{\True}%\False
+
+\paragraph{Shapes\ShapesNewVersion{}{--- old definition}}
+
+\begin{version}{\Not\ShapesNewVersion}
 Shapes are one of the following form:
 \begin{mathpar}
 \begin{bnfgrammar}[\def \and {\wide\mid}]
@@ -2330,25 +2335,36 @@ types defined in the calculus}
 
 \Xalistair{I feel the definition for $\tpoly \ts$ is not formal enough}
 
-
+\end{version}
 \begin{version}{\True}
+We use letter $\sh$ to range over shapes, which are a generalization of the
+notion of type constructor $\F$ to cope with polytypes.  As shape is an
+existentially closed quantified linear shallow type type $\exi \tvs \t$.
+That is,
+\begin{itemize}
 
-\subsection*{Shapes -- new definition}
+\item
+  $\tvs$  $\tvs$ are the free variables of $\t$
 
-\blue
+\item
+  $\t$ is linear, \ie each type variable $\tv$ in $\tvs$ occurs eactly only
+  once in $\t$,
 
-We define the shape of a type $\t$ as a generalization of the notion of type
-constructor $\F$ to cope with polytypes. For that reason, we represent
-shapes as existentially quantified shallow linear types $\exi \tvs \t$.
-where $\tvs$ are the free variables of $\t$ and $\t$ is linear, \ie.  each
-type variable $\tv$ in $\tvs$ occurs eactly only once in $\t$, and $\t$ is a
-shallow type.  A shallow type that is not a polytype is one whose subterms
-are all variables.  A shallow polytype $\tpoly {\all \tvs \t}$ is such that
-all subterms that do not lead to a variable in $\tvs$ are variables.  The
-shape of a variable is undefined (which we write $\shape \t = \bot$).
-The shape of nonvarianle terms is is uniquely determined (up to
-$\alpha$-renaming, indeed).
+\item
+  $\t$ is shallow, which means the following:
+\begin{itemize}
 
+\item 
+  when $\t$ is not a polytype, all subterms of $\t$ are variables.
+
+\item
+  when $\t$ is a polytype $\tpoly {\all \tvbs \tsp}$, then all subterms of
+  $\tsp$ that do not lead to a polymorphic variable $\tvb$ in $\tvbs$
+  are a variable in $\tvs$.
+
+\end{itemize}
+
+\end{itemize}
 For example, the shape of a type $\tys \F$ is $\exi \tvs \tvs \F$ where
 $\tvs$ is a tuple of disjoint variables of length the arity of $\F$.  The
 shape of $\tpoly {\all \tv {(\tv \to \tv) \to \tvb \to \tvb}}$ is $\exi \tvb
@@ -2356,47 +2372,56 @@ shape of $\tpoly {\all \tv {(\tv \to \tv) \to \tvb \to \tvb}}$ is $\exi \tvb
 the ordering of quantifiers. We may require $\tvs$ to be be in their order
 of appearance in $\t$.
 
+The shape of a variable is undefined and we write $\shape \t = \bot$ or
+$\shape \t \Undefined$.  The shape of a nonvariable monotype $\t$ is always
+defined, which we write $\shape \t \Defined$ and is unique up
+$\alpha$-renaming. We may then write $\shape \t = \sh$. 
+
 A nonvariable monotype can be uniquely decomposed into a pair $\exi \tvs
 \deshaped \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
 $\exi \tvs \tyz$ is the shape of $\t$.  We then write $\t = \exi \tvs
 {\deshaped \tyz \tys}$.
 \end{version}
 
+\paragraph {Unavoidable shapes}
+
 In order to describe the judgments $\eshape \E \e \sh$ and
 $\Eshape \E \e \sh$, we introduce a cast operation $\ecast \e \t \tp$
-which allows an expression $\e$ of type $\t$ to be seen with type $\tp$.
-That is the typing rule for casts is
+that allows an expression $\e$ of type $\t$ to be seen with type $\tp$.
+That is the typing rule for casts is:
 \begin{mathpar}
   \inferrule[Cast]
     {\G \th e : \t}
     {\G \th \ecast e \t \tp : \tp}
 \end{mathpar}
-Casts are not allowed on source terms and are just a device for the
-definition of unavoidable shapes. Finally, we define it means for a shape
-to be determined from the context or the expression:
+Casts expressions are not allowed on source terms and are just a device for
+the definition of unavoidable shapes.  Finally, we define what it means for a
+shape to be determined from the type of a context or an expression:
 \begin{mathpar}
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
 \eshape E \e \sh \Eqdef
   \forall \G, \t, \tp, \uad
   \G \th E \where {\ecast \e \typ \typp} : \t \wedge \shape \typ \downarrow
-  \implies \shape \typ.1 = \sh
+      \wide\implies \shape \typ = \sh
 \\[1ex]
 \Eshape E \e \sh \Eqdef
   \forall \G, \t, \tp, \uad
       \G \th E\where{\ecast \e \typ \typp} : \t \wedge \shape \typp \downarrow
-      \implies \shape \typp.1 = \sh
+      \wide\implies \shape \typp = \sh
 \end{tabular}}
 \end{mathpar}
 These states that the shape $\sh$ of expression $\e$ in context $\E$ is
 determined by the expression $\e$, in the former case, or by the context
 $\E$ in the latter case.
 
-Shapes are equal modulo alpha equivalence and the removal of useless
-polymorphic type variables. They do not have useless existential variables.
+%% Shapes are equal modulo alpha equivalence and the removal of useless
+%% polymorphic type variables. They do not have useless existential variables.
 
+\paragraph {Structural tuples and polytypes}
 
 % Expression-based implicit rules
+
 The implicit rule \Rule{Proj-I} types the projection $\eproj \e j$ provided the
 context $\E$ \emph{infers} that the shape of $\e$ must be a tuple with arity $n$.
 Similarly, \Rule{Use-I} permits instantiating a polytype in $\einst e$ if
@@ -2408,15 +2433,15 @@ differs from the previous two as the shape is determined by the expected type
 within the context as opposed to the inferred type of $\e$.
 
 
+\paragraph {Nominal records}
+
 % Labels
 
 We adopt a similar non-compositional approach for elaborating overloaded labels,
 whether in record projection ($\efield e \elab$) or record construction
-($\erecord {\overline{\elab = \e}}$). Here, a one-hole label context $\Lab$
-provides the surrounding context in which a label $\elab$ appears, and we require
-that the record type $\F$ associated with $\elab$ is uniquely determined.
-This is expressed by the judgment $\Lshape \Lab \elab \F$, where
-the context $\Lab$ is as follows:
+($\erecord {\overline{\elab = \e}}$), although the definitions are slighly
+more involved.  Here, a one-hole label context $\Lab$
+provides the surrounding context in which a label $\elab$ may appear: 
 \begin{mathpar}
 \begin{bnfgrammar}
 \entry [Label contexts]{\Lab}{
@@ -2428,12 +2453,14 @@ the context $\Lab$ is as follows:
 }
 \end{bnfgrammar}
 \end{mathpar}
-The judgement $\Lshape \Lab \elab \F$holds if either:
+We then require that the record type $\F$ associated with $\elab$ is
+uniquely determined.  This is expressed by the judgment $\Lshape \Lab \elab
+\F$, which holds if either:
 \begin{enumerate*}
-\item
+\item \label{enum/lab/1}
   the label $\elab$ can be uniquely resolved to a record type $\F$ in the
   typing context, written $\eshape \Lab {\elab ~} \F$;
-\item
+\item \label{enum/lab/2}
   the context $\Lab$ infers that $\elab$ must be instantiated to the record
   type $\tys \Fapp$, written $\Eshape \Lab \elab \F$.
 \end{enumerate*}
@@ -2442,10 +2469,10 @@ We thus define:
   \Lshape \Lab \elab \F \Wide \eqdef
      \eshape \Lab \elab \F \vee \Eshape \Lab \elab \F
 \end{mathpar}
-The first case applies when the record type is uniquely determined by the
+Case~\ref {enum/lab/1} applies when the record type is uniquely determined by the
 syntax of the context, without needing shape inference. There are two main
 subcases:
-\begin{enumerate*}
+\begin{enumerate*}[label*=\textbf{(\alph*)}]
 \item
   in a record projection context $\E[\e.\elab]$, if the label $\elab$ is not
   overloaded, then the global record typing context $\labenv$ assigns a
@@ -2468,11 +2495,10 @@ subcases:
             {\elaba = \eone; \ldots; \square = \ei; \ldots;  \elab_n = \en }]}
       \elab \F }
 \end{mathpar}
-
-To support the second case, we introduce a casting label judgment
+To support case~\ref {enum/lab/2} case, we introduce a casting label judgment
 (\Rule{Lab-Cast}) that behaves analogously to the cast operator in
-expression contexts. It enables us to assume a hole $\square : \t$ in label
-position may be instantiated to a function type $\tp \to \t$:
+expression contexts. It enables us to assume that a hole $\square : \t$ in
+label position may be instantiated to a function type $\tp \to \t$:
 \begin{mathpar}
   \infer[Lab-Cast]
     {}
@@ -2492,10 +2518,13 @@ $\E$ or $\Lab$ for implicit rules \Rule {Proj-I}, \Rule {Use-I}, \Rule {Poly-I}
 and \Rule{Lab-I}.
 That is, there is always a derivation using only toplevel contexts.
 \begin{lemma}
+\label{lem/context/largest}
 \newcommand {\Eab}{\parens{\Ea\where \Eb}}
-Assume $\eshape \Eb \e \sh$ and $\G \th \Ea \Where {\Ga \th \Eb \where {\e^x} :
-  \tya} \t$, then $\eshape \Eab \e \sh$ and $\G \th \Eab\where {\e^i} : \t$.
-  Similarly, for label contexts, assuming $\Lshape \Lab \elab \F$ and $\G \th \E [\Ga \th \Lab[\elab] : \tya] : \t$, then $\Lshape {(\E[\Lab])} \elab \F$ and $\G \th (\E[\Lab])[\elab] : \tau$.
+Assume $\eshape \Eb \e \sh$ and $\G \th \Ea \Where {\Ga \th \Eb \where
+{\e^x} : \tya} \t$, then $\eshape \Eab \e \sh$ and $\G \th \Eab\where {\e^i}
+: \t$.  Similarly, for label contexts, assuming $\Lshape \Lab \elab \F$ and
+$\G \th \E [\Ga \th \Lab[\elab] : \tya] : \t$, then $\Lshape {(\E[\Lab])}
+\elab \F$ and $\G \th (\E[\Lab])[\elab] : \tau$.
 \end{lemma}
 \begin{proof}[Proof Sketch]
 Formally, can be proved by induction on $\Ea$ and $\E$, respectively.
@@ -2508,9 +2537,10 @@ To illustrate a simple case of non-typability, we show that the expression $e$
 equal to $\efun \x {\eproj \x k}$ is ambiguous, \ie that it does not
 typecheck.
 %
-Let $e_n$ be the explicitly annotated version $\efun r
-{\eproj[n] \x i}$. for $n \le k$.  If there is a derivation of $\efun r
-{\eproj \x i}$ then there must be one of the form:
+%% Let $e_n$ be the explicitly annotated version $\efun r
+%% {\eproj[n] \x i}$. for $n \le k$.
+If there is a derivation of $\efun r
+{\eproj \x k}$ then there must be one of the form:
 \begin{mathpar}
 \infer*[Right=Proj-I]{
                         \eshape E \x {\Pi\iton} \\
@@ -2520,21 +2550,20 @@ Let $e_n$ be the explicitly annotated version $\efun r
 }
 \end{mathpar}
 where $E$ is the term $\efun \x \ehole$, which is the largest possible
-context. (If there is one with a smaller $E$, there is also one with a
-larger $E$.)
+context, thanks to~\cref {lem/context/largest}.
 %
-We have  the following derivation:
+Let $\t$ be $\Pi\iton \ti \to \t_k$.  We have the following derivation:
 \begin{mathpar}
 \infer* [Right=Fun]{
           \infer*[Right=Proj-X]
                 {\x : \Pi\iton \ti \th \x : \Pi\iton \ti}
                 {r : \Pi\iton \ti \th \eproj[n] \x k : \t_k}
-}{%             --------------------------------------------
-                 \eset \th E \where{\eproj[n] \x k} : \t_k
+}{%      ----------------------------------------------------------
+         \eset \th E \where{\eproj[n] \x k} : \t
 }
 \end{mathpar}
-However, $\eshape E  \x {\Pi\iton}$ does not hold.
-Indeed, we have $\eset \th E \where {\emagic {\x :\t_n}} : \wild$
+Unfortunately, $\eshape E  \x {\Pi\iton}$ does not hold.
+Indeed, we have $\eset \th E \where {\ecast \x {\t_n} {\t_k}} : \t$
 for any $\t_n$ of the form $\Pi\iton \tys$ and $n \ge k$.
 Hence, $\Pi\iton[k]$ and $\Pi\iton[k+1]$ are two possible shapes
 for the type of $\x$.
@@ -2545,8 +2574,9 @@ for the type of $\x$.
 We now illustrate a non-ambiguous example, showing that the
 expression $e$ equal to $\th \eapp {(\efun \x {\eproj
 \x  k})} {(1, 2)} : \tint$.
-
+%
 Let $k$ and $n$ be $1$ and $2$.
+%
 Let $E$ be the context $\th \eapp {(\efun \x \ehole)} {(1, 2)} : \tint$.  We
 have the derivation:
 \begin{mathpar}
@@ -2557,19 +2587,19 @@ have the derivation:
                   \eset \th E \where {\eproj \x k} : \t_k
 }
 \end{mathpar}
-Indeed, $\eset \th E \where {\eproj[n] \x k} : \t_k$ obviously holds.
+We have $\eset \th E \where {\eproj[n] \x k} : \t_k$, indeed. 
 Therefore, it just remains to show $\eshape E \x {\Pi\iton}$~\llabel C.
-Assume $\eset \th \E \where{\ecast \x \typ \typp} : \t$. Since
+Assume $\eset \th \E \where{\ecast \x \typ \typp} : \t_k$. Since
 $\x: \Pi\iton (\tint,\tint)$ is bound in the context at the hole $E$,
-there is no other choice but $\tp$ equal to $\Pi\iton (\tint,\tint)$,
-hence $\tshape \t = \Pi\iton$, which proves~\lref C.
+there is no other choice but take $\tp$ equal to $\Pi\iton (\tint,\tint)$,
+hence $\tshape \tp = \Pi\iton$, which proves~\lref C.
 \end{example}
 
-The following example of non-typability illustrates is how the typing rules
-still forces to reject typing of expressions whose annotations would
-be unambiguous. This is intended, to prevent us from having to focus
-at several annotation simultaneously. Our typing rules enforces the
-resolution of annotation, locally, one construct at a time.
+The following example of non-typability illustrates how the typing rules
+still forces to reject typing of some expressions whose annotations would be
+unambiguous. This is intended, to prevent us from having to focus at several
+annotation simultaneously. Our typing rules enforce the resolution of
+annotations, locally, one at a time.
 
 \begin{example}
 \newcommand{\tyid}{\ty_{\kwd{id}}}
@@ -2585,9 +2615,9 @@ annotated derivation.
 %
 To show that $e$ is typable, we must be able to make all annotations
 optional, sequentially.  Therefore, the final step, which will eliminate the
-last annotation has a single point of focus \Xgabriel[$\E{\e^x}$]{?}, which could be any
-of the three positions with an annotation.  We consider each case
-independently, and show that it is actually not typable.
+last annotation has a single point of focus of the form $\E\where{e^i}$,
+where $\e^i$ can be any of the three positions with a missing annotation.  We
+consider each case independently, and show that it is actually not typable.
 \proofcase
 {$\E$ is $\elet \x \ehole (\eapp {\einst \x} 1, \eapp {\einst \x}\eunit)$}
 %
@@ -2600,10 +2630,12 @@ If this holds, we should have a derivation that ends with
                        \eset \th \E \where \epid : \t
 }
 \end{mathpar}
-However, $\Eshape \E {\epoly {\efun z z}} {\tpoly \tyid}$ does not hold.
-Indeed, the following judgment $\eset \th \E \where {\epid [s]}: \t$ where
-$s$ is either $\all \tv \tv \to \tv$ or $\all \tv (\tv\to\tv) \to
-\tv\to\tv$. Hence, this case cannot occur.
+However, $\Eshape \E {\epoly {\efun z z}} {{\tpoly \tyid}}$ does not hold.
+Indeed, the following judgment
+$\eset \th \E \where {\ecast \epid {\tpoly \ts} \wild} : \t$ where
+$\ts$ is either $\all \tv \tv \to \tv$ or $\all \tv (\tv\to\tv) \to
+\tv\to\tv$. Hence, the shape of the type of $\epid$ is not uniquely
+determined and this case cannot occur.
 
 \proofcase
 {$\E$ is
@@ -2634,70 +2666,35 @@ $\e$ is of the form $\E \where {\x}$ where  $\E$ is the context $\elet f
 We have $\eset \th \E \where {\eproj[2] \x 1} : \tint$.
 Let us show that $\eshape \E \x {\Pi\iton[2](\tint, \tint)}$.
 %
-Assume $\eset \th \E \where {\ecast \x \typ \typp} : \t$.
-The type $\typ$ of $\x$ cannot be that of an arbitrary record, since
+Assume $\eset \th \E \where {\ecast \x \typ \typp} : \t$
+and $\shape \typ \Defined$. Thus is, the type $\typ$ of $\x$ is not a
+variable.  Then,  $\typ$ cannot be that of an arbitrary record, since
 there is not such type as a record of arbitrary size. Hence,
 $\typ$ must be a record of some shape $\Pi\iton$ for some size
 $n$. Since the codomain of $f$ must be a tuple of size~$2$, then $n$ must
 also be $2$. This shows that $\eshape \E \x {\Pi\iton[2]}$.
-
-\Xalistair{This proof is invalid, see below.}
-
-Here is a sketch that $\neg \eshape \E \x {\Pi\iton[2]}$.
-We have the following typing derivation
-for $\emptyset \th \E[\ecast \x \tva \tvb] : \tunit$:
-\begin{mathpar}
-  \infer
-    {
-    \infer
-      {
-	\infer
-	  {
-	    \infer
-	      {
-		\infer
-		  {}
-		  {\tva, \tvb, x : \tva \th x : \tva}}
-	      {\tva, \tvb, x : \tva \th \ecast x \tva \tvb : \tvb}}
-	  {\tva, \tvb \th \efun x {\ecast x \tva \tvb : \tva \to \tvb}}}
-      {\emptyset \th \efun \x \ecast \x \tva \tvb : \tfor {\tva, \tvb} \tva \to \tvb} \\
-    \infer
-      {\ldots}
-      {f : \tfor {\tva, \tvb} \tva \to \tvb \th \eapp f (1, 2) : \tunit}}
-    {\emptyset \th \elet f {\efun \x {\ecast \x \tva \tvb}} {\eapp f (1, 2)} : \tunit}
-\end{mathpar}
-Yet $\shape \tv.1 = \sbot$.
+%% \begin{mathpar}
+%%   \infer
+%%     {
+%%     \infer
+%%       {
+%% 	\infer
+%% 	  {
+%% 	    \infer
+%% 	      {
+%% 		\infer
+%% 		  {}
+%% 		  {\tva, \tvb, x : \tva \th x : \tva}}
+%% 	      {\tva, \tvb, x : \tva \th \ecast x \tva \tvb : \tvb}}
+%% 	  {\tva, \tvb \th \efun x {\ecast x \tva \tvb : \tva \to \tvb}}}
+%%       {\emptyset \th \efun \x \ecast \x \tva \tvb : \tfor {\tva, \tvb} \tva \to \tvb} \\
+%%     \infer
+%%       {\ldots}
+%%       {f : \tfor {\tva, \tvb} \tva \to \tvb \th \eapp f (1, 2) : \tunit}}
+%%     {\emptyset \th \elet f {\efun \x {\ecast \x \tva \tvb}} {\eapp f (1, 2)} : \tunit}
+%% \end{mathpar}
 \end{example}
-\Xdidier{Yes, I found this problem, but lost my text had been lost in the
-big merge (change of hierarchy): I was proposing the following as a fix}
 
-I was suggesting to replace the premises of rule \Rule {Proj-I} by
-\begin{mathpar}
-\G \th E[\exfield e n j] : \t
-
-(\G \th E[\exfield e k j] : \t \implies k = n)
-\end{mathpar}
-This will force $\x$ to be a product, and therefore a pair.
-(It might force us to infer more, however.)
-
-\Xalistair{I don't think this would fix it, since the issue isn't with the
-$\G \th \E[\exfield \e n j] : \t$ premise but the $\eshape \E \e \sh$
-premise}
-\Xdidier{The right-hand side above is an attempt to replace the $\eshape \E
-\e \sh$, but I agree that this is likely not the right direction}
-
-Hoverver, I think the correct solution is rather to formalize the fact that
-shape should be shared by all instances and that the constraint solver
-should know than, \ie you idea of using a mornomirphic higher-order function
-applied to polymorphic type variables, since this is really the intuition.
-
-\Xdidier{Yet an other attempt}
-\begin{version}{\blue\True}
-If we used row variables to typecheck tuples, then an we could force
-the row variabe
-There is an easy solution for tuples label, which is to use row variables
-and request that the row variable be allocated at the toplevel.
-\end{version}
 
 \subsection{Constraint generation}
 \label{sec:constraint-gen}
