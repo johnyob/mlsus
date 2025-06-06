@@ -1195,18 +1195,23 @@ the constraints $f (\semenv (\sh))$ and $\semenv (f (\sh))$ are equivalent.
 \begin{version}{\blue\True}
 \begin{hparens}
 \Xalistair{Shapes v3}
-A shape $\sh$ is a \emph{partial type}:
+A shape $\sh$ is \Xdidier[a \emph{partial type}]{Partial type dpes not mean
+anything, syntactically $\t$ is just a type. A partial type would suggest
+that it would not be closed. So let's just call it a shape.}:
 \begin{mathpar}
   \begin{bnfgrammar}
     \entry[Shape]{\sh}{ \shq \tvcs \t }
   \end{bnfgrammar}
 \end{mathpar}
-where $\tvcs$ are bound within the type $\t$. Shapes must be closed.
-We consider $\tvcs$ to be flexible within $\t$. The \emph{bottom} shape
+\Xdidier [where $\tvcs$ are bound within the type $\t$.
+Shapes must be closed.]{where $\tvcs$ are the free varoables of
+$\t$ [This avoids dealing with $\tvc \notin \ftv \t$]}
+
+We consider $\tvcs$ to be flexible within $\t$. The \emph{\Xdidier[bottom]{partilal?}} shape
 is defined as $\shq \tvc \tvc$, written $\bot$. For a shape $\shq \tvcs \t$,
 we say that $\t$ is the \emph{structure} of the shape.
 
-Shapes are equipped with an ordering -- that of the standard
+Shapes are equipped with an ordering---that of the standard
 instantiation ordering, defined by:
 \begin{mathpar}
   \infer[Inst-Shape]
@@ -1216,9 +1221,12 @@ instantiation ordering, defined by:
 When writing $\sh \preceq \shp$, we say that $\sh$ is more general than $\shp$.
 
 % Define decomposition
-For shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t \where {\tvcs \is \tys}$.
+
+For shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t
+\where {\tvcs \is \tys}$.
 A type $\t$ has a decomposition $\angles {\sh, \tys}$ iff $\t = \tys \shapp$;
-we say that $\sh$ is \emph{a} shape of $\t$. A decomposition is trivial is the shape is $\bot$.
+we say that $\sh$ is \emph{a} shape of $\t$. A decomposition is trivial is
+the shape is $\bot$. 
 
 \begin{definition}
   A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
@@ -1229,8 +1237,8 @@ we say that $\sh$ is \emph{a} shape of $\t$. A decomposition is trivial is the s
 \end{definition}
 
 \begin{theorem}
-  For any type $\t$, if $\t$ is a non-variable type, then there is a non-trivial principal shape $\sh$
-  for $\t$.
+  Any nonvariable type $\t$, if $\t$ has a non-trivial principal shape
+  $\sh$. 
 \end{theorem}
 We write $\shape \t = \sh$ for the non-trivial principal shape of $\t$ (if defined).
 Match functions operate the principal decompositions, requiring the
@@ -1239,8 +1247,20 @@ property of parametricy:
   \all {\text{non-trival } \sh, \shp}
     \sh \preceq \shp \implies f(\head \sh) = f(\head \shp)
 \end{mathpar}
-We should also request that the meta-language for meta-functions is
-terminating (i.e. doesn't have unbounded recursion).
+\Xdidier {What is the head of a shape (including polytypes), then? Isn't
+going to dupplicate/mimic the definition of shapes?}  We should also request
+that the meta-language for meta-functions is terminating (i.e. doesn't have
+unbounded recursion).
+
+\Xdidier
+{Your definition does not make a special case of polytypes, which is
+fine. We should still give examples and the user will see the two disjoint
+cases.}
+\Xdidier
+{However, the definition is odd with repect to $\alpha$ conversion: you say
+that shapes are closed, which should imply that they are considered up
+$\alpha$-convertible. However, you see then as open when you write
+ $\tys \shapp[\shq \tvcs \t]$, which I do not like very much.}
 \end{hparens}
 \end{version}
 
@@ -1644,7 +1664,6 @@ from the interaction of suspended constraints and let-abstractions.
 
 % Backpropagation
 
-\Xdidier {Can you also have backpropagation for tuples and polytypes?}
 A further subtle---but crucial---feature of our semantics is its support for
 \emph{backpropagation}.
 %
@@ -1659,7 +1678,9 @@ different story could be confusing} and generalisation forms a boundary that
 prevents information from later use sites from influencing the generalised
 type--this is why polymorphic type information is considered `known'.
 
-\Xdidier{Then, it should be added to the intro to criticize the \OCaml approach.}
+\Xdidier
+{I adding a variable of this example in the intro. Could it be reused
+here instead of using yet another one?}
 For example, the following program is rejected by \OCaml:
 \begin{program}[input]
   let e$_{11}$ = let f r = r.x in f ({ x = 1; y = 1 })
