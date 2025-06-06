@@ -1192,6 +1192,58 @@ the constraints $f (\semenv (\sh))$ and $\semenv (f (\sh))$ are equivalent.
 \end{hparens}
 \end{version}
 
+\begin{version}{\blue\True}
+\begin{hparens}
+\Xalistair{Shapes v3}
+A shape $\sh$ is a \emph{partial type}:
+\begin{mathpar}
+  \begin{bnfgrammar}
+    \entry[Shape]{\sh}{ \shq \tvcs \t }
+  \end{bnfgrammar}
+\end{mathpar}
+where $\tvcs$ are bound within the type $\t$. Shapes must be closed.
+We consider $\tvcs$ to be flexible within $\t$. The \emph{bottom} shape
+is defined as $\shq \tvc \tvc$, written $\bot$. For a shape $\shq \tvcs \t$,
+we say that $\t$ is the \emph{structure} of the shape.
+
+Shapes are equipped with an ordering -- that of the standard
+instantiation ordering, defined by:
+\begin{mathpar}
+  \infer[Inst-Shape]
+    {\bar \tvc_2 \disjoint \shq {\tvcs_1} \tone}
+    {\shq {\tvcs_1} \tone \preceq \shq {\tvcs_2} \tone \where {\tvcs_1 \is \tys}}
+\end{mathpar}
+When writing $\sh \preceq \shp$, we say that $\sh$ is more general than $\shp$.
+
+% Define decomposition
+For shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t \where {\tvcs \is \tys}$.
+A type $\t$ has a decomposition $\angles {\sh, \tys}$ iff $\t = \tys \shapp$;
+we say that $\sh$ is \emph{a} shape of $\t$. A decomposition is trivial is the shape is $\bot$.
+
+\begin{definition}
+  A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
+  \begin{enumerate}
+    \item $\t = \tys \shapp$
+    \item For any other non-trivial decomposition $\t = \tys' \shapp[\shp]$, $\sh \preceq \shp$
+  \end{enumerate}
+\end{definition}
+
+\begin{theorem}
+  For any type $\t$, if $\t$ is a non-variable type, then there is a non-trivial principal shape $\sh$
+  for $\t$.
+\end{theorem}
+We write $\shape \t = \sh$ for the non-trivial principal shape of $\t$ (if defined).
+Match functions operate the principal decompositions, requiring the
+property of parametricy:
+\begin{mathpar}
+  \all {\text{non-trival } \sh, \shp}
+    \sh \preceq \shp \implies f(\head \sh) = f(\head \shp)
+\end{mathpar}
+We should also request that the meta-language for meta-functions is
+terminating (i.e. doesn't have unbounded recursion).
+\end{hparens}
+\end{version}
+
 
 To extend these semantics to our suspended constraints, a first natural idea
 is to propose the following rule---henceforth referred to as the
