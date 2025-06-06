@@ -294,7 +294,7 @@ incompleteness, which is actually three-fold:
 Let us consider a few more examples:
 \begin{program}[error]
 let e_6 r = (r.x, r.y)
-let e_7 = let getx = r.x in getx {x = 1}
+let e_7 = let getx r = r.x in getx {x = 1}
 let e_8 r = (r.x : bool)
 let e_9 r = r.x.x
 \end{program}
@@ -1160,7 +1160,7 @@ is done by \Rule {Susp-Ctx}, which then allows \Rule {Susp-Use} to fire.
 
 We need to be clearer about the abstract function $f$. In particular,
 they should dispach on the shape of there argument, that is such that
-the constraints $f (\semenv (\sh))$ and $\semenv (f (\sh))$ are equivalent. 
+the constraints $f (\semenv (\sh))$ and $\semenv (f (\sh))$ are equivalent.
 \Xalistair
   {This last statement makes no sense -- $\semenv$ doesn't operate on
   constraints or shapes (according the the above redefinition of shapes,
@@ -2397,7 +2397,7 @@ That is,
   $\t$ is shallow, which means the following:
 \begin{itemize}
 
-\item 
+\item
   when $\t$ is not a polytype, all subterms of $\t$ are variables.
 
 \item
@@ -2418,7 +2418,7 @@ of appearance in $\t$.
 The shape of a variable is undefined and we write $\shape \t = \bot$ or
 $\shape \t \Undefined$.  The shape of a nonvariable monotype $\t$ is always
 defined, which we write $\shape \t \Defined$ and is unique up
-$\alpha$-renaming. We may then write $\shape \t = \sh$. 
+$\alpha$-renaming. We may then write $\shape \t = \sh$.
 
 A nonvariable monotype can be uniquely decomposed into a pair $\exi \tvs
 \deshaped \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
@@ -2485,7 +2485,7 @@ We adopt a similar non-compositional approach for elaborating overloaded labels,
 whether in record projection ($\efield e \elab$) or record construction
 ($\erecord {\overline{\elab = \e}}$), although the definitions are slighly
 more involved.  Here, a one-hole label context $\Lab$
-provides the surrounding context in which a label $\elab$ may appear: 
+provides the surrounding context in which a label $\elab$ may appear:
 \begin{mathpar}
 \begin{bnfgrammar}
 \entry [Label contexts]{\Lab}{
@@ -2631,7 +2631,7 @@ have the derivation:
                   \eset \th E \where {\eproj \x k} : \t_k
 }
 \end{mathpar}
-We have $\eset \th E \where {\eproj[n] \x k} : \t_k$, indeed. 
+We have $\eset \th E \where {\eproj[n] \x k} : \t_k$, indeed.
 Therefore, it just remains to show $\eshape E \x {\Pi\iton}$~\llabel C.
 Assume $\eset \th \E \where{\ecast \x \typ \typp} : \t_k$. Since
 $\x: \Pi\iton (\tint,\tint)$ is bound in the context at the hole $E$,
