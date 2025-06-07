@@ -11,6 +11,8 @@
 
 \newcommand{\Let}{\mathprefix{let}}
 \newcommand{\In}{\mathinfix{in}}
+\newcommand{\MetaLet}{\mathprefix{\textsl{let}}}
+\newcommand{\MetaIn}{\mathinfix{\textsl{in}}}
 \newcommand{\Match}{\mathprefix{match}}
 \newcommand{\With}{\mathinfix{with}}
 
@@ -33,10 +35,15 @@
 \newcommand{\cinst}[2]{#1 \; #2}
 \newcommand{\cletin}[3]{\Let #1 = #2 \In #3}
 \newcommand{\cabs}[2]{\lambda {#1}. \,{#2}}
+\newcommand{\clam}[2]{\lambda {#1}. \,{#2}}
 \newcommand{\capp}[2]{#1 \; #2}
 \newcommand{\cmatch}[3]{\Match #1 \With [ #2 ] #3}
 \newcommand{\cmatchdots}[1]{\Match #1 \With \dots}
-\newcommand{\clam}[2]{\lambda {#1}.\,{#2}}
+\newcommand{\mlet}[3]{\MetaLet #1 = #2 \MetaIn #3}
+\newcommand{\Clet}[4]{\cletin {#1}{\clam{#2}{#3}}{#4}}
+\newcommand{\clet}[4]{\Let #1\, (#2) = #3 \In #4}
+\newcommand{\Csuspend}[4]{\cmatch {#1}{#3}{\clam {#2}{#4}}}
+\newcommand{\csuspend}[4]{#1?#2 [#3]\to}
 
 \newcommand{\cctx}{\mathscr{C}}
 \newcommand \Cshape[3]{#1 \where {#2 \mathop{!} #3}}

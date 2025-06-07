@@ -138,7 +138,8 @@ limit its downsides.
 
 
 \paragraph{\Geninst-directional type inference}
-\Xdidier {See other choices in \texttt{./abbreviations.sty}}
+
+ \Xdidier {See other choices in \texttt{./abbreviations.sty}}
 \OCaml uses another mechanism for propagation of type information,
 based on polymorphism, which actually enforces an ordering in the
 typechecking of let-bindings, where the (polymorphic part of) a the
@@ -374,14 +375,34 @@ the let-bound variable to extend the typing environment in which the body is
 then typed. The Hindley-Milner algorithm $\mathcal{J}$, one of its variant
 $\mathcal{W}$ or $\mathcal{M}$~\cite {Lee_Yi/algoM@toplas1998}, or more
 flexible constraint solving algorithms all follow this strategy.
+However, it is not mandatory.
 
-However, it is not mandatory. In fact, typing constraints as presented
-by~\citet {Pottier-Remy/emlti} can be instantiated before they are fully
-solved, although this comes at the cost of duplicating some computation.
-Still, this shows that the let-binding ordering is a convenience, not a
-requirement.
+\paragraph {Constraint-based type inference}
 
-Omnidirectional type inference for \ML thus relies on two key technical devices:
+In fact, typing constraints as presented by~\citet {Pottier-Remy/emlti} can
+be instantiated before they are fully solved, although this comes at the
+cost of duplicating some computation.  Still, this shows that the
+let-binding ordering is a convenience, not a requirement.
+
+In the~\textit{constraint-based} approach, type inference
+is split into two stages, mediated by the language of \textit{constraints}
+\citep{TODO}.  In the first stage, a term $\e$ is translated into a constraint
+$\C$ which is satisfiable if and only if the term $e$ is well-typed. In the
+second stage, the generated constraint $\C$ is solved (or shown to be
+unsatisfiable).
+%
+The idea of treating typing judgments as typing constraints, which first
+appeared in~\cite{Remy/mleth,Remy/thesis}, was popularized by ~\citet
+{Odersky-Sulzmann-Wehr@tpos} with the \HMX framework---the Hindley-Milner
+system parameterized by a constraint domain $X$, allowing constraints to
+appear within types, and later extended by \citet{Pottier-Remy/emlti} who
+fully decoupled constraint generation from constraint solving.  The central
+innovation in their system for the reduction of type inference to constraint
+solving is the inclusion of term variables in the language of constraints.
+
+Our insights into directionality builds on this work, which we extend with
+with two technical devices to efficiently achieve omnidirectional type
+inference for fragile \ML extensions:
 \begin{enumerate*}
 \item
   We introduce \emph{suspended match constraints} as a way to suspend
@@ -504,12 +525,15 @@ need examples early enough. Or keep it as is and say in the intro that we
 leave polytype examples, which are more involved for this section.}
 \end{version}
 
-% Constraint-based approach
-
+\begin{version}{}
+%% This has been moved to the introduction
 Our insights into directionality come by approaching type inference from a
-\textit{constraint-based} \citep{TODO} perspective, in which type inference
+\textit{constraint-based}
+\citep{TODO} perspective, in which type inference
 is split into two stages, mediated by the language of \textit{constraints}
-\citep{TODO}.  In the first stage, a term $\e$ is translated into a constraint
+\citep{TODO}.
+
+In the first stage, a term $\e$ is translated into a constraint
 $\C$ which is satisfiable if and only if the term $e$ is well-typed. In the
 second stage, the generated constraint $\C$ is solved (or shown to be
 unsatisfiable).
@@ -524,6 +548,7 @@ who fully decoupled constraint generation from constraint solving. The
 central innovation in their system for the reduction of type inference to
 constraint solving is the inclusion of term variables in the language of
 constraints.
+\end{version}
 
 \begin{version}{}
 % Life is hard
@@ -578,9 +603,9 @@ validate that the implementation is efficient for the moment.}
   \and  \Cone \cand \Ctwo
   \and  \cexists \cv \c
   \and 	\cfor \tv \c
-  \and  \cunif \tone \ttwo
+  \And  \cunif \tone \ttwo
   \nextline
-  \and  \cletin \x {\clam \cv \Cone} {\Ctwo}
+  \and  \clet \x \cv \Cone \Ctwo
   \and  \cinst \x \t
   \nextline
   \and  \cmatch \t  \D  \hf
@@ -594,7 +619,8 @@ recursive types. Since it does, shouldn't we state it?}
 
 % Syntax!
 
-Building on this foundation, we adopt a constraint language that includes
+Building the constraint-based type inference framework of
+\citet{Pottier-Remy/emlti}, we adopt a constraint language that includes
 both term and type variables. Its syntax is given
 in~\Cref{fig:constraint-syntax}.
 %
@@ -616,15 +642,15 @@ There are two constructs that deal with the introduction and elimination of
 constraint abstractions. As the name suggests, a constraint abstraction
 $\cabs \tv \c$ can simply be seen as a function which when applied to some
 type $\t$ returns $\c \where {\tv := \t}$. Constraint abstractions are
-introduced by a let-construct $\cletin \x {\cabs \tv \cone} \ctwo$ which
+introduced by a let-construct $\clet \x \tv \cone \ctwo$ which
 binds the constraint abstraction to the term variable $\x$ in
 $\ctwo$---additionally ensuring the abstraction is satisfiable. They are
 eliminated using the application constraint $\capp \x \t$ which applies the
 type $\t$ to the abstraction bound to $x$.
 
 \Xdidier {Since you write $\capp \x \t$, instead of $\x \le \t$, then I
-would write the abstraction as $\cletin {\capp \x \tv} \Cone \Ctwo$
-instead of $\cletin {\cabs \tv \Cone} \Ctwo$.}
+wrote $\clet \x \tv \Cone \Ctwo$ instead of $\Clet \x \tv \Cone \Ctwo$.
+Macroyfied and easily reversible}
 
 % Suspended match constraints
 
@@ -987,9 +1013,12 @@ projection $\efield \e \elab$, we generate the typing constraint:
   \cmatch \tvb {\cva, \cvb}
     \parens
       {\clam {(\bar \tvc \Fapp)}
-	{\cletin \ts {\Omega(\elab / \F)} {\ts \leq \tva \to \tvb}}
+	{\mlet \ts {\Omega(\elab / \F)} {\ts \leq \tva \to \tvb}}
       }
 \end{mathpar}
+\Xdidier {$\mlet \ts {\Omega(\elab / \F)} {\ts \leq \tva \to \tvb}$ looks
+like a concrete constraint, but it is not a syntactically well-formed
+one. In fact, it is part of the meta-language, hence I changed the style.}
 This constraint defers resolution until more information is available:
 specifically, until the type constructor of $\tvb$ of the record expression
 $\e$ is known.
@@ -1103,7 +1132,7 @@ satisfied after sunstituting $\tv$ for $\t$.
   \infer[Let]
     {\semenv \vdash \exists \tv. \cone \\
      \semenv, \x :=  \cabs \tv \cone \vdash \ctwo}
-    {\semenv \vdash \cletin \x {\cabs \tv \cone} \ctwo}
+    {\semenv \vdash \clet \x \tv \cone \ctwo}
 
   \infer[App]
     {\semenv(x) = \cabs \tv \c \\
@@ -1636,8 +1665,8 @@ To illustrate, let us consider again \code{e}$_{10}$:
 A simplified typing constraint for this program is:
 \begin{mathpar}
   \cexists \tv
-    \cletin x {\cabs \tvb {\cmatch \tva {\tvb} {(\lambda (\tvcs \Fapp).~ \ldots )}}}
-      \cinst x \tint \cand \cunif \tv {\mathsf{three}}
+    \clet x \tvb {\cmatch \tva {\tvb} {(\lambda (\tvcs \Fapp).~ \ldots )}}
+      {\cinst x \tint \cand \cunif \tv {\mathsf{three}}}
 \end{mathpar}
 Here, $\tv$ is \code{r}'s type. The constraint suspends
 until the shape of \code{r}'s type becomes available, which occurs when typing
@@ -1695,9 +1724,11 @@ In constract, our approach permits such refinement.
 The (simplified) constraint generated when typing \code{e}$_{11}$ is:
 \begin{mathpar}
   \cexists \tv
-  \cletin f {\cabs \delta {\cexists {\tvb, \tvc}
-    \cunif \delta {\tvb \to \tvc}
-    \cand \cmatch \tvb {\tvc} {(\ldots)}}}
+  \clet f \delta
+     {\cexists {\tvb, \tvc} \Parens {\strut
+        \cunif \delta {\tvb \to \tvc} \cand
+        \cmatch \tvb {\tvc} {(\ldots)}
+        }}
     {\cinst f {(\mathsf{three} \to \tv)}}
 \end{mathpar}
 Here, type information flows from an instance constraint ($\cinst f
@@ -1767,7 +1798,7 @@ we collect all the rules pertaining to the satisfiability judgement in
   \infer[Let]
     {\semenv \vdash \exists \tv. \cone \\
      \semenv, \x :=  \cabs \tv \cone \vdash \ctwo}
-    {\semenv \vdash \cletin \x {\cabs \tv \cone} \ctwo}
+    {\semenv \vdash \clet \x \tv \cone \ctwo}
 
   \infer[App]
     {\semenv(x) = \cabs \tv \c \\
@@ -2839,14 +2870,14 @@ we may pick a fresh type variable $\tv$ for $\t$.
 
   \cinfer {\efun \x \e} \t \eqdef
     \cexists {\tva, \tvb} \cunif \t {\tva \to \tvb}
-    \cand \cletin \x {\cabs \tvc {\cunif \tvc \tva}} {\cinfer \e \tvb}
+    \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}
 
   \cinfer {\eapp \eone \etwo} \t \eqdef
     \cexists {\tva, \tvb} \cinfer \eone \tva \cand \cinfer \etwo \tvb
     \cand \cunif \tva {\tvb \to \t}
 
   \cinfer {\elet \x \eone \etwo} \t \eqdef
-    \cletin \x {\cabs \tva {\cinfer \eone \tva}} {\cinfer \etwo \t}
+    \clet \x \tva {\cinfer \eone \tva} {\cinfer \etwo \t}
 
   \cinfer {\eannot \e \tvs \tp} \t \eqdef \cexists \tvs \cunif \t \tp \cand \cinfer \e \tp
 
@@ -2880,7 +2911,8 @@ we may pick a fresh type variable $\tv$ for $\t$.
     \cand \bbrackets {\elab \leq \tv \to \t}
 
   \bbrackets {\elab \leq \t \to \tp} \eqdef
-    \cmatch \tp {\fvs \t} {(\lambda (\tvs \Fapp).~ \cletin \ts {\D(\elab/\F)} \ts \leq \t \to \tvs \Fapp)}
+    \cmatch \tp {\fvs \t} {(\lambda (\tvs \Fapp).~
+    \mlet \ts {\D(\elab/\F)} \ts \leq \t \to \tvs \Fapp)}
 \end{mathparfig}
 \Xalistair{We need a cute name for our calculus -- we could go for
 $\textsf{ML}_\textsf{sus}$ (or symbol for the subscript)}
