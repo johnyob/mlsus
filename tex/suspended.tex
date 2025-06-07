@@ -614,8 +614,6 @@ validate that the implementation is efficient for the moment.}
 \\
 \entry[Closure contexts] \D {\eset \and \D, \tv \and \D, \x}
 \end{bnffig}
-\Xdidier {It should be made clear somewhere whether our framework works with
-recursive types. Since it does, shouldn't we state it?}
 
 % Syntax!
 
@@ -680,15 +678,7 @@ constraint. Formally, a suspended constraint is written as $\cmatch \t \D
 function $\efun p \C$ where $p$ is a shape pattern that matches in
 the shape and binds underlying type variables $\tvs$ to types $\tys$?}
 
-\begin{mathparfig}[t]
-{fig:shape-fn-def}
-{Definition of $\shape \t$, a partial function from types to
-shape-substitution pairs $\langle \sh, \theta \rangle$}
-\shape \tv \eqdef \bot
 
-\shape {\tys \F} \eqdef
-        \angles {\tvs \F, \where {\tvs \is \tys}}
-\end{mathparfig}
 
 % Informal semantics
 
@@ -697,6 +687,24 @@ constraint remains suspended until the shape of $\t$ is defined (through
 unification), at which point the handler is applied to this shape $\hf(\sh)$
 and the generated constraint is scheduled to be solved. If the shape of $\t$
 is never determined, the constraint remains unsatisfiable.
+
+Informally, the shape of a variable is undefined and the shape
+of a type $\tys \F$ is its symbol $\F$, but we prefer to write is
+as a linear shallow type $\exi \tvs \tvs \F$.
+
+\TODO{Fix this:}
+Given a nonvariable type $\t$, we
+write $\t =  \deshaped [\tvs] {\tvs \F} \tys$ when $\\exi \tvs \tvs \F$ is
+the shape of $\t$ and $\t$ is equal to $\tys \F$. 
+
+%% {Definition of $\deshaped \t$, a partial function from types to
+%% shape-substitution pairs $\langle \sh, \theta \rangle$}
+%% \begin{mathpar}
+%% \deshaped \tv \eqdef \bot
+%% \par
+%% \deshaped {\tys \F} \eqdef
+%%         \angles {\tvs \F, \where {\tvs \is \tys}}
+%% \end{mathpar}
 
 % Applications
 
@@ -1168,7 +1176,7 @@ derivation:
 
 % Natural semantics
 
-\begin{version}{\blue\True}
+\begin{version}{\blue\False}%
 \begin{hparens}
 \Xdidier{Treatment of shapes:}
 The treatment of shapes is too informal with respect to free variables: a
@@ -1224,72 +1232,65 @@ the constraints $f (\semenv (\sh))$ and $\semenv (f (\sh))$ are equivalent.
 \begin{version}{\blue\True}
 \begin{hparens}
 \Xalistair{Shapes v3}
-A shape $\sh$ is \Xdidier[a \emph{partial type}]{Partial type dpes not mean
-anything, syntactically $\t$ is just a type. A partial type would suggest
-that it would not be closed. So let's just call it a shape.}:
-\begin{mathpar}
-  \begin{bnfgrammar}
-    \entry[Shape]{\sh}{ \shq \tvcs \t }
-  \end{bnfgrammar}
-\end{mathpar}
-\Xdidier [where $\tvcs$ are bound within the type $\t$.
-Shapes must be closed.]{where $\tvcs$ are the free varoables of
-$\t$ [This avoids dealing with $\tvc \notin \ftv \t$]}
-
-We consider $\tvcs$ to be flexible within $\t$. The \emph{\Xdidier[bottom]{partilal?}} shape
-is defined as $\shq \tvc \tvc$, written $\bot$. For a shape $\shq \tvcs \t$,
-we say that $\t$ is the \emph{structure} of the shape.
+We introduce \emph{shapes}, a generalization of the notion of type
+constructosr to cope with polytypes.  A shape $\sh$ is
+an existentially quantified type $\any \tvs \t$ where $\tvs$ is exactly the
+sequence of free variables of $\t$ in order of appearance in $\t$.  A shaped
+is closed. It is treated up to $\alpha$-conversion.
+%% We call $\t$ the \emph{structure}
+%% of the shape, which by constrat is defined up to renaming.
+We write $\bot$ for the partial shape $\any \tvc \tvc$.
 
 Shapes are equipped with an ordering---that of the standard
 instantiation ordering, defined by:
 \begin{mathpar}
   \infer[Inst-Shape]
-    {\bar \tvc_2 \disjoint \shq {\tvcs_1} \tone}
-    {\shq {\tvcs_1} \tone \preceq \shq {\tvcs_2} \tone \where {\tvcs_1 \is \tys}}
+    {\tvas \disjoint \any \tvbs \tone}
+    {\any {\tvas} \tone \preceq \any {\tvbs} \tone \where {\tvas \is \tys}} 
 \end{mathpar}
 When writing $\sh \preceq \shp$, we say that $\sh$ is more general than $\shp$.
 
 % Define decomposition
 
-For shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t
-\where {\tvcs \is \tys}$.
-A type $\t$ has a decomposition $\angles {\sh, \tys}$ iff $\t = \tys \shapp$;
-we say that $\sh$ is \emph{a} shape of $\t$. A decomposition is trivial is
-the shape is $\bot$. 
+Given a shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t
+\where {\tvs \is \tys}$. This is uniquely determined, since it is
+independent of the choice of vairbales $\tvs$ for representing the shape.
+
+A type $\t$ has a decomposition $\deshaped \sh \tys$ iff $\t = \tys \shapp$;
+we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial is
+the shape is $\bot$.
 
 \begin{definition}
-  A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
-  \begin{enumerate}
-    \item $\t = \tys \shapp$
-    \item For any other non-trivial decomposition $\t = \tys' \shapp[\shp]$, $\sh \preceq \shp$
-  \end{enumerate}
+A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
+\begin{enumerate}
+  \item
+    $\t = \tys \shapp$
+  \item
+    $\forall \shp, \shp\not=\bot \wedge \t = \tys' \shapp[\shp]
+    \implies \sh \preceq \shp$
+    %% For any other non-trivial decomposition $\t = \tys' \shapp[\shp]$,
+    %% $\sh \preceq \shp$
+\end{enumerate}
 \end{definition}
 
 \begin{theorem}
-  Any nonvariable type $\t$, if $\t$ has a non-trivial principal shape
-  $\sh$. 
+Any nonvariable type $\t$ has a non-trivial principal shape $\sh$.
 \end{theorem}
-We write $\shape \t = \sh$ for the non-trivial principal shape of $\t$ (if defined).
-Match functions operate the principal decompositions, requiring the
+We write $\shape \t = \sh$ for the non-trivial principal shape of $\t$ (if
+defined).
+%
+Match functions operate on the principal decompositions, requiring the
 property of parametricy:
 \begin{mathpar}
-  \all {\text{non-trival } \sh, \shp}
-    \sh \preceq \shp \implies f(\head \sh) = f(\head \shp)
+  \forall \sh, \shp, \uad
+    \sh \not=\bot \wedge
+    \sh \preceq \shp \wedge
+    \sh = \any \tvs \t \wedge
+    \shp = \any \tvps \tp
+  \implies
+    \exi \tvs {f(\t)} \cequiv \exi \tvps f(\tp)
 \end{mathpar}
-\Xdidier {What is the head of a shape (including polytypes), then? Isn't
-going to dupplicate/mimic the definition of shapes?}  We should also request
-that the meta-language for meta-functions is terminating (i.e. doesn't have
-unbounded recursion).
-
-\Xdidier
-{Your definition does not make a special case of polytypes, which is
-fine. We should still give examples and the user will see the two disjoint
-cases.}
-\Xdidier
-{However, the definition is odd with repect to $\alpha$ conversion: you say
-that shapes are closed, which should imply that they are considered up
-$\alpha$-convertible. However, you see then as open when you write
- $\tys \shapp[\shq \tvcs \t]$, which I do not like very much.}
+\vskip -\belowdisplayskip\vskip -\smallskipamount
 \end{hparens}
 \end{version}
 
@@ -1298,24 +1299,10 @@ To extend these semantics to our suspended constraints, a first natural idea
 is to propose the following rule---henceforth referred to as the
 \emph{natural semantics} of suspended constraints:
 \begin{mathpar}
-  \infer[Susp-Nat]
-  {\shape {\semenv(\tau)} = \angles {\sh,\theta} \\
-   \semenv_{\mid \Delta}, \theta \vdash f(\sh)}
-  {\semenv \vdash \cmatch \tau \Delta f}
-
-\Alt{
-\infer[Susp-Nat/Alt1]
-  {\shape {\semenv(\tau)} \Defined \\
-   \semenv_{\mid \Delta} \th f(\t)}
-  {\semenv \vdash \cmatch \tau \Delta f}
-}
-
-\Alt{
-\infer[Susp-Nat/Alt2]
-  {\shape {\semenv(\tau)} = \exi \tvs {\deshaped \typ \tys} \\
+\infer[Susp-Nat]
+  {\semenv(\tau) = \deshaped [\tvs] \typ \tys \\
    \semenv_{\mid \Delta}, \tvs \is \tys \th f(\tp)}
   {\semenv \vdash \cmatch \tau \Delta f}
-}
 \end{mathpar}
 % Explain the rule
 This rule states that a suspended constraint is satisfied by $\semenv$
@@ -1329,13 +1316,14 @@ structural information needed to discharge the match constraint, while $\theta$
 ensures the correct scoping of its constituents.
 
 % Good example
+
 For example, the constraint $\cexists \tv \cunif \tv \tint \cand \cmatch \tv
 {} {(\lambda \wild.~ \ctrue)}$ is satisfied as follows:
 \begin{mathpar}
   \infer*[Right=Conj]
    {\infer*[Left=Unif]
     {\tint = \tint}{\cdot, \tv := \tint \vdash \cunif \tv \tint} \\
-    \infer*[Right=Susp-Nat]{\shape \tint = \angles {\tint, []} \\
+    \infer*[Right=Susp-Nat]{\deshaped \tint = \angles {\tint, []} \\
      \infer*{}{\cdot, \tv := \tint \vdash \ctrue}
     }
     {\cdot, \tv := \tint \vdash \cmatch \tv {} {(\lambda \wild.~ \ctrue)}}
@@ -1393,44 +1381,19 @@ Rather than relying on the guesswork inherent in the natural semantics,
 we adopt a \emph{contextual} semantics. This formulation ensures
 the shape is \emph{known} from the surrounding context.
 % Open/use rule for suspended constraints
-First, we introduce a simplified variant of the natural rule (\Rule{Susp-Nat}):
+First, we introduce a simplified variant of the natural rule
+(\Rule{Susp-Nat}) that only applies when $\tau$ already has a shape:
 \begin{mathpar}
   \infer[Susp-Use]
-    {\shape \t = \angles {\sh, \theta} \\
-     \semenv_{\mid \Delta}, \semenv(\theta) \vdash f(\sh)
+    {\t = \deshaped [\tvs] \typ \tys \\
+     \semenv_{\mid \Delta},\tvs \is {\semenv(\tys)}  \th f(\tp)
     }
     {\semenv \vdash \cmatch \t \Delta f}
-
-\Alt {
-  \infer[Susp-Use/Alt1]
-    {\shape \t \Defined \\
-     \semenv_{\mid \Delta}  \th f(\semenv (\t))
-    }
-    {\semenv \vdash \cmatch \t \Delta f}
-}
-
-\Alt {
-  \infer[Susp-Use/Alt2]
-    {\shape {\semenv(\tau)} = \exi \tvs {\deshaped \typ \tys} \\
-     \semenv_{\mid \Delta},\tvs \is \tys  \th f(\tp)
-    }
-    {\semenv \vdash \cmatch \t \Delta f}
-}
 \end{mathpar}
-Here, the rule \Rule{Susp-Use} only applies when $\tau$ already has a shape.
 Unlike the natural rule, which takes the shape of $\semenv(\tau)$, which may
 contain parts that have been ``guessed'' in $\semenv$, this version demands
 that the shape $\sh$ of $\t$ must already be known in the constraint,
-statically.
-
-\Xdidier {The positioning is unclear: you say that this is a simplified case,
-of a rule that does not work, hence we read this as a temporary useless
-rule. But you use it later.  This should me made clearer.}
-\Xdidier {Right now this rule is not a subcase of \Rule {Susp-Ctx} but it
-would if you allowed $\C {\ty !\ty}$ and I think you should allow it since
-constraints should be substituable. It would be simple to treated is as a
-subcase, hence a shortcut for telling the story and writing derivations.}
-
+statically. Hence, it does not allow to guess.
 
 % Contextual rule
 
@@ -1438,37 +1401,33 @@ The key innovation of the contextual semantics lies in the following rule,
 which---unlike the others---is not syntax-directed:
 \begin{mathpar}
   \infer[Susp-Ctx]
-    {\Cshape \C \tv \sh \\
-      \semenv \vdash \C[\cexists {\fvs \sh} \cunif \tv \sh \cand
-      \cmatch \sh \Delta f]
-    }
-    {\semenv \vdash \C[\cmatch \tv \Delta f]}
-
-\Alt{
-  \infer[Susp-Ctx]
-    {\Cshape \C \tv {\exi \tvs \sh} \\
+    {\Cshape \C \tv {\exi \tvs \t} \\
       \semenv \th
-         \C \where {\cexists \tvs \cunif \tva \sh \cand \cmatch \sh \Delta f}
+         \C \where {\cexists \tvs \cunif \tva \t \cand \cmatch \t \Delta f}
     }
     {\semenv \vdash \C \where {\cmatch \tv \Delta f}}
-}
 \end{mathpar}
 This rule lets us substitute the matchee variable $\tv$ by a more defined
 shape $\sh$, provided the constraint context $\C$ determines $\tv$ to have
-precisely this shape. The side-condition $\Cshape \C \tv \sh$ ensures this
-precisely: it expresses that the context $\C$ constrains all
-the solutions of $\tv$ to have the \emph{same} shape $\sh$, modulo
-$\alpha$-equivalence of shapes. The
-formal definition of this condition, which is somewhat technical, will be
-introduced later.
+precisely this shape.
+%
+The side-condition $\Cshape \C \tv \sh$ ensures this
+precisely: it expresses that the context $\C$ constrains all the solutions
+of $\tv$ to have the \emph{same} shape $\sh$, modulo $\alpha$-equivalence of
+shapes. The formal definition of this condition, which is somewhat
+technical, will be introduced later.
 
 In other words, we can \emph{discover}\Xdidier{Was \emph{guess} but this is
 not the correct word, you do not guess in our sense, since there is no other
 choice even better we are force to make this choice. (\emph{use} would also
 be possible but I prefer \emph{doscover}} a shape, as in the natural semantics,
 but only if ambient constraint context $\C[\square]$ guarantees that
-there is a unique possible shape.\Xdidier {was: a unique shape to guess.}
+there is a unique possible shape.
+This rule is typically used in combinatino with \Rule {Susp-Use} which
+can then be used in the prove of the right-hand side premise. 
+
 % Examples
+
 We illustrate the contextual semantics for suspended constraints
 with a series of examples.
 \begin{example}
@@ -1806,14 +1765,14 @@ we collect all the rules pertaining to the satisfiability judgement in
     {\semenv \vdash \cinst x \t}
 
   \infer[Susp-Use]
-    {\shape \t = \angles {\sh, \theta} \\
+    {\deshaped \t = \angles {\sh, \theta} \\
      \semenv_{\mid \Delta}, \semenv(\theta) \vdash f(\sh)
     }
     {\semenv \vdash \cmatch \t \Delta f}
 
 \Alt{
   \infer[Susp-Use]
-    {\shape \t \Defined \\
+    {\deshaped \t \Defined \\
      \semenv_{\mid \Delta} \th f(\semenv \semenv \t)
     }
     {\semenv \vdash \cmatch \t \Delta f}
@@ -2460,23 +2419,23 @@ When $\exi \tvs \tpoly \ts$ is a polytype skeleton, we write $\cpoly \tys
 
 \begin{mathparfig}[t]
 {fig:shape-fn-def-typing}
-{Definition of $\shape \t$, a partial function from types to
+{Definition of $\deshaped \t$, a partial function from types to
 shape-substitution pairs $\langle \sh, \theta \rangle$, extended for all
 types defined in the calculus}
-  \shape \tv \eqdef \bot
+  \deshaped \tv \eqdef \bot
 
-  \shape 1 \eqdef 1
+  \deshaped 1 \eqdef 1
 
-  \shape {\t \to \tp} \eqdef
+  \deshaped {\t \to \tp} \eqdef
       \angles {\tv \to \tv', \where {\tv \is \t, \tv' \is \tp}}
 
-  \shape {\Pi\iton \tys} \eqdef
+  \deshaped {\Pi\iton \tys} \eqdef
       \angles {\Pi\iton \tvs, \where {\tvs \is \tys}}
 
-  \shape {\tys \F} \eqdef
+  \deshaped {\tys \F} \eqdef
       \angles {\tvs \F, \where {\tvs \is \tys}}
 
-  \shape {\tpoly \ts} \eqdef
+  \deshaped {\tpoly \ts} \eqdef
       \angles {\exi \tvs \tpoly \ts, \where {\tvs \is \tys}}
 \end{mathparfig}
 
@@ -2519,15 +2478,15 @@ shape of $\tpoly {\all \tv {(\tv \to \tv) \to \tvb \to \tvb}}$ is $\exi \tvb
 the ordering of quantifiers. We may require $\tvs$ to be be in their order
 of appearance in $\t$.
 
-The shape of a variable is undefined and we write $\shape \t = \bot$ or
-$\shape \t \Undefined$.  The shape of a nonvariable monotype $\t$ is always
-defined, which we write $\shape \t \Defined$ and is unique up
-$\alpha$-renaming. We may then write $\shape \t = \sh$.
+The shape of a variable is undefined and we write $\deshaped \t = \bot$ or
+$\deshaped \t \Undefined$.  The shape of a nonvariable monotype $\t$ is always
+defined, which we write $\deshaped \t \Defined$ and is unique up
+$\alpha$-renaming. We may then write $\deshaped \t = \sh$.
 
-A nonvariable monotype can be uniquely decomposed into a pair $\exi \tvs
-\deshaped \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
-$\exi \tvs \tyz$ is the shape of $\t$.  We then write $\t = \exi \tvs
-{\deshaped \tyz \tys}$.
+A nonvariable monotype can be uniquely decomposed into a pair $\deshaped
+\tvs \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
+$\exi \tvs \tyz$ is the shape of $\t$.  We then write $\t = \deshaped
+\tvs \tyz \tys$.
 
 \end{version}
 
@@ -2550,13 +2509,13 @@ shape to be determined from the type of a context or an expression:
 {\begin{tabular}{RCL}
 \eshape E \e \sh \Eqdef
   \forall \G, \t, \tp, \uad
-  \G \th E \where {\ecast \e \typ \typp} : \t \wedge \shape \typ \downarrow
-      \wide\implies \shape \typ = \sh
+  \G \th E \where {\ecast \e \typ \typp} : \t \wedge \deshaped \typ \downarrow
+      \wide\implies \deshaped \typ = \sh
 \\[1ex]
 \Eshape E \e \sh \Eqdef
   \forall \G, \t, \tp, \uad
-      \G \th E\where{\ecast \e \typ \typp} : \t \wedge \shape \typp \downarrow
-      \wide\implies \shape \typp = \sh
+      \G \th E\where{\ecast \e \typ \typp} : \t \wedge \deshaped \typp \downarrow
+      \wide\implies \deshaped \typp = \sh
 \end{tabular}}
 \end{mathpar}
 These states that the shape $\sh$ of expression $\e$ in context $\E$ is
@@ -2654,7 +2613,7 @@ label position may be instantiated to a function type $\tp \to \t$:
 
 \Eshape \Lab \elab \F \Wide\eqdef
    \forall \G, \t, \tp, \G \th \Lab[\square : \tp] : \t \implies
-        \shape \tp.1 = \tvs \F
+        \deshaped \tp.1 = \tvs \F
 \end{mathpar}
 
 % Contexts can be the entire term
@@ -2815,7 +2774,7 @@ We have $\eset \th \E \where {\eproj[2] \x 1} : \tint$.
 Let us show that $\eshape \E \x {\Pi\iton[2](\tint, \tint)}$.
 %
 Assume $\eset \th \E \where {\ecast \x \typ \typp} : \t$
-and $\shape \typ \Defined$. Thus is, the type $\typ$ of $\x$ is not a
+and $\deshaped \typ \Defined$. Thus is, the type $\typ$ of $\x$ is not a
 variable.  Then,  $\typ$ cannot be that of an arbitrary record, since
 there is not such type as a record of arbitrary size. Hence,
 $\typ$ must be a record of some shape $\Pi\iton$ for some size

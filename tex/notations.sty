@@ -16,7 +16,8 @@
 \newcommand{\Match}{\mathprefix{match}}
 \newcommand{\With}{\mathinfix{with}}
 
-\newcommand{\shq}[2]{{#1}.\,{#2}}
+\newcommand{\shq}[2]{\any {#1}{#2}}
+
 \renewcommand{\c}{C}
 \newcommand{\cone}{\c_1}
 \newcommand{\ctwo}{\c_2}
@@ -44,6 +45,7 @@
 \newcommand{\clet}[4]{\Let #1\, (#2) = #3 \In #4}
 \newcommand{\Csuspend}[4]{\cmatch {#1}{#3}{\clam {#2}{#4}}}
 \newcommand{\csuspend}[4]{#1?#2 [#3]\to}
+\newcommand{\cequiv}{\equiv}
 
 \newcommand{\cctx}{\mathscr{C}}
 \newcommand \Cshape[3]{#1 \where {#2 \mathop{!} #3}}
@@ -62,7 +64,9 @@
 \newcommand{\F}{\mathpostfix{F}}
 \newcommand{\Fapp}{\mathop{}\mathrel{\F}}
 \newcommand{\shapp}[1][\sh]{\mathrel{\angles{#1}}\mathclose{}}
-\newcommand{\head}[1]{\mathsf{head}(#1)}
+
+\newcommand{\deshaped}[3][]{#3\;\angles{\ifempty{#1}{}{\any{#1}}{#2}}}
+
 \renewcommand{\t}{\tau}
 \newcommand{\tp}{\t'}
 \newcommand{\tone}{\t_1}
@@ -70,7 +74,9 @@
 \newcommand{\ti}{\t_i}
 \newcommand{\tj}{\t_j}
 \newcommand{\tv}{\tva}
+\newcommand{\tvp}{\tv'}
 \newcommand{\tvs}{\bar\tv}
+\newcommand{\tvps}{\bar\tv'}
 \newcommand{\tvi}{\tv_i}
 \newcommand{\tva}{\alpha}
 \newcommand{\tvas}{\bar \tva}
@@ -207,6 +213,7 @@
 
 \newcommand{\all}[2]{\forall #1.\,#2}
 \newcommand{\exi}[2]{\exists #1.\,#2}
+\newcommand{\any}[2]{\nu #1.\,#2}
 
 \newcommand{\eqdef}{\mathrel{\triangleq}}
 \newcommand \uad [1][1ex]{\hskip #1}
@@ -224,4 +231,3 @@
 \newcommand \sbot {\bot}
 \newcommand \tshape [1]{\mathprefix {shape}{#1}}
 \newcommand \labenv {\Omega}
-\newcommand{\deshaped}[2]{\angles{#1, #2}}
