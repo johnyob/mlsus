@@ -284,7 +284,7 @@ However, the resolution of each ambiguity is another source of
 incompleteness, which is actually three-fold:
 \begin{enumerate}
 \item\label {item/order}
-  the resolution is not considering type information from all ambigusous
+  the resolution is not considering type information from all ambiguous
   nodes into account.
 \item\label {item/info}
   the resolution is not taking all contextual type information from
@@ -680,7 +680,7 @@ constraint. Formally, a suspended constraint is written as $\cmatch \t \D
 \Xdidier{Why make $f$ a meta-function, and not just a concrete
 function $\efun p \C$ where $p$ is a shape pattern that matches in
 the shape and binds underlying type variables $\tvs$ to types $\tys$?}
-
+\Xgabriel{Each new language feature would need to introduce its own domain-specific constraint formers; for example to type nominal records you need to fetch field declarations from the declaration environment. I would rather leave this to the meta-level to keep the core language simple.}
 
 
 % Informal semantics
@@ -1183,15 +1183,15 @@ derivation:
 % Natural semantics
 
 We introduce \emph{shapes}, a generalization of the notion of type
-constructosr to cope with polytypes.  A shape $\sh$ is
+constructors to cope with polytypes.  A shape $\sh$ is
 an existentially quantified type $\any \tvs \t$ where $\tvs$ is exactly the
-sequence of free variables of $\t$ in order of appearance in $\t$.
+sequence of free variables of $\t$ in order of appearance in $\t$. \Xgabriel{``Existentially'' suggests that shapes are constraints. As far as I can tell, thinking of $(\nu)$ as a $(\lambda)$ is more accurate than an $(\exists)$.}
 Hences, shaped are closed. They are treated up to $\alpha$-conversion.
 %% We call $\t$ the \emph{structure}
 %% of the shape, which by constrat is defined up to renaming.
-We write $\bot$ for the trivial shape $\any \tvc \tvc$. We write $\Shapes$
+We write $\bot$ for the shape $\any \tvc \tvc$, which we call the \emph{trivial} shape. We write $\Shapes$
 the set of shapes and $\Shapesz$ the subset of non trivial shapes. 
-%
+
 Shapes are equipped with an ordering---that of the standard
 instantiation ordering, defined by:
 \begin{mathpar}
@@ -1201,17 +1201,17 @@ instantiation ordering, defined by:
 \end{mathpar}
 When writing $\sh \preceq \shp$, we say that $\sh$ is more general than
 $\shp$. When $\sh$ and $\shp$ are more general than one another, they are
-actually equal.
+actually equal. $\bot$ is the most general shape.
 
 % Define decomposition
 
 Given a shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t
 \where {\tvs \is \tys}$. This is uniquely determined, since it is
-independent of the choice of vairbales $\tvs$ for representing the shape.
+independent of the choice of vairbales $\tvs$ for representing the shape. \Xgabriel{I would expect the standard notation $\sh(\tys)$.}
 %
 A type $\t$ has a decomposition $\deshaped \sh \tys$ iff $\t = \tys \shapp$;
 we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial is
-the shape is $\bot$.
+the shape is $\bot$. \Xgabriel{It is obvious that $\sh(\tys)$ is uniquely determined in the paragraph above, but not completely obvious that the decomposition of $\tau$ as $\sh(\tys)$ is uniquely determined by $\sh$.}
 
 \begin{definition}
 A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
@@ -1245,7 +1245,7 @@ For example, the polytype  $\tpoly {\all \tva
   {\parens{\tint \tlist}}
 \end{mathpar}
 %
-Match functions operate on the principal decompositions, requiring the
+Match functions $f$ operate on the principal decompositions, requiring the
 property of parametricy:
 \begin{mathpar}
   \forall \sh \in \Shapesz, \shp \in \Shapes, \uad
@@ -1255,6 +1255,9 @@ property of parametricy:
   \implies
     \exi \tvs {f(\t)} \cequiv \exi \tvps f(\tp)
 \end{mathpar}
+\Xgabriel{I would call this \emph{uniformity} rather than parametricity. I believe that the definition is wrong: for example, it is not the case a-priori that $(\exists \tv. f(\tv~\tlist)) \equiv f(\tint \tlist)$. Instead we want to ask that if the substitution $\theta$ witnesses $\sh \leq \sh'$ then we have $f(\sh') \cequiv f(\sh)[\theta].$}
+
+\Xgabriel{Many remarks in the rest of the text below read incorrectly if we consider that $\bot$ is a valid shape. Should we consider defining shapes in a way that actually rules $\bot$ out? Then the decomposition $\ty = \sh(\tys)$ becomes a partial relation, and/but I think this is fine?}
 
 
 
@@ -1347,7 +1350,7 @@ we adopt a \emph{contextual} semantics. This formulation ensures
 the shape is \emph{known} from the surrounding context.
 % Open/use rule for suspended constraints
 First, we introduce a simplified variant of the natural rule
-(\Rule{Susp-Nat}) that only applies when $\tau$ already has a shape:
+(\Rule{Susp-Nat}) that only applies when $\tau$ already has a shape \Xgabriel{Shouldn't we ask for a non-trivial shape in this rule?}:
 \begin{mathpar}
   \infer[Susp-Use]
     {\t = \deshaped [\tvs] \typ \tys \\
