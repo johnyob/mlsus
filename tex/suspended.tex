@@ -2773,59 +2773,91 @@ $\cinfer \e \t$ interpret the free variables of $\t$ such that
 $\t$ becomes a valid type of $\e$. For example, to infer the entire type of $\e$
 we may pick a fresh type variable $\tv$ for $\t$.
 
+
 \begin{mathparfig}
   {fig:constraint-gen}
   {The constraint generation translation for ??}
-
-  \cinfer x \t \eqdef \cinst x \t
-
-  \cinfer {()} \t \eqdef \cunif \t \tunit
-
-  \cinfer {\efun \x \e} \t \eqdef
-    \cexists {\tva, \tvb} \cunif \t {\tva \to \tvb}
-    \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}
-
-  \cinfer {\eapp \eone \etwo} \t \eqdef
-    \cexists {\tva, \tvb} \cinfer \eone \tva \cand \cinfer \etwo \tvb
-    \cand \cunif \tva {\tvb \to \t}
-
-  \cinfer {\elet \x \eone \etwo} \t \eqdef
-    \clet \x \tva {\cinfer \eone \tva} {\cinfer \etwo \t}
-
-  \cinfer {\eannot \e \tvs \tp} \t \eqdef \cexists \tvs \cunif \t \tp \cand \cinfer \e \tp
-
-  \cinfer {\etuple {\eone, \ldots, \en}} \t \eqdef \cexists \tvs \cunif \t {\Pi\iton \tvs}
-    \cand \cAnd \iton \cinfer \ei {\tv_i}
-
-  \cinfer {\exfield \e j n} \t \eqdef \cexists {\tv, \tvbs} \cunif \tva {\Pi\iton \tvbs}
+\newcommand {\Crule}[2]{#1 &\eqdef& #2}
+\def \arraystretch{1.2}%4
+\begin{tabular}{LCL}
+\Crule
+   {\cinfer x \t}
+   {\cinst x \t}
+\\
+\Crule
+  {\cinfer {()} \t}
+  {\cunif \t \tunit}
+\\
+\Crule
+  {\cinfer {\efun \x \e} \t}
+  {\cexists {\tva, \tvb} \cunif \t {\tva \to \tvb}
+    \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}}
+\\
+\Crule
+  {\cinfer {\eapp \eone \etwo} \t}
+  {\cexists {\tva, \tvb} \cinfer \eone \tva \cand \cinfer \etwo \tvb
+    \cand \cunif \tva {\tvb \to \t}}
+\\
+\Crule
+  {\cinfer {\elet \x \eone \etwo} \t}
+  {\clet \x \tva {\cinfer \eone \tva} {\cinfer \etwo \t}}
+\\
+\Crule
+  {\cinfer {\eannot \e \tvs \tp} \t}
+  {\cexists \tvs \cunif \t \tp \cand \cinfer \e \tp}
+\\
+\Crule
+  {\cinfer {\etuple {\eone, \ldots, \en}} \t}
+  {\cexists \tvs \cunif \t {\Pi\iton \tvs}
+    \cand \cAnd \iton \cinfer \ei {\tv_i}}
+\\
+\Crule
+  {\cinfer {\exfield \e j n} \t}
+  {\cexists {\tv, \tvbs} \cunif \tva {\Pi\iton \tvbs}
     \cand \cinfer \e \tva
-    \cand \cunif \t {\tvb_j}
-
-  \cinfer {\efield \e j} \t \eqdef \cexists \tv \cinfer \e \tv
-    \cand \cmatch \tv {\fvs \t} {(\lambda (\Pi \iton \tvbs).~ \cunif \t {\tvb_j})}
-
-  \cinfer {\expoly \e {\exi \tvbs \tfor \tvs \tp}} \t \eqdef \cexists {\tvbs}
+    \cand \cunif \t {\tvb_j}}
+\\
+\Crule
+  {\cinfer {\efield \e j} \t}
+  {\cexists \tv \cinfer \e \tv
+    \cand \cmatch \tv {\fvs \t} {(\lambda (\Pi \iton \tvbs).~ \cunif \t
+    {\tvb_j})}}
+\\
+\Crule
+  {\cinfer {\expoly \e {\exi \tvbs \tfor \tvs \tp}} \t}
+  {\cexists {\tvbs}
     (\cfor \tvs \cinfer \e \tp)
-    \cand \cunif \t {\tpoly {\tfor \tvs \tp}}
-
-  \cinfer {\einst \e} \t \eqdef \cexists \tva
+    \cand \cunif \t {\tpoly {\tfor \tvs \tp}}}
+\\
+\Crule
+  {\cinfer {\einst \e} \t}
+  {\cexists \tva
     \cinfer \e \tva
-    \cand \cmatch \tva {\fvs \t} {(\lambda (\exi \tvbs \tpoly \ts).~ \ts \leq \t)}
-
-  \cinfer {\efield \e \elab} \t \eqdef \cexists \tv \cinfer \e \tv
+    \cand \cmatch \tva {\fvs \t} {(\mlam {(\exi \tvbs \tpoly \ts)} \ts
+    \leq \t)}}
+\\
+\Crule
+  {\cinfer {\efield \e \elab} \t}
+  {\cexists \tv \cinfer \e \tv
     \cand \bbrackets {\elab \mathop{!} \tv}
-    \cand \bbrackets {\elab \leq \t \to \tv}
-
-  \cinfer {\erecord {\overline{\elab = \e}}} \t \eqdef
-    \bbrackets {\bar \elab \mathop{!} \t}
-    \cand \cAnd \iton \bbrackets {\elab = \e : \t}
-
-  \bbrackets {\elab = \e : \t} \eqdef \cexists \tv \cinfer \e \tv
-    \cand \bbrackets {\elab \leq \tv \to \t}
-
-  \bbrackets {\elab \leq \t \to \tp} \eqdef
-    \cmatch \tp {\fvs \t} {(\lambda (\tvs \Fapp).~
-    \mlet \ts {\D(\elab/\F)} \ts \leq \t \to \tvs \Fapp)}
+    \cand \bbrackets {\elab \leq \t \to \tv}}
+\\
+\Crule
+  {\cinfer {\erecord {\overline{\elab = \e}}} \t}
+  {\bbrackets {\bar \elab \mathop{!} \t}
+    \cand \cAnd \iton \bbrackets {\elab = \e : \t}}
+\\
+\Crule
+  {\bbrackets {\elab = \e : \t}}
+  {\cexists \tv \cinfer \e \tv
+    \cand \bbrackets {\elab \leq \tv \to \t}}
+\\
+\Crule
+  {\bbrackets {\elab \leq \t \to \tp}}
+  {\cmatch \tp {\fvs \t} {(\mlam {(\tvs \Fapp)}
+    {\mlet \ts {\D(\elab/\F)} \ts \leq \t \to \tvs \Fapp)}}}
+\\    
+\end{tabular}
 \end{mathparfig}
 \Xalistair{We need a cute name for our calculus -- we could go for
 $\textsf{ML}_\textsf{sus}$ (or symbol for the subscript)}
