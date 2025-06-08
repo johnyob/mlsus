@@ -2855,7 +2855,7 @@ we may pick a fresh type variable $\tv$ for $\t$.
 \Crule
   {\bbrackets {\elab \leq \t \to \tp}}
   {\cmatch \tp {\fvs \t} {(\mlam {(\tvs \Fapp)}
-    {\mlet \ts {\D(\elab/\F)} \ts \leq \t \to \tvs \Fapp)}}}
+    {\mlet \ts {\labenv(\elab/\F)} \ts \leq \t \to \tvs \Fapp)}}}
 \\    
 \end{tabular}
 \end{mathparfig}
