@@ -1724,45 +1724,39 @@ we collect all the rules pertaining to the satisfiability judgement in
     {\semenv \vdash \cinst x \t}
 
   \infer[Susp-Use]
-    {\deshaped \t = \angles {\sh, \theta} \\
+    {\t = \angles {\sh, \theta} \\
      \semenv_{\mid \Delta}, \semenv(\theta) \vdash f(\sh)
     }
     {\semenv \vdash \cmatch \t \Delta f}
 
 \Alt{
   \infer[Susp-Use]
-    {\deshaped \t \Defined \\
-     \semenv_{\mid \Delta} \th f(\semenv \semenv \t)
+    {\t \in \Typesz \\
+     \semenv_{\mid \Delta} \th f(\t)
     }
     {\semenv \vdash \cmatch \t \Delta f}
 }
 
   \infer[Susp-Ctx]
     {\Cshape \C \tv \sh \\\\
-      \semenv \vdash \C[\cexists {\fvs \sh} \cunif \tv \sh \cand
+      \semenv \th \C[\cexists {\fvs \sh} \cunif \tv \sh \cand
       \cmatch \sh \Delta f]
     }
     {\semenv \vdash \C[\cmatch \tv \Delta f]}
 
 \Alt{
   \infer[Susp-Ctx]
-    {\Cshape \C \tv \sh \\\\
-      \semenv \vdash \C[\cexists {\fvs \sh} \cunif \tv \sh \cand
-      \cmatch \sh \Delta f]
+    {\Cshape \C \tv {\any \tvcs \t} \\\\
+      \semenv \th \C[\cexists \tvcs \cunif \tv \t \cand
+      \cmatch \t \Delta f]
     }
     {\semenv \vdash \C[\cmatch \tv \Delta f]}
 }
 \\
-\Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \shp, \uad
-      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies
-            \sh =_{\setminus \alpha} \shp
-
-\Alt{
-  \Cshape \C \tv \sh \Wide\eqdef \
-  \forall \semenv, \t \in \Typesz, \uad
-      \semenv \vdash \C[\cexists \tvbs \cunif \tv \t] \implies
+\Cshape \C \tv \sh \Wide\eqdef \
+  \forall \semenv, {\any \tvcs \t} \in \Typesz, 
+      \semenv \th \C[\cexists \tvcs \cunif \tv \t] \implies
             \sh \le \any \tvcs \t
-}
 \end{mathparfig}
 
 % Contextual semantics is cool, and our approach extends to type systems
