@@ -586,9 +586,9 @@ validate that the implementation is efficient for the moment.}
 \begin{bnffig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
-  \emptyentry[Type variables]{\cva, \cvb, \cvc}{}
+\entry[Type variables]{\cva, \cvb, \cvc}{}{}
 \\
-\entry[Constraint types]{\t}{
+\entry[Types]{\t}{
      \cv \mid \overline{\t} \Fapp ~ \mid \ldots
 }\\
 \entry [Type constructors]{\Fapp}{
@@ -610,6 +610,8 @@ validate that the implementation is efficient for the moment.}
   \nextline
   \and  \cmatch \t  \D  \hf
 }\\
+%% \entry[Constraint abstractions]{}{\clam \cv \C}
+%% \\
 \entry[Shapes] \sh {\tvs \F \and \ldots}
 \\
 \entry[Closure contexts] \D {\eset \and \D, \tv \and \D, \x}
@@ -620,7 +622,8 @@ validate that the implementation is efficient for the moment.}
 Building the constraint-based type inference framework of
 \citet{Pottier-Remy/emlti}, we adopt a constraint language that includes
 both term and type variables. Its syntax is given
-in~\Cref{fig:constraint-syntax}.
+in~\Cref{fig:constraint-syntax}. We write $\Types$ the set of types and
+$\Typesz$ the subset of nonvariable types.
 %
 The constraint language contains tautologic constraints ($\ctrue$),
 unsatisfiable constraints ($\cfalse$), and logical conjunctions ($\cone
@@ -648,7 +651,7 @@ type $\t$ to the abstraction bound to $x$.
 
 \Xdidier {Since you write $\capp \x \t$, instead of $\x \le \t$, then I
 wrote $\clet \x \tv \Cone \Ctwo$ instead of $\Clet \x \tv \Cone \Ctwo$.
-Macroyfied and easily reversible}
+[It is macroyfied, so easily reversible.]}
 
 % Suspended match constraints
 
@@ -935,6 +938,9 @@ type classes, respectively, which can incur runtime overhead unless
 optimized away by monomorphization and aggressive inlining.
 
 % How it relates to OCaml?
+
+\Xdidier {why pick other examples and not reuse those of the introductino?}
+
 \OCaml supports a limited yet useful form of static overloading for record
 labels and data type constructors.
 \begin{program}[input]
@@ -1176,71 +1182,16 @@ derivation:
 
 % Natural semantics
 
-\begin{version}{\blue\False}%
-\begin{hparens}
-\Xdidier{Treatment of shapes:}
-The treatment of shapes is too informal with respect to free variables: a
-shape $\sh$ should be the generalization of a symbol to cope with
-polytypes. Hence it should be a closed term $\exi \tvs \tvs \F$ and not an
-open term. Then, we may define the decomposition of a type by a shape $\t /
-{\F}$ or $\t/ \exi \tvs \tvs \F$ as the types $\tys$ such that $\t = (\tvs
-\F)\where {\tvs \is \tys}$.  $f$ used in match clauses should be functions
-from types to constraints.  They should receive a type which they can
-decomposed by pattern matching.
-
-Below, I propose \Alt {alternative
-formulations in red} followingf these rules. I would prefer to write $\t ?
-[\D] f$ rather than $\cmatch \t \D f$ since it is $f$ that pattern matches
-on $\tv$ while $\t ? [\D] f$ just means wait until $\t$ is a non variable to
-fire the constraint. The replacement of $\tv$ by $\t$ in $\tv ? [\D] f$
-is done by \Rule {Susp-Ctx}, which then allows \Rule {Susp-Use} to fire.
-
-We need to be clearer about the abstract function $f$. In particular,
-they should dispach on the shape of there argument, that is such that
-the constraints $f (\semenv (\sh))$ and $\semenv (f (\sh))$ are equivalent.
-\Xalistair
-  {This last statement makes no sense -- $\semenv$ doesn't operate on
-  constraints or shapes (according the the above redefinition of shapes,
-  since they're closed).}
-\Xdidier
-  {Ah, I see: ground types ground types are not a subset of types?
-   Still, this is the idea though. Maybe we can stil extract a subsitution,
-   as before while keeping the new definitio of shapes.}
-
-\Xalistair{I prefer this definition of shape wrt the guarentees it gives
-  about scoping. Yet, the constraint semantics are wrong. For instance, by
-  permitting the metafunction to operate on types, it is possible that the
-  two constraints $\cunif \tv \tint \tlist \cand \cmatch \tv {} f$ differs
-  from $\cmatch {\tint \tlist} {} f$ since the latter would permit the
-  meta-function to `deeply' match on the type while the former doesn't. This
-  is why shapes were open shallow types.}
-\Xdidier
-  {I requested opaque functions to be \emph{parametric}---which should be
-   defined. But this was this idea to force them to not be able to look
-   deeper.}
-
-\Xalistair {Also I'm more in agreement with you that perhaps $f$ shouldn't
-  be a metafunction anymore
-  but a list of constraint cases $\lambda \bar c$ where each case is a
-  pattern $p \to \c$.  However, I tried defining a notion of pattern and
-  realised they'd have to be very dependent (e.g. in tuples, we'd need to be
-  able to match on the size and index its subcomponents). Did you have a
-  simple way to achieve this in mind?}
-\end{hparens}
-\end{version}
-
-\begin{version}{\blue\True}
-\begin{hparens}
-\Xalistair{Shapes v3}
 We introduce \emph{shapes}, a generalization of the notion of type
 constructosr to cope with polytypes.  A shape $\sh$ is
 an existentially quantified type $\any \tvs \t$ where $\tvs$ is exactly the
-sequence of free variables of $\t$ in order of appearance in $\t$.  A shaped
-is closed. It is treated up to $\alpha$-conversion.
+sequence of free variables of $\t$ in order of appearance in $\t$.
+Hences, shaped are closed. They are treated up to $\alpha$-conversion.
 %% We call $\t$ the \emph{structure}
 %% of the shape, which by constrat is defined up to renaming.
-We write $\bot$ for the partial shape $\any \tvc \tvc$.
-
+We write $\bot$ for the trivial shape $\any \tvc \tvc$. We write $\Shapes$
+the set of shapes and $\Shapesz$ the subset of non trivial shapes. 
+%
 Shapes are equipped with an ordering---that of the standard
 instantiation ordering, defined by:
 \begin{mathpar}
@@ -1248,14 +1199,16 @@ instantiation ordering, defined by:
     {\tvas \disjoint \any \tvbs \tone}
     {\any {\tvas} \tone \preceq \any {\tvbs} \tone \where {\tvas \is \tys}} 
 \end{mathpar}
-When writing $\sh \preceq \shp$, we say that $\sh$ is more general than $\shp$.
+When writing $\sh \preceq \shp$, we say that $\sh$ is more general than
+$\shp$. When $\sh$ and $\shp$ are more general than one another, they are
+actually equal.
 
 % Define decomposition
 
 Given a shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t
 \where {\tvs \is \tys}$. This is uniquely determined, since it is
 independent of the choice of vairbales $\tvs$ for representing the shape.
-
+%
 A type $\t$ has a decomposition $\deshaped \sh \tys$ iff $\t = \tys \shapp$;
 we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial is
 the shape is $\bot$.
@@ -1266,7 +1219,7 @@ A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
   \item
     $\t = \tys \shapp$
   \item
-    $\forall \shp, \shp\not=\bot \wedge \t = \tys' \shapp[\shp]
+    $\forall \shp \in \Shapesz, \t = \tys' \shapp[\shp]
     \implies \sh \preceq \shp$
     %% For any other non-trivial decomposition $\t = \tys' \shapp[\shp]$,
     %% $\sh \preceq \shp$
@@ -1277,23 +1230,35 @@ A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
 Any nonvariable type $\t$ has a non-trivial principal shape $\sh$.
 \end{theorem}
 We write $\shape \t = \sh$ for the non-trivial principal shape of $\t$ (if
-defined).
+defined). The $\shape {\tys \F}$ is $\exi \tvs \tvs \F$.
+The interest of the definition is to extend to polytypes:
+For example, the polytype  $\tpoly {\all \tva
+  {\parens{\tpoly {\all \tvb {\parens{\tvb \to \tint \tlist}} \tprod \tvb}
+  \to \tva} 
+  \to \tva}}$  can be decomposed as:
+\begin{mathpar}
+\deshaped
+  [\tvc]
+  {\tpoly {\all \tva
+     {\parens{\tpoly {\all \tvb \parens{\tvb \to \tvc} \tprod \tvb} \to \tva}
+    \to \tva}}}
+  {\parens{\tint \tlist}}
+\end{mathpar}
 %
 Match functions operate on the principal decompositions, requiring the
 property of parametricy:
 \begin{mathpar}
-  \forall \sh, \shp, \uad
-    \sh \not=\bot \wedge
+  \forall \sh \in \Shapesz, \shp \in \Shapes, \uad
     \sh \preceq \shp \wedge
     \sh = \any \tvs \t \wedge
     \shp = \any \tvps \tp
   \implies
     \exi \tvs {f(\t)} \cequiv \exi \tvps f(\tp)
 \end{mathpar}
-\vskip -\belowdisplayskip\vskip -\smallskipamount
-\end{hparens}
-\end{version}
 
+
+
+\paragraph {Suspended constraints, an attempt}
 
 To extend these semantics to our suspended constraints, a first natural idea
 is to propose the following rule---henceforth referred to as the
@@ -1373,10 +1338,10 @@ any record type with the field $z$ for the type of $x$, and may be no most
 general choice.\Xalistair{Maybe we could show a bit of the constraint,
 simplified.}\Xdidier{This is unclear, as you are discussing overloading of
 record fields without telling us which record fields have been declared.
-The example would work better with tupples that are structural---or with
-structural record types.}
+The example would perhaps work better with structural tuples?}
 
-% Contextual semantics
+\paragraph {Contextual semantics}
+
 Rather than relying on the guesswork inherent in the natural semantics,
 we adopt a \emph{contextual} semantics. This formulation ensures
 the shape is \emph{known} from the surrounding context.
@@ -1417,14 +1382,11 @@ of $\tv$ to have the \emph{same} shape $\sh$, modulo $\alpha$-equivalence of
 shapes. The formal definition of this condition, which is somewhat
 technical, will be introduced later.
 
-In other words, we can \emph{discover}\Xdidier{Was \emph{guess} but this is
-not the correct word, you do not guess in our sense, since there is no other
-choice even better we are force to make this choice. (\emph{use} would also
-be possible but I prefer \emph{doscover}} a shape, as in the natural semantics,
-but only if ambient constraint context $\C[\square]$ guarantees that
-there is a unique possible shape.
-This rule is typically used in combinatino with \Rule {Susp-Use} which
-can then be used in the prove of the right-hand side premise. 
+In other words, we can \emph{discover} a shape, as in the natural semantics,
+but only if ambient constraint context $\C[\square]$ guarantees that there
+is a unique possible shape.  This rule is typically used in combinatino with
+\Rule {Susp-Use} which can then be used in the proof of the right-hand-side
+premise.
 
 % Examples
 
@@ -1601,9 +1563,7 @@ semantics is exploited using the meta-language as opposed to a flaw in the
 object language \ie constraints.
 
 \Xdidier{I don't understand $\C_{\text{loop}}$: this cannot be written since
-there is not recursion in the language of constraints}.
-\Xdidier{Actually, I don't understand what $f$ is in the meta language and
-why we do not express is as a constraint}
+there is no recursion in the language of constraints}.
 
 \paragraph{Interaction with polymorphism}
 
@@ -1617,9 +1577,8 @@ it is carefully crafted to give us the desired properties.
 % Partially generalised type schemes (example)
 To illustrate, let us consider again \code{e}$_{10}$:
 \begin{program}[input]
-  type three = { x : int; y : int }
-  ...
-  let e$_{10}$ r = let x = r.x in x + r.y
+type three = {x : int; y : int}  ...
+let e$_{10}$ r = let x = r.x in x + r.y
 \end{program}
 A simplified typing constraint for this program is:
 \begin{mathpar}
@@ -1667,11 +1626,11 @@ prevents information from later use sites from influencing the generalised
 type--this is why polymorphic type information is considered `known'.
 
 \Xdidier
-{I adding a variable of this example in the intro. Could it be reused
-here instead of using yet another one?}
+{There is now  a variant of this example \ocaml$e_7$ in the introduction.
+Could we be reused it here instead of using another one?}
 For example, the following program is rejected by \OCaml:
 \begin{program}[input]
-  let e$_{11}$ = let f r = r.x in f ({ x = 1; y = 1 })
+  let e$_{11}$ = let getx r = r.x in getx {x = 1; y = 1}
 \end{program}
 Yet this example ought to be well-typed: the type of \code{f}'s
 argument is unambiguously the record type \code{three}. The reason
@@ -1679,7 +1638,7 @@ this is ill-typed is that \geninst-directional inference cannot propagate
 the known type of the record (\ie \code{three}) \textbf{back} to
 \code{f}'s type.
 
-In constract, our approach permits such refinement.
+By contrast, our approach permits such refinement.
 The (simplified) constraint generated when typing \code{e}$_{11}$ is:
 \begin{mathpar}
   \cexists \tv
@@ -1799,9 +1758,10 @@ we collect all the rules pertaining to the satisfiability judgement in
             \sh =_{\setminus \alpha} \shp
 
 \Alt{
-  \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \shp, \uad
-      \semenv \vdash \C[\cexists {\fvs \shp} \cunif \tv \shp] \implies
-            \sh =_{\setminus \alpha} \shp
+  \Cshape \C \tv \sh \Wide\eqdef \
+  \forall \semenv, \t \in \Typesz, \uad
+      \semenv \vdash \C[\cexists \tvbs \cunif \tv \t] \implies
+            \sh \le \any \tvcs \t
 }
 \end{mathparfig}
 

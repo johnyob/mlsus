@@ -65,9 +65,9 @@
    & #2&&\bnf@flushentry}
 \newcommand {\bnf@entry}[3][]
   {\bnf@flushentry \gdef\@bnf@entry {&&#1}
-   & #2\bnf@is #3\bnf@flushentry}
+   & #2&\ifempty{#2}{}{\ifempty{#3}{}{\bnf@is}}& #3\bnf@flushentry}
 \def \bnf@empty{\gdef \@bnf@entry{}}\bnf@empty
-\def \bnf@is {&::=&}
+\def \bnf@is {::=}
 \def \bnf@mid {\mid}
 \def \bnf@flushentry{\@bnf@entry \bnf@empty}
 \def \bnf@andcr{\bnf@flushentry \\&&\bnf@mid&}
@@ -75,7 +75,6 @@
 
 \newenvironment{bnfgrammar}[1][]
   {\let \entry \bnf@entry
-   \let \emptyentry \bnf@emptyentry
    \let \is \bnf@is
    \let \and \bnf@mid
    \let \andcr \bnf@andcr

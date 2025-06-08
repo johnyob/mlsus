@@ -79,6 +79,11 @@
 \let \bln@ifequal \ifequalbool
 
 \def \bln@empty {}
+\newcommand{\ifempty}[3]
+   {\def \@test{#1}\ifx \@test \bln@empty
+    \let \@do \bln@true\else \let \@do \bln@false\fi \@do{#2}{#3}}
+\let \bln@ifempty \ifempty    
+
 \newcommand {\IsEmpty}[1]
     {\ifybool{#1}{\bln@empty}}
 \newcommand {\IsxEmpty}[1]
