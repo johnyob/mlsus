@@ -682,7 +682,13 @@ constraint. Formally, a suspended constraint is written as $\cmatch \t \D
 \Xdidier{Why make $f$ a meta-function, and not just a concrete
 function $\efun p \C$ where $p$ is a shape pattern that matches in
 the shape and binds underlying type variables $\tvs$ to types $\tys$?}
-\Xgabriel{Each new language feature would need to introduce its own domain-specific constraint formers; for example to type nominal records you need to fetch field declarations from the declaration environment. I would rather leave this to the meta-level to keep the core language simple.}
+\Xgabriel{Each new language feature would need to introduce its own
+domain-specific constraint formers; for example to type nominal records you
+need to fetch field declarations from the declaration environment. I would
+rather leave this to the meta-level to keep the core language
+simple.}\Xdidier{That is not good reason: we may have a concrete language
+with dots and exhibit the properties that should holds for the language
+and do hold for the current features.}
 
 
 % Informal semantics
@@ -1192,7 +1198,12 @@ derivation:
 We introduce \emph{shapes}, a generalization of the notion of type
 constructors to cope with polytypes.  A shape $\sh$ is
 an existentially quantified type $\any \tvs \t$ where $\tvs$ is exactly the
-sequence of free variables of $\t$ in order of appearance in $\t$. \Xgabriel{``Existentially'' suggests that shapes are constraints. As far as I can tell, thinking of $(\nu)$ as a $(\lambda)$ is more accurate than an $(\exists)$.}
+sequence of free variables of $\t$ in order of appearance in $\t$.
+\Xgabriel{``Existentially'' suggests that shapes are constraints. As far as
+I can tell, thinking of $(\nu)$ as a $(\lambda)$ is more accurate than an
+$(\exists)$.}\Xdidier {I am not sure $\lambda$ works better, but I am find
+to pick another qualifier.  In fact \texttt{\string \some} woudld better
+carry the idea than \texttt{\string\any} for the macro name.} which work
 Hences, shaped are closed. They are treated up to $\alpha$-conversion.
 %% We call $\t$ the \emph{structure}
 %% of the shape, which by constrat is defined up to renaming.
@@ -1214,11 +1225,19 @@ actually equal. $\bot$ is the most general shape.
 
 Given a shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t
 \where {\tvs \is \tys}$. This is uniquely determined, since it is
-independent of the choice of vairbales $\tvs$ for representing the shape. \Xgabriel{I would expect the standard notation $\sh(\tys)$.}
+independent of the choice of variables $\tvs$ for representing the
+shape. \Xgabriel{I would expect the standard notation $\sh(\tys)$.}\Xdidier
+{I would prefer this too. I reused Alistairs prefix notation. In fact, I
+would prefer that we use the postfix notation for formal types everywhere
+and reserve the prefix notation for examples. I can make the change if we
+agree.} 
 %
 A type $\t$ has a decomposition $\deshaped \sh \tys$ iff $\t = \tys \shapp$;
-we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial is
-the shape is $\bot$. \Xgabriel{It is obvious that $\sh(\tys)$ is uniquely determined in the paragraph above, but not completely obvious that the decomposition of $\tau$ as $\sh(\tys)$ is uniquely determined by $\sh$.}
+we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial if
+the shape is trivial. \Xgabriel{It is obvious that $\sh(\tys)$ is uniquely
+determined in the paragraph above, but not completely obvious that the
+decomposition of $\t$ as $\sh(\tys)$ is uniquely determined by
+$\sh$.}\Xdidier {Why not?}
 
 \begin{definition}
 A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
@@ -1253,18 +1272,29 @@ For example, the polytype  $\tpoly {\all \tva
 \end{mathpar}
 %
 Match functions $f$ operate on the principal decompositions, requiring the
-property of parametricy:
+property of \emph{uniformity}:
 \begin{mathpar}
-  \forall \sh \in \Shapesz, \shp \in \Shapes, \uad
-    \sh \preceq \shp \wedge
-    \sh = \any \tvs \t \wedge
-    \shp = \any \tvps \tp
-  \implies
-    \exi \tvs {f(\t)} \cequiv \exi \tvps f(\tp)
+  \forall (\any \tvs \t) \in \Shapesz,
+  \forall % \tvps, \tys, \uad
+  (\any \tvps \t \where {\tvs \is \tys}) \in \Shapes,
+  \uad %\implies
+    \cexists \tvs {\cunif \tvs \tys \wedge f(\t)}
+    \cequiv f(\t \where {\tvs \is \tys})
 \end{mathpar}
-\Xgabriel{I would call this \emph{uniformity} rather than parametricity. I believe that the definition is wrong: for example, it is not the case a-priori that $(\exists \tv. f(\tv~\tlist)) \equiv f(\tint \tlist)$. Instead we want to ask that if the substitution $\theta$ witnesses $\sh \leq \sh'$ then we have $f(\sh') \cequiv f(\sh)[\theta].$}
+\Xgabriel
+{I would call this \emph{uniformity} rather than parametricity.\Xdidier{I
+committed.} I believe that the definition is wrong: for example, it is not
+the case a-priori that $(\exists \tv. f(\tv \tlist)) \equiv f(\tint
+\tlist)$. Instead we want to ask that if the substitution $\theta$ witnesses
+$\sh \leq \sh'$ then we have $f(\sh') \cequiv f(\sh)[\theta].$}\Xdidier{Is
+this fixed?} 
 
-\Xgabriel{Many remarks in the rest of the text below read incorrectly if we consider that $\bot$ is a valid shape. Should we consider defining shapes in a way that actually rules $\bot$ out? Then the decomposition $\ty = \sh(\tys)$ becomes a partial relation, and/but I think this is fine?}
+\Xgabriel{Many remarks in the rest of the text below read incorrectly if we
+consider that $\bot$ is a valid shape. Should we consider defining shapes in
+a way that actually rules $\bot$ out? Then the decomposition $\ty =
+\sh(\tys)$ becomes a partial relation, and/but I think this is
+fine?}\Xdidier {Yes, I know. But the trivial shape first the definition
+based on the ordering.}
 
 
 
@@ -1275,9 +1305,9 @@ is to propose the following rule---henceforth referred to as the
 \emph{natural semantics} of suspended constraints:
 \begin{mathpar}
 \infer[Susp-Nat]
-  {\semenv(\tau) = \deshaped [\tvs] \typ \tys \\
+  {\semenv(\t) = \deshaped [\tvs] \typ \tys \\
    \semenv_{\mid \Delta}, \tvs \is \tys \th f(\tp)}
-  {\semenv \vdash \cmatch \tau \Delta f}
+  {\semenv \vdash \cmatch \t \Delta f}
 \end{mathpar}
 % Explain the rule
 This rule states that a suspended constraint is satisfied by $\semenv$
@@ -1357,10 +1387,13 @@ we adopt a \emph{contextual} semantics. This formulation ensures
 the shape is \emph{known} from the surrounding context.
 % Open/use rule for suspended constraints
 First, we introduce a simplified variant of the natural rule
-(\Rule{Susp-Nat}) that only applies when $\tau$ already has a shape \Xgabriel{Shouldn't we ask for a non-trivial shape in this rule?}:
+(\Rule{Susp-Nat}) that only applies when $\t$ already has a shape
+\Xgabriel{Shouldn't we ask for a non-trivial shape in this
+rule?}\Xdidier{Yes, indeed}:  
 \begin{mathpar}
   \infer[Susp-Use]
     {\t = \deshaped [\tvs] \typ \tys \\
+    \typ \in \Typesz \\
      \semenv_{\mid \Delta},\tvs \is {\semenv(\tys)}  \th f(\tp)
     }
     {\semenv \vdash \cmatch \t \Delta f}
