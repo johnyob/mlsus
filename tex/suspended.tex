@@ -617,6 +617,8 @@ validate that the implementation is efficient for the moment.}
 \entry[Closure contexts] \D {\eset \and \D, \tv \and \D, \x}
 \end{bnffig}
 
+\Xdidier {We need to define $\G \th \t$}
+
 % Syntax!
 
 Building the constraint-based type inference framework of
@@ -1086,9 +1088,14 @@ are discharged accordingly.
 The semantics of constraints is given, as is standard, by a satisfiability
 judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied
 by the solution, or valuation, $\semenv$. The semantic environment $\semenv$
-maps type variables to \emph{ground} types, and term variables to constraint abstractions.
+maps term variables to constraint abstractions of the from $\clam \cv \C$
+and type variables to \emph{ground} types, \ie the subset $\Ground$ of type
+expressions with no free type variables.\footnote {Ground types are thus
+finite trees. In \cref{sec/rec-types}, we dissuss the alternative choice
+of regular trees for the set of ground types that models equirecursive types.}
 
 % Definition exampled
+
 The judgment is defined, for all constraint-formers except suspended
 constraints, in \cref{fig:constraint-semantics}. $\ctrue$ is satisfied in
 any environment, and $\cfalse$ in none. An environment $\semenv$ satisfies
@@ -2856,43 +2863,116 @@ we may pick a fresh type variable $\tv$ for $\t$.
   {\bbrackets {\elab \leq \t \to \tp}}
   {\cmatch \tp {\fvs \t} {(\mlam {(\tvs \Fapp)}
     {\mlet \ts {\labenv(\elab/\F)} \ts \leq \t \to \tvs \Fapp)}}}
-\\    
+\\[1ex]
+\Crule
+  {\csem {\enil \th \e : \t}}
+  {\cinfer \e \t}
+\\
+\Crule
+  {\csem {\tv, \G \th \e : \t}}
+  {\call \tv {\csem {\G \th \e : \t}}}
+\\
+\Crule
+  {\csem {x : \ts, \G \th \e : \t}}
+  {\clet \x \tv {\ts \le \tv} {\csem {\G \th \e : \t}}}
+\\
 \end{tabular}
 \end{mathparfig}
 \Xalistair{We need a cute name for our calculus -- we could go for
-$\textsf{ML}_\textsf{sus}$ (or symbol for the subscript)}
+\OML \Lang{oML} or \ML with a  subscript?}
 
 % Explanation of constraint gen cases
 % Simple constraint gen
-The function $\cinfer - {\mathop{=}}$ is defined in \cref{fig:constraint-gen}.
-We assume that all variables $\tv_i$ existentially bound by the translation are fresh.
-Unsurprisingly, variables generate an instantiation constraint. Unit $()$ requires
-the type $\t$ to be $\tunit$. Function generate a constraint that binds two fresh
-flexible type variables for the argument and return types. We use a $\Let$ constraint
-to bind the argument in the constraint generated for the body of the function. The
-$\Let$ constraint is monomorphic since $\tv_3$ is fully constrained by type variables
-defined outside the abstraction's scope and therefore cannot be generalized. Function
-application binds two fresh flexible type variables for the function and argument types
-and ensures $\tv$ is the return type of the function. Let terms generate a polymorphic
-let constraint; $\cabs \tv {\cinfer \e \tv}$ is a principal constraint abstraction for $\e$:
-its intended interpretation is the set of all types that $\e$ admits.
+
+The function $\cinfer - {\mathop{=}}$ is defined in
+\cref{fig:constraint-gen}.  We assume that all variables $\tv_i$
+existentially bound by the translation are fresh.\Xdidier {I do nor
+understand this, since we are using explicit existential binders.}
+%
+Unsurprisingly, variables generate an instantiation constraint. Unit $()$
+requires the type $\t$ to be $\tunit$. A function generates a constraint
+that binds two fresh flexible type variables for the argument and return
+types.  We use a $\Let$ constraint to bind the argument in the constraint
+generated for the body of the function. The $\Let$ constraint is monomorphic
+since $\tvc$ is fully constrained by type variables defined outside the
+abstraction's scope and therefore cannot be generalized.  An application
+binds two fresh flexible type variables for the function and argument types
+and ensures $\t$ is the return type of the function. A Let-binding generates
+a polymorphic let constraint; $\cabs \tv {\cinfer \e \tv}$ is a principal
+constraint abstraction for $\e$: its intended interpretation is the set of
+all types that $\e$ admits.
 
 % New constraint gen cases
+
 \TODO{Explain new constraint gen cases}
 
 
 % Soundness/completeness of constraint gen
-The translation is sound and complete with respect to ?? typing rules. That is to say, the term $e$ is well-typed if and only if $\llbracket e : \alpha \rrbracket$ is satisfiable.
+
+The translation is sound and complete with respect to the typing judgment. 
+That is to say, the term $e$ is well-typed if and only if $\llbracket e : \alpha
+\rrbracket$ is satisfiable.
 %
 \begin{theorem}{(Constraint generation is sound and complete)}
-  Given a well-formed assignment $\semenv$. Then $\semenv \th \cinfer \e \tv$
-  if and only if $\floor \semenv \th \e : \semenv(\tv)$.
+  Given a well-formed assignment $\semenv$. Then $\semenv \th \cinfer \e
+  \tv$ if and only if $\floor \semenv \th \e : \semenv(\tv)$.
 \end{theorem}
 \Xalistair{Our type system has well-formedness conditions (that typically
 make proving this result (using a ground semantics for constraints), difficult)}
 
+\Xdidier{I would prefer to state it this way}
+\begin{theorem}{(Constraint generation is sound and complete)}
+$\G \th \e : \t$ iff\/
+$\th \csem {\G \th \e : \t}$.
+\end{theorem}
 
+\paragraph{Stability by program transformations}
 
+A well-known property of \ML is to admit principal types---and the design of
+fragile \ML extensions is all about the preservation of principal types.
+However, core \ML has several other key properties:
+\SetLabelAlign{mydesc}{#1:\hfill}
+\begin{description}[font=\it,align=mydesc,topsep=1ex,itemsep=1ex,leftmargin=0ex]
+\newcommand {\eswap}{\mathprefix  {swap}}
+
+\item [Compositionality]
+  If $\G \th \E \where \e : \t$ then there exists $\Gp$ and $\tp$ such that
+  $\Gp \th \e : \tp$ and for all term $\ep$ such that $\Gp \th \ep : \tp$,
+  then $\G \th \E \where \ep : \t$.
+
+\item [Factorization]
+  If $\G \th \e \where {\x \is \ez} : \t$ and $\G \th \ez : \ts$ then
+  $\G \th \elet \x \ez \e : \t$.
+
+%% \item [Inlining]
+%%   If $\G \th \elet \x \ez \e : \t$ then $\G \th \e \where {\x \is \ez} : \t$
+
+\item [Application equitypability]
+  The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
+  equitypable where $\eswap$ is $\efun f {\efun \xa {\efun \xb {\eappp f \xb
+  \ea}}}$.  Thanks to a few other properties, this implies in turn that
+  $\eapp f \ea$ and $\eApp f \ea$ and $\eb \ePipe \ea$ are themselves
+  equi-typable where are the application function $\efun f \efun \x \eapp f
+  \x$ and the reverse application function $\efun \x \efun f \eapp f \x$,
+  respectively.
+
+\end{description}
+It is well-known that bidirectional types inference breaks application
+equi-typability. However, both \Geninst-directional and omnidirectional type
+inference preserve it.
+
+In core \ML, Factorization is a consequence of principal types and
+compositionality.  It is definitely broken by overloading, since the inlined
+version may has several overloading sites that may be resolved differently.
+However, we may wonder about linear factorization, \ie. when $\x$ occurs
+exactly once in~$\e$.  This is again broken by bidirectional type inference,
+but preserved by both \Geninst-directional and omnidirectional type inference,
+although for different reasons: for \Geninst-directional type inference, it
+follows from the limited use of contextual type information; for
+omnidirectional type inference, it follows by backpropagation\Xdidier{I
+think this is not the right term}.
+
+\Xdidier {How formal should we be? Should we justify these claims?}
 
 \section{Solving constraints}
 \label{sec:solving}
@@ -2920,6 +3000,18 @@ make proving this result (using a ground semantics for constraints), difficult)}
 
 % Metatheory
 
+\begin{theorem}
+All equivalence rules preserves the solutions. 
+\end{theorem}
+
+Define a strategy by orienting the rules.
+\begin{theorem}
+The stategy always terminates.
+\end{theorem}
+
+\begin{theorem}
+All constraints in normal forms, but $\cfalse$ admit principal solutions.
+\end{theorem}
 
 \section{HM Prototype and discussion}
 \label{sec:implementation}
@@ -2970,6 +3062,35 @@ fun (r1 : one) ->
 
 
 \subsection{Default clauses}
+
+\subsection{Recursive types}
+\label {sec/rec-types}
+
+\Xdidier
+{We should be clear about whether we allow or disallow recursive types.  It
+would be a plus to allow them. This should be easy since we are working with
+constraints. The only difficulty that I see is with polytypes, but there
+should be canonical forms for polytype skeletons, so their equality should
+be easily checkable (after put into normal form).}
+
+For sake of simplicity, we have taken finite trees for ground types, hence
+the semantics of constraints. Taking regular trees instead would have worked
+as well, since we never assume finiteness of ground types, as in \cite
+{Pottier-Remy/emlti}. This would model equirecursive types.
+
+Technically, we need to extend the syntax of types with
+\begin{mathpar}
+\begin{bnfgrammar}
+\entry {\t}{\ldots \mid \trec \tv \t}
+\end{bnfgrammar}
+\end{mathpar}
+The only technical difficult lies in the definition of shapes.  We must
+ensure the existence of a miniaml element for recursive types $\trec \tv
+\t$, including in the presentce of polytypes.  This can be ensured using the
+canonical representation proposed by~\cite
+{Gauthier-Pottier/numbering@icfp04}.
+
+
 
 
 \section{Semi-unification Prototype}
@@ -3070,14 +3191,6 @@ heuristics to refine it, a two-phase process. It's fine.}
 
 \section{DRAFT: a later TODO  list}
 
-\subsection {Recursive types}
-
-We should be clear about whether we allow or disallow recursive types.  It
-would be a plus to allow them. This should be easy since we are working with
-constraints. The only difficulty that I see is with polytypes, but there
-should be canonical forms for polytype skeletons, so their equality should
-be easily checkable (after put into normal form).
-
 
 \end{document}
 
@@ -3086,4 +3199,5 @@ be easily checkable (after put into normal form).
 % LocalWords:  monomorphic subexpression Dunfield Riboulet jfla subtyping
 % LocalWords:  greek Chargueraud typable monotype polytype Garrigue Remy
 % LocalWords:  impredicative polytypes minimality RCL ary Proj toplevel
-% LocalWords:  typability backpropagation arity
+% LocalWords:  typability backpropagation arity Compositionality equi
+% LocalWords:  equitypable compositionality inlined equitypability
