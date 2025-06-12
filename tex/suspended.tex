@@ -618,7 +618,9 @@ validate that the implementation is efficient for the moment.}
 \end{bnffig}
 
 \Xdidier {We need to define $\G \th \t$}
-
+\Xalistair {The definition is entirely standard? We could add an
+`ok' or `wf' suffix to the judgement to make it clearer that it is
+well-formedness}
 % Syntax!
 
 Building the constraint-based type inference framework of
@@ -689,7 +691,11 @@ rather leave this to the meta-level to keep the core language
 simple.}\Xdidier{That is not good reason: we may have a concrete language
 with dots and exhibit the properties that should holds for the language
 and do hold for the current features.}
-
+\Xalistair{I agree with Didier here, I've switch over to an explicit
+pattern representation in my first year report and its not any worse
+and we can easily paramterize the semantics by a 'matches' predicate.
+Moreover, this ensures we have well-foundness (something meta-functions
+don't necessarily break, but complicate) and termination of the solver. }
 
 % Informal semantics
 
@@ -706,7 +712,7 @@ as a linear shallow type $\exi \tvs \tvs \F$.
 \TODO{Fix this:}
 Given a nonvariable type $\t$, we
 write $\t =  \deshaped [\tvs] {\tvs \F} \tys$ when $\\exi \tvs \tvs \F$ is
-the shape of $\t$ and $\t$ is equal to $\tys \F$. 
+the shape of $\t$ and $\t$ is equal to $\tys \F$.
 
 %% {Definition of $\deshaped \t$, a partial function from types to
 %% shape-substitution pairs $\langle \sh, \theta \rangle$}
@@ -1208,14 +1214,14 @@ Hences, shaped are closed. They are treated up to $\alpha$-conversion.
 %% We call $\t$ the \emph{structure}
 %% of the shape, which by constrat is defined up to renaming.
 We write $\bot$ for the shape $\any \tvc \tvc$, which we call the \emph{trivial} shape. We write $\Shapes$
-the set of shapes and $\Shapesz$ the subset of non trivial shapes. 
+the set of shapes and $\Shapesz$ the subset of non trivial shapes.
 
 Shapes are equipped with an ordering---that of the standard
 instantiation ordering, defined by:
 \begin{mathpar}
   \infer[Inst-Shape]
     {\tvas \disjoint \any \tvbs \tone}
-    {\any {\tvas} \tone \preceq \any {\tvbs} \tone \where {\tvas \is \tys}} 
+    {\any {\tvas} \tone \preceq \any {\tvbs} \tone \where {\tvas \is \tys}}
 \end{mathpar}
 When writing $\sh \preceq \shp$, we say that $\sh$ is more general than
 $\shp$. When $\sh$ and $\shp$ are more general than one another, they are
@@ -1230,14 +1236,17 @@ shape. \Xgabriel{I would expect the standard notation $\sh(\tys)$.}\Xdidier
 {I would prefer this too. I reused Alistairs prefix notation. In fact, I
 would prefer that we use the postfix notation for formal types everywhere
 and reserve the prefix notation for examples. I can make the change if we
-agree.} 
+agree.}
+\Xalistair{I'm happy to change to prefix notation}
 %
 A type $\t$ has a decomposition $\deshaped \sh \tys$ iff $\t = \tys \shapp$;
 we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial if
 the shape is trivial. \Xgabriel{It is obvious that $\sh(\tys)$ is uniquely
 determined in the paragraph above, but not completely obvious that the
 decomposition of $\t$ as $\sh(\tys)$ is uniquely determined by
-$\sh$.}\Xdidier {Why not?}
+$\sh$.}\Xdidier {Why not?} \Xalistair{I also think it is fairly
+obvious? To find $\tys$, just unify the shape with $\t$ treating
+the variables as flexible unification variables.}
 
 \begin{definition}
 A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
@@ -1260,7 +1269,7 @@ defined). The $\shape {\tys \F}$ is $\exi \tvs \tvs \F$.
 The interest of the definition is to extend to polytypes:
 For example, the polytype  $\tpoly {\all \tva
   {\parens{\tpoly {\all \tvb {\parens{\tvb \to \tint \tlist}} \tprod \tvb}
-  \to \tva} 
+  \to \tva}
   \to \tva}}$  can be decomposed as:
 \begin{mathpar}
 \deshaped
@@ -1287,7 +1296,7 @@ committed.} I believe that the definition is wrong: for example, it is not
 the case a-priori that $(\exists \tv. f(\tv \tlist)) \equiv f(\tint
 \tlist)$. Instead we want to ask that if the substitution $\theta$ witnesses
 $\sh \leq \sh'$ then we have $f(\sh') \cequiv f(\sh)[\theta].$}\Xdidier{Is
-this fixed?} 
+this fixed?}
 
 \Xgabriel{Many remarks in the rest of the text below read incorrectly if we
 consider that $\bot$ is a valid shape. Should we consider defining shapes in
@@ -1389,7 +1398,7 @@ the shape is \emph{known} from the surrounding context.
 First, we introduce a simplified variant of the natural rule
 (\Rule{Susp-Nat}) that only applies when $\t$ already has a shape
 \Xgabriel{Shouldn't we ask for a non-trivial shape in this
-rule?}\Xdidier{Yes, indeed}:  
+rule?}\Xdidier{Yes, indeed}:
 \begin{mathpar}
   \infer[Susp-Use]
     {\t = \deshaped [\tvs] \typ \tys \\
@@ -1797,7 +1806,7 @@ we collect all the rules pertaining to the satisfiability judgement in
 }
 \\
 \Cshape \C \tv \sh \Wide\eqdef \
-  \forall \semenv, {\any \tvcs \t} \in \Typesz, 
+  \forall \semenv, {\any \tvcs \t} \in \Typesz,
       \semenv \th \C[\cexists \tvcs \cunif \tv \t] \implies
             \sh \le \any \tvcs \t
 \end{mathparfig}
@@ -2945,7 +2954,7 @@ all types that $\e$ admits.
 
 % Soundness/completeness of constraint gen
 
-The translation is sound and complete with respect to the typing judgment. 
+The translation is sound and complete with respect to the typing judgment.
 That is to say, the term $e$ is well-typed if and only if $\llbracket e : \alpha
 \rrbracket$ is satisfiable.
 %
@@ -3037,7 +3046,7 @@ think this is not the right term}.
 % Metatheory
 
 \begin{theorem}
-All equivalence rules preserves the solutions. 
+All equivalence rules preserves the solutions.
 \end{theorem}
 
 Define a strategy by orienting the rules.
