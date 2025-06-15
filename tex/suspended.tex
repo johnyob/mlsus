@@ -3111,17 +3111,11 @@ fun (r1 : one) ->
 \subsection{Recursive types}
 \label {sec/rec-types}
 
-\Xdidier
-{We should be clear about whether we allow or disallow recursive types.  It
-would be a plus to allow them. This should be easy since we are working with
-constraints. The only difficulty that I see is with polytypes, but there
-should be canonical forms for polytype skeletons, so their equality should
-be easily checkable (after put into normal form).}
-
-For sake of simplicity, we have taken finite trees for ground types, hence
-the semantics of constraints. Taking regular trees instead would have worked
-as well, since we never assume finiteness of ground types, as in \cite
-{Pottier-Remy/emlti}. This would model equirecursive types.
+For sake of simplicity, we have taken finite trees for ground types, that
+is, for the semantics of constraints. However, replacing trees by regular
+trees for ground types would preserver the metatheoretical properties, as
+in~\cite {Pottier-Remy/emlti}, as we never assume finiteness of ground
+types.  This would allow type inference with equirecursive types.
 
 Technically, we need to extend the syntax of types with
 \begin{mathpar}
@@ -3134,7 +3128,7 @@ ensure the existence of a miniaml element for recursive types $\trec \tv
 \t$, including in the presentce of polytypes.  This can be ensured using the
 canonical representation proposed by~\cite
 {Gauthier-Pottier/numbering@icfp04}.
-
+\Xdidier {How much more should we say?}
 
 
 
