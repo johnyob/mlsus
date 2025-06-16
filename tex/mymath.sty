@@ -13,6 +13,11 @@
 \newcommand{\Rule}[1]{\hyperlink{#1}{\TirName {#1}}}
 \renewcommand{\DefTirName}[1]{\hypertarget{#1}{\TirName {#1}}}
 
+\newcommand \Rewrite[3][]
+   {\inferrule*[fraction={==\Rightarrow},lab=#1]{#2}{#3}}
+\newcommand \rewrite[3][]
+   {\inferrule*[fraction={{}{-}\to},lab=#1]{#2}{#3}}
+
 \newtheorem*{notation}{Notation}
 \newtheorem{fact}{Fact}
 \newtheorem{property}{Property}

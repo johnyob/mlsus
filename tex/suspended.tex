@@ -986,21 +986,55 @@ under our account but rejected by \OCaml's current type checker.
 
 \subsection{Tuple projections \'a la \SML}
 
-\TODO{Introduce tuple projections here and tuple patterns}
-% Tuple projections from SML
+\SML supports positional projections from tuples using expressions of the form
+\ocaml{#$j$ e} to extract the $j$-th component of the tuple \code{e}.
 
-% The typing of SML uses structural records for tuples, but had the
-% adhoc requirement that the tail of the row must be unified to a concrete
-% row -- it cannot be polymorphic
+% SML typing rule
+Internally, tuples in \SML are treated as structural records with numeric
+labels. While the specification \cite{TODO} does not provide a dedicated typing
+rule for tuple projection, its semantics are captured by the following
+rule\footnote{This rule is reconstructed using the typing rules for pattern
+matching of records, function applications and the syntactic sugar $\eproj \e j
+\eqdef \eapp {\parens {\efun {\erecord {j = \x; \wild}} \x}} \e$}:
+\begin{mathpar}
+  \infer[Sml-Proj]
+    {\G \th \e : \tsrecord {j = \tj; \rho }}
+    {\G \th \eproj \e j : \tj}
+\end{mathpar}
 
+Here, the projection retrieves the $j$-th field from a record with tail $\rho$.
+However, \SML enforces an additional restriction: the tail $\rho$ must be fully
+determined (\ie cannot be a polymorphic row variable). This ensures that the
+arity of the tuple is \emph{known} statically from the surrounding context,
+thereby avoiding the need for row polymorphic and any associated runtime
+representation overhead. The restriction is not reflected in the typing rules
+themselves, but is instead enforced within \SML's type inference algorithm.
 
-% Thus tuple projections can be seen as static overloading
-% They differ from record / constructor overloading in that the overloadings
-% cannot finitely be enumerated
+% Tuple projection is statically overloaded
+From a typing perspective, tuple projection in \SML behaves like a form
+of static overloading: the expression $\eproj \e j$ is valid only when $\e$ is
+known to be an $n$-ary tuple for some fixed $n \geq j$. Unlike record or
+constructor  overloading, the space of possible overloadings in this case is
+countably infinite.
 
 % We can precisely specify this with suspended constraints:
+We can capture the typing of tuple projections precisely using suspended
+constraints. For the projection $\eproj \e j$, we generate the following
+constraint:
+
+\begin{mathpar}
+  \cinfer {\eproj \e j } \tv \wide\eqdef
+  \cexists \tvb
+    \cinfer \e \tvb
+    \cand \cmatch \tvb {\cbranch {\cpatprod \tvc j} {\cunif \tva \tvc}}
+\end{mathpar}
 
 % Tuple patterns
+The suspended constraint $\cmatchdots \tvb$ blocks until the shape of $\e$
+($\tvb$) is known to be a tuple of sufficient arity. The pattern $\cpatprod
+\tvc j$ matches only tuple shapes $\tProd \tvi$, where $n \geq j$, binding the
+$j$-th component to $\tvc$, which is then unified with the expected result type
+$\tva$.
 
 % Next section
 
@@ -2971,41 +3005,386 @@ think this is not the right term}.
 \section{Solving constraints}
 \label{sec:solving}
 
-\TODO
-{a declarative solver.}
-
 % Intro
+We now present a machine for solving constraints in our language. The solver
+operates as a rewriting system on constraints $\c \csolve \cp$. Once no further
+transitions are applicable, \ie $\c \cnsolve$, the constraint $\c$ is either in
+solved form -- from which we can read off a most general solution -- or the
+solver becomes stuck, indicating that $\c$ is unsatisfiable.
 
-% Shape of solver
-
-% Constraint contexts (and their use in solving)
-
-% Solved forms
+% Contexts
+% Treatment of $alpha$-equivalence in contexts
+% Membership of constraints
 
 % Unification
+\subsection{Unification}
+%
+Our constraints ultimately reduce to equations between types, which we solve
+using first-order unification. Like our solver, we specify unification as a
+non-deterministic rewriting relation between \emph{unification problems} $\upa
+\unif \upb$.
 
-% Solver rules
+\begin{bnffig}
+  {fig:unification-syntax}
+  {Syntax of unification problems}
+  \entry[Unification problems]{\up}{
+    \ctrue \and \cfalse \and \upa \cand \upb \and \cexists \tv \up \and \ueq
+  } \\
+  \entry[Multi-equations]{\ueq}{
+    \eset \mid \cunif \ueq \t
+  }
+\end{bnffig}
 
-% Explainations for the main rules
+% Multi-equations
+Unification problems $\up$ are a restricted subset of constraints.
+To enable an efficient presentation of unification, we adopt
+\emph{multi-equations} \citep{Pottier-Remy/emlti}---a multi-set of types
+considered equal. These generalize binary equalities and their semantic
+interpretation is given by:
+\begin{mathpar}
+  \infer[Multi-Unif]
+    {\tp \in \Ground \\
+     \all {\t \in \ueq}\, \semenv(\t) = \tp}
+    {\semenv \vdash \ueq}
+\end{mathpar}
+That is, $\semenv$ satisfies $\ueq$ if all members of $\ueq$ are mapped to a
+single ground type $\tp$ by $\semenv$. We consider multi-equations equal
+modulo permutation of their members.
 
-% Term variable constraints
+% The spec
+The unification rules are listed in \cref{fig:unification-algorithm}. Rewriting
+proceeds modulo $\alpha$-equivalence, as well as associativity
+and commutativity of conjuctions, and takes place under an arbitrary
+unification problem context $\Up$.
+%
+Our algorithm is largely standard \cite{Pottier-Remy/emlti} but replaces type
+constructors with \emph{canonical principal shapes}, enabling a uniform
+treatment of monotypes and polytypes within unification, avoiding the need for
+specialised handling of polytypes, as found in \citep{Garrigue-Remy/poly-ml}.
 
-% Suspended match constraints
+% Explaination of rules
+We briefly summarize the purpose of each rule below: \Rule{U-Exists} lifts
+existential quantifiers to the top of the unification problem, enabling
+applications of \Rule{U-Merge} and \Rule{U-Cycle} as all multi-equations
+eventually part of a single conjunction. \Rule{U-Merge} combines
+mutli-equations sharing a common variable. \Rule{U-Stutter} removes duplicate
+occurrences of a variable. \Rule{U-Decomp} decomposes equal types with matching
+shapes into equalities between their subcomponents. \Rule{U-Clash} complements
+\Rule{U-Decomp}, handling shape mistmatches that result in failure.
+\Rule{U-Name} introduces a fresh variable to expose a subcomponent of a shape,
+ensuring unification over \emph{shallow terms}, making sharing of type
+variables explicit and avoids the need for copying types in rules such as
+\Rule{U-Decomp}. \Rule{U-True} and \Rule{U-Trivial} eliminate trivial
+constraints. The latter occurs when a multi-equation $\ueq$ is trivial, that
+is, when it is either empty ($\eset$) or contains only a single type ($\cunif
+\t \eset$).
 
-% Metatheory
+\Rule{U-Cycle} implements the \emph{occurs check}, ensuring that a type
+variable does not occur in the type it is being unified with. This is a
+necessary condition for unification, as it would otherwise lead to infinite
+types\footnote{We discuss relaxing this constraint in ??}. Cyclicity
+is defined by the relation $\tv \prec_\up \tvb$ indicating that $\tv$ occurs
+in a type assigned to $\tvb$ in $\up$. A unification problem is cyclic,
+written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
 
-\begin{theorem}
-All equivalence rules preserves the solutions.
-\end{theorem}
+\begin{mathparfig}
+  {fig:omni-unification-algorithm}
+  {Unification algorithm as a series of rewriting rules
+   $\upa \unif \upb$. All shapes are principal.}
+    \rewrite[U-Exists]
+      {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
+      {\cexists \tv {\upa \cand \upb}}
 
-Define a strategy by orienting the rules.
-\begin{theorem}
-The stategy always terminates.
-\end{theorem}
+    \rewrite[U-Cycle]
+      {\up \\ \cyclic \up}
+      {\cfalse}
 
-\begin{theorem}
-All constraints in normal forms, but $\cfalse$ admit principal solutions.
-\end{theorem}
+    \rewrite[U-True]
+      {\up \cand \ctrue}
+      {\up}
+
+    \rewrite[U-Merge]
+      {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
+      {\cunif \tv {\cunif \ueqa \ueqb}}
+
+    \rewrite[U-Stutter]
+      {\cunif \tv {\cunif \tv \ueq}}
+      {\cunif \tv \ueq}
+
+    \rewrite[U-Name]
+      {\cunif {\tys[\ti] \pshapp} \ueq \\ \tv \disjoint \tys, \ueq }
+      {\cexists \tv {\cunif \tv \ti \cand \cunif {\tys[\tv] \pshapp} \ueq}}
+
+    \rewrite[U-Decomp]
+      {\cunif {\tvs \pshapp} {\cunif {\tvbs \pshapp} \ueq}}
+      {\cunif {\tvs \pshapp} \ueq \cand \cunif \tvs \tvbs}
+
+    \rewrite[U-Clash]
+      {\cunif {\tvs \pshapp} {\cunif {\tvbs \pshapp[\shp]} \ueq }\\
+       \sh \neq \shp}
+      {\cfalse}
+
+    \rewrite[U-Trivial]
+      {\trivial \ueq}
+      {\ctrue}
+\end{mathparfig}
+
+% Solved forms
+A unification problem is in \emph{solved form} if it has the structure
+\begin{mathpar}
+  \cexists \tvs \cAnd \iton \ueqi
+\end{mathpar}
+where each $\ueqi$ contains at most one non-variable type, variables
+do not occur in multiple equations, and the problem is acyclic. From
+such a form, a most general unifier $\vartheta$ can be directly read off.
+
+
+\subsection{Solving rules}
+%\paragraph{Solving rules}
+%
+%We now introduce the rules of the constraint solver itself
+%(\cref{fig:omni-solver}). These rules are non-deterministic. Rewriting is
+%performed modulo $\alpha$-equivalence, commutativity and assoiciativity of
+%conjuction and under an arbitrary \emph{constraint context} $\Cctx$.
+%
+%
+%\begin{mathparfig}
+%  {fig:omni-solver}
+%  {Select rewriting rules of the solver}
+%
+%  \rewrite[S-Unif]
+%    {\Cctx[\Ua] \\ \Ua \longrightarrow \Ub}
+%    {\Cctx[\Ub]}
+%
+%  \rewrite[S-True]
+%    {\C \Cand \Ctrue}
+%    {\C}
+%
+%  \rewrite[S-Exists-Conj]
+%    {(\Cexists \alpha \Ca) \Cand \Cb \\ \tv \disjoint \Cb}
+%    {\Cexists \tv {\Ca \Cand \Cb}}
+%
+%  \rewrite[S-Exists-Let]
+%    {\Cletlam \x \tv \Ca {\Cexists \tvb \Cb} \\ \tvb \disjoint \tv, \Ca}
+%    {\Cexists \tvb {\Cletlam \x \tv \Ca \Cb}}
+%
+%  \rewrite[S-Lift-Let2]
+%    {\Cletlam \x \tv \Ca (\Cb \Cand \Cc) \\ \x \disjoint \Cc}
+%    {\Cc \Cand \Cletlam \x \tv \Ca \Cb}
+%
+%  \rewrite[S-Lift-Let1]
+%    {\Clet \x {\Clam \tvas {\Ca \Cand \Cb}} \Cc \\ \tvas \disjoint \Ca}
+%    {\Ca \Cand \Clet \x {\Clam \tvas \Cb} \Cc}
+%\end{mathparfig}
+%
+%% Common rule descriptions
+%\paragraph{Basic rules} \Rule{S-Unif} invokes the unification algorithm to the
+%current unification problem. The unification algorithm itself is treated as a
+%block box by the solver, allowing the slover to be parameterized over the
+%equational theory of types implemented by the unifier.
+%%
+%\Rule{S-Exists-Lift*} lifts existential quantifiers to the nearest enclosing
+%$\Let$, if any, or otherwise to the top of the constraint, which
+%we refer to as a \emph{region} within the constraint.
+%Similarly, \Rule{S-Lift-Let*} hoists constraints out of let-binders
+%when they do not depend on the locally bound variables. These lifting rules
+%normalize the structure of each region into a block of existentially bound
+%variables with a unification problem, together with unresolved constraints.
+%
+%\paragraph{Suspended constraints}
+%
+%\Rule{S-Susp-Use} solves suspended match constraints whose scruintee
+%has a locally known shape -- either statically, or as a result of appplying
+%\Rule{S-Susp-Ctx}. The rule selects a unique matching branch based on the shape
+%of the scruitinee and applies the generated substitution to the branch. If no
+%branch matches, the rule is stuck, indicating that the constraint is
+%unsatisfiable.
+%
+%\begin{mathparfig}
+%  {fig:omin-solver-susp}
+%  {Solving rules for suspended match constraints.}
+%  \rewrite[S-Susp-Ctx]
+%    {\Cctx[\Cmatchp \tv \shcases]\\
+%     \shape(\t) = \shq \tvcs \tp \\
+%     \tv \Ceq \t \Ceq \Ueq \in \Cctx}
+%    {\Cctx[\Cexists \tvcs  \tv \Ceq \tp \Cand \Cmatchp \tp \shcases]}
+%
+%  \rewrite[S-Susp-Use]
+%    {\Cmatchp \t {\Ccase {\bar \shpat} {\bar \C}} \\
+%     \shape(\t) \downarrow \\
+%     \shpati \matches \shape(\t) \leadsto \theta}
+%    {\theta(\Ci)}
+%\end{mathparfig}
+%
+%When the solver encounters a suspended constraint with an unknown shape, it
+%cannot proceed immediately. Instead, it must wait until it can construct
+%a surrounding context $\Cctx$ that includes a multi-equation unifying the
+%scruintee with a type whose shape is defined. This enables the suspended
+%match to be rewritten, according to \Rule{Sat-Susp-Ctx}, thereby exposing
+%the shape required to continue solving in \Rule{S-Susp-Use}.
+%
+%\paragraph{Let constraints}
+%% Let-constraint solving is generalization
+%Application constraints can be solved by copying constraints
+%(\ie $\beta$-reduction):
+%\begin{mathpar}
+%  \rewrite[S-Let-App-Copy]
+%    {\Cletlam \x \tv \Ca {\Cctx[\Capp \x \t]} \\ \tv \disjoint \t}
+%    {\Cletlam \x \tv \Ca {\Cctx[\Cexists \tv \tv \Ceq \t \Cand \Ca]}}
+%\end{mathpar}
+%However, this duplicates constraint solving work. A more efficient
+%strategy first solves the abstraction fully and then reuses it --
+%solving constraint abstractions is equivalent to rank-based generalization
+%\cite{book/atapl/Pottier04}.
+%
+%% Generalization with suspended constraints is hard
+%But, the inclusion of suspended constraints complicates generalization.
+%To illustrate this, let us examine:
+%%
+%\begin{program}[input]
+%  type three = { x : int; y : int } (* y is overloaded *)
+%  ...
+%  let e_9 r = let y = r.y in r.x + y
+%\end{program}
+%The generated constraint\footnote{Simplified for readability.} is:
+%\begin{mathpar}
+%  \Cexists \tv
+%    \Clet y {\Clam \tvb {\Cmatchp \tva {\parens
+%      {\Ccase {\wild \Tapp[t]}
+%	      {\Omega(y/t) \leq \tvb \Tarr \tva}}}}}
+%      \Capp y \mathsf{int} \Cand \tv \Ceq {\mathsf{three}}
+%\end{mathpar}
+%Here, $\tv$ is \code{r}'s type. The constraint remains
+%suspended until \code{r.x} forces \code{r}'s type to be \code{three}
+%When generalizing \code{y}, the type $\tvb$ -- captured by the match --
+%has not yet been resolved. We must, however, allocate a scheme for \code{y},
+%resulting in $\Tforall \tvb \tvb$ -- which appears unsound since $\tvb$ later
+%unifies with $\Tint$.
+%
+%% Partial schemes are the solution
+%This motivates \emph{partial type schemes}: type schemes that delay commitment
+%to certain quantifications (\eg $\tvb$). These \emph{partially generalized}
+%variables are generalized, but can still be refined in future as suspended
+%constraints are discharged.
+%
+%% Partial instantiation syntax
+%To encode partial schemes, we introduce \emph{partial application constraints}
+%$\Cpapp \x \theta \U$, where $\theta$ maps variables bound inside $\x$'s
+%abstraction to fresh copies and $\U$ accumulates copied multi-equations.
+%Copying proceeds by two rules:
+%
+%\begin{enumerate}
+%  \item \Rule{S-Papp-Exists} allocates fresh existential variables at the call
+%    site that are mapped to uninstantiated variables within the abstraction.
+%    We write $\theta : \tvs$ for $\dom(\theta) = \tvs$.
+%
+%  \item \Rule{S-Papp-Unif} copies multi-equations from the abstraction
+%    to the call site.
+%\end{enumerate}
+%
+%\begin{mathparfig}
+%  {fig:omni-solver-schemes}
+%  {Solving rules for let-bindings and applications.}
+%  \rewrite[S-Let-App]
+%    {\Cletlam \x \tv \Ca \Cctx[\Capp \x \t]}
+%    {\Cletlam \x \tv \Ca \Cctx[\Cexists \tvb
+%      \Cpapp \x {\where {\tv \assign \tvb}} {\Ctrue} ]}
+%
+%  \rewrite[S-Papp-Exists]
+%    {\Clet \x {\Clam \tvs \Cexists \tvb \Ca} \Cctx[\Cpapp \x \theta \U] \\
+%     \theta : \tvs}
+%    {\Clet \x {\Clam {\tvs, \tvb} \Ca}
+%      \Cctx[\Cexists \tvbp \Cpapp \x {\theta, \tvb \assign \tvbp} \U]}
+%
+%  \rewrite[S-Papp-Unif]
+%    {\Clet \x {\Clam \tvs \Ca \Cand \hat{\Ueq}} {\Cctx[\Cpapp \x \theta \U]} \\
+%     \theta : \tvs}
+%    {\Clet \x {\Clam \tvs \Ca \Cand \hat{\Ueq}}
+%      \Cctx[\Cpapp \x \theta {\U \Cand \hat{\Ueq}} \Cand \theta(\hat{\Ueq})]}
+%
+%  \rewrite[S-Papp-Solve]
+%    {\Clet \x {\Clam \tvs \Up} {\Cctx[\Cpapp \x \theta \U]} \\
+%     \theta : \tvs \\
+%     U \vDash \Up}
+%    {\Clet \x {\Clam \tvs \Up} {\Cctx[\Ctrue]}}
+%
+%  \rewrite[S-Let-Solve]
+%    {\Clet \x {\Clam \tv \U} \C \\ \x \disjoint \C \\
+%     \Cexists \tv \U \equiv \Ctrue}
+%    {\Cb}
+%
+%  \rewrite[S-Lower]
+%    {\Clet \x {\Clam {\tvas, \tvbs} \Ca}
+%      {\Cctx[\overline{\Cpapp \x \theta \U}]} \\
+%     \Cexists {\tvas} \Ca \text{ determines } \tvbs \\
+%     \theta : \tvas, \tvbs}
+%    {\Cexists \tvbs
+%      \Clet \x {\Clam \tvas \Ca}
+%	{\Cctx[{\overline{\Cpapp \x {\theta \setminus \tvbs} \U
+%			 \Cand \theta(\tvbs) = \tvbs}}]}}
+%  \\
+%\end{mathparfig}
+%
+%% Cleaning up partial applications and let constraints
+%\Rule{S-Papp-Solve} removes partial applications once all necessary constraints
+%have been copied -- that is, when the copied equations entail the abstraction
+%body. \Rule{S-Let-Solve} remove a $\Let$ constraint when the bound term variable
+%is unused and the abstraction is satisfiable.
+%
+%\Rule{S-Lower} implements R\'emy's efficient rank-based generalization:
+%variables $\tvbs$ dominated by monomorphic variables are removed from the
+%abstraction. Partial applications that copied $\tvbs$ are notified, unifying
+%their copies with the lowered $\tvbs$.
+%
+%\paragraph{Backpropagation}
+%Our semantics supports \emph{backpropagation}, allowing type information
+%from use sites to refine matched variables inside generalised abstractions.
+%
+%For example, in:
+%\begin{program}[input]
+%  let e$_{10}$ = let f r = r.y in f ({ x = 1; y = 1 })
+%\end{program}
+%\OCaml rejects this, as \Pidirectional inference cannot propagate the known
+%type \code{three} back to \code{f}'s parameter.
+%The (simplified) constraint generated when typing \code{e}$_{10}$ is:
+%\begin{align*}
+%  \Cexists \tv
+%  &\Let f = \Clam \delta {\Cexists {\tvb, \tvc}
+%    \delta \Ceq {\tvb \Tarr \tvc}
+%    \Cand \Cmatchp \tvb {(\Ccase {\wild \Tapp[t]} {\Omega(y / t) \leq \gamma \Tarr \beta})}} \\
+%  &\hspace{-1mm}\In \Capp f {(\mathsf{three} \to \tv)}
+%\end{align*}
+%At the use site, the abstraction is applied with a type of known shape (\code{three}).
+%\Rule{S-BackProp} propagates this shape back into the suspendede match inside the
+%abstraction by unifying it with the variable $\tvb$. This is sound: the unicity
+%predicate $\Cshape \Cctx \tv \sh$ ensures that $\tvb$'s shape is \code{three}
+%provided the context $\Cctx$ include the application constraint.
+%\begin{mathpar}
+%  \rewrite[S-BackProp]
+%    {\Cctx[\Cletlam \x \tvs {\Cctxa[\Cmatchp \tv \shcases]} {\Cctxb[x[\theta \tack U]]}] \\
+%     \theta : \tvs \\
+%     \theta(\alpha) \Ceq \t \Ceq \Ueq \in \Cctx, \Cctxb \\
+%     \shape(\t) = \shq \tvcs \tp}
+%    {\Cctx[\Cletlam \x \tvs {\Cctxa[\Cexists \tvcs \tv = \tp \Cand \Cmatchp \tp \shcases]} {\Cctxb[x[\theta \tack U]]}]}
+%\end{mathpar}
+%
+
+\subsection{Metatheory}
+%% Properties
+%\begin{thm}[Progress]
+%  If $\cdot \tack \C$ and $\C$ is not solved, then there exists a $\Cp$
+%  such that $\C \longrightarrow \Cp$.
+%\end{thm}
+%
+%\begin{thm}[Termiantion]
+%  The constraint solver terminates on all inputs.
+%\end{thm}
+%
+%\begin{thm}[Preservation]
+%  If $\Ca \longrightarrow \Cb$, then $\Ca \equiv \Cb$.
+%\end{thm}
+
+
 
 \section{HM Prototype and discussion}
 \label{sec:implementation}
@@ -3119,7 +3498,7 @@ them. It's not as exciting as I thought it would be.}
 \section{Related work}
 \label{sec:related-work}
 
-Should we cite \cite{Leijen-Ye/prefix@pldi2025} ? 
+Should we cite \cite{Leijen-Ye/prefix@pldi2025} ?
 
 \subsection{Qualified types}
 

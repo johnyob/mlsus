@@ -1,5 +1,6 @@
 \RequirePackage{metavar}
 \RequirePackage{boolean}
+\RequirePackage{stmaryrd}
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand \kwd[1]{\mathsf{#1}}
@@ -56,11 +57,20 @@
 \newcommand{\Shapesz}{\Shapes^\ast}
 \newcommand{\cmatches}[3]{#1 \Matches #2 \leadsto #3}
 \newcommand{\cwild}{\wild}
+\newcommand{\csolve}{\longrightarrow}
+\newcommand{\cnsolve}{\longarrownot\longrightarrow}
+\newcommand{\unif}{\longrightarrow}
 
 \defmetavar{\cpat}{\rho}
+\newcommand{\cpatprod}[2]{\Pi~{{#1}_{#2}}}
 \defmetavar{\cb}{\chi}
 \newcommand{\cbs}{\bar \cb}
 \newcommand{\cbranch}[2]{#1 \to #2}
+
+\defmetavar{\up}{U}
+\defmetavar{\ueq}{\epsilon}
+\defmetavar{\Up}{\mathcal{U}}
+
 
 \newcommand{\mlam}[2]{\lambda {#1}. \,{#2}}
 \newcommand{\mlet}[3]{\MLet #1 = #2 \MIn #3}
@@ -105,6 +115,7 @@
 \defmetavar{\tvc}{\gamma}\newcommand{\tvcs}{\bar\tvc}
 \newcommand{\tarrow}{\to}
 \newcommand{\tprod}{\mathbin\ast}
+\newcommand{\tProd}[1]{\Pi\iton {#1}}
 \newcommand{\tfor}[2]{\forall {#1}.\,{#2}}
 \newcommand{\tpoly}[1]{[#1]}
 \newcommand{\tapoly}[2]{\tpoly{#1}^{#2}}
@@ -115,6 +126,7 @@
 
 \newcommand{\tlist}{\mathpostfix{list}}
 \newcommand{\trec}[2]{\mathprefix{rec}#1.#2}
+\newcommand{\tsrecord}[1]{\braces {#1}}
 
 
 
@@ -173,6 +185,8 @@
 \newcommand{\disjoint}{\mathop{\#}}
 \newcommand{\shape}[1]{\mathprefix{shape}(#1)}
 \newcommand{\decomp}[1]{\mathprefix{decomp}(#1)}
+\newcommand{\cyclic}[1]{\mathprefix{cyclic}(#1)}
+\newcommand{\trivial}[1]{\mathprefix{trivial}(#1)}
 
 % Common metas
 \defmetavar{\e}{e}
