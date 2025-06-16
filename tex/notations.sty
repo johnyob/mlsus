@@ -16,6 +16,7 @@
 \newcommand{\MIn}{\mathinfix{\textsl{in}}}
 \newcommand{\Match}{\mathprefix{match}}
 \newcommand{\With}{\mathinfix{with}}
+\newcommand{\Matches}{\mathinfix{matches}}
 
 \newcommand{\shq}[2]{\any {#1}{#2}}
 
@@ -23,6 +24,7 @@
 \newcommand{\cone}{\c_1}
 \newcommand{\ctwo}{\c_2}
 \newcommand{\cp}{\c'}
+\newcommand{\ci}{\c_i}
 \newcommand{\cv}{\cva}
 \newcommand{\cva}{\alpha}
 \newcommand{\cvb}{\beta}
@@ -40,7 +42,7 @@
 \newcommand{\cabs}[2]{\lambda {#1}. \,{#2}}
 \newcommand{\clam}[2]{\lambda {#1}. \,{#2}}
 \newcommand{\capp}[2]{#1 \; #2}
-\newcommand{\cmatch}[3]{\Match #1 \With [ #2 ] #3}
+\newcommand{\cmatch}[2]{\Match #1 \With #2}
 \newcommand{\cmatchdots}[1]{\Match #1 \With \dots}
 \newcommand{\clet}[4]{\cletin {#1}{\clam{#2}{#3}}{#4}}
 \newcommand{\Clet}[4]{\Let #1\; #2 = #3 \In #4}
@@ -52,6 +54,13 @@
 \newcommand{\Typesz}{\Types^\ast}
 \newcommand{\Shapes}{\mathcal {S}}
 \newcommand{\Shapesz}{\Shapes^\ast}
+\newcommand{\cmatches}[3]{#1 \Matches #2 \leadsto #3}
+\newcommand{\cwild}{\wild}
+
+\defmetavar{\cpat}{\rho}
+\defmetavar{\cb}{\chi}
+\newcommand{\cbs}{\bar \cb}
+\newcommand{\cbranch}[2]{#1 \to #2}
 
 \newcommand{\mlam}[2]{\lambda {#1}. \,{#2}}
 \newcommand{\mlet}[3]{\MLet #1 = #2 \MIn #3}
@@ -71,8 +80,11 @@
 \newcommand{\ctxindex}[2]{{#1}/{#2}}
 
 \newcommand{\F}{\mathpostfix{F}}
+\newcommand{\T}{\mathpostfix{t}}
 \newcommand{\Fapp}{\mathop{}\mathrel{\F}}
+\newcommand{\Tapp}[1][\T]{\mathrel{#1}\mathclose{}}
 \newcommand{\shapp}[1][\sh]{\mathrel{\angles{#1}}\mathclose{}}
+\newcommand{\pshapp}[1][\sh]{\mathrel{!\angles{#1}}\mathclose{}}
 
 \newcommand{\deshaped}[3][]{#3\;\angles{\ifempty{#1}{}{\any{#1}}{#2}}}
 
@@ -160,6 +172,7 @@
 %% \newcommand{\TODO}{\textcolor{red}{TODO}}
 \newcommand{\disjoint}{\mathop{\#}}
 \newcommand{\shape}[1]{\mathprefix{shape}(#1)}
+\newcommand{\decomp}[1]{\mathprefix{decomp}(#1)}
 
 % Common metas
 \defmetavar{\e}{e}
