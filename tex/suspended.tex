@@ -2971,6 +2971,10 @@ $\G \th \e : \t$ iff\/
 $\th \csem {\G \th \e : \t}$.
 \end{theorem}
 
+\subsection{Type system properties}
+\label{sec:constraint-prop}
+
+
 \paragraph{Stability by program transformations}
 
 A well-known property of \ML is to admit principal types---and the design of
@@ -3097,16 +3101,43 @@ polymorphically.
 
 \subsection{Choice points}
 
+\Xdidier {Is this subsection obsolete?}
+\begin{version}{}
 The current typing rules don't support back-propagation:
-
 \begin{program}
-fun (r1 : one) ->
-  let g r = r.x in
-  g r1
+fun (r1 : one) -> let g r = r.x in g r1
 \end{program}
+\end{version}
 
 
-\subsection{Default clauses}
+\subsection{Default rules}
+
+Type inference may failed either because of a typing error (the constraint
+if of the form $\C \where \cfalse$), or because some choice point cannot be
+resolved---a stuck constraint containt a suspended match constraint.
+%
+In the later case, we may point the user to at least one choice point that
+could not be solved and invite him to provide additional type annotations.
+
+In fact \OCaml uses default rules in case overloaded contructors or record
+field have not been solved, then selecting the most recently defined type.
+
+While, we could also introduce similar default rules in our proposal, they
+would break the properties of the type system.  Hence, instead of
+integrating default rules in omnidirectional type inference, we prefer to
+see them as an additional external mechanism that suggests extra type
+annotations in case of failture and calls back type inference, which may
+resume from its previous state.
+
+Still, we discuss reasonable choice for defauls.
+
+\paragraph{Overloading of record fiels or data constructors}
+
+\paragraph{Structural tuples}
+In the case of 
+
+\paragraph{Polytypes}
+
 
 \subsection{Recursive types}
 \label {sec/rec-types}
