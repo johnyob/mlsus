@@ -1438,7 +1438,7 @@ This rule lets us substitute the matchee variable $\tv$ by a more defined
 non-variable type $\t$, provided the constraint context $\C$ determines $\tv$
 to have precisely the shape $\any \tvcs \t$.
 %
-The side-condition $\Cshape \C \tv {\any \tvcs \t}$ ensures this
+The uniqueness-condition $\Cshape \C \tv {\any \tvcs \t}$ ensures this
 precisely: it expresses that the context $\C$ constrains all the solutions
 of $\tv$ to have the \emph{same} principal shape $\any \tvcs \t$,
 modulo $\alpha$-equivalence of shapes. The formal definition of this condition,
@@ -1463,12 +1463,12 @@ Consider the two examples from above:
 
   \cexists \tv \cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}
 \end{mathpar}
-In the first example, we apply the contextual rule with the context $\C :=
-(\exists \tv. \tv = \tint \cand \square)$. Any solution $\phi$ of this part
-of the constraint necessarily has $\phi(\tv) = \tint$, therefore the shape
-of $\tv$ is uniquely determined. The side condition of \Rule{Susp-Ctx}
-rule is therefore satisfied , and the suspended constraint can
-be resolved.
+In the first example, we apply the contextual rule with the context $\C$
+equals to $(\exists \tv. \tv = \tint \cand \square)$. Any solution $\phi$ of
+this part of the constraint necessarily satisfies $\tv = \tint$. Hence,
+the shape of $\tv$ is uniquely determined. The uniqueness condition of
+\Rule{Susp-Ctx} rule is therefore satisfied, and the suspended constraint
+can be resolved.
 
 In constrast, the second example has no contextual information around
 the suspended constraint ($\C[\square] = \square$), so any solution
@@ -1539,9 +1539,11 @@ cannot use the \Rule{Susp-Use} rule yet as $\beta$ has no head, and we cannot
 use the \Rule{Susp-Ctx} rule as the empty context $\square$ does not uniquely
 constrain $\tvb$.
 
-This example illustrates a key distinction between the natural and contextual semantics:
-while the former allows unconstrained guessing, the latter requires well-foundedness in constraint
-dependencies, ensuring that resolutions are guided by contextual information rather than arbitrary choice.
+This example illustrates a key distinction between the natural and
+contextual semantics: while the former allows unconstrained guessing, the
+latter requires well-foundedness in constraint dependencies, ensuring that
+resolutions are guided by contextual information rather than arbitrary
+choices.
 \end{example}
 
 \subsection{Technical details}
@@ -1861,7 +1863,7 @@ between the two. We'll need formal definitions for this.}
 \TODO
 {Some examples of principal realisation}
 
-As we've previously hinted, the semantics for a suspended constraint must
+As we have previously hinted, the semantics for a suspended constraint must
 require that the surrounding context principally realises the matchee. This
 is formally specified as:
 \begin{mathpar}
