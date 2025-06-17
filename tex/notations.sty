@@ -21,15 +21,10 @@
 
 \newcommand{\shq}[2]{\any {#1}{#2}}
 
-\renewcommand{\c}{C}
+\let \c \relax
+\defmetavar{\c}{C}
 \newcommand{\cone}{\c_1}
 \newcommand{\ctwo}{\c_2}
-\newcommand{\cp}{\c'}
-\newcommand{\ci}{\c_i}
-\newcommand{\cv}{\cva}
-\newcommand{\cva}{\alpha}
-\newcommand{\cvb}{\beta}
-\newcommand{\cvc}{\gamma}
 \newcommand{\ctrue}{\mathsf{true}}
 \newcommand{\cfalse}{\mathsf{false}}
 \newcommand{\cexists}[2]{\exists {#1}.\, #2}
@@ -42,11 +37,13 @@
 \newcommand{\cletin}[3]{\Let #1 = #2 \In #3}
 \newcommand{\cabs}[2]{\lambda {#1}. \,{#2}}
 \newcommand{\clam}[2]{\lambda {#1}. \,{#2}}
+\newcommand{\cabsr}[3]{\cabs {{#1}\where{#2}} {#3}}
 \newcommand{\capp}[2]{#1 \; #2}
 \newcommand{\cmatch}[2]{\Match #1 \With #2}
 \newcommand{\cmatchdots}[1]{\Match #1 \With \dots}
 \newcommand{\clet}[4]{\cletin {#1}{\clam{#2}{#3}}{#4}}
 \newcommand{\Clet}[4]{\Let #1\; #2 = #3 \In #4}
+\newcommand{\cletr}[5]{\Clet{#1}{#2\;\where{#3}}{#4}{#5}}
 \newcommand{\Csuspend}[4]{\cmatch {#1}{#3}{\clam {#2}{#4}}}
 \newcommand{\csuspend}[4]{#1?#2 [#3]\to}
 \newcommand{\cequiv}{\equiv}
@@ -60,15 +57,20 @@
 \newcommand{\csolve}{\longrightarrow}
 \newcommand{\cnsolve}{\longarrownot\longrightarrow}
 \newcommand{\unif}{\longrightarrow}
+\newcommand{\Determines}{\mathinfix{determines}}
+\newcommand{\cdetermines}[2]{#1 \Determines #2}
 
 \defmetavar{\cpat}{\rho}
 \newcommand{\cpatprod}[2]{\Pi~{{#1}_{#2}}}
-\defmetavar{\cb}{\chi}
-\newcommand{\cbs}{\bar \cb}
+\defmetavar{\cbr}{\chi}
+\newcommand{\cbrs}{\bar \cbr}
 \newcommand{\cbranch}[2]{#1 \to #2}
+\newcommand{\cpapp}[4]{{#1} \where{{#2} \th {#3}} \; #4}
+\defmetavar{\ren}{\rho}
 
 \defmetavar{\up}{U}
 \defmetavar{\ueq}{\epsilon}
+\newcommand{\ueqs}{\bar \ueq}
 \defmetavar{\Up}{\mathcal{U}}
 
 
@@ -187,6 +189,8 @@
 \newcommand{\decomp}[1]{\mathprefix{decomp}(#1)}
 \newcommand{\cyclic}[1]{\mathprefix{cyclic}(#1)}
 \newcommand{\trivial}[1]{\mathprefix{trivial}(#1)}
+\newcommand{\dom}{\mathprefix{dom}}
+\newcommand{\rng}{\mathprefix{rng}}
 
 % Common metas
 \defmetavar{\e}{e}
@@ -195,11 +199,7 @@
 %% \newcommand{\ei}{\e_i}
 \newcommand{\en}{\e_n}
 
-\newcommand{\C}{C}
-\newcommand{\Cone}{\C_1}
-\newcommand{\Ctwo}{\C_2}
-\newcommand{\Ci}{\C_i}
-\newcommand{\Cn}{\C_n}
+\defmetavar{\C}{\mathscr{C}}
 
 \newcommand{\sh}{\varsigma}
 \newcommand{\shp}{\varsigma'}

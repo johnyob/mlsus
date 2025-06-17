@@ -395,8 +395,8 @@ let-binding ordering is a convenience, not a requirement.
 In the~\textit{constraint-based} approach, type inference
 is split into two stages, mediated by the language of \textit{constraints}
 \citep{TODO}.  In the first stage, a term $\e$ is translated into a constraint
-$\C$ which is satisfiable if and only if the term $e$ is well-typed. In the
-second stage, the generated constraint $\C$ is solved (or shown to be
+$\c$ which is satisfiable if and only if the term $e$ is well-typed. In the
+second stage, the generated constraint $\c$ is solved (or shown to be
 unsatisfiable).
 %
 The idea of treating typing judgments as typing constraints, which first
@@ -585,25 +585,25 @@ validate that the implementation is efficient for the moment.}
 \begin{bnffig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
-\entry[Type variables]{\cva, \cvb, \cvc}{}{}
+\entry[Type variables]{\tva, \tvb, \tvc}{}{}
 \\
 \entryset[Types]{\t}{\Types}\\
 \entry[Constraints]{\C}{
         \ctrue
   \and  \cfalse
-  \and  \Cone \cand \Ctwo
+  \and  \ca \cand \cb
   \and  \cexists \tv \c
   \and 	\cfor \tv \c
   \And  \cunif \tone \ttwo
   \nextline
-  \and  \clet \x \cv \Cone \Ctwo
+  \and  \clet \x \tv \ca \cb
   \and  \cinst \x \t
   \nextline
-  \and  \cmatch \t \cbs
+  \and  \cmatch \t \cbrs
 }\\
-\entry[Branches]{\cb}{\cbranch \cpat \c} \\
+\entry[Branches]{\cbr}{\cbranch \cpat \c} \\
 \entry[Patterns]{\cpat}{}{} \\
-%% \entry[Constraint abstractions]{}{\clam \cv \C}
+%% \entry[Constraint abstractions]{}{\clam \tv \C}
 %% \\
 \entry[Shapes] \sh {} {}
 \end{bnffig}
@@ -654,14 +654,14 @@ constructor\footnote{We intentionally leave the notion of shape underspecified
 here; it is formalized in \cref{sec:semantics}.}, is known. Once the shape is
 determined (typically through unification), the constraint selects a matching
 branch from a list of cases. Formally, a suspended constraint is written as
-$\cmatch \t \cbs$, where:
+$\cmatch \t \cbrs$, where:
 %
 \begin{enumerate}
 \item
   The matchee $\t$ is a type. The constraint remains suspended until the
   shape of $\t$ is determined.
 \item
-  $\cbs$ is a list of branches of the form $\cbranch \cpat \c$, where each
+  $\cbrs$ is a list of branches of the form $\cbranch \cpat \c$, where each
   shape pattern $\cpat$\footnote{Patterns are also left unspecified for now.}
   describes a structural form of the shape.
   %
@@ -809,7 +809,7 @@ Typechecking $\expoly e \ts$ is, intuitively:
 \cinfer {\expoly \e {\tfor {\tvbs} \t}} \tva \wide\eqdef
   \parens{\cfor \tvbs \cinfer \e \t}
 \cand
-   \cva = \tpoly {\tfor \tvbs \t}
+   \tva = \tpoly {\tfor \tvbs \t}
 \end{mathpar}
 If $\e$ is already known to have the type $[\ts]$, then we can simply
 instantiate it.  However, if the type of $\e$ is not yet known, \ie  it is a
@@ -1051,7 +1051,7 @@ are discharged accordingly.
 The semantics of constraints is given, as is standard, by a satisfiability
 judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied
 by the solution, or valuation, $\semenv$. The semantic environment $\semenv$
-maps term variables to constraint abstractions of the from $\clam \cv \C$
+maps term variables to constraint abstractions of the from $\clam \tv \C$
 and type variables to \emph{ground} types, \ie the subset $\Ground$ of type
 expressions with no free type variables.\footnote {Ground types are thus
 finite trees. In \cref{sec/rec-types}, we dissuss the alternative choice
@@ -1103,7 +1103,7 @@ satisfied after sunstituting $\tv$ for $\t$.
 
   \infer[Exists]
     {\semenv, \tv := \tau \vdash \c}
-    {\semenv \vdash \cexists \cv \c}
+    {\semenv \vdash \cexists \tv \c}
 
   \infer[Forall]
     {\forall \t, ~ \semenv, \tv := \t \vdash \c}
@@ -1432,9 +1432,9 @@ which---unlike the others---is not syntax-directed:
   \infer[Susp-Ctx]
     {\Cshape \C \tv {\any \tvcs \t} \\
       \semenv \th \C \where {\cexists \tvcs \cunif \tv \t
-                             \cand \cmatch \t \cbs}
+                             \cand \cmatch \t \cbrs}
     }
-    {\semenv \vdash \C \where {\cmatch \tv \cbs}}
+    {\semenv \vdash \C \where {\cmatch \tv \cbrs}}
 \end{mathpar}
 This rule lets us substitute the matchee variable $\tv$ by a more defined
 non-variable type $\t$, provided the constraint context $\C$ determines $\tv$
@@ -1595,7 +1595,7 @@ us from interpreting the rules as a well-behaved inference system.
 
 However, it can easily be resolved by obersving that the rules, while not
 syntactically well-founded, can be defined in a decreasing way by noting
-that the conclusion of \Rule{Susp-Ctx} $\C[\cmatch \tv \cbs]$ is structurally
+that the conclusion of \Rule{Susp-Ctx} $\C[\cmatch \tv \cbrs]$ is structurally
 larger than the negatively-occurring judgement $\C[\cunif \tv \t]$.
 
 Instead of consdering the rules defined above as a \emph{single}
@@ -1620,41 +1620,6 @@ and let-generalisation. Though our semantics appears modular,
 it is carefully crafted to give us the desired properties.
 %
 % Partially generalised type schemes (example)
-To illustrate, let us consider again \code{e}$_{10}$:
-\begin{program}[input]
-type three = {x : int; y : int}
-...
-let e$_{10}$ r = let x = r.x in x + r.y
-\end{program}
-A simplified typing constraint for this program is:
-\begin{mathpar}
-  \cexists \tv
-    \clet x \tvb {\cmatchdots \tva }
-      {\cinst x \tint \cand \cunif \tv {\mathsf{three}}}
-\end{mathpar}
-Here, $\tv$ is \code{r}'s type. The constraint suspends
-until the shape of \code{r}'s type becomes available, which occurs when typing
-\code{r.y} using closed-world reasoning of records.
-
-% Generalisation
-At the point of generalising \code{x}, the type $\tvb$
-remains unknown: it is captured by a suspended match constraint
-and has not yet been refined. We must nevertheless assign a type
-scheme to $x$, yielding $\tfor \tvb \tvb$.
-This appears unsound---$\tvb$ is generalised despite depending on
-unresolved information. However, $\tvb$ is not `fully' generalised in
-the traditional sense: it may be (and is) further constrained once the match
-constraint is discharged.
-
-To support this, we introduce our second novel mechanism for omnidirectional
-type inference: \emph{partial type schemes}.  Such type schemes (\ie $x$'s
-scheme) delay commitment to certain quantifications, allowing generalised
-variables like $\tvb$ to be later refined (\eg, to \code{int}) once
-suspended constraints are discharged. We defer the solver-level details of
-this mechanism to \cref{sec:solver, sec:implementation}.  At the semantic
-level, we simply note that partially generalised schemes arise naturally
-from the interaction of suspended constraints and let-abstractions.
-
 % Backpropagation
 
 A further subtle---but crucial---feature of our semantics is its support for
@@ -1749,7 +1714,7 @@ we collect all the rules pertaining to the satisfiability judgement in
 
   \infer[Exists]
     {\semenv, \tv := \tau \vdash \c}
-    {\semenv \vdash \cexists \cv \c}
+    {\semenv \vdash \cexists \tv \c}
 
   \infer[Forall]
     {\forall \t, ~ \semenv, \tv := \t \vdash \c}
@@ -1779,9 +1744,9 @@ we collect all the rules pertaining to the satisfiability judgement in
   \infer[Susp-Ctx]
     {\Cshape \C \tv {\any \tvcs \t} \\\\
       \semenv \th \C[\cexists \tvcs \cunif \tv \t \cand
-      \cmatch \t \cbs]
+      \cmatch \t \cbrs]
     }
-    {\semenv \vdash \C[\cmatch \tv \cbs]}
+    {\semenv \vdash \C[\cmatch \tv \cbrs]}
 \\
 \Cshape \C \tv \sh \Wide\eqdef \
   \forall \semenv, \t \in \Ground,
@@ -1803,7 +1768,7 @@ constraint generated by the handler.
 
 The idea, inspired by type systems that require principality (such as
 FreezeML), is to stipulate that the only satisfying assignments for the
-context of the suspended constraint requires $\cv$ to be assigned to some
+context of the suspended constraint requires $\tv$ to be assigned to some
 type with a unique type constructor.
 \Xalistair[]{This doesn't read entirely correctly, we want a unique
 constructor for all assignments}.
@@ -1826,43 +1791,43 @@ constructor for all assignments}.
 
 
 A na\"ive denotation semantics for suspended constraints would be to simply
-apply the assignment of $\cva$ to $f$. More formally,
+apply the assignment of $\tva$ to $f$. More formally,
 \begin{mathpar}
   \inferrule*
-    {\semenv(\cva) = \overline{\t} \Fapp \\ \semenv_{\setminus
-    \Delta}[\overline{\cvb := \t}] \vdash f(\overline{\cvb} \Fapp)}
-    {\semenv \vdash \cmatch \cva \Delta f}
+    {\semenv(\tva) = \overline{\t} \Fapp \\ \semenv_{\setminus
+    \Delta}[\overline{\tvb := \t}] \vdash f(\overline{\tvb} \Fapp)}
+    {\semenv \vdash \cmatch \tva \Delta f}
 \end{mathpar}
 However, our informal solver would be incomplete with respect to this
-semantics.  We show this by considering the constraint $\cexists \cv
-\cmatch \cv \cv (\lambda \_.~ \cv = 1)$.  This constraint does not
-unify $\cv$ outside the suspended constraint, but once it is scheduled,
-the variable $\cv$ must be unified with the unit type $1$. So our
+semantics.  We show this by considering the constraint $\cexists \tv
+\cmatch \tv \tv (\lambda \_.~ \tv = 1)$.  This constraint does not
+unify $\tv$ outside the suspended constraint, but once it is scheduled,
+the variable $\tv$ must be unified with the unit type $1$. So our
 informal solver suggests that this constraint is unsatisfiable since
-$\cv$ is never unified outside the match constraint. Yet we can use the
+$\tv$ is never unified outside the match constraint. Yet we can use the
 above rule to show that this constraint is satisfiable:
 \begin{mathpar}
   \inferrule*
     {
       \inferrule*
         {
-          (\cv \mapsto 1)(\cv) = 1 \\
+          (\tv \mapsto 1)(\tv) = 1 \\
           \inferrule*
-            {(\cv \mapsto 1)(\cv) = 1} {\cv \mapsto 1 \vdash \cv
+            {(\tv \mapsto 1)(\tv) = 1} {\tv \mapsto 1 \vdash \tv
             = 1}
         }
-        {\cv \mapsto 1 \vdash \cmatch \cv \cv (\lambda \_. ~ \cv
+        {\tv \mapsto 1 \vdash \cmatch \tv \tv (\lambda \_. ~ \tv
         = 1)}
     }
-    {\cdot \vdash \cexists \cv \cmatch \cv \cv (\lambda \_.~ \cv = 1)}
+    {\cdot \vdash \cexists \tv \cmatch \tv \tv (\lambda \_.~ \tv = 1)}
 \end{mathpar}
 The dependency of suspended constraints can also be complex, as in the
-following example: $\cexists {\cva, \cvb} \cmatch \cva \cvb {(\lambda
-\_. ~ \cvb = 1)} \cand \cmatch \cvb \cva {(\lambda \_. ~ \cva = 1)}$.
-Worse still, is that the binding location of $\cva$ may not even contain
-the sufficient information to show that $\cva$ is realised.  For instance,
+following example: $\cexists {\tva, \tvb} \cmatch \tva \tvb {(\lambda
+\_. ~ \tvb = 1)} \cand \cmatch \tvb \tva {(\lambda \_. ~ \tva = 1)}$.
+Worse still, is that the binding location of $\tva$ may not even contain
+the sufficient information to show that $\tva$ is realised.  For instance,
 \begin{align*}
-  \cexists \cvb \cvb = 1 \cand \cexists \cva \cva = \cvb \cand \cmatch \cva \Delta f
+  \cexists \tvb \tvb = 1 \cand \cexists \tva \tva = \tvb \cand \cmatch \tva \Delta f
 \end{align*}
 
 Our conclusion is that the na\"ive semantics should be rejected in favour
@@ -1873,21 +1838,21 @@ constraint generated by the handler.
 
 The idea, inspired by type systems that require principality (such as
 FreezeML), is to stipulate that the only satisfying assignments for the
-context of the suspended constraint requires $\cv$ to be assigned to some
+context of the suspended constraint requires $\tv$ to be assigned to some
 type with a unique type constructor.
 \Xalistair[]{This doesn't read entirely correctly, we want a unique
 constructor for all assignments}.
 
 This motivates our next definition: the principal realisation of a type
-variable $\cv$ by some constraint context $\cctx[-]$.
+variable $\tv$ by some constraint context $\cctx[-]$.
 
 \begin{definition}
-  A type variable $\cv$ is principally realised with the constructor $\F$
-  by the context $\cctx[-]$, written $\cctx[\cv !] \rhd \F$,
+  A type variable $\tv$ is principally realised with the constructor $\F$
+  by the context $\cctx[-]$, written $\cctx[\tv !] \rhd \F$,
   iff for all assignments $\semenv$, there exists an assignment $\semenvp$
   for the
   hole such that $\semenv \vdash \cctx[\semenvp \vdash \ctrue]$ implies
-  $\semenvp(\cv) = \overline{\t} \Fapp$
+  $\semenvp(\tv) = \overline{\t} \Fapp$
 \end{definition}
 
 \TODO
@@ -1903,11 +1868,11 @@ require that the surrounding context principally realises the matchee. This
 is formally specified as:
 \begin{mathpar}
 \inferrule*
-   {\cctx[\cva !] \rhd \F \\
-    \semenv \vdash \cctx[\semenvp_{\setminus \Delta}[\overline{\cvb :=
-      \t}] \vdash f(\overline{\cvb} \Fapp)] \\
-    \semenvp(\cva) = \overline{\t} \Fapp}
-   {\semenv \vdash \cctx[\semenvp \vdash \cmatch \cva \Delta f]}
+   {\cctx[\tva !] \rhd \F \\
+    \semenv \vdash \cctx[\semenvp_{\setminus \Delta}[\overline{\tvb :=
+      \t}] \vdash f(\overline{\tvb} \Fapp)] \\
+    \semenvp(\tva) = \overline{\t} \Fapp}
+   {\semenv \vdash \cctx[\semenvp \vdash \cmatch \tva \Delta f]}
 \end{mathpar}
 
 \TODO: precise declarative semantics of constraints. They should coincide
@@ -1932,22 +1897,22 @@ $\c[\square] = \c$ when $\square$ occurs once in $\c$.
 Next steps:
 \begin{itemize}
 \item introduce the condition
-  $\c[\cv !]$:
+  $\c[\tv !]$:
   \begin{mathpar}
     \begin{array}{l}
     \exists! \F, \quad \forall \semenv, \semenvp,\\ \qquad (\semenvp \vdash
     \square); \semenv \vdash \c[\square] \implies
-    \mathsf{head}(\semenvp(\cv)) = \F
+    \mathsf{head}(\semenvp(\tv)) = \F
     \end{array}
   \end{mathpar}
 \item and finally the global rule
   \begin{mathpar}
     \infer
-    {\c[\cva !]
-      \and \semenvp(\cva) = \overline{\t} \Fapp
-      \and \semmetaenv, (\semenvp, \overline{\cvb := \t} \vdash
-      \square)\vdash \c[f(\overline{\cvb} \Fapp)] }
-    {\semmetaenv, (\semenvp \vdash \square); \semenv \vdash \c[\cmatch \cva \Delta f]}
+    {\c[\tva !]
+      \and \semenvp(\tva) = \overline{\t} \Fapp
+      \and \semmetaenv, (\semenvp, \overline{\tvb := \t} \vdash
+      \square)\vdash \c[f(\overline{\tvb} \Fapp)] }
+    {\semmetaenv, (\semenvp \vdash \square); \semenv \vdash \c[\cmatch \tva \Delta f]}
   \end{mathpar}
 \end{itemize}
 
@@ -3024,12 +2989,17 @@ non-deterministic rewriting relation between \emph{unification problems} $\upa
 
 \begin{bnffig}
   {fig:unification-syntax}
-  {Syntax of unification problems}
+  {Syntax of unification problems. Constraints are also extended with the
+  administrative multi-equation construct.}
+
   \entry[Unification problems]{\up}{
     \ctrue \and \cfalse \and \upa \cand \upb \and \cexists \tv \up \and \ueq
   } \\
   \entry[Multi-equations]{\ueq}{
     \eset \mid \cunif \ueq \t
+  } \\
+  \entry[Constraints]{\c}{
+    \dots \and \ueq
   }
 \end{bnffig}
 
@@ -3059,6 +3029,8 @@ Our algorithm is largely standard \cite{Pottier-Remy/emlti} but replaces type
 constructors with \emph{canonical principal shapes}, enabling a uniform
 treatment of monotypes and polytypes within unification, avoiding the need for
 specialised handling of polytypes, as found in \citep{Garrigue-Remy/poly-ml}.
+
+\TODO{Example of unifying polytypes?}
 
 % Explaination of rules
 We briefly summarize the purpose of each rule below: \Rule{U-Exists} lifts
@@ -3127,213 +3099,396 @@ written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
       {\ctrue}
 \end{mathparfig}
 
-% Solved forms
-A unification problem is in \emph{solved form} if it has the structure
-\begin{mathpar}
-  \cexists \tvs \cAnd \iton \ueqi
-\end{mathpar}
-where each $\ueqi$ contains at most one non-variable type, variables
-do not occur in multiple equations, and the problem is acyclic. From
-such a form, a most general unifier $\vartheta$ can be directly read off.
-
 
 \subsection{Solving rules}
-%\paragraph{Solving rules}
+
+% What we do (introduce / explain the solver)
+We now introduce the rules of the constraint solver itself
+(\cref{fig:omni-solver}). These rulesdefine a non-deterministic rewriting
+system, operating modulo $\alpha$-equivalence and the associativity and
+commutativity of conjunction. Rewriting is performed under an arbitrary
+one-hole constraint context $\C$.
+% Solved forms
+A constraint $C$ is satisfiable if it can be rewritten into a \emph{solved
+form}:
+\begin{mathpar}
+  \hat{\up} \uad\triangleq\uad \cexists \tvs \cAnd \iton \ueqi
+\end{mathpar}
+where each $\ueqi$ contains at most one non-variable type,
+variables do not occur in multiple equations, and the constraint is acyclic.
+From such a form, a most general solution (\ie a unifier $\vartheta$) can be
+directly read off.
+% Common rule descriptions
+\paragraph{Basic rules} \Rule{S-Unif} invokes the unification algorithm to the
+current unification problem. The unification algorithm itself is treated as a
+block box by the solver, allowing the solver to be parameterized over the
+equational theory of types implemented by the unifier.
+
+\begin{bnffig}
+  {fig:constraint-syntax-extension}
+  {Syntax of region-based $\Let$ constraints and partial applications}
+  \entry[Constraints]{\c}{
+    \dots \and \cletr \x \tv \tvs \ca \cb \and \cpapp \x \ren \ueqs \t
+  } \\
+  \entry[Semantic environment]{\semenv}{
+    \dots \and \semenv, \x := \cabsr \tv \tvs \c
+  } \\
+  \entry[Renaming]{\ren}{
+    \eset \and \rho[\tv := \tvb]
+  }
+\end{bnffig}
+
+In general, existential quantifiers $\cexists \tv \c$ are lifted to the nearest enclosing
+$\Let$, if any, or otherwise to the top of the constraint.
+We refer to the resulting existential prefix $\exists \tvs$ as a
+\emph{region}. To make regions explicit, we introduce the syntax
+$\cletr \x \tv \tvs \ca \cb$, where $\tv$ is the \emph{root} of the region
+and $\tvs$ are auxiliary existential variables. The order of $\tvs$ is
+immaterial, and regions are considered equal up to permutation of these
+variables.
+
+The satisfiability of regional $\Let$ constraints is defined by:
+\begin{mathpar}
+  \infer[Letr]
+    {\semenv \th \cexists {\tv, \tvs} \ca \\
+     \semenv, \x \is \cabsr \tv \tvs \ca \th \cb}
+    {\semenv \th \cletr \x \tv \tvs \ca \cb}
+
+  \infer[Appr]
+    {\semenv(\x) = \cabsr \tv {\tvs'} \c \\
+     \semenv, \tv \is \semenv(\t), \tvs' \is \tys' \th \c}
+    {\semenv \th \capp \x \t}
+\end{mathpar}
+We introduce an abstraction with a region, written $\cabsr \tv \tvs \c$, to
+track the region introduced in \Rule{Letr}. Region-based $\Let$ constraints
+strictly generalize ordinary constraint abstractions:
+\begin{mathpar}
+  \clet \x \tv \ca \cb \cequiv \cletr \x \tv \eset \ca \cb
+\end{mathpar}
+
+\Rule{S-Let} rewrites the usual let constraints $\clet \x \tv \ca \cb$ into
+region form. \Rule{S-Exists-Conj} lifts existentials across conjunctions,
+while \Rule{S-Exists-Let1} and \Rule{S-Exists-Let2} lift existentials into or
+across let-binders. \Rule{S-Let-Conj1} and \Rule{S-Let-Conj2} hoist
+constraints out of let-binders when they do not depend on locally bound
+variables. Collectively, these lifting rules normalize the structure of each
+region into a block of existentially bound variables, comprising set of solved
+multi-equations (from unification) and residual unsolved constraints (\ie
+applications, let-bindings and suspended constraints).
+
+\begin{mathparfig}
+  {fig:solver-basic}
+  {Basic rewriting rules $\ca \csolve \cb$}
+
+  \rewrite[S-Unif]
+    {\upa \\ \upa \unif \upb}
+    {\upb}
+
+  \rewrite[S-Exists-Conj]
+    {(\cexists \alpha \ca) \cand \cb \\
+     \tv \disjoint \cb}
+    {\cexists \tv {\ca \cand \cb}}
+
+  \rewrite[S-Exists-Let1]
+    {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
+     \tvb \disjoint \tv, \tvs}
+    {\cletr \x \tv {\tvs, \tvb} \ca \cb}
+
+  \rewrite[S-Exists-Let2]
+    {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
+     \tvb \disjoint \tv, \tvs, \cb}
+    {\cexists \tvb {\clet \x \tvs \ca \cb}}
+
+  \rewrite[S-Let]
+    {\clet \x \tv \ca \cb}
+    {\cletr \x \tv \eset \ca \cb}
+
+  \rewrite[S-Let-Conj1]
+    {\cletr \x \tv \tvs \ca (\cb \cand \cc) \\
+     \x \disjoint \cc}
+    {\cc \cand \Clet \x \tv \ca \cb}
+
+  \rewrite[S-Let-Conj2]
+    {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
+     \ca \disjoint \tv, \tvs}
+    {\ca \cand \cletr \x \tv \tvs \cb \cc}
+\end{mathparfig}
+
+
 %
-%We now introduce the rules of the constraint solver itself
-%(\cref{fig:omni-solver}). These rules are non-deterministic. Rewriting is
-%performed modulo $\alpha$-equivalence, commutativity and assoiciativity of
-%conjuction and under an arbitrary \emph{constraint context} $\Cctx$.
+Remaining basic constraint-formers, such as label and polytype instantiation
+constraints, introduced in \cref{TODO}, are handled by rewriting them once
+their left-hand side becomes concrete. For instance, an instantiation
+constraint $s \leq \t$ is handled once $s$ is subsitituted by a match
+constraint, yielding $\ts \leq \t$, which is then solved using the syntactic
+sugar introduced in \cref{sec:constraints}. Similarly, label instantiation
+constraints of the form $\Omega(\elab/t) \leq \t$ are resolved once $t$ is
+substituted for some concrete $\T$.
+
+\paragraph{Suspended match constraints}
+
+% S-Susp-Use
+\Rule{S-Susp-Use} solves suspended match constraints whose scruintee
+has a locally known shape -- either statically, or as a result of appplying
+\Rule{S-Susp-Ctx}. The rule selects a unique matching branch based on the shape
+of the scruitinee and applies the generated substitution to the branch. If no
+branch matches, the rule is stuck, indicating that the constraint is
+unsatisfiable.
+
+\begin{mathparfig}
+  {fig:solver-susp}
+  {Rewriting rules for suspended match constraints.}
+  \rewrite[S-Susp-Ctx]
+    {\C[\cmatch \tv \cbrs] \cand \cunif \tv {\cunif \t \ueq} \\
+     \shape \t = \any \tvcs \tp \\
+     \tv \disjoint \C}
+    {\C[\cexists \tvcs  \cunif \tv \tp \cand \cmatch \tp \cbrs]
+     \cand \cunif \tv {\cunif \t \ueq}}
+
+  \rewrite[S-Susp-Use]
+    {\cmatch \t {\cbranch {\bar \cpat} {\bar \c}} \\
+     \shape \t \Defined \\
+     \cmatches \cpati {\decomp \t} \theta}
+    {\theta(\ci)}
+\end{mathparfig}
+
+% S-Susp-Ctx
+When the solver encounters a suspended constraint with an unknown shape, it
+cannot proceed immediately. Instead, it must wait until the surrounding
+context proves that the scruintee $\tv$ is unified with a type $\t$ whose
+shape is defined. This enables the suspended match to be rewritten, according
+to \Rule{Susp-Ctx}, thereby exposing the shape required to continue solving in
+\Rule{S-Susp-Use}.
+
+\paragraph{Let constraints}
+% Let-constraint solving is generalization
+Application constraints can be solved by copying constraints
+(\ie $\beta$-reduction):
+\begin{mathpar}
+  \rewrite[S-Let-App-$\beta$]
+    {\cletr \x \tv \tvs \ca {\C[\capp \x \t]} \\ \tv, \tvs \disjoint \t \\ x \disjoint \C}
+    {\clet \x \tv \ca {\C[\cexists {\tv, \tvs} \cunif \tv \t \cand \ca]}}
+\end{mathpar}
+While obviously correct, this na\"ive strategy duplicates constraint solving
+work across applications of the same abstraction.
+
+% Background on efficient solving of applications (aka generalization)
+A more efficient approach first solves the abstraction once---\eg reducing it
+to $\cabsr \tv \tvs \ueqs$, where $\tvs$ are generalizable variables---and
+then reuses the result by copying only the solved constraint body $\ueqs$ at
+each application site, only copying the solved constraints. Concretly, this
+corresponds to solving $\ca$ to $\hat\up$ and identifying the generalizable
+variables $\tvs$ and equations $\ueqs$ in $\hat\up$.
+
+% Where is this formalized?
+This connection between constraint abstractions and \ML type schemes is
+formalized by Pottier and R\'emy \citet{Pottier-Remy/emlti}, who show that the
+solved $\cabsr \tv \tvs \ueqs$ is equivalent to $\tfor {\tvs} \theta(\tv)$
+where $\theta$ is the most general unifier of $\ueqs$. Consequently, efficient
+implementations of \HM inference, such as that of \OCaml, implement
+instantiation by copying the generalized constraint body $\ueqs$ with fresh
+variables for $\tvs$.
+
+% Generalization with suspended constraints is hard
+However, suspended constraints complicate generalization.
+To illustrate this, let us examine:
+\begin{program}[input]
+  type three = {x : int; y : int} (* y is overloaded *)
+  ...
+  let e$_{10}$ r = let y = r.y in y + r.x
+\end{program}
+The generated constraint\footnote{Simplified for readability.} is:
+\begin{mathpar}
+  \cexists \tv
+    \clet y \tvb {\cmatchdots \tva }
+      {\cinst y \tint \cand \cunif \tv {\mathsf{three}}}
+\end{mathpar}
+Here, $\tv$ is \code{r}'s type. The constraint remains
+suspended until \code{r.y} forces \code{r}'s type to be \code{three}.
+Cruicially, the variable $\tvb$ -- introduced inside the abstraction for the
+type of \code{y} -- is captured by the suspended match constraint that is
+not yet resolved at the point of generalizing \code{y}.
+
+% Partial type schemes
+Nonetheless, to continue solving the let-body, we must assign a scheme to
+\code{y}. We na\"ive pick $\tfor \tvb \tvb$. This appears unsound, since
+$\tvb$ will later unify with $\tint$ once the match constraint is discharged.
+But it would be incomplete to lower $\tvb$ as a monomorphic variable.
 %
-%
-%\begin{mathparfig}
-%  {fig:omni-solver}
-%  {Select rewriting rules of the solver}
-%
-%  \rewrite[S-Unif]
-%    {\Cctx[\Ua] \\ \Ua \longrightarrow \Ub}
-%    {\Cctx[\Ub]}
-%
-%  \rewrite[S-True]
-%    {\C \Cand \Ctrue}
-%    {\C}
-%
-%  \rewrite[S-Exists-Conj]
-%    {(\Cexists \alpha \Ca) \Cand \Cb \\ \tv \disjoint \Cb}
-%    {\Cexists \tv {\Ca \Cand \Cb}}
-%
-%  \rewrite[S-Exists-Let]
-%    {\Cletlam \x \tv \Ca {\Cexists \tvb \Cb} \\ \tvb \disjoint \tv, \Ca}
-%    {\Cexists \tvb {\Cletlam \x \tv \Ca \Cb}}
-%
-%  \rewrite[S-Lift-Let2]
-%    {\Cletlam \x \tv \Ca (\Cb \Cand \Cc) \\ \x \disjoint \Cc}
-%    {\Cc \Cand \Cletlam \x \tv \Ca \Cb}
-%
-%  \rewrite[S-Lift-Let1]
-%    {\Clet \x {\Clam \tvas {\Ca \Cand \Cb}} \Cc \\ \tvas \disjoint \Ca}
-%    {\Ca \Cand \Clet \x {\Clam \tvas \Cb} \Cc}
-%\end{mathparfig}
-%
-%% Common rule descriptions
-%\paragraph{Basic rules} \Rule{S-Unif} invokes the unification algorithm to the
-%current unification problem. The unification algorithm itself is treated as a
-%block box by the solver, allowing the slover to be parameterized over the
-%equational theory of types implemented by the unifier.
-%%
-%\Rule{S-Exists-Lift*} lifts existential quantifiers to the nearest enclosing
-%$\Let$, if any, or otherwise to the top of the constraint, which
-%we refer to as a \emph{region} within the constraint.
-%Similarly, \Rule{S-Lift-Let*} hoists constraints out of let-binders
-%when they do not depend on the locally bound variables. These lifting rules
-%normalize the structure of each region into a block of existentially bound
-%variables with a unification problem, together with unresolved constraints.
-%
-%\paragraph{Suspended constraints}
-%
-%\Rule{S-Susp-Use} solves suspended match constraints whose scruintee
-%has a locally known shape -- either statically, or as a result of appplying
-%\Rule{S-Susp-Ctx}. The rule selects a unique matching branch based on the shape
-%of the scruitinee and applies the generated substitution to the branch. If no
-%branch matches, the rule is stuck, indicating that the constraint is
-%unsatisfiable.
-%
-%\begin{mathparfig}
-%  {fig:omin-solver-susp}
-%  {Solving rules for suspended match constraints.}
-%  \rewrite[S-Susp-Ctx]
-%    {\Cctx[\Cmatchp \tv \shcases]\\
-%     \shape(\t) = \shq \tvcs \tp \\
-%     \tv \Ceq \t \Ceq \Ueq \in \Cctx}
-%    {\Cctx[\Cexists \tvcs  \tv \Ceq \tp \Cand \Cmatchp \tp \shcases]}
-%
-%  \rewrite[S-Susp-Use]
-%    {\Cmatchp \t {\Ccase {\bar \shpat} {\bar \C}} \\
-%     \shape(\t) \downarrow \\
-%     \shpati \matches \shape(\t) \leadsto \theta}
-%    {\theta(\Ci)}
-%\end{mathparfig}
-%
-%When the solver encounters a suspended constraint with an unknown shape, it
-%cannot proceed immediately. Instead, it must wait until it can construct
-%a surrounding context $\Cctx$ that includes a multi-equation unifying the
-%scruintee with a type whose shape is defined. This enables the suspended
-%match to be rewritten, according to \Rule{Sat-Susp-Ctx}, thereby exposing
-%the shape required to continue solving in \Rule{S-Susp-Use}.
-%
-%\paragraph{Let constraints}
-%% Let-constraint solving is generalization
-%Application constraints can be solved by copying constraints
-%(\ie $\beta$-reduction):
-%\begin{mathpar}
-%  \rewrite[S-Let-App-Copy]
-%    {\Cletlam \x \tv \Ca {\Cctx[\Capp \x \t]} \\ \tv \disjoint \t}
-%    {\Cletlam \x \tv \Ca {\Cctx[\Cexists \tv \tv \Ceq \t \Cand \Ca]}}
-%\end{mathpar}
-%However, this duplicates constraint solving work. A more efficient
-%strategy first solves the abstraction fully and then reuses it --
-%solving constraint abstractions is equivalent to rank-based generalization
-%\cite{book/atapl/Pottier04}.
-%
-%% Generalization with suspended constraints is hard
-%But, the inclusion of suspended constraints complicates generalization.
-%To illustrate this, let us examine:
-%%
-%\begin{program}[input]
-%  type three = { x : int; y : int } (* y is overloaded *)
-%  ...
-%  let e_9 r = let y = r.y in r.x + y
-%\end{program}
-%The generated constraint\footnote{Simplified for readability.} is:
-%\begin{mathpar}
-%  \Cexists \tv
-%    \Clet y {\Clam \tvb {\Cmatchp \tva {\parens
-%      {\Ccase {\wild \Tapp[t]}
-%	      {\Omega(y/t) \leq \tvb \Tarr \tva}}}}}
-%      \Capp y \mathsf{int} \Cand \tv \Ceq {\mathsf{three}}
-%\end{mathpar}
-%Here, $\tv$ is \code{r}'s type. The constraint remains
-%suspended until \code{r.x} forces \code{r}'s type to be \code{three}
-%When generalizing \code{y}, the type $\tvb$ -- captured by the match --
-%has not yet been resolved. We must, however, allocate a scheme for \code{y},
-%resulting in $\Tforall \tvb \tvb$ -- which appears unsound since $\tvb$ later
-%unifies with $\Tint$.
-%
-%% Partial schemes are the solution
-%This motivates \emph{partial type schemes}: type schemes that delay commitment
-%to certain quantifications (\eg $\tvb$). These \emph{partially generalized}
-%variables are generalized, but can still be refined in future as suspended
-%constraints are discharged.
-%
-%% Partial instantiation syntax
-%To encode partial schemes, we introduce \emph{partial application constraints}
-%$\Cpapp \x \theta \U$, where $\theta$ maps variables bound inside $\x$'s
-%abstraction to fresh copies and $\U$ accumulates copied multi-equations.
-%Copying proceeds by two rules:
-%
-%\begin{enumerate}
-%  \item \Rule{S-Papp-Exists} allocates fresh existential variables at the call
-%    site that are mapped to uninstantiated variables within the abstraction.
-%    We write $\theta : \tvs$ for $\dom(\theta) = \tvs$.
-%
-%  \item \Rule{S-Papp-Unif} copies multi-equations from the abstraction
-%    to the call site.
-%\end{enumerate}
-%
-%\begin{mathparfig}
-%  {fig:omni-solver-schemes}
-%  {Solving rules for let-bindings and applications.}
-%  \rewrite[S-Let-App]
-%    {\Cletlam \x \tv \Ca \Cctx[\Capp \x \t]}
-%    {\Cletlam \x \tv \Ca \Cctx[\Cexists \tvb
-%      \Cpapp \x {\where {\tv \assign \tvb}} {\Ctrue} ]}
-%
-%  \rewrite[S-Papp-Exists]
-%    {\Clet \x {\Clam \tvs \Cexists \tvb \Ca} \Cctx[\Cpapp \x \theta \U] \\
-%     \theta : \tvs}
-%    {\Clet \x {\Clam {\tvs, \tvb} \Ca}
-%      \Cctx[\Cexists \tvbp \Cpapp \x {\theta, \tvb \assign \tvbp} \U]}
-%
-%  \rewrite[S-Papp-Unif]
-%    {\Clet \x {\Clam \tvs \Ca \Cand \hat{\Ueq}} {\Cctx[\Cpapp \x \theta \U]} \\
-%     \theta : \tvs}
-%    {\Clet \x {\Clam \tvs \Ca \Cand \hat{\Ueq}}
-%      \Cctx[\Cpapp \x \theta {\U \Cand \hat{\Ueq}} \Cand \theta(\hat{\Ueq})]}
-%
-%  \rewrite[S-Papp-Solve]
-%    {\Clet \x {\Clam \tvs \Up} {\Cctx[\Cpapp \x \theta \U]} \\
-%     \theta : \tvs \\
-%     U \vDash \Up}
-%    {\Clet \x {\Clam \tvs \Up} {\Cctx[\Ctrue]}}
-%
-%  \rewrite[S-Let-Solve]
-%    {\Clet \x {\Clam \tv \U} \C \\ \x \disjoint \C \\
-%     \Cexists \tv \U \equiv \Ctrue}
-%    {\Cb}
-%
-%  \rewrite[S-Lower]
-%    {\Clet \x {\Clam {\tvas, \tvbs} \Ca}
-%      {\Cctx[\overline{\Cpapp \x \theta \U}]} \\
-%     \Cexists {\tvas} \Ca \text{ determines } \tvbs \\
-%     \theta : \tvas, \tvbs}
-%    {\Cexists \tvbs
-%      \Clet \x {\Clam \tvas \Ca}
-%	{\Cctx[{\overline{\Cpapp \x {\theta \setminus \tvbs} \U
-%			 \Cand \theta(\tvbs) = \tvbs}}]}}
-%  \\
-%\end{mathparfig}
-%
-%% Cleaning up partial applications and let constraints
-%\Rule{S-Papp-Solve} removes partial applications once all necessary constraints
-%have been copied -- that is, when the copied equations entail the abstraction
-%body. \Rule{S-Let-Solve} remove a $\Let$ constraint when the bound term variable
-%is unused and the abstraction is satisfiable.
-%
-%\Rule{S-Lower} implements R\'emy's efficient rank-based generalization:
-%variables $\tvbs$ dominated by monomorphic variables are removed from the
-%abstraction. Partial applications that copied $\tvbs$ are notified, unifying
-%their copies with the lowered $\tvbs$.
-%
+This motivates our second novel mechanism for omnidirectional inference:
+\emph{partial type schemes}---type schemes that delay commitment to certain
+quantifications (\eg $\tvb$). Such \emph{partially generalized} variables are
+treated as generalized, but can still be refined in future as suspended
+constraints are discharged.
+
+% Intro partial applications
+To support this, we extend the language of constraints with \emph{partial
+application constraints} $\cpapp \x \ren \ueqs \t$, representing a partially
+solved application $\capp \x \t$. The renaming $\ren$ map $\x$'s regional
+variables to fresh copies, and $\ueqs$ accumulates the solved equations copied
+so far. This enables efficient, incremental instantiation of constraint
+abstractions: solved parts are reused immediately, while unresolved
+constraints (\ie suspended constraints) can be solved later, further refining
+the abstraction and propagation additional equations to the application sites.
+
+\begin{mathparfig}
+  {fig:solver-schemes}
+  {Rewriting rules for let-bindings and applications.}
+  \rewrite[S-Let-App]
+    {\cletr \x \tv \tvs \ca \C[\capp \x \t] \\
+     \tvc \disjoint \t \\
+     \x \disjoint \C}
+    {\cletr \x \tv \tvs \ca \C[\cexists \tvc \cunif \tvc \t
+                               \cand \cpapp \x \eset \eset \tvc ]}
+
+  \rewrite[S-Papp-Exists]
+    {\cletr \x \tv {\tvs, \tvb} \c \C[\cpapp \x \ren \ueqs \tvc] \\
+     \tvb \notin \dom \ren \\
+     \tvbp \disjoint \ren, \ueqs, \tvc \\
+     \x \disjoint \C}
+    {\cletr \x \tv {\tvs, \tvb} \c
+      \C[\cexists \tvbp \cpapp \x {\ren \where {\tvb \is \tvbp}} \ueqs \tvc]}
+
+  \rewrite[S-Papp-Unif]
+    {\cletr \x \tv \tvs {\c \cand \ueq} {\C[\cpapp \x \ren \ueqs \tvc]} \\
+     \ren : \tvs \\
+     \ueqs \nvDash \ueq \\
+     \x \disjoint \C}
+    {\cletr \x \tv \tvs {\c \cand \ueq}
+      \C[\cpapp \x \ren {\ueqs, \ueq} \tvc
+	 \cand \ueq[\ren\where{\tv \is \tvc}]]}
+
+  \rewrite[S-Papp-Solve]
+    {\cletr \x \tv \tvs {\ueqs'} {\C[\cpapp \x \ren \ueqs \tvc]} \\
+     \ren : \tvs \\
+     \ueqs \vDash \ueqs' \\
+     \x \disjoint \C}
+    {\cletr \x \tv \tvs {\ueqs'} {\C[\ctrue]}}
+
+  \rewrite[S-Let-Solve]
+    {\cletr \x \tv \tvs \ueqs \c \\ \x \disjoint \c \\
+     \cexists {\tv, \tvs} \ueqs \cequiv \ctrue}
+    {\c}
+
+  \rewrite[S-Exists-Lower]
+    {\cletr \x \tv {\tvas, \tvbs} \c
+     {\C[\overline{\cpapp \x \ren \ueqs \tvc}]} \\
+     \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
+     \bar \ren : \tvas, \tvbs \\
+     \x, \tvbs \disjoint \C}
+    {\cexists \tvbs
+      \cletr \x \tv \tvas \c
+	{\C[{\overline{\cpapp \x {\ren \setminus \tvbs} \ueqs
+			 \cand \cunif {\ren(\tvbs)} \tvbs}}]}}
+\end{mathparfig}
+
+% Semantics to partial applications
+We assign the following semantics to partial application constraints:
+\begin{mathpar}
+  \infer[Papp]
+    {\semenv, \tv \is \semenv(\t) \th \ueqs [\ren]
+	      \implies \semenv \th \capp \x \t \\
+     \semenv(\x) = \cabsr \tv \tvs \c \\
+     \dom \ren \subseteq \tvs}
+    {\semenv \th \cpapp \x \ren \ueqs \t}
+\end{mathpar}
+Informally, this states that a solution $\semenv$ to a partial application
+constraint $\cpapp \x \ren \ueqs \t$ must also be a solution to the full
+application $\capp \x \t$, provided the copied equations $\ueqs$ are
+satisfiable under the renaming.
+% Treatment of alpha-renaming
+The semantics enforces that the domain of the renaming $\ren$ is a subset of
+the regional variables $\tvs$ of $\x$---a cruicial property for treating these
+variables modulo $\alpha$-equivalence. Interestingly, $\tvs$ are bound not
+only in the body of the abstraction $\ca$, but also in the
+constraint $\cb$, where they may appear in partial applications of $\x$ via
+renamings.
+
+\begin{remark}
+  The satisfiability judgement in \Rule{Papp} occurs in a negative position.
+  This does not threaten well-foundness, as the conclusion of this rule is
+  strictly larger than the negatively occuring judgement. See Appendix ??.
+\end{remark}
+
+Partial application constraints are solved using the following rules:
+\begin{enumerate}
+  \item \Rule{S-Papp-Exists} allocates fresh existential variables at the call
+    site that are mapped to uninstantiated variables within the abstraction.
+    We write $\ren : \tvs$ for $\dom \ren = \tvs$.
+
+  \item \Rule{S-Papp-Unif} copies multi-equations from the abstraction
+    to the call site, provided we have not copied them previously.
+\end{enumerate}
+% Cleaning up partial applications and let constraints
+\Rule{S-Papp-Solve} removes partial applications once all necessary
+constraints have been copied -- that is, when the copied equations entail the
+abstraction's body. \Rule{S-Let-Solve} remove a $\Let$ constraint when the
+bound term variable is unused and the abstraction is satisfiable.
+
+% Lowering
+\Rule{S-Exists-Lower} implements the non-trivial case of lowering existentials
+across $\Let$-binders. It identifies a subset of variables in the region
+of a $\Let$ constraint that are unified with variables from outside the
+region. Such variables are considered monomorphic and thus cannot be
+generalized; they can instead be safely lowered to the outer scope.
+
+% Determines
+This is the case when the types of $\tvbs$ are \emph{determined} in a unique
+way. In short, $\c$ determines $\tvbs$ if and only if the solutions for
+$\tvbs$ are uniquely fixed by the solutions to other variables in $\c$.
+
+\begin{definition}
+  $\cdetermines \c \tvbs$ if and only if for every ground assignment
+  $\semenv, \semenvp$ that satisfy $\c$ and coincide outside of $\tvb$ must
+  concide on $\tvbs$ as well.
+
+  \begin{mathpar}
+    \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
+      \semenv \th \c
+      \wedge \semenvp \th \c
+      \wedge \semenv =_{\setminus \tvbs} \semenvp
+      \implies
+      \semenv = \semenvp
+  \end{mathpar}
+\end{definition}
+
+% How the determines relation corresponds to ML
+Conceptually, this corresponds to the negation of the generalization condition
+in \ML: a type variable cannot be generalized if it appears in the typing
+context. In the constraint setting, it cannot be generalized if it depends on
+variables from outside the region.
+
+% How to decide the relation
+To decide when $\cdetermines {\cexists \tvs \c} \tvbs$ holds for $\tvbs
+\disjoint \tvs$, we search for a multi-equation $\ueq$ in $\c$ of the form:
+\begin{enumerate*}
+  \item $\cunif \tvc \ueq'$ where $\tvc \disjoint \tvs, \tvbs$ and
+    $\tvbs \subseteq \fvs {\ueq'}$, or
+  \item $\cunif \tvbs {\cunif \t \ueq'}$ where $\fvs \t \disjoint
+    \tvs, \tvbs$.
+\end{enumerate*}
+For instance, $\cexists \tvba \cunif \tv {\tvba \to \tvbb}$ determines
+$\tvbb$, as $\tvbb$ is free. \cref{sec:implementation} discusses how we
+efficiently decide determinability.
+
+% Why we lower?
+Lowering such varibles improves solver efficiency. It avoids unnecessary
+duplication of work that would otherwise occur via \Rule{S-Papp-Exists}, which
+allocates fresh copies of all regional variables at each application site. By
+reducing the number of variables that need to be copied, lowering directly
+reduces instantiation overhead.
+
+% Updating partial applications
+However, sometimes \Rule{S-Papp-Exists} must copy a variable before it can be
+lowered, for instance, in the constraint $\cexists a b $\TODO{Think of
+constraint that forces our solver}. In this case, when we eventually lower the
+variable, we must also update any partial applications that previously copied
+it, ensuring their local copies are unified with the new, lowered variables
+$\tvbs$.
+
+
+\TODO{Compression}
+\TODO{Backpropagation}
 %\paragraph{Backpropagation}
 %Our semantics supports \emph{backpropagation}, allowing type information
 %from use sites to refine matched variables inside generalised abstractions.
@@ -3359,28 +3514,31 @@ such a form, a most general unifier $\vartheta$ can be directly read off.
 %provided the context $\Cctx$ include the application constraint.
 %\begin{mathpar}
 %  \rewrite[S-BackProp]
-%    {\Cctx[\Cletlam \x \tvs {\Cctxa[\Cmatchp \tv \shcases]} {\Cctxb[x[\theta \tack U]]}] \\
+%    {\C[\clet \x \tvs {\Ca[\cmatch \tv \cbrs]} {\Cb[x[\theta \th \up]]}] \\
 %     \theta : \tvs \\
-%     \theta(\alpha) \Ceq \t \Ceq \Ueq \in \Cctx, \Cctxb \\
-%     \shape(\t) = \shq \tvcs \tp}
-%    {\Cctx[\Cletlam \x \tvs {\Cctxa[\Cexists \tvcs \tv = \tp \Cand \Cmatchp \tp \shcases]} {\Cctxb[x[\theta \tack U]]}]}
+%     \C[\Cb] \th \theta(\tv) = \t \\
+%     \shape \t = \any \tvcs \tp}
+%    {\C[\clet \x \tvs {\Ca[\cexists \tvcs \cunif \tv \tp
+%                           \cand \cmatch \tp \cbrs]}
+%		      {\Cb[x[\theta \th U]]}]}
 %\end{mathpar}
 %
 
 \subsection{Metatheory}
-%% Properties
-%\begin{thm}[Progress]
-%  If $\cdot \tack \C$ and $\C$ is not solved, then there exists a $\Cp$
-%  such that $\C \longrightarrow \Cp$.
-%\end{thm}
-%
-%\begin{thm}[Termiantion]
-%  The constraint solver terminates on all inputs.
-%\end{thm}
-%
-%\begin{thm}[Preservation]
-%  If $\Ca \longrightarrow \Cb$, then $\Ca \equiv \Cb$.
-%\end{thm}
+% Properties
+
+\begin{theorem}[Progress]
+  If $\cdot \th \c$ and $\c$ is not solved, then there exists a $\cp$
+  such that $\c \csolve \cp$.
+\end{theorem}
+
+\begin{theorem}[Termination]
+  The constraint solver terminates on all inputs.
+\end{theorem}
+
+\begin{theorem}[Preservation]
+  If $\ca \csolve \cb$, then $\ca \cequiv \cb$.
+\end{theorem}
 
 
 
@@ -3388,6 +3546,18 @@ such a form, a most general unifier $\vartheta$ can be directly read off.
 \label{sec:implementation}
 
 % Generalization trees
+
+% Ranks
+In practice, this
+check is efficiently implemented using \emph{ranks} -- where each regional
+$\Let$ constraint and type variable is allocated an integer rank, which
+informs us the depth of the region within the constraint. type variables of
+rank $0$ are bound at the top-level region, and type variables of rank $r \geq
+1$ are bound in the region of $\Let$ constraint at depth $r$. Ranks were
+initially described by R\'emy \cite{TODO} for efficient generalization.
+In practice, the unification algorithm is aware of ranks and lowers them
+accordingly when unifying types.
+
 
 % Lazy generalization
 
