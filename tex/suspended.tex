@@ -1152,20 +1152,14 @@ derivation:
 
 % Definition of shape
 
-A shape $\sh$ is a type with holes, written $\any \tvs \t$, where
-$\tvs$ denotes the set of type variables representing the holes,
-is exactly the free variables of $\t$.
-\Xgabriel{``Existentially'' suggests that shapes are constraints. As far as
-I can tell, thinking of $(\nu)$ as a $(\lambda)$ is more accurate than an
-$(\exists)$.}\Xdidier {I am not sure $\lambda$ works better, but I am find
-to pick another qualifier.  In fact \texttt{\string \some} woudld better
-carry the idea than \texttt{\string\any} for the macro name.}
-\Xalistair{Agree that $\lambda$ is not better than $\nu$.}
-Hence, shaped are closed. They are treated up to $\alpha$-conversion.
-%% We call $\t$ the \emph{structure}
-%% of the shape, which by constrat is defined up to renaming.
-We write $\bot$ for the shape $\any \tvc \tvc$, which we call the \emph{trivial} shape. We write $\Shapes$
-the set of shapes and $\Shapesz$ the subset of non trivial shapes.
+A shape $\Sh$ is a type with holes, written $\any \tvs \t$, where $\tvs$
+denotes the set of type variables representing the holes, is exactly the
+free variables of $\t$.  Hence, shaped are closed. They are treated up to
+$\alpha$-conversion.  We write $\bot$ for the shape $\any \tvc \tvc$, which
+we call the \emph{trivial} shape. We write $\Shapes$ the set of shapes and
+$\Shapesz$ the subset of non trivial shapes.
+%% and use letter $\Sh$ to range
+%% over non trivial shapes.
 
 Shapes are equipped with an ordering---that of the standard
 instantiation ordering, defined by:
@@ -1174,40 +1168,37 @@ instantiation ordering, defined by:
     {\tvas \disjoint \any \tvbs \tone}
     {\any {\tvas} \tone \preceq \any {\tvbs} \tone \where {\tvas \is \tys}}
 \end{mathpar}
-When writing $\sh \preceq \shp$, we say that $\sh$ is more general than
-$\shp$. When $\sh$ and $\shp$ are more general than one another, they are
-actually equal. $\bot$ is the most general shape.
+When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
+$\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
+actually equal. The trivial shape $\bot$ is the most general shape.
 
 % Define decomposition
 
-Given a shape $\shq \tvcs \t$, we write $\tys \shapp[\shq \tvcs \t]$ for $\t
-\where {\tvs \is \tys}$. This is uniquely determined, since it is
-independent of the choice of variables $\tvs$ for representing the
-shape. \Xgabriel{I would expect the standard notation $\sh(\tys)$.}\Xdidier
-{I would prefer this too. I reused Alistairs prefix notation. In fact, I
-would prefer that we use the postfix notation for formal types everywhere
-and reserve the prefix notation for examples. I can make the change if we
-agree.}
-\Xalistair{I'm happy to change to prefix notation}
+Given a shape $\Shp \tvcs \t$, we write $\deshaped [\tvcs] \t \tys$ for $\t
+\where {\tvcs \is \tys}$. This is uniquely determined, since it is
+independent of the choice of variables $\tvcs$ for representing the
+shape. 
 %
-A type $\t$ has a decomposition $\deshaped \sh \tys$ iff $\t = \tys \shapp$;
+A type $\t$ has a decomposition $\deshaped \Sh \tys$ iff $\t = \shapp \tys$;
 we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial if
-the shape is trivial. \Xgabriel{It is obvious that $\sh(\tys)$ is uniquely
-determined in the paragraph above, but not completely obvious that the
-decomposition of $\t$ as $\sh(\tys)$ is uniquely determined by
-$\sh$.}\Xdidier {Why not?} \Xalistair{I also think it is fairly
-obvious? To find $\tys$, just unify the shape with $\t$ treating
-the variables as flexible unification variables.}
+the shape is trivial.
+
+%% \Xgabriel{It is obvious that $\sh(\tys)$ is uniquely
+%% determined in the paragraph above, but not completely obvious that the
+%% decomposition of $\t$ as $\sh(\tys)$ is uniquely determined by
+%% $\sh$.}\Xdidier {Why not?} \Xalistair{I also think it is fairly
+%% obvious? To find $\tys$, just unify the shape with $\t$ treating
+%% the variables as flexible unification variables.}
 
 \begin{definition}
-A non-trival shape $\sh$ is the principal shape of the type $\t$ iff:
+A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff:
 \begin{enumerate}
   \item
-    $\t = \tys \shapp$
+    $\t = \shapp \tys$
   \item
-    $\forall \shp \in \Shapesz, \t = \tys' \shapp[\shp]
+    $\forall \Shp \in \Shapesz, \t = \shapp[\shp] \typs
     \implies \sh \preceq \shp$
-    %% For any other non-trivial decomposition $\t = \tys' \shapp[\shp]$,
+    %% For any other non-trivial decomposition $\t = \shapp[\shp] \typs$,
     %% $\sh \preceq \shp$
 \end{enumerate}
 \end{definition}
@@ -1217,12 +1208,17 @@ Any nonvariable type $\t$ has a non-trivial principal shape $\sh$.
 \end{theorem}
 
 % Define canonical shape
-A shape $\any \tvs \t$ is canonical if the sequence of free variables $\tvs$
-is sorted by some arbitrary ordering on bound variables. For convenience of
-presentation, we take the canonical ordering to be the order in which the
-variables occur in $\t$ --- although we admit that this is not always
-for all shapes (but is for principal shapes).
 
+\Xdidier
+[A shape $\any \tvs \t$ is canonical if the sequence of free variables
+$\tvs$ is sorted by some arbitrary ordering on bound variables]{I disagree:
+shapes to be $\alpha$-convertible, which does not preserve this
+ordering. Hence I reversed the definition.}  A principal shape $\any \tvs
+\t$ is canonical if the sequence of its free variables $\tvs$ appear
+in the order in which the variables occur in $\t$.\footnote{This order is
+well-defned for principal shapes, but not always well-defined for all
+shapes\Xdidier{What example do you have in mind?}}  We write $\sh$ for
+canonical principal shapes.
 
 We write $\shape \t = \sh$ for the canonical principal shape of $\t$ (if
 defined). Thus $\shape {\tys \Tapp}$ is $\any \tvs \tvs \Tapp$.
@@ -1240,11 +1236,13 @@ For example, the polytype  $\tpoly {\all \tva
     \to \tva}}}
   {\parens{\tint \tlist}}
 \end{mathpar}
-
 The canonical principal shape of a type governs its decomposition. We write
 $\decomp \t$ for the decomposition of $\t$ induced by its canonical principal
-shape, if it exists, and $\tys \pshapp$ for the recomposition of a type where
-$\sh$ is a canonical principal shape.
+shape, if it exists, and $\pshapp \tys$ for the recomposition of a type where
+$\sh$ is a canonical principal shape. \Xdidier {Too many notations.
+I would not use $\pshapp$, just require that $\sh$ only range over principal
+shapes. We could keep $\sh$ for principal and use $\zeta$ (or $s$ any shape,
+or inline them.}
 
 \begin{version}{}
 %
@@ -1308,7 +1306,7 @@ unsatisfiable by definition.
 % Matches predicate
 We have thus far left the syntax of shape patterns deliberately abstract,
 as it is extension-specific. Accordingly, the matching predicate
-$\cmatches \cpat {\tys \pshapp} \theta$ is also left unspecified. This
+$\cmatches \cpat {\pshapp \tys} \theta$ is also left unspecified. This
 predicate matches a pattern $\cpat$ against a principal shape $\sh$ with
 components $\tys$, yielding a substitution $\theta$ for any variables bound in
 the pattern.
@@ -1317,7 +1315,7 @@ the pattern.
 For illustrative purposes, we define the trivial pattern $\cwild$, which matches
 any shape and binds no variables. Its semantics are given by:
 \begin{mathpar}
-  \cmatches \cwild {\tys \pshapp} \eset
+  \cmatches \cwild {\pshapp \tys} \eset
 \end{mathpar}
 
 % Good example
@@ -1338,7 +1336,7 @@ semantics, as shown by the derivation:
      \\
      \infer*[Right=Susp-Nat]
       {
-	\cmatches \cwild {\cdot \pshapp[\tint]} \eset
+	\cmatches \cwild {\pshapp[\tint]\cdot} \eset
 	\\
 	\infer*[Right=True]
 	  {\,}
@@ -1374,7 +1372,7 @@ natural semantics, it is considered satisfiable:
   {
     \infer*[Right=Susp-Nat]
     {
-      \cmatches \cwild {\cdot \pshapp[\tint]} \eset
+      \cmatches \cwild {\pshapp[\tint]\cdot} \eset
       \\
       \infer*[Right=Unif]
         {\tint = \tint}
@@ -2402,23 +2400,24 @@ When $\exi \tvs \tpoly \ts$ is a polytype skeleton, we write $\cpoly \tys
 
 \begin{mathparfig}[t]
 {fig:shape-fn-def-typing}
-{Definition of $\deshaped \t$, a partial function from types to
-shape-substitution pairs $\langle \sh, \theta \rangle$, extended for all
-types defined in the calculus}
-  \deshaped \tv \eqdef \bot
+{Definition of $\deshape \t a$, a partial function from types to
+shape-substitution pairs $\angles {\sh, \theta}$, extended for all
+types defined in the calculus.
+}
+  \deshape \tv \eqdef \bot
 
-  \deshaped 1 \eqdef 1
+  \deshape 1 \eqdef 1
 
-  \deshaped {\t \to \tp} \eqdef
+  \deshape {\t \to \tp} \eqdef
       \angles {\tv \to \tv', \where {\tv \is \t, \tv' \is \tp}}
 
-  \deshaped {\Pi\iton \tys} \eqdef
+  \deshape {\Pi\iton \tys} \eqdef
       \angles {\Pi\iton \tvs, \where {\tvs \is \tys}}
 
-  \deshaped {\tys \F} \eqdef
+  \deshape {\tys \F} \eqdef
       \angles {\tvs \F, \where {\tvs \is \tys}}
 
-  \deshaped {\tpoly \ts} \eqdef
+  \deshape {\tpoly \ts} \eqdef
       \angles {\exi \tvs \tpoly \ts, \where {\tvs \is \tys}}
 \end{mathparfig}
 
@@ -2428,7 +2427,7 @@ types defined in the calculus}
 \begin{version}{\True}
 We use letter $\sh$ to range over shapes, which are a generalization of the
 notion of type constructor $\F$ to cope with polytypes.  As shape is an
-existentially closed quantified linear shallow type type $\exi \tvs \t$.
+existentially closed quantified linear shallow type $\any \tvs \t$.
 That is,
 \begin{itemize}
 
@@ -2454,22 +2453,22 @@ That is,
 \end{itemize}
 
 \end{itemize}
-For example, the shape of a type $\tys \F$ is $\exi \tvs \tvs \F$ where
+For example, the shape of a type $\tys \F$ is $\any \tvs \tvs \F$ where
 $\tvs$ is a tuple of disjoint variables of length the arity of $\F$.  The
-shape of $\tpoly {\all \tv {(\tv \to \tv) \to \tvb \to \tvb}}$ is $\exi \tvb
+shape of $\tpoly {\all \tv {(\tv \to \tv) \to \tvb \to \tvb}}$ is $\any \tvb
 {\tpoly {\all \tv {(\tv \to \tv) \to \tvbp}}}$.  The shape is defined up to
 the ordering of quantifiers. We may require $\tvs$ to be be in their order
 of appearance in $\t$.
 
-The shape of a variable is undefined and we write $\deshaped \t = \bot$ or
-$\deshaped \t \Undefined$.  The shape of a nonvariable monotype $\t$ is always
-defined, which we write $\deshaped \t \Defined$ and is unique up
-$\alpha$-renaming. We may then write $\deshaped \t = \sh$.
+The shape of a variable is undefined and we write $\deshape \t = \bot$ or
+$\deshape \t \Undefined$.  The shape of a nonvariable monotype $\t$ is always
+defined, which we write $\deshape \t \Defined$ and is unique up
+$\alpha$-renaming. We may then write $\deshape \t = \sh$.
 
 A nonvariable monotype can be uniquely decomposed into a pair $\deshaped
-\tvs \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
-$\exi \tvs \tyz$ is the shape of $\t$.  We then write $\t = \deshaped
-\tvs \tyz \tys$.
+[\tvs] \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
+$\any \tvs \tyz$ is the shape of $\t$.  We then write $\t = \deshaped
+[\tvs] \tyz \tys$.
 
 \end{version}
 
@@ -3110,15 +3109,15 @@ written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
       {\cunif \tv \ueq}
 
     \rewrite[U-Name]
-      {\cunif {\tys[\ti] \pshapp} \ueq \\ \tv \disjoint \tys, \ueq }
-      {\cexists \tv {\cunif \tv \ti \cand \cunif {\tys[\tv] \pshapp} \ueq}}
+      {\cunif {\pshapp \tys[\ti]} \ueq \\ \tv \disjoint \tys, \ueq }
+      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \tys[\tv] } \ueq}}
 
     \rewrite[U-Decomp]
-      {\cunif {\tvs \pshapp} {\cunif {\tvbs \pshapp} \ueq}}
-      {\cunif {\tvs \pshapp} \ueq \cand \cunif \tvs \tvbs}
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
+      {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
 
     \rewrite[U-Clash]
-      {\cunif {\tvs \pshapp} {\cunif {\tvbs \pshapp[\shp]} \ueq }\\
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }\\
        \sh \neq \shp}
       {\cfalse}
 

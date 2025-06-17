@@ -93,10 +93,13 @@
 \newcommand{\T}{\mathpostfix{t}}
 \newcommand{\Fapp}{\mathop{}\mathrel{\F}}
 \newcommand{\Tapp}[1][\T]{\mathrel{#1}\mathclose{}}
-\newcommand{\shapp}[1][\sh]{\mathrel{\angles{#1}}\mathclose{}}
-\newcommand{\pshapp}[1][\sh]{\mathrel{!\angles{#1}}\mathclose{}}
+\newcommand{\shapp}[1][\sh]{\mathopen{}\mathrel{\angles{#1}}}
+%\newcommand{\pshapp}[1][\sh]{\shapp[!#1]}
+\newcommand{\pshapp}{\shapp}
 
-\newcommand{\deshaped}[3][]{#3\;\angles{\ifempty{#1}{}{\any{#1}}{#2}}}
+\newcommand{\deshaped}[3][]
+   {\angles{\ifempty{#1}{}{\any{#1}}{#2}}\ifempty{#3}{}{\;#3}}
+\newcommand{\deshape}[1]{\mathprefix{deshaped}(#1)}
 
 \renewcommand{\t}{\tau}
 \newcommand{\tp}{\t'}
@@ -117,7 +120,7 @@
 \newcommand{\tprod}{\mathbin\ast}
 \newcommand{\tProd}[1]{\Pi\iton {#1}}
 \newcommand{\tfor}[2]{\forall {#1}.\,{#2}}
-\newcommand{\tpoly}[1]{[#1]}
+\newcommand{\tpoly}[1]{\brackets {#1}}
 \newcommand{\tapoly}[2]{\tpoly{#1}^{#2}}
 \newcommand{\tunit}{1}
 \newcommand{\tint}{\mathsf{int}}
@@ -140,7 +143,7 @@
 \newcommand{\econstr}[2]{#1 \@ #2}
 \newcommand{\einst}[2][]{\angles {#2\ifempty{#1}{}{:#1}}}
 \newcommand{\exinst}[3]{\angles {#1 : \exists {#2}. \, #3}}
-\newcommand{\epoly}[2][]{[#2\ifempty{#1}{}{:#1}]}
+\newcommand{\epoly}[2][]{\tpoly{#2\ifempty{#1}{}{:#1}}}
 \newcommand{\expoly}[2]{\epoly {#1:#2}}
 \newcommand{\eunit}{()}
 \newcommand{\efun}[2]{\lambda #1. \, #2}
@@ -164,6 +167,7 @@
 \newcommand {\braces}[1]{\{#1\}}
 \newcommand {\brackets}[1]{[#1]}
 \newcommand {\bbrackets}[1]{\llbracket #1\rrbracket}
+\newcommand {\ceils}[1]{\lceil #1\rceil}
 \newcommand {\angles}[1]{\langle #1\rangle}
 \newcommand {\highdelim}[2]{\left#1{#2\right}}
 \newcommand {\Parens}[1]{\highdelim\parens {#1}}
@@ -201,13 +205,17 @@
 \newcommand{\Ci}{\C_i}
 \newcommand{\Cn}{\C_n}
 
+\newcommand{\Sh}{\zeta}
+\newcommand{\Shp}{\Sh'}
 \newcommand{\sh}{\varsigma}
-\newcommand{\shp}{\varsigma'}
+\newcommand{\shp}{\sh'}
 
-\newcommand{\sigmaone}{\sigma_1}
-\newcommand{\sigmatwo}{\sigma_2}
-\newcommand{\sigmai}{\sigma_i}
-\newcommand{\sigman}{\sigma_n}
+%% Type schemes
+\defmetavar {\ts} {\sigma}
+\newcommand{\sigmaone}{\ts_1}
+\newcommand{\sigmatwo}{\ts_2}
+\newcommand{\sigmai}{\ts_i}
+\newcommand{\sigman}{\ts_n}
 
 \newcommand{\hf}{f}
 
@@ -234,10 +242,8 @@
 
 %% Expression variables
 \defmetavar {\x} {x}
-%% Type schemes
 %% \defmetavar {\Ts} {\chi}
-\defmetavar {\ts} {\sigma}
-\defmetavar {\ty} {\tau}
+\defmetavar {\ty} {\tau}\newcommand{\typs}{{\bar\ty'}}
 \defmetavar {\E} {E}
 \defmetavar {\Lab} {\mathscr{L}}
 \newcommand {\tss} {\bar\ts}
