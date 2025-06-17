@@ -20,7 +20,7 @@
 \usepackage{marginnote}
 
 \title{Omnidirectional type inference:
-   principality revisited \\ for advanced \ML extensions
+  principled principality for advanced \ML extensions
 }
 
 \begin{document}
@@ -42,12 +42,11 @@ contextual information and to be discharged then when we have learned enough
 information from the resolution of other constraints, typically when some type
 variables have been instantiated.
 %
-We illustrate the benefit of omnidirectional type inference for several
-advanced features present in the \OCaml language, including static
-overloading of record labels and datatype constructors on the one hand and
-semi-explicit polymorphism on the other hand.
+We illustrate the benefits of omnidirectional type inference for several
+advanced \ML extensions, including \OCaml's static overloading of
+record labels and constructors, semi-explicit first-class polymorphism, and
+tuple projections \`a la \SML.
 \end{abstract}
-
 \maketitle
 
 \begin{version}[Titles]{\blue\True}
@@ -56,43 +55,52 @@ Alternative titles (the long list has shrunk to):
 \medskip
 \noindent \textbf{Omnidirectional type inference:}
 \begin{itemize}
-\item principled principality for advanced \ML extensions
+\item principality revisited for advanced \ML extensions
 \end{itemize}
 
 \end{version}
 
 \section{Introduction}
 
-ML polymorphism, also known as Hindley-Milner type system, has been a very
-sweet spot in the design space of strongly typed programming languages, as
-it enjoys the principal type property and, more importantly, is closed by
-common program transformations such as let-contraction and let-expansion,
-and permutation of the order or arguments.
+% Introduction (ML, principality)
+The Damas-Hindley-Milner (\HM) \TODO{citations} type system has long occupied a
+sweet spot in the design space of strongly typed programming languages, as it
+enjoys the \emph{principal type property}: every well-typed expression $\e$ has
+a most general type $\ts$ from which all other valid types for $\e$ are
+instances of $\ts$. For example, the identity function $\efun \x \x$ has
+the principal type $\tfor \tv \tv \to \tv$, generalizing types like
+$\tint \to \tint$ and $\tbool \to \tbool$.
 
+% Benefits of principality
+This property ensures predictable and efficient inference. Local typing
+decisions are always optimal, yielding most general types, without guessing or
+backtracking. As a result, inference of subexpressions can proceed in any
+order, and well-typedness is preserved under common program transformations
+such as let-contraction, let-expansion, and argument reordering.
+
+% Extensions often break pincipality
 Over the years, many extensions of \ML have been proposed. Some of the new
 constructs, such as extensible records with row-polymorphism, higher-kinded
-types, or dimensional types, fit perfectly into the \ML framework. Others
-such as GADTs, semi-explicit polymorphism, first-class modules or static
-overloading of datatype constructors and record fields, are
-\emph{fragile}, as they sometimes require explicit type
-annotations.
-In order to minimize the need for type anotations, their specifications have
-been twisted with some direct or indirect algorithmic flavor in order to
-preserve \emph{principality}.
+types, or dimensional types, fit perfectly into the \ML framework. Others such
+as GADTs, higher-rank polymorphism, or static overloading
+\TODO{citations}, are \emph{fragile}, as they sometimes require explicit type
+annotations. In order to minimize the need for type anotations, their
+specifications have been twisted with some direct or indirect algorithmic
+flavor in order to preserve \emph{principality}.
 %
 These (more or less ad-hoc) restrictions in the specification are designed
 especially to reject examples that would break completeness with respect to
 the type-checker implementations, but they also simultaneously reject other
-examples whose type could easily be guessed.\Xgabriel{I would like to
-explain more here, it is not obvious why completeness-breaking examples also
-endanger principality.}  Unsurprisingly, they have historically posed
-challenges to the preservation of principal types.
+examples whose type could easily be guessed.\Xgabriel{I would like to explain
+more here, it is not obvious why completeness-breaking examples also endanger
+principality.} \Xalistair{Perhaps we pick an example extension}
+Unsurprisingly, they have historically posed challenges to the preservation of
+principal types.
 
 Optional type annotations may sometimes but not always be omitted: the
-return type of overload data constructors can be annotated; polymorphic
-expressions can be annotated with a type scheme; first-class module
-expressions with a module signature; for GADTs, the type of the
-\texttt{match} scrutinee can be annotated to a rigid type which will be
+return type of overloaded data constructors can be annotated; polymorphic
+expressions can be annotated with a type scheme; for GADTs, the type of the
+\texttt{match} scrutinee and return type can be annotated to a rigid type which will be
 refined by type equalities in each branch. To each fragile construct
 corresponds a robust construct where this type annotation is mandatory. The
 robust constructs fit perfectly into the \ML framework, but are
@@ -220,7 +228,7 @@ in the subexpression \ocaml{r.x} is not-yet-known even if equal to
 typing context, and therefore it is monomorphic.\footnote{Technically, all
 type nodes are annotated with a special variable $\av$ called an annotation
 variable, so that we may distinguish between the polymorphic binding $\xa :
-\all \av. \t^\av$ that binds $r$ to the known (raw) type $\t$ and the
+\all \av \t^\av$ that binds $r$ to the known (raw) type $\t$ and the
 monomorphic binding $\xb : \t^\av$ that binds $\xa$ to the unknown (raw)
 type $\t$.}
 
@@ -446,11 +454,11 @@ The rest of the paper is organized as follows.
 \item
   In \cref{sec:semantics}, we describe suspended constraints and their semantics.
 \item
-  In \cref{sec:language}, we define an extension of \ML featuring static
-  overloading and semi-explicit first-class polymorphism along with its
-  typing rules. Here we give the precise definition of the constraint
-  generation translation and state the theorems of soundness and
-  completeness.
+  In \cref{sec:language}, we define \OML, an extension of \ML featuring static
+  overloading of record labels, overloaded tuple projections, and
+  semi-explicit first-class polymorphism. We also present its typing rules.
+  This section gives a precise definition of the constraint generation
+  translation and state the theorems of soundness and completeness.
 \item
   In \cref{sec:solving}, we provide a formal definition of our constraint
   solver as a series of non-deterministic rewriting rules.
@@ -461,17 +469,6 @@ The rest of the paper is organized as follows.
   In \cref{sec:related-work} and \cref{sec:future-work}, we discuss related
   and future work.
 \end{enumerate*}
-
-\Xdidier {I think we should
-\begin{itemize}
-\item
-  Move the typing rules before the semantic of constraints.  It is simpler
-  and far less technical
-\item
-  Move the polytype (2.2) story to the introduction after the record field
-  story.
-\end{itemize}
-}
 
 \subsubsection* {Our contributions}
 
@@ -492,9 +489,11 @@ Our contributions are
 \item
   A complete yet efficient constraint-solving type inference algorithm.
 
-\item New declarative type systems for static overloading of constructors
-  and fields, and for semi-explicit first-class polymorphism, and their
-  implementation using suspended constraints.
+\item New declarative type systems for tuple projection in the style of \SML,
+    static overloading of record fields and datatype constructors, and for
+    semi-explicit first-class polymorphism, and their implementation using
+    suspended constraints.
+
 \end{enumerate*}
 
 \section{Suspended constraints: an overview}
@@ -691,7 +690,6 @@ These include:
   \item Constructor and record label overloading for nominal algebraic
   datatypes;
   \item Overloaded tuple projection in the style of \SML;
-  \TODO{We need to introduce tuple projections in this section}
 \end{enumerate}
 We demonstrate how the typablity of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
@@ -984,7 +982,7 @@ behaviour\footnote {modulo default disambiguation rules.}, and in fact
 improves on it: certain expressions, such as \code{e}$_{10}$ are well-typed
 under our account but rejected by \OCaml's current type checker.
 
-\subsection{Tuple projections \'a la \SML}
+\subsection{Tuple projections \`a la \SML}
 
 \SML supports positional projections from tuples using expressions of the form
 \ocaml{#$j$ e} to extract the $j$-th component of the tuple \code{e}.
@@ -3458,7 +3456,7 @@ Still, we discuss reasonable choice for defauls.
 \paragraph{Overloading of record fiels or data constructors}
 
 \paragraph{Structural tuples}
-In the case of 
+In the case of
 
 \paragraph{Polytypes}
 
