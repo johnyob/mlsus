@@ -1178,7 +1178,7 @@ actually equal. The trivial shape $\bot$ is the most general shape.
 Given a shape $\Shp \tvcs \t$, we write $\deshaped [\tvcs] \t \tys$ for $\t
 \where {\tvcs \is \tys}$. This is uniquely determined, since it is
 independent of the choice of variables $\tvcs$ for representing the
-shape. 
+shape.
 %
 A type $\t$ has a decomposition $\deshaped \Sh \tys$ iff $\t = \shapp \tys$;
 we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial if
@@ -1366,7 +1366,7 @@ semantics, as shown by the derivation:
       {\semenv \vdash \cunif \tv \tint \cand \cmatchex}
     % ------------------------------------------------------------
       {\cdot \vdash \cexists \tv \cunif \tv \tint \cand \cmatchex}
-}  
+}
 \end{mathpar}
 In this case, the shape of $\tv$ is first determined by the unification with
 $\tint$, allowing a solver to deduce that $\tv$'s shape is \emph{known}
@@ -1397,7 +1397,7 @@ natural semantics, it is considered satisfiable:
     {\semenv \vdash \cmatchex}
   % -----------------------------------
   {\cdot \vdash \cexists \tv \cmatchex}
-}  
+}
 \end{mathpar}
 In this case, the semantics les us \emph{guess} the type of $\tv$
 and use it to unlock the match constraint, rather than requiring it to be
@@ -3278,11 +3278,10 @@ unsatisfiable.
     {\theta(\ci)}
 
   \rewrite[S-Susp-Ctx]
-    {\C[\cmatch \tv \cbrs] \cand \cunif \tv {\cunif \t \ueq} \\
-     \shape \t = \any \tvcs \tp \\
-     \tv \disjoint \C}
-    {\C[\cexists \tvcs  \cunif \tv \tp \cand \cmatch \tp \cbrs]
-     \cand \cunif \tv {\cunif \t \ueq}}
+    {\C[\cmatch \tv \cbrs] \\
+     \cunif \tv {\cunif \t \ueq} \in \C \\
+     \shape \t = \any \tvcs \tp}
+    {\C[\cexists \tvcs  \cunif \tv \tp \cand \cmatch \tp \cbrs]}
 \end{mathparfig}
 
 \parcomment {S-Susp-Ctx}
@@ -3293,6 +3292,11 @@ context proves that the scruintee $\tv$ is unified with a type $\t$ whose
 shape is defined. This enables the suspended match to be rewritten, according
 to \Rule{Susp-Ctx}, thereby exposing the shape required to continue solving in
 \Rule{S-Susp-Use}.
+
+We decide whether the context $\C$ proves an equality (or more generally),
+a multi-equation $\ueq$, by finding contexts $\Ca, \Cb$ such that
+$\C = \Ca[\ueq \cand \Cb]$ and $\fvs \ueq \disjoint \Cb$ \ie $\Cb$ does not
+bind the free variables of $\ueq$.
 
 \paragraph{Let constraints}
 
@@ -3305,7 +3309,7 @@ Application constraints can be solved by copying constraints:
     {\clet \x \tv \ca {\C[\cexists {\tv, \tvs} \cunif \tv \t \cand \ca]}}
 \end{mathpar}
 This is similarly to $\beta$-reduction, except that the original constraint
-is kept around. 
+is kept around.
 While obviously correct, this na\"ive strategy may duplicate constraint solving
 work across applications of the same abstraction.
 
@@ -3525,48 +3529,50 @@ However, sometimes \Rule{S-Papp-Exists} must copy a variable before it can be
 lowered, for instance, in the constraint $\cexists \tvc \cletr \x \tva \tvb
 {\cunif \tva \tvb \cand \cmatch \tvb {\cbranch \cwild {\cunif \tvb \tvc}}}
 {\capp \x \tint}$ requires us to instantiate $\x$ before we can make any
-progress. In this case, when we eventually lower the
+progress on lowering $\tvb$. In this case, when we eventually lower the
 variable, we must also update any partial applications that previously copied
 it, ensuring their local copies are unified with the new, lowered variables
 $\tvbs$.
 
 
 \TODO{Compression}
-\TODO{Backpropagation}
-%\paragraph{Backpropagation}
-%Our semantics supports \emph{backpropagation}, allowing type information
-%from use sites to refine matched variables inside generalised abstractions.
-%
-%For example, in:
-%\begin{program}[input]
-%  let e$_{10}$ = let f r = r.y in f ({ x = 1; y = 1 })
-%\end{program}
-%\OCaml rejects this, as \Pidirectional inference cannot propagate the known
-%type \code{three} back to \code{f}'s parameter.
-%The (simplified) constraint generated when typing \code{e}$_{10}$ is:
-%\begin{align*}
-%  \Cexists \tv
-%  &\Let f = \Clam \delta {\Cexists {\tvb, \tvc}
-%    \delta \Ceq {\tvb \Tarr \tvc}
-%    \Cand \Cmatchp \tvb {(\Ccase {\wild \Tapp[t]} {\Omega(y / t) \leq \gamma \Tarr \beta})}} \\
-%  &\hspace{-1mm}\In \Capp f {(\mathsf{three} \to \tv)}
-%\end{align*}
-%At the use site, the abstraction is applied with a type of known shape (\code{three}).
-%\Rule{S-BackProp} propagates this shape back into the suspendede match inside the
-%abstraction by unifying it with the variable $\tvb$. This is sound: the unicity
-%predicate $\Cshape \Cctx \tv \sh$ ensures that $\tvb$'s shape is \code{three}
-%provided the context $\Cctx$ include the application constraint.
-%\begin{mathpar}
-%  \rewrite[S-BackProp]
-%    {\C[\clet \x \tvs {\Ca[\cmatch \tv \cbrs]} {\Cb[x[\theta \th \up]]}] \\
-%     \theta : \tvs \\
-%     \C[\Cb] \th \theta(\tv) = \t \\
-%     \shape \t = \any \tvcs \tp}
-%    {\C[\clet \x \tvs {\Ca[\cexists \tvcs \cunif \tv \tp
-%                           \cand \cmatch \tp \cbrs]}
-%		      {\Cb[x[\theta \th U]]}]}
-%\end{mathpar}
-%
+\TODO{Should we mention backpropagation prior to here?}
+\paragraph{Backpropagation} The interaction that froces
+partial application to be useful\footnote{We could in theory re-order
+instantiations in any way, delaying until the abstraction is fully solved} is
+\emph{backpropagation}, the mechanism that allows type information from use sites
+to refine matched variables inside generalised abstractions.
+
+For example, in:
+\begin{program}[input]
+  let e$_{10}$ = let f r = r.y in f ({ x = 1; y = 1 })
+\end{program}
+\OCaml rejects this, as \geninst-directional inference cannot propagate the known
+type \code{three} back to \code{f}'s parameter.
+The (simplified) constraint generated when typing \code{e}$_{10}$ is:
+\begin{align*}
+  \cexists \tv
+  &\clet f \delta {\cexists {\tvb, \tvc}
+    \cunif \delta {\tvb \to \tvc}
+    \cand \cmatch \tvb {(\cbranch {\wild \Tapp[t]} {\Omega(y / t) \leq \gamma \to \beta})}} \\
+  &\hspace{-1mm}\capp f {(\mathsf{three} \to \tv)}
+\end{align*}
+At the use site, the abstraction is applied with a type of known shape (\code{three}).
+\Rule{S-BackProp} propagates this shape back into the suspendede match inside the
+abstraction by unifying it with the variable $\tvb$. This is sound: the unicity
+predicate $\Cshape \C \tv \sh$ ensures that $\tvb$'s shape is \code{three}
+provided the context $\C$ include the application constraint.
+\begin{mathpar}
+  \rewrite[S-BackProp]
+    {\C[\cletr \x \tv \tvs {\Ca[\cmatch \tvp \cbrs]} {\Cb[\cpapp \x \ren \ueqs \tvc]}] \\
+     \tvp \in \dom \ren \\
+     \C[\Cb] \th \theta(\tv) = \t \\
+     \shape \t = \any \tvcs \tp}
+    {\C[\clet \x \tvs {\Ca[\cexists \tvcs \cunif \tv \tp
+                           \cand \cmatch \tp \cbrs]}
+		      {\Cb[x[\theta \th U]]}]}
+\end{mathpar}
+
 
 \subsection{Metatheory}
 % Properties
