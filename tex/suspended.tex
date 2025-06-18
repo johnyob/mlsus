@@ -3416,7 +3416,7 @@ the abstraction and propagation additional equations to the application sites.
     {\cletr \x \tv {\tvas, \tvbs} \c
      {\C[\overline{\cpapp \x \ren \ueqs \tvc}]} \\
      \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
-     \bar \ren : \tvas, \tvbs \\
+     \dom \bar \ren \subseteq \tvbs \\
      \x, \tvbs \disjoint \C}
     {\cexists \tvbs
       \cletr \x \tv \tvas \c
@@ -3522,8 +3522,10 @@ reduces instantiation overhead.
 
 % Updating partial applications
 However, sometimes \Rule{S-Papp-Exists} must copy a variable before it can be
-lowered, for instance, in the constraint $\cexists a b $\TODO{Think of
-constraint that forces our solver}. In this case, when we eventually lower the
+lowered, for instance, in the constraint $\cexists \tvc \cletr \x \tva \tvb
+{\cunif \tva \tvb \cand \cmatch \tvb {\cbranch \cwild {\cunif \tvb \tvc}}}
+{\capp \x \tint}$ requires us to instantiate $\x$ before we can make any
+progress. In this case, when we eventually lower the
 variable, we must also update any partial applications that previously copied
 it, ensuring their local copies are unified with the new, lowered variables
 $\tvbs$.
