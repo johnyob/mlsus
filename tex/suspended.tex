@@ -357,7 +357,20 @@ Our proposal with omnidirectional type inference succeeds
 on \ocaml{e_6}, \ocaml{e_7}, and \ocaml{e_8}.\Xdidier{to be checked}
 \Xalistair{I'm fairly certain your implementation (and our theory) does not
 typecheck \code{e_8}. It is another example of incompleteness (like
-\code{e_9})}\Xdidier {My prototype solves $e_8$ but not $e_9$}
+\code{e_9})}\Xdidier {My prototype solves $e_8$ but not $e_9$. See below:}
+\begin{version}{\Draft}
+The example $e_8$ generates the following anti-unifier and variabtional
+type
+\begin{program}
+Types antiunifed: one -> int | 'a two -> 'a
+Variational anti-unifier: {'b ? {#(one | 'a two)}} -> {'c ? {#(int | 'a)}}
+val e8 : bool two -> bool
+\end{program}
+Hence, the return type which is unified with \ocaml{'c} cancels the left
+options (of the binary variation type), which becomes a singleton.  Since,
+this is the same variational type on \ocaml{'b}, this is also solved.
+\end{version}
+
 %% \Xgabriel{Does it? My implementation with Olivier would reject this example,
 %%   because it is not robust to the addition of additional type definitions in
 %%   the context. Even where there is a single type declaration with a given
