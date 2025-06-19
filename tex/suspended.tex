@@ -609,6 +609,8 @@ validate that the implementation is efficient for the moment.}
 \entry[Shapes] \sh {} {}
 \end{bnffig}
 
+\Xdidier {We never defined the syntax of types?}
+
 \Xdidier {We need to define $\G \th \t$}
 \Xalistair {The definition is entirely standard? We could add an
 `ok' or `wf' suffix to the judgement to make it clearer that it is
@@ -663,7 +665,8 @@ $\cmatch \t \cbrs$, where:
   shape of $\t$ is determined.
 \item
   $\cbrs$ is a list of branches of the form $\cbranch \cpat \c$, where each
-  shape pattern $\cpat$\footnote{Patterns are also left unspecified for now.}
+  shape pattern $\cpat$\footnote{Patterns are also left unspecified for now.
+  \TODO{They will be defined in \cref{sec/TODO}}}
   describes a structural form of the shape.
   %
   For example, the pattern $\tva \to \tvb$ matches function types, binding the
@@ -952,6 +955,15 @@ projection $\efield \e \elab$, we generate the typing constraint:
 This constraint defers resolution until more information is available:
 specifically, until the type constructor of $\tvb$ of the record expression
 $\e$ is known.
+\Xdidier {Then, it seems that we cannot solve
+$\efun r {r.x + r.y}$, since the two accesses $r.x$ and $r.y$ will both wait
+for the type of $r$ to be known independently of the other.
+Since we could collect the information that $r$ must have two fields $x$
+and $y$ and there is a unique solution. In fact, an approach based on
+qualified types would solve this example statically.
+Nominal records are an example where we should allow to combine information
+from two different use points---of the same type. That is several matches on
+the same variable should be combined.}
 
 We assume a global typing environment $\Omega$, which provides type scheme
 declarations for
@@ -3176,9 +3188,12 @@ nearest enclosing $\Let$, if any, or otherwise to the top of the constraint.
 We refer to the resulting existential prefix $\exists \tvs$ as a
 \emph{region}. To make regions explicit, we introduce the syntax
 $\cletr \x \tv \tvs \ca \cb$, where $\tv$ is the \emph{root} of the region
-and $\tvs$ are auxiliary existential variables.  Both $\tv$ and $\tvs$ are
-bound in $\ca$ but not in $\cb$.  The order of $\tvs$ is immaterial, and
-regions are considered equal up to permutation of these variables.
+and $\tvs$ are auxiliary existential variables.  Both $\tv$ is bound in
+$\ca$ but not in $\cb$, while $\tvs$ are bound in $\ca$ but may also appear
+in $\cb$ but only in a partial application of $\x$.  In particular, $\tvs$
+cannot appear in $\cb$ when $\x$ does not appear in $\cb$.  The order of
+$\tvs$ is immaterial, and regions are considered equal up to permutation of
+these variables.
 
 The satisfiability of regional $\Let$-constraints is defined by:
 \begin{mathpar}
@@ -3223,6 +3238,10 @@ constraints).
     {\upa \\ \upa \unif \upb}
     {\upb}
 
+  \rewrite[S-Let]
+    {\clet \x \tv \ca \cb}
+    {\cletr \x \tv \eset \ca \cb}
+
   \rewrite[S-Exists-Conj]
     {(\cexists \alpha \ca) \cand \cb \\
      \tv \disjoint \cb}
@@ -3237,10 +3256,6 @@ constraints).
     {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
      \tvb \disjoint \tv, \tvs, \cb}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
-
-  \rewrite[S-Let]
-    {\clet \x \tv \ca \cb}
-    {\cletr \x \tv \eset \ca \cb}
 
   \rewrite[S-Let-ConjLeft]
     {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
@@ -3270,10 +3285,10 @@ substituted for some concrete $\T$.
 
 Rule \Rule{S-Susp-Use} solves suspended match constraints whose scruintee
 has a locally known shape---either statically, or as a result of appplying
-Rule \Rule{S-Susp-Ctx}. The rule selects a unique matching branch based on the shape
-of the scruitinee and applies the generated substitution to the branch. If no
-branch matches, the rule is stuck, indicating that the constraint is
-unsatisfiable.
+Rule \Rule{S-Susp-Ctx}. The rule selects a unique matching branch based on
+the shape of the scruitinee and applies the generated substitution to the
+branch. If no branch matches, the rule is stuck, indicating that the
+constraint is unsatisfiable.
 
 \begin{mathparfig}
   {fig:solver-susp}
@@ -3290,6 +3305,10 @@ unsatisfiable.
      \shape \t = \any \tvcs \tp}
     {\C\where{\cexists \tvcs  \cunif \tv \tp \cand \cmatch \tp \cbrs}}
 \end{mathparfig}
+\Xdidier {Where is ``$\cmatches \cpati {\decomp \t} \theta$'' defined?}
+
+
+
 
 \parcomment {S-Susp-Ctx}
 
@@ -3311,7 +3330,7 @@ bind the free variables of $\ueq$.
 
 Application constraints can be solved by copying constraints:
 \begin{mathpar}
-  \rewrite[S-Let-App-$\beta$]
+  \rewrite[S-Let-App-Beta]
     {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tv, \tvs \disjoint \t \\ x \disjoint \C}
     {\clet \x \tv \ca {\C\where{\cexists {\tv, \tvs} \cunif \tv \t \cand \ca}}}
 \end{mathpar}
@@ -3344,18 +3363,26 @@ variables for $\tvs$.
 However, suspended constraints complicate generalization.
 To illustrate this, let us examine:
 \begin{program}[input]
-  type three = {x : int; y : int} (* y is overloaded *)
-  ...
+  type three = {x : int; y : int} °\ocamlcomment {OCaml - typechecks}°
   let e$_{10}$ r = let y = r.y in y + r.x
 \end{program}
-The generated constraint\footnote{Simplified for readability.} is of the form:
+The generated constraint\footnote{Simplified for readability.} is of the
+form:
 \begin{mathpar}
   \cexists \tv
-    \clet y \tvb {\cmatchdots \tva }
+    \clet y \tvb
+      %% {\cmatchdots \tva}
+      {\cmatch \tvb {\cbranch {(\wild \Tapp[t])} {\C\where {t, \tva,\tvb}}}}
       {\cinst y \tint \cand \cunif \tv {\mathsf{three}}}
 \end{mathpar}
+\begin{version}{}
+where $\C\where{t,\tv,\tvb}cbr$ is ${\Omega(\elab / t) \leq \tva \to \tvb}$
+\end{version}
 Here, $\tv$ stands for \code{r}'s type. The constraint remains
-suspended until \code{r.y} forces \code{r}'s type to be \code{three}.
+suspended until \code{r.y} forces \code{r}'s type to be
+\code{three}.\Xdidier {I don't understand the discourse. First, we do not
+know what are the overloaded labels. Then the suspended constaints if for
+$r.y$, so the expression that could unfreeze it is $r.x$ not $r.y$.}
 Cruicially, the variable $\tvb$ (introduced inside the abstraction for the
 type of \code{y}) is captured by the suspended match constraint that is
 not yet resolved at the point of generalizing \code{y}.
@@ -3384,7 +3411,7 @@ abstractions: solved parts are reused immediately, while unresolved
 constraints (\ie suspended constraints) can be solved later, further refining
 the abstraction and propagation additional equations to the application sites.
 
-\begin{mathparfig}
+\begin{mathparfig}[t]
   {fig:solver-schemes}
   {Rewriting rules for let-bindings and applications.}
   \rewrite[S-Let-App]
@@ -3426,36 +3453,42 @@ the abstraction and propagation additional equations to the application sites.
   \rewrite[S-Exists-Lower]
     {\cletr \x \tv {\tvas, \tvbs} \c
      {\C\where{\overline{\cpapp \x \ren \ueqs \tvc}}} \\
-     \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
-     \dom \bar \ren \subseteq \tvbs \\
-     \x, \tvbs \disjoint \C}
+     \cdetermines {\cexists {\tv, \tvas} \c} \tvbs \\
+     \tvbs \subseteq \dom \bar \ren
+     \Xdidier[was]{\dom \bar \ren \subseteq \tvbs}\\
+     \x, \tvbs \disjoint \C
+     }
     {\cexists \tvbs
       \cletr \x \tv \tvas \c
 	{\C\where{{\overline{\cpapp \x {\ren \setminus \tvbs} \ueqs
 			 \cand \cunif {\ren(\tvbs)} \tvbs}}}}}
 \end{mathparfig}
 
+
 % Semantics to partial applications
 We assign the following semantics to partial application constraints:
 \begin{mathpar}
-  \infer[Papp]
-    {\semenv, \tv \is \semenv(\t) \th \ueqs [\ren]
-	      \implies \semenv \th \capp \x \t \\
-     \semenv(\x) = \cabsr \tv \tvs \c \\
-     \dom \ren \subseteq \tvs}
-    {\semenv \th \cpapp \x \ren \ueqs \t}
+\infer[Papp]{
+   \semenv(\x) = \cabsr \tv \tvs \c \\
+   \dom \ren \subseteq \tvs \\
+   \semenv, \tv \is \semenv(\t) \th \ueqs [\ren] \implies
+   \semenv \th \capp \x \t                              \\
+}{% -------------------------------------------------------              
+   \semenv \th \cpapp \x \ren \ueqs \t
+}
 \end{mathpar}
 Informally, this states that a solution $\semenv$ to a partial application
 constraint $\cpapp \x \ren \ueqs \t$ must also be a solution to the full
 application $\capp \x \t$, provided the copied equations $\ueqs$ are
 satisfiable under the renaming.
-% Treatment of alpha-renaming
+\parcomment{Treatment of alpha-renaming}
 The semantics enforces that the domain of the renaming $\ren$ is a subset of
 the regional variables $\tvs$ of $\x$---a cruicial property for treating these
-variables modulo $\alpha$-equivalence. Interestingly, $\tvs$ are bound not
+variables modulo $\alpha$-equivalence. As mentioned above, $\tvs$ are bound not
 only in the body of the abstraction $\ca$, but also in the
 constraint $\cb$, where they may appear in partial applications of $\x$ via
-renamings.
+renamings---and only there. Hence, when they cannot appear in $\ca$ when
+(the corresponding variable) $\x$ does not itself appear in $\ca$.
 
 \begin{remark}
   The satisfiability judgement in \Rule{Papp} occurs in a negative position.
@@ -3465,36 +3498,50 @@ renamings.
 
 Partial application constraints are solved using the following rules:
 \begin{enumerate}
-  \item \Rule{S-Papp-Exists} allocates fresh existential variables at the call
-    site that are mapped to uninstantiated variables within the abstraction.
-    We write $\ren : \tvs$ for $\dom \ren = \tvs$.
 
-  \item \Rule{S-Papp-Unif} copies multi-equations from the abstraction
-    to the call site, provided we have not copied them previously.
+\item
+  Rule \Rule{S-Papp-Exists} allocates fresh existential variables at the
+  call site that are mapped to uninstantiated variables within the
+  abstraction.  We write $\ren : \tvs$ for $\dom \ren = \tvs$.
+  \Xdidier {Why not inline it? already too many notations...}
+
+\item
+  Rule \Rule{S-Papp-Unif} copies multi-equations from the abstraction to the
+  call site, provided we have already introduced the renamings by Rule \Rule
+  {S-Papp-Exits} and we have not copied them previously.
+  \Xdidier {$\ueqs \nvDash \ueq$ is not formally defined, which is non
+  obvious because of renamings.}
+
 \end{enumerate}
-% Cleaning up partial applications and let constraints
-\Rule{S-Papp-Solve} removes partial applications once all necessary
-constraints have been copied -- that is, when the copied equations entail the
-abstraction's body. \Rule{S-Let-Solve} remove a $\Let$ constraint when the
-bound term variable is unused and the abstraction is satisfiable.
+\parcomment{Cleaning up partial applications and let constraints}
+Rule \Rule{S-Papp-Solve} removes partial applications once all necessary
+constraints have been copied---that is, when the copied equations entail
+the abstraction's body. \Rule{S-Let-Solve} remove a $\Let$ constraint when
+the bound term variable is unused and the abstraction is satisfiable.
 
-% Lowering
-\Rule{S-Exists-Lower} implements the non-trivial case of lowering existentials
-across $\Let$-binders. It identifies a subset of variables in the region
-of a $\Let$ constraint that are unified with variables from outside the
-region. Such variables are considered monomorphic and thus cannot be
-generalized; they can instead be safely lowered to the outer scope.
+\parcomment{Lowering}
 
-% Determines
+Rule \Rule{S-Exists-Lower} implements the non-trivial case of lowering
+existentials across $\Let$-binders. It identifies a subset of variables in
+the region of a $\Let$ constraint that are unified with variables from
+outside the region. Such variables are considered monomorphic and thus
+cannot be generalized; they can instead be safely lowered to the outer
+scope.
+\Xdidier{The condition $\x, \tvbs \disjoint \C$ in \Rule {S-exists-Lower}
+prevents the simplicication when there are several occurrences of
+$\x$ in $\C$ as they cannot be eliminated}
+
+
+\parcomment {Determines}
+
 This is the case when the types of $\tvbs$ are \emph{determined} in a unique
 way. In short, $\c$ determines $\tvbs$ if and only if the solutions for
 $\tvbs$ are uniquely fixed by the solutions to other variables in $\c$.
 
 \begin{definition}
-  $\cdetermines \c \tvbs$ if and only if for every ground assignment
-  $\semenv, \semenvp$ that satisfy $\c$ and coincide outside of $\tvb$ must
+  $\cdetermines \c \tvbs$ if and only if every ground assignments
+  $\semenv$ and $\semenvp$ that satisfy $\c$ and coincide outside of $\tvb$ 
   concide on $\tvbs$ as well.
-
   \begin{mathpar}
     \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
       \semenv \th \c
@@ -3505,7 +3552,7 @@ $\tvbs$ are uniquely fixed by the solutions to other variables in $\c$.
   \end{mathpar}
 \end{definition}
 
-% How the determines relation corresponds to ML
+\parcomment {How the determines relation corresponds to ML}
 Conceptually, this corresponds to the negation of the generalization condition
 in \ML: a type variable cannot be generalized if it appears in the typing
 context. In the constraint setting, it cannot be generalized if it depends on
@@ -3524,14 +3571,16 @@ For instance, $\cexists \tvba \cunif \tv {\tvba \to \tvbb}$ determines
 $\tvbb$, as $\tvbb$ is free. \cref{sec:implementation} discusses how we
 efficiently decide determinability.
 
-% Why we lower?
-Lowering such varibles improves solver efficiency. It avoids unnecessary
+\parcomment{Why we lower?}
+
+Lowering such variables improves solver efficiency. It avoids unnecessary
 duplication of work that would otherwise occur via \Rule{S-Papp-Exists}, which
 allocates fresh copies of all regional variables at each application site. By
 reducing the number of variables that need to be copied, lowering directly
 reduces instantiation overhead.
 
-% Updating partial applications
+\parcomment{Updating partial applications}
+
 However, sometimes \Rule{S-Papp-Exists} must copy a variable before it can be
 lowered, for instance, in the constraint $\cexists \tvc \cletr \x \tva \tvb
 {\cunif \tva \tvb \cand \cmatch \tvb {\cbranch \cwild {\cunif \tvb \tvc}}}
@@ -3543,16 +3592,20 @@ $\tvbs$.
 
 
 \TODO{Compression}
+
 \TODO{Should we mention backpropagation prior to here?}
-\paragraph{Backpropagation} The interaction that froces
-partial application to be useful\footnote{We could in theory re-order
-instantiations in any way, delaying until the abstraction is fully solved} is
+
+\paragraph{Backpropagation}
+
+The interaction that forces partial application to be useful\footnote{We
+could in theory re-order instantiations in any way, delaying until the
+abstraction is fully solved} is
 \emph{backpropagation}, the mechanism that allows type information from use sites
 to refine matched variables inside generalised abstractions.
 
 For example, in:
 \begin{program}[input]
-  let e$_{10}$ = let f r = r.y in f ({ x = 1; y = 1 })
+  let e$_{10}$ = let f r = r.y in f {x = 1; y = 1}
 \end{program}
 \OCaml rejects this, as \geninst-directional inference cannot propagate the known
 type \code{three} back to \code{f}'s parameter.
@@ -3560,18 +3613,23 @@ The (simplified) constraint generated when typing \code{e}$_{10}$ is:
 \begin{align*}
   \cexists \tv
   &\clet f \delta {\cexists {\tvb, \tvc}
-    \cunif \delta {\tvb \to \tvc}
-    \cand \cmatch \tvb {(\cbranch {\wild \Tapp[t]} {\Omega(y / t) \leq \gamma \to \beta})}} \\
-  &\hspace{-1mm}\capp f {(\mathsf{three} \to \tv)}
+    \cunif \delta {\tvb \to \tvc} \cand
+    \cmatch \tvb
+       {(\cbranch {\wild \Tapp[t]} {\Omega(y / t) \leq \gamma \to \beta})}} \\
+  &\capp f {(\mathsf{three} \to \tv)}
 \end{align*}
-At the use site, the abstraction is applied with a type of known shape (\code{three}).
-\Rule{S-BackProp} propagates this shape back into the suspendede match inside the
-abstraction by unifying it with the variable $\tvb$. This is sound: the unicity
-predicate $\Cshape \C \tv \sh$ ensures that $\tvb$'s shape is \code{three}
-provided the context $\C$ include the application constraint.
+At the use site, the abstraction is applied with a type of known shape
+(\code{three}).  Rule \Rule{S-BackProp} propagates this shape back into the
+suspendede match inside the abstraction by unifying it with the variable
+$\tvb$. This is sound: the unicity predicate $\Cshape \C \tv \sh$ ensures
+that $\tvb$'s shape is \code{three} provided the context $\C$ include the
+application constraint.
+\Xdidier {This rule should be in \cref  {fig:solver-schemes}}
 \begin{mathpar}
   \rewrite[S-BackProp]
-    {\C\where{\cletr \x \tv \tvs {\Ca[\cmatch \tvp \cbrs}} {\Cb[\cpapp \x \ren \ueqs \tvc]}] \\
+    {\C\where
+       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
+                           {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
      \tvp \in \dom \ren \\
      \C\where{\Cb} \th \theta(\tv) = \t \\
      \shape \t = \any \tvcs \tp}

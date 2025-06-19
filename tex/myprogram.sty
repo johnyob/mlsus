@@ -63,7 +63,8 @@
   inputencoding=utf8,
   escapechar=@,
   mathescape,
-  %% escapechar=°,
+  escapeinside={(*-$}{$-*)},
+  escapechar=°,
   literate={%
     {->}{\ensuremath\to}2%
     %% {=>}{\ensuremath\Rightarrow}2%
@@ -152,6 +153,8 @@
     {deletekeywords={type,of,if,with}}
 \lstdefinestyle{algo}
     {}
+
+\newcommand \ocamlcomment[1]{\hfill \ocamlcommentstyle (* #1 *)\space}
 
 \colorlet{input}{blue!7}
 \colorlet{error}{red!10}
