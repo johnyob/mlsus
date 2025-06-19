@@ -84,19 +84,31 @@ constructs, such as extensible records with row-polymorphism, higher-kinded
 types, or dimensional types, fit perfectly into the \ML framework. Others such
 as GADTs, higher-rank polymorphism, or static overloading
 \TODO{citations}, are \emph{fragile}, as they sometimes require explicit type
-annotations. In order to minimize the need for type anotations, their
-specifications have been twisted with some direct or indirect algorithmic
-flavor in order to preserve \emph{principality}.
+annotations.
 %
-These (more or less ad-hoc) restrictions in the specification are designed
-especially to reject examples that would break completeness with respect to
-the type-checker implementations, but they also simultaneously reject other
-examples whose type could easily be guessed.\Xgabriel{I would like to explain
-more here, it is not obvious why completeness-breaking examples also endanger
-principality.} \Xalistair{Perhaps we pick an example extension}
-Unsurprisingly, they have historically posed challenges to the preservation of
-principal types.
+Consider impredicative higher-rank polymorphism:
+\begin{program}[input]
+  let self f = f f
+\end{program}
+With higher-rank types, one could \emph{guess} the type of \code{f} to be
+either $\tfor \tv \tv \to \tv$ or $\tfor \tv \to \tv \to \tv$ in order to
+typecheck \code{self} --- neither of which is more general than the other,
+violating principality.
 
+% Current approaches are kinda bad
+To fix this, inference algorithms require a minimal amount of \emph{known}
+type information (\ie annotations) to restore principality. Yet specifying
+such requirements declaratively is difficult. As a result, the specifications
+are often twisted with some direct or indirect algorithmic flavor in order to
+preserve principality and completeness.
+%
+Moreover, these (more or less) ad-hoc restrictions commonly reject examples
+whose type could easily be guessed. For instance, \citep{TODO} reject:
+\begin{program}[input]
+  let self' f = if true then f f else (f : 'a. 'a -> 'a)
+\end{program}
+
+% Annotations fixes all the issues (but they're problematic)
 Optional type annotations may sometimes but not always be omitted: the
 return type of overloaded data constructors can be annotated; polymorphic
 expressions can be annotated with a type scheme; for GADTs, the type of the
@@ -149,6 +161,8 @@ limit its downsides.
 \paragraph{\Geninst-directional type inference}
 
  \Xdidier {See other choices in \texttt{./abbreviations.sty}}
+ \Xalistair {In my report, I used $\pi$-directional `pi-directional' --
+ thought it was quite cute. What do you think?}
 \OCaml uses another mechanism for propagation of type information,
 based on polymorphism, which actually enforces an ordering in the
 typechecking of let-bindings, where the (polymorphic part of) a the
@@ -333,6 +347,9 @@ amnbiguous.
 
 Our proposal with omnidirectional type inference succeeds
 on \ocaml{e_6}, \ocaml{e_7}, and \ocaml{e_8}.\Xdidier{to be checked}
+\Xalistair{I'm fairly certain your implementation (and our theory) does not
+typecheck \code{e_8}. It is another example of incompleteness (like
+\code{e_9})}
 %% \Xgabriel{Does it? My implementation with Olivier would reject this example,
 %%   because it is not robust to the addition of additional type definitions in
 %%   the context. Even where there is a single type declaration with a given
@@ -500,89 +517,6 @@ Our contributions are
 \section{Suspended constraints: an overview}
 \label{sec:constraints}
 
-\begin{version}{}
-% Old comments
-\TODO{PLAN: Only the constraint syntax, not constraint-solving yet. The
-point is to show examples in a concrete way.}
-\Xalistair{Some of this probably belongs in the intro @Didier, but I didn't
-want to conflict with your work}
-
-\Xdidier {We need examples before we did in the technical details.
-But since this section is still partly informal---no semantics, we may
-then still consider as part of the intro and not described
-suspended constraints earlier}
-
-\Xdidier {The question is where do we put examples of programs that
-do not typecheck in \OCaml, are expected to typecheck and that we can
-typecheck (without explaining how they typecheck) ?  I gave one example for
-record fields in the intro.  Should I also introduce semi-explicit
-polymorphism and give an example in the intro?}
-
-\Xalistair{I think it makes sense that this is the intro continued. As for
-examples, I think the intro has enough. We should put them in the relevant
-subsections  in this section.}\Xdidier {Or the other way round: I think we
-need examples early enough. Or keep it as is and say in the intro that we
-leave polytype examples, which are more involved for this section.}
-\end{version}
-
-\begin{version}{}
-%% This has been moved to the introduction
-Our insights into directionality come by approaching type inference from a
-\textit{constraint-based}
-\citep{TODO} perspective, in which type inference
-is split into two stages, mediated by the language of \textit{constraints}
-\citep{TODO}.
-
-In the first stage, a term $\e$ is translated into a constraint
-$\C$ which is satisfiable if and only if the term $e$ is well-typed. In the
-second stage, the generated constraint $\C$ is solved (or shown to be
-unsatisfiable).
-
-% HMX
-
-A key framework for constraint-based type inference is \HMX
-\cite{Odersky-Sulzmann-Wehr@tpos}---the Hindley-Milner system parameterized
-by a constraint domain $X$, allowing constraints to appear within types. Our
-work is inspired by the presentation of \HMX by \citet{Pottier-Remy/emlti}
-who fully decoupled constraint generation from constraint solving. The
-central innovation in their system for the reduction of type inference to
-constraint solving is the inclusion of term variables in the language of
-constraints.
-\end{version}
-
-\begin{version}{}
-% Life is hard
-\Xalistair{This paragraph now feels out of place -- nonetheless I think we
-need state how difficult this was :/}\Xdidier {It could be move to the
-introduction}
-Formulating a suitable constraint language for omnidirectional type
-inference, a (provably) correct constraint translation for our extensions,
-and an efficient, sound and complete solver involves several difficulties.
-\Xdidier
-{I think what is difficult is (1) the semantics of constraints (2) the
-efficient implementation, rather than just a sound and complete
-implementation. In particular, efficiency requires to use ranks and an
-ordering on the way constraint are solve.}
-
-\Xdidier
-{Beside we have no proof that our implementation is efficient. In fact, I
-think is not cheap: Assume that a type scheme of size $n$ is solved
-incrementally by adding one node at a time and that every time we add a node
-we propagate it to all its instantiations. Currently, each propagation with
-redo the job, ignoring what had already be done ealier. Hence you get a
-factor of $n$ complexity that need not necessarily be there. Plus
-constraints are copied before being simplified. Another factor...}
-
-\Xalistair{The spec for the solver and my solver impl does not suffer from this,
-it is able to track which new nodes need propagating and leaves the rest
-untouched.}
-
-\Xdidier {This is not what you told me when we talk. There may be
-misunderstanding. We should discuss it. However, this is not so important.
-My point about efficient implementation is that we do not have anything to
-validate that the implementation is efficient for the moment.}
-\end{version}
-
 \begin{bnffig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
@@ -608,11 +542,6 @@ validate that the implementation is efficient for the moment.}
 %% \\
 \entry[Shapes] \sh {} {}
 \end{bnffig}
-
-\Xdidier {We need to define $\G \th \t$}
-\Xalistair {The definition is entirely standard? We could add an
-`ok' or `wf' suffix to the judgement to make it clearer that it is
-well-formedness}
 
 % Syntax!
 
@@ -759,27 +688,13 @@ well-typed because the explicit annotation introduces a fresh
 variable annotation $\ava$, which can then be generalized, yielding
 $\tfor \ava {\tapoly \ts \ava}$.
 
-\begin{version}{}
-%% Old version
-Principality is tracked using generalization.  This is done by tracking the
-polymorphism of labels. Type schemes quantify not only over type variables
-but $\varepsilon$ variables. As a result, a term $e$ with the type $\tapoly
-\ts \varepsilon$ for some fresh $\varepsilon$ may be generalized to
-$\tfor \varepsilon {\tapoly \ts \varepsilon}$.  The typing rule for
-$\einst e$ in fact requires $e$'s type to be $\tfor \varepsilon {\tapoly
-\ts \varepsilon}$, not just a plain polytype $\tapoly \ts
-\varepsilon$. The rational is that a label is polymorphic if and only if it
-is principally known and not inferred.  This is why the introduction form
-for polytypes $\expoly e \ts$ is able to introduce a \textit{fresh}
-$\varepsilon$ variable.
-\end{version}
-
 % Short commings of annotation variables
 
 The very purpose of annotation variables is to distinguish \emph{known},
 polymorphic polytypes from yet-unknown, monomorphic ones. However, they are
 \Xdidier[somewhat difficult to understand and]{I would cut this as I
-somewhat disagree...}  sensitive to the placement of type
+somewhat disagree...}\Xalistair{I still find them somewhat confusing, I
+propose we let Gabriel break this stalemate} sensitive to the placement of type
 annotation, an artifact of the fixed directionality of generalization in
 \geninst-directional inference. For instance, the following two terms differ
 only in the position of the annotation, yet only the one on the left-hand
@@ -857,13 +772,17 @@ optimized away by monomorphization and aggressive inlining.
 \Xdidier {why pick other examples and not reuse those of the introductino?}
 \Xalistair {I think the sections were written in parallel, we should
 be able to reuse the examples from the intro}
+\Xalistair {I've tried to reconcile some of the examples with the intro ---
+ though I find myself thinking we're repeating bits of the intro here.
+ My feeling is that this section should be the intro to this feature (as
+ opposed to the introduction). }
 
 \OCaml supports a limited yet useful form of static overloading for record
 labels and data type constructors.
 \begin{program}[input]
-  type three = {x : int; y : int}
-  type four  = {y : int; z : int}
-  type five  = {x : int; z : int}
+  type 'a one = {x : 'a}
+  type two = {x : int; y : int}
+  type three = {y : int; z : int}
 \end{program}
 \programjoin
 \begin{program}[input]
@@ -888,36 +807,36 @@ polytype instance, \OCaml complements \geninst-directionality with a
 limited form of bidirectional propagation of expected types. This allows the
 following to be well-typed:
 \begin{program}[input]
-  let e_8 = (function (L : m) | _ -> 1) L
+  let e$_{10}$ = (function (L : m) | _ -> 1) L
 \end{program}
 
 % Closed-world reasoning
 Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to resolve
 ambiguities in record types. For instance:
 \begin{program}[input]
-  let e_9 = fun {x; z} -> {x = -z; z = x}
+  let e$_{11}$ = fun {x; y} -> {x = -y; y = x}
 \end{program}
 \programjoin
 \begin{program}[output]
-  val e_9 : five -> five
+  val e$_{11}$ : two -> two
 \end{program}
-Here, \code{x} and \code{y} appear together only in the type \code{five},
-allowing the type checker to unambiguously infer the type of \code{e_8} as
-\code{five -> five}.
+Here, \code{x} and \code{y} appear together only in the type \code{two},
+allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
+\code{two -> two}.
 
 % Default rules
 If local type information and closed-world reasoning are insufficient,
 \OCaml falls back to a syntactic default: it selects the most recently
 defined compatible type. For example:
 \begin{program}[input]
-  let proj$_z$ = fun {z; _} -> z
+  let proj$_y$ = fun {y; _} -> y
 \end{program}
 \programjoin
 \begin{program}[output]
-  val proj$_z$ : five -> int
+  val proj$_y$ : three -> int
 \end{program}
-The expression is compatiable with both \code{four} and \code{five},
-since each defines a field \code{z}. But \code{five} is chosen simply
+The expression is compatiable with both \code{two} and \code{three},
+since each defines a field \code{y}. But \code{three} is chosen simply
 because it appears later in the source.
 We do not treat this behaviour as principal; accordingly, we provide
 no formalisation of such ``default'' rules, though their implementation is
@@ -926,13 +845,13 @@ discussed further in \cref{sec:implementation}.
 This fallback mechanism highlights the directionality of \OCaml inference.
 Once the compiler selects a type, it commits to it---even if that choice
 causes errors downstream:
-\begin{program}[input]
-  let e$_{10}$ = fun r -> let x (* infers [five] *) = r.x in x + r.y
+\begin{program}[error]
+  let e$_{12}$ = fun r -> let y (* infers [three] *) = r.y in r.x + y
 \end{program}
 \programjoin
-\begin{program}[error]
-  Error: The expression has type five
-	 There is no field y within type five
+\begin{program}[error, style=message]
+  Error: The expression has type three
+	 There is no field x within type three
 \end{program}
 
 % Record field disambiguation in suspended constraints
@@ -997,18 +916,21 @@ matching of records, function applications and the syntactic sugar $\eproj \e j
 \eqdef \eapp {\parens {\efun {\erecord {j = \x; \wild}} \x}} \e$}:
 \begin{mathpar}
   \infer[Sml-Proj]
-    {\G \th \e : \tsrecord {j = \tj; \rho }}
+    {\G \th \e : \tsrecord {j = \tj; \varrho }}
     {\G \th \eproj \e j : \tj}
 \end{mathpar}
 \Xdidier {Beware! Overloading of meta-variable $\rho$}
+\Xalistair {Renamed to $\varrho$ -- hopefully shouldn't be confused for a
+renaming.}
 
-Here, the projection retrieves the $j$-th field from a record with tail $\rho$.
-However, \SML enforces an additional restriction: the tail $\rho$ must be fully
-determined (\ie cannot be a polymorphic row variable). This ensures that the
-arity of the tuple is \emph{known} statically from the surrounding context,
-thereby avoiding the need for row polymorphic and any associated runtime
-representation overhead. The restriction is not reflected in the typing rules
-themselves, but is instead enforced within \SML's type inference algorithm.
+Here, the projection retrieves the $j$-th field from a record with tail
+$\varrho$. However, \SML enforces an additional restriction: the tail
+$\varrho$ must be fully determined (\ie cannot be a polymorphic row variable).
+This ensures that the arity of the tuple is \emph{known} statically from the
+surrounding context, thereby avoiding the need for row polymorphic and any
+associated runtime representation overhead. The restriction is not reflected
+in the typing rules themselves, but is instead enforced within \SML's type
+inference algorithm.
 
 \parcomment {Tuple projection is statically overloaded}
 
@@ -1770,182 +1692,20 @@ we collect all the rules pertaining to the satisfiability judgement in
 \end{mathparfig}
 
 % Contextual semantics is cool, and our approach extends to type systems
-Together, these rules define a flexible but principled system for constraint resolution,
-capable of both deferring and resolving shape information as determined by the constraint context.
-Importantly, the same style of contextual reasoning extends naturally to the static semantics of terms.
-
-\begin{version}{}
-\Xgabriel{Maybe reuse what's below.}
-Our conclusion is that the na\"ive semantics should be rejected in favour
-for the semantics of our informal solver. Our intent with suspended
-constraints is that the blocking variable should not be guessed out of thin
-air, but deduced from the surrounding context without knowledge of the
-constraint generated by the handler.
-
-The idea, inspired by type systems that require principality (such as
-FreezeML), is to stipulate that the only satisfying assignments for the
-context of the suspended constraint requires $\tv$ to be assigned to some
-type with a unique type constructor.
-\Xalistair[]{This doesn't read entirely correctly, we want a unique
-constructor for all assignments}.
-
-
-\TODO{Show the natural-semantics rule for suspended constraints,
-  explain that (1) it is not our intention for this typing construct (it
-  admits ``guesses out of thin air'') (2) a non-guessing solver cannot be
-  complete with respect to it.}
-
-\TODO{Show the contextual semantics,
-  first an informal explanation of $\c[\tv !]$,
-  then show the full definition, then discuss the fine-grained
-  points on examples.
-}
-
-\TODO{Discuss well-foundedness.}
-
-\Xdidier{We are missing an introduction to the semantics of constraints}
-
-
-A na\"ive denotation semantics for suspended constraints would be to simply
-apply the assignment of $\tva$ to $f$. More formally,
-\begin{mathpar}
-  \inferrule*
-    {\semenv(\tva) = \overline{\t} \Fapp \\ \semenv_{\setminus
-    \Delta}[\overline{\tvb := \t}] \vdash f(\overline{\tvb} \Fapp)}
-    {\semenv \vdash \cmatch \tva \Delta f}
-\end{mathpar}
-However, our informal solver would be incomplete with respect to this
-semantics.  We show this by considering the constraint $\cexists \tv
-\cmatch \tv \tv (\lambda \_.~ \tv = 1)$.  This constraint does not
-unify $\tv$ outside the suspended constraint, but once it is scheduled,
-the variable $\tv$ must be unified with the unit type $1$. So our
-informal solver suggests that this constraint is unsatisfiable since
-$\tv$ is never unified outside the match constraint. Yet we can use the
-above rule to show that this constraint is satisfiable:
-\begin{mathpar}
-  \inferrule*
-    {
-      \inferrule*
-        {
-          (\tv \mapsto 1)(\tv) = 1 \\
-          \inferrule*
-            {(\tv \mapsto 1)(\tv) = 1} {\tv \mapsto 1 \vdash \tv
-            = 1}
-        }
-        {\tv \mapsto 1 \vdash \cmatch \tv \tv (\lambda \_. ~ \tv
-        = 1)}
-    }
-    {\cdot \vdash \cexists \tv \cmatch \tv \tv (\lambda \_.~ \tv = 1)}
-\end{mathpar}
-The dependency of suspended constraints can also be complex, as in the
-following example: $\cexists {\tva, \tvb} \cmatch \tva \tvb {(\lambda
-\_. ~ \tvb = 1)} \cand \cmatch \tvb \tva {(\lambda \_. ~ \tva = 1)}$.
-Worse still, is that the binding location of $\tva$ may not even contain
-the sufficient information to show that $\tva$ is realised.  For instance,
-\begin{align*}
-  \cexists \tvb \tvb = 1 \cand \cexists \tva \tva = \tvb \cand \cmatch \tva \Delta f
-\end{align*}
-
-Our conclusion is that the na\"ive semantics should be rejected in favour
-for the semantics of our informal solver. Our intent with suspended
-constraints is that the blocking variable should not be guessed out of thin
-air, but deduced from the surrounding context without knowledge of the
-constraint generated by the handler.
-
-The idea, inspired by type systems that require principality (such as
-FreezeML), is to stipulate that the only satisfying assignments for the
-context of the suspended constraint requires $\tv$ to be assigned to some
-type with a unique type constructor.
-\Xalistair[]{This doesn't read entirely correctly, we want a unique
-constructor for all assignments}.
-
-This motivates our next definition: the principal realisation of a type
-variable $\tv$ by some constraint context $\cctx[-]$.
-
-\begin{definition}
-  A type variable $\tv$ is principally realised with the constructor $\F$
-  by the context $\cctx[-]$, written $\cctx[\tv !] \rhd \F$,
-  iff for all assignments $\semenv$, there exists an assignment $\semenvp$
-  for the
-  hole such that $\semenv \vdash \cctx[\semenvp \vdash \ctrue]$ implies
-  $\semenvp(\tv) = \overline{\t} \Fapp$
-\end{definition}
-
-\TODO
-{Here, we not only rely on the definition of a constraint with a hole
-$\mathcal{C}[-]$ but a judgement with a hole and some way to translate
-between the two. We'll need formal definitions for this.}
-
-\TODO
-{Some examples of principal realisation}
-
-As we have previously hinted, the semantics for a suspended constraint must
-require that the surrounding context principally realises the matchee. This
-is formally specified as:
-\begin{mathpar}
-\inferrule*
-   {\cctx[\tva !] \rhd \F \\
-    \semenv \vdash \cctx[\semenvp_{\setminus \Delta}[\overline{\tvb :=
-      \t}] \vdash f(\overline{\tvb} \Fapp)] \\
-    \semenvp(\tva) = \overline{\t} \Fapp}
-   {\semenv \vdash \cctx[\semenvp \vdash \cmatch \tva \Delta f]}
-\end{mathpar}
-
-\TODO: precise declarative semantics of constraints. They should coincide
-with the semantics of the typing rules.
-
-Alistair has yet another proposal derived from his simplification of his
-timestamp semantics.
-
-\TODO
-{derive precise declarative semantics for the language features of
-Section 2.}
-
-
-Meta-substitution lemma: if $\semmetav$ occurs exactly once in $\c$, then
-$\semmetaenv, (\semenvp \vdash \semmetav); \semenv \vdash C$ and $\semenvp
-\vdash \cp$ if and only if $\semmetaenv; \semenv \vdash \c[\semmetav :=
-\cp]$.
-
-Convention: we write $\c[\cp]$ for $\c[\square := \cp]$. In particular
-$\c[\square] = \c$ when $\square$ occurs once in $\c$.
-
-Next steps:
-\begin{itemize}
-\item introduce the condition
-  $\c[\tv !]$:
-  \begin{mathpar}
-    \begin{array}{l}
-    \exists! \F, \quad \forall \semenv, \semenvp,\\ \qquad (\semenvp \vdash
-    \square); \semenv \vdash \c[\square] \implies
-    \mathsf{head}(\semenvp(\tv)) = \F
-    \end{array}
-  \end{mathpar}
-\item and finally the global rule
-  \begin{mathpar}
-    \infer
-    {\c[\tva !]
-      \and \semenvp(\tva) = \overline{\t} \Fapp
-      \and \semmetaenv, (\semenvp, \overline{\tvb := \t} \vdash
-      \square)\vdash \c[f(\overline{\tvb} \Fapp)] }
-    {\semmetaenv, (\semenvp \vdash \square); \semenv \vdash \c[\cmatch \tva \Delta f]}
-  \end{mathpar}
-\end{itemize}
-
-The intuition for the judgment $\semmetaenv, (\semenvp \vdash \square);
-\semenv \vdash \c[\cp]$ is that it is a proof of satisfiability of
-$\c[\square := \cp]$ with valuation $\semenv$, where we furthermore know
-that the $\cp$ sub-derivation has the valuation $\semenvp$. Note that, after
-the the global rule is added, the derivations of this judgment are not
-syntactically directed by $\c$ anymore.
-
-\end{version}
-
+Together, these rules define a flexible but principled system for constraint
+resolution, capable of both deferring and resolving shape information as
+determined by the constraint context. Importantly, the same style of contextual
+reasoning extends naturally to the static semantics of terms.
 
 \section{The language}
 \label{sec:language}
 
 \Xdidier{We need to add structure to this section, with subsections}
+
+\Xdidier {We need to define $\G \th \t$}
+\Xalistair {The definition is entirely standard? We could add an
+`ok' or `wf' suffix to the judgement to make it clearer that it is
+well-formedness}
 
 % Running example: tuple projection disambiguation
 
