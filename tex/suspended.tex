@@ -100,7 +100,8 @@ principal types.
 Optional type annotations may sometimes but not always be omitted: the
 return type of overloaded data constructors can be annotated; polymorphic
 expressions can be annotated with a type scheme; for GADTs, the type of the
-\texttt{match} scrutinee and return type can be annotated to a rigid type which will be
+\texttt{match} scrutinee and return type can be annotated to a rigid type
+which will be 
 refined by type equalities in each branch. To each fragile construct
 corresponds a robust construct where this type annotation is mandatory. The
 robust constructs fit perfectly into the \ML framework, but are
@@ -975,10 +976,10 @@ return types of the label access.
 
 \TODO{Do some typing constraints for the examples presented in this section}
 
-% Suspended constraints are better
+\parcomment{Suspended constraints are better}
 
 As seen in the examples above, this approach is faithful to \OCaml's current
-behaviour\footnote {modulo default disambiguation rules.}, and in fact
+behaviour\footnote {Modulo default disambiguation rules.}, and in fact
 improves on it: certain expressions, such as \code{e}$_{10}$ are well-typed
 under our account but rejected by \OCaml's current type checker.
 
@@ -1009,33 +1010,34 @@ thereby avoiding the need for row polymorphic and any associated runtime
 representation overhead. The restriction is not reflected in the typing rules
 themselves, but is instead enforced within \SML's type inference algorithm.
 
-% Tuple projection is statically overloaded
+\parcomment {Tuple projection is statically overloaded}
+
 From a typing perspective, tuple projection in \SML behaves like a form
 of static overloading: the expression $\eproj \e j$ is valid only when $\e$ is
 known to be an $n$-ary tuple for some fixed $n \geq j$. Unlike record or
 constructor  overloading, the space of possible overloadings in this case is
 countably infinite.
 
-% We can precisely specify this with suspended constraints:
+\parcomment {We can precisely specify this with suspended constraints}
+
 We can capture the typing of tuple projections precisely using suspended
 constraints. For the projection $\eproj \e j$, we generate the following
 constraint:
-
 \begin{mathpar}
   \cinfer {\eproj \e j } \tv \wide\eqdef
   \cexists \tvb
     \cinfer \e \tvb
     \cand \cmatch \tvb {\cbranch {\cpatprod \tvc j} {\cunif \tva \tvc}}
 \end{mathpar}
-
-% Tuple patterns
-The suspended constraint $\cmatchdots \tvb$ blocks until the shape of $\e$
-($\tvb$) is known to be a tuple of sufficient arity. The pattern $\cpatprod
+\parcomment{Tuple patterns}
+The suspended constraint $\cmatch \tvb {\cbranch {\cpatprod \tvc j} {\cunif
+\tva \tvc}}$ blocks until the shape of $\e$ ($\tvb$) is known to be a tuple
+of sufficient arity. The pattern $\cpatprod
 \tvc j$ matches only tuple shapes $\tProd \tvi$, where $n \geq j$, binding the
 $j$-th component to $\tvc$, which is then unified with the expected result type
 $\tva$.
 
-% Next section
+\parcomment{Next section}
 
 Suspended constraints offer a robust mechanism for dealing with extensions of
 \ML that depend on a notion of \emph{known} type information. What remains
@@ -1173,9 +1175,9 @@ When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
 actually equal. The trivial shape $\bot$ is the most general shape.
 
-% Define decomposition
+\parcomment{Define decomposition}
 
-Given a shape $\Shp \tvcs \t$, we write $\deshaped [\tvcs] \t \tys$ for $\t
+Given a shape $\any \tvcs \t$, we write $\deshaped [\tvcs] \t \tys$ for $\t
 \where {\tvcs \is \tys}$. This is uniquely determined, since it is
 independent of the choice of variables $\tvcs$ for representing the
 shape.
@@ -1192,7 +1194,7 @@ the shape is trivial.
 %% the variables as flexible unification variables.}
 
 \begin{definition}
-A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff:
+A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff: 
 \begin{enumerate}
   \item
     $\t = \shapp \tys$
@@ -1459,7 +1461,7 @@ modulo $\alpha$-equivalence of shapes. The formal definition of this condition,
 which is somewhat technical, will be introduced later.
 
 In other words, we can \emph{discover} a shape, as in the natural semantics,
-but only if ambient constraint context $\C[\square]$ guarantees that there
+but only if ambient constraint context $\C\where{\square}$ guarantees that there
 is a unique possible shape.  This rule is typically used in combinatino with
 \Rule {Susp-Use} which can then be used in the proof of the right-hand-side
 premise.
@@ -1485,7 +1487,7 @@ the shape of $\tv$ is uniquely determined. The uniqueness condition of
 can be resolved.
 
 In constrast, the second example has no contextual information around
-the suspended constraint ($\C[\square] = \square$), so any solution
+the suspended constraint ($\C\where{\square} = \square$), so any solution
 $\semenv$ satisfies it, and $\tv$ can take an arbitrary shape in this context.
 Consequently, the uniqueness condition fails, the \Rule{Susp-Ctx} rule
 cannot be applied, and the constraint remains unsatisfiable---as intended.
@@ -1547,7 +1549,7 @@ Without loss of generality, suppose that we try to use \Rule{Susp-Ctx} on
 $\tva$ first: we get to prove $\Cshape \C \tva \tint$ for the context $\C :=
 (\square \cand \cmatch \tvb {\cbranch \cwild {\cunif \tva \tint}})$: we have
 to prove that $\tint$ is a unique head structure for $\tva$ such that
-$\C[\ldots]$ is satisfiable. But this does not hold, as the constraint
+$\C\where{\ldots}$ is satisfiable. But this does not hold, as the constraint
   $(\cmatch \tvb {\cbranch \cwild {\cunif \tva \tint}})$ cannot be solved: we
 cannot use the \Rule{Susp-Use} rule yet as $\beta$ has no head, and we cannot
 use the \Rule{Susp-Ctx} rule as the empty context $\square$ does not uniquely
@@ -1573,19 +1575,19 @@ A key ingredient of the contextual rule \Rule{Susp-Ctx} is determining
 when a type variable's shape is uniquely fixed by its surrounding
 constraint context. We formalize this using the unicity predicate
 $\Cshape \C \tv \sh$, which expresses that within the context
-$\C[\square]$, the variable $\tv$ must have shape $\sh$ in any
+$\C\where{\square}$, the variable $\tv$ must have shape $\sh$ in any
 satisfying assignment.
 
 \begin{definition}
   A type variable $\tv$ has a \emph{uniquely known} principal shape within the
-  context $\C[\square]$, written $\Cshape \C \tv \sh$, iff for all assignments
-  $\semenv$ and ground types $\t$, then $\semenv \vdash \C[\cunif \tv \t]$
+  context $\C\where{\square}$, written $\Cshape \C \tv \sh$, iff for all assignments
+  $\semenv$ and ground types $\t$, then $\semenv \vdash \C\where{\cunif \tv \t}$
   implies that the principal shape of $\t$ is equal to $\sh$.
 %
   In other words:
   \begin{mathpar}
     \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \t \in \Ground, \uad
-      \semenv \vdash \C[\cunif \tv \t] \implies \shape \t = \sh
+      \semenv \vdash \C\where{\cunif \tv \t} \implies \shape \t = \sh
   \end{mathpar}
   This condition ensures that we are not guessing a shape arbitrarily;
   the shape must already be determined by the ambient constraint.
@@ -1609,8 +1611,8 @@ us from interpreting the rules as a well-behaved inference system.
 
 However, it can easily be resolved by obersving that the rules, while not
 syntactically well-founded, can be defined in a decreasing way by noting
-that the conclusion of \Rule{Susp-Ctx} $\C[\cmatch \tv \cbrs]$ is structurally
-larger than the negatively-occurring judgement $\C[\cunif \tv \t]$.
+that the conclusion of \Rule{Susp-Ctx} $\C\where{\cmatch \tv \cbrs}$ is structurally
+larger than the negatively-occurring judgement $\C\where{\cunif \tv \t}$.
 
 Instead of consdering the rules defined above as a \emph{single}
 inductive definition, we consider them to determine a function
@@ -1757,14 +1759,14 @@ we collect all the rules pertaining to the satisfiability judgement in
 
   \infer[Susp-Ctx]
     {\Cshape \C \tv {\any \tvcs \t} \\\\
-      \semenv \th \C[\cexists \tvcs \cunif \tv \t \cand
-      \cmatch \t \cbrs]
+      \semenv \th \C\where{\cexists \tvcs \cunif \tv \t \cand
+      \cmatch \t \cbrs}
     }
-    {\semenv \vdash \C[\cmatch \tv \cbrs]}
+    {\semenv \vdash \C\where{\cmatch \tv \cbrs}}
 \\
 \Cshape \C \tv \sh \Wide\eqdef \
   \forall \semenv, \t \in \Ground,
-      \semenv \th \C[\cunif \tv \t] \implies \shape \t = \sh
+      \semenv \th \C\where{\cunif \tv \t} \implies \shape \t = \sh
 \end{mathparfig}
 
 % Contextual semantics is cool, and our approach extends to type systems
@@ -3178,35 +3180,41 @@ and $\tvs$ are auxiliary existential variables.  Both $\tv$ and $\tvs$ are
 bound in $\ca$ but not in $\cb$.  The order of $\tvs$ is immaterial, and
 regions are considered equal up to permutation of these variables.
 
-The satisfiability of regional $\Let$ constraints is defined by:
+The satisfiability of regional $\Let$-constraints is defined by:
 \begin{mathpar}
-  \infer[Letr]
+  \infer[LetR]
     {\semenv \th \cexists {\tv, \tvs} \ca \\
      \semenv, \x \is \cabsr \tv \tvs \ca \th \cb}
     {\semenv \th \cletr \x \tv \tvs \ca \cb}
 
-  \infer[Appr]
+  \infer[AppR]
     {\semenv(\x) = \cabsr \tv {\tvs'} \c \\
      \semenv, \tv \is \semenv(\t), \tvs' \is \tys' \th \c}
     {\semenv \th \capp \x \t}
 \end{mathpar}
 We introduce an abstraction with a region, written $\cabsr \tv \tvs \c$, to
-track the region introduced in \Rule{Letr}. Region-based $\Let$ constraints
+track the region introduced in \Rule{LetR}. Region-based $\Let$-constraints
 strictly generalize ordinary constraint abstractions:
 \begin{mathpar}
   \clet \x \tv \ca \cb \cequiv \cletr \x \tv \eset \ca \cb
 \end{mathpar}
+In particular, Rule \Rule{S-Let} rewrites the usual let constraints $\clet
+\x \tv \ca \cb$ into region form.
 
-Rule \Rule{S-Let} rewrites the usual let constraints $\clet \x \tv \ca \cb$
-into region form. Rule \Rule{S-Exists-Conj} lifts existentials across
+\begingroup
+\sloppy Rule \Rule{S-Exists-Conj} lifts existentials across
 conjunctions, while rules \Rule{S-Let-ExistsLeft} and \Rule{S-Let-ExistsRight}
-lift existentials into or across let-binders. Rules \Rule{S-Let-ConjLeft} and
+lift existentials into or across let-binders.
+%
+Rules \Rule{S-Let-ConjLeft} and
 \Rule{S-Let-ConjRight} hoist constraints out of let-binders when they do not
 depend on locally bound variables. Collectively, these lifting rules
 normalize the structure of each region into a block of existentially bound
 variables, comprising set of solved multi-equations (from unification) and
 residual unsolved constraints (\ie applications, let-bindings and suspended
 constraints).
+\par
+\endgroup
 
 \begin{mathparfig}[t]
   {fig:solver-basic}
@@ -3246,9 +3254,8 @@ constraints).
 \end{mathparfig}
 
 
-%
 Remaining basic constraint-formers, such as label and polytype instantiation
-constraints, introduced in \cref{TODO}, are handled by rewriting them once
+constraints, introduced in \cref{sec/TODO}, are handled by rewriting them once
 their left-hand side becomes concrete. For instance, an instantiation
 constraint $s \leq \t$\Xdidier {What is $s$, where are such constaints
 defined?} is handled once $s$ is subsitituted by a match constraint,
@@ -3278,10 +3285,10 @@ unsatisfiable.
     {\theta(\ci)}
 
   \rewrite[S-Susp-Ctx]
-    {\C[\cmatch \tv \cbrs] \\
+    {\C\where{\cmatch \tv \cbrs} \\
      \cunif \tv {\cunif \t \ueq} \in \C \\
      \shape \t = \any \tvcs \tp}
-    {\C[\cexists \tvcs  \cunif \tv \tp \cand \cmatch \tp \cbrs]}
+    {\C\where{\cexists \tvcs  \cunif \tv \tp \cand \cmatch \tp \cbrs}}
 \end{mathparfig}
 
 \parcomment {S-Susp-Ctx}
@@ -3305,8 +3312,8 @@ bind the free variables of $\ueq$.
 Application constraints can be solved by copying constraints:
 \begin{mathpar}
   \rewrite[S-Let-App-$\beta$]
-    {\cletr \x \tv \tvs \ca {\C[\capp \x \t]} \\ \tv, \tvs \disjoint \t \\ x \disjoint \C}
-    {\clet \x \tv \ca {\C[\cexists {\tv, \tvs} \cunif \tv \t \cand \ca]}}
+    {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tv, \tvs \disjoint \t \\ x \disjoint \C}
+    {\clet \x \tv \ca {\C\where{\cexists {\tv, \tvs} \cunif \tv \t \cand \ca}}}
 \end{mathpar}
 This is similarly to $\beta$-reduction, except that the original constraint
 is kept around.
@@ -3381,35 +3388,35 @@ the abstraction and propagation additional equations to the application sites.
   {fig:solver-schemes}
   {Rewriting rules for let-bindings and applications.}
   \rewrite[S-Let-App]
-    {\cletr \x \tv \tvs \ca \C[\capp \x \t] \\
+    {\cletr \x \tv \tvs \ca \C\where{\capp \x \t} \\
      \tvc \disjoint \t \\
      \x \disjoint \C}
-    {\cletr \x \tv \tvs \ca \C[\cexists \tvc \cunif \tvc \t
-                               \cand \cpapp \x \eset \eset \tvc ]}
+    {\cletr \x \tv \tvs \ca \C\where{\cexists \tvc \cunif \tvc \t
+                               \cand \cpapp \x \eset \eset \tvc }}
 
   \rewrite[S-Papp-Exists]
-    {\cletr \x \tv {\tvs, \tvb} \c \C[\cpapp \x \ren \ueqs \tvc] \\
+    {\cletr \x \tv {\tvs, \tvb} \c \C\where{\cpapp \x \ren \ueqs \tvc} \\
      \tvb \notin \dom \ren \\
      \tvbp \disjoint \ren, \ueqs, \tvc \\
      \x \disjoint \C}
     {\cletr \x \tv {\tvs, \tvb} \c
-      \C[\cexists \tvbp \cpapp \x {\ren \where {\tvb \is \tvbp}} \ueqs \tvc]}
+      \C\where{\cexists \tvbp \cpapp \x {\ren \where {\tvb \is \tvbp}} \ueqs \tvc}}
 
   \rewrite[S-Papp-Unif]
-    {\cletr \x \tv \tvs {\c \cand \ueq} {\C[\cpapp \x \ren \ueqs \tvc]} \\
+    {\cletr \x \tv \tvs {\c \cand \ueq} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
      \ren : \tvs \\
      \ueqs \nvDash \ueq \\
      \x \disjoint \C}
     {\cletr \x \tv \tvs {\c \cand \ueq}
-      \C[\cpapp \x \ren {\ueqs, \ueq} \tvc
-	 \cand \ueq[\ren\where{\tv \is \tvc}]]}
+      \C\where{\cpapp \x \ren {\ueqs, \ueq} \tvc
+	 \cand \ueq[\ren\where{\tv \is \tvc}}]}
 
   \rewrite[S-Papp-Solve]
-    {\cletr \x \tv \tvs {\ueqs'} {\C[\cpapp \x \ren \ueqs \tvc]} \\
+    {\cletr \x \tv \tvs {\ueqs'} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
      \ren : \tvs \\
      \ueqs \vDash \ueqs' \\
      \x \disjoint \C}
-    {\cletr \x \tv \tvs {\ueqs'} {\C[\ctrue]}}
+    {\cletr \x \tv \tvs {\ueqs'} {\C\where{\ctrue}}}
 
   \rewrite[S-Let-Solve]
     {\cletr \x \tv \tvs \ueqs \c \\ \x \disjoint \c \\
@@ -3418,14 +3425,14 @@ the abstraction and propagation additional equations to the application sites.
 
   \rewrite[S-Exists-Lower]
     {\cletr \x \tv {\tvas, \tvbs} \c
-     {\C[\overline{\cpapp \x \ren \ueqs \tvc}]} \\
+     {\C\where{\overline{\cpapp \x \ren \ueqs \tvc}}} \\
      \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
      \dom \bar \ren \subseteq \tvbs \\
      \x, \tvbs \disjoint \C}
     {\cexists \tvbs
       \cletr \x \tv \tvas \c
-	{\C[{\overline{\cpapp \x {\ren \setminus \tvbs} \ueqs
-			 \cand \cunif {\ren(\tvbs)} \tvbs}}]}}
+	{\C\where{{\overline{\cpapp \x {\ren \setminus \tvbs} \ueqs
+			 \cand \cunif {\ren(\tvbs)} \tvbs}}}}}
 \end{mathparfig}
 
 % Semantics to partial applications
@@ -3564,12 +3571,12 @@ predicate $\Cshape \C \tv \sh$ ensures that $\tvb$'s shape is \code{three}
 provided the context $\C$ include the application constraint.
 \begin{mathpar}
   \rewrite[S-BackProp]
-    {\C[\cletr \x \tv \tvs {\Ca[\cmatch \tvp \cbrs]} {\Cb[\cpapp \x \ren \ueqs \tvc]}] \\
+    {\C\where{\cletr \x \tv \tvs {\Ca[\cmatch \tvp \cbrs}} {\Cb[\cpapp \x \ren \ueqs \tvc]}] \\
      \tvp \in \dom \ren \\
-     \C[\Cb] \th \theta(\tv) = \t \\
+     \C\where{\Cb} \th \theta(\tv) = \t \\
      \shape \t = \any \tvcs \tp}
-    {\C[\clet \x \tvs {\Ca[\cexists \tvcs \cunif \tv \tp
-                           \cand \cmatch \tp \cbrs]}
+    {\C\where{\clet \x \tvs {\Ca[\cexists \tvcs \cunif \tv \tp
+                           \cand \cmatch \tp \cbrs}}
 		      {\Cb[x[\theta \th U]]}]}
 \end{mathpar}
 

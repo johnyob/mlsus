@@ -82,10 +82,11 @@
 % \@ifundefined {ignorespacesafterend}
 %    {\def \ignorespacesafterend {\aftergroup \ignorespaces}
 
+
 \newenvironment{mathpar}[1][]
-  {$$\mpr@savepar \parskip 0em \hsize \linewidth \centering
-     \vbox \bgroup \mpr@prebindings \mpr@paroptions #1\ifmmode $\else
-     \noindent $\displaystyle\fi
+  {\mprparset{#1}$$\mpr@savepar \parskip 0em \hsize \linewidth \centering
+     \vbox \bgroup \mpr@prebindings \mpr@paroptions \mprpar@cmd
+     \ifmmode $\else \noindent $\displaystyle\fi
      \MathparBindings}
   {\unskip \ifmmode $\fi\egroup $$\ignorespacesafterend}
 
@@ -367,7 +368,15 @@
 %  typesetting (in particular  leftskip must preceed left and Left and
 %  rightskip must follow Right or right; vdots must come last 
 %  or be only followed by rightskip. 
-%  
+%
+
+%% Keys for mathpar env
+\def \mprparset #1{\setkeys{mprpar}{#1}}
+\define@key {mprpar}{nodisplayskip}[]
+        {\abovedisplayskip=\@z\belowdisplayskip=\@z}
+\define@key {mprpar}{mprset}[1]{\mprsep{#1}}
+\define@key {mprpar}{cmd}[1]{\def \mprpar@cmd{#1}}
+\let \mprpar@cmd \empty
 
 %% Keys that make sence in all kinds of rules
 \def \mprset #1{\setkeys{mprset}{#1}}
