@@ -119,7 +119,7 @@ Optional type annotations may sometimes but not always be omitted: the
 return type of overloaded data constructors can be annotated; polymorphic
 expressions can be annotated with a type scheme; for GADTs, the type of the
 \texttt{match} scrutinee and return type can be annotated to a rigid type
-which will be 
+which will be
 refined by type equalities in each branch. To each fragile construct
 corresponds a robust construct where this type annotation is mandatory. The
 robust constructs fit perfectly into the \ML framework, but are
@@ -1120,7 +1120,7 @@ derivation:
 
 \parcomment {Definition of shape}
 
-A shape $\Sh$ is a type with holes, written $\any \tvs \t$, where $\tvs$
+A shape $\Sh$ is a type with holes, written $\any \tvcs \t$, where $\tvcs$
 denotes the set of type variables representing the holes, is exactly the
 free variables of $\t$.  Hence, shaped are closed. They are treated up to
 $\alpha$-conversion.  We write $\bot$ for the shape $\any \tvc \tvc$, which
@@ -1133,9 +1133,10 @@ Shapes are equipped with an ordering---that of the standard
 instantiation ordering, defined by:
 \begin{mathpar}
   \infer[Inst-Shape]
-    {\tvas \disjoint \any \tvbs \tone}
-    {\any {\tvas} \tone \preceq \any {\tvbs} \tone \where {\tvas \is \tys}}
+    {\bar \tvcb \disjoint \any {\bar \tvca} \t}
+    {\any {\bar \tvca} \t \preceq \any {\bar \tvcb} \t \where {\tvas \is \tys}}
 \end{mathpar}
+\Xalistair{I quite like using $\tvc$ for shape type variables (as a convention)}
 When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
 actually equal. The trivial shape $\bot$ is the most general shape.
@@ -1159,37 +1160,33 @@ the shape is trivial.
 %% the variables as flexible unification variables.}
 
 \begin{definition}
-A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff: 
+A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff:
 \begin{enumerate}
   \item
-    $\t = \shapp \tys$
+    $\t = \shapp[\Sh] \tys$
   \item
-    $\forall \Shp \in \Shapesz, \t = \shapp[\shp] \typs
-    \implies \sh \preceq \shp$
+    $\forall \Shp \in \Shapesz, \t = \shapp[\Shp] \typs
+    \implies \Sh \preceq \Shp$
     %% For any other non-trivial decomposition $\t = \shapp[\shp] \typs$,
     %% $\sh \preceq \shp$
 \end{enumerate}
 \end{definition}
 
 \begin{theorem}
-Any nonvariable type $\t$ has a non-trivial principal shape $\sh$.
+Any nonvariable type $\t$ has a non-trivial principal shape $\Sh$.
 \end{theorem}
 
 \parcomment {Define canonical shape}
 
-\Xdidier
-[A shape $\any \tvs \t$ is canonical if the sequence of free variables
-$\tvs$ is sorted by some arbitrary ordering on bound variables]{I disagree:
-shapes to be $\alpha$-convertible, which does not preserve this
-ordering. Hence I reversed the definition.}  A principal shape $\any \tvs
-\t$ is canonical if the sequence of its free variables $\tvs$ appear
-in the order in which the variables occur in $\t$.\footnote{This order is
-well-defned for principal shapes, but not always well-defined for all
-shapes\Xdidier{What example do you have in mind?}}  We write $\sh$ for
-canonical principal shapes.
+A principal shape $\any \tvcs \t$ is canonical if the sequence of its free
+variables $\tvcs$ appear in the order in which the variables occur in
+$\t$\footnote{This order is well-defned for principal shapes, but not always
+well-defined for all shapes, for instance $\any {\tvca, \tvcb} (\tvca \to
+\tvcb) \to (\tvcb \to \tvca)$.}. We write $\sh$ for canonical principal
+shapes.
 
 We write $\shape \t = \sh$ for the canonical principal shape of $\t$ (if
-defined). Thus $\shape {\tys \Tapp}$ is $\any \tvs \tvs \Tapp$.
+defined). Thus $\shape {\tys \Tapp}$ is $\any \tvcs \tvcs \Tapp$.
 Canonical principal shapes can be seen as a generalization of type
 constructors, capable of coping with polytypes.
 For example, the polytype  $\tpoly {\all \tva
@@ -1206,8 +1203,9 @@ For example, the polytype  $\tpoly {\all \tva
 \end{mathpar}
 The canonical principal shape of a type governs its decomposition. We write
 $\decomp \t$ for the decomposition of $\t$ induced by its canonical
-principal shape, if it exists, and $\pshapp \tys$ for the recomposition of a
-type where $\sh$ is a canonical principal shape. \Xdidier {Too many
+principal shape.
+
+\Xdidier {Too many
 notations.  I replaced the canonical shape notation by forcing $\sh$ to only
 range over principal shapes and introduced $\zeta$ (we could have used $s$
 to range over any shape), or inline them. But it is reversible as I left the
@@ -1218,12 +1216,24 @@ later use in place of type constructors and $\zeta$ looks better when seen
 as a type constructor. Hence I would write $\Sh\; \tys$ rather then
 $\shapp[\Sh] \tys$ for a type where $\Sh$ is either a canonical shape or a
 type construtor $\F$, since they are isormophic to the nonpolytype shapes}
+\Xalistair{I agree with the notation switch -- I also agree with the
+suggestion to treat $\zeta$ more like a type constructor (though personally I
+find $\sh$ more readable that $\zeta$ as a shape).}
 
 \Xdidier {The notation $\shape \t \Defined$ is not longer defined before
 beeing used. Actually, it should be equivalent to $\t \in \Typesz$, which is
 a lighther more intuitive condition.}
+\Xalistair {I personally find $\shape \t \Defined$ clearer, it is obvious
+to me that $\decomp \t$ is defined when $\shape \t$ is defined. But I
+don't have a strong opinion on this. }
 
 \Xdidier {Where is uniformity discussed}
+\Xalistair {Uniformity isn't really required anymore since our
+matches predicate operates directly on principal decompositions of
+types as opposed to types and we control the structure of patterns (enforcing
+that they're 'shallow'). We could re-introduce it with an analogous
+property \eg if a pattern matches a decomposition, then it matches a more
+principal decomposition of the type with the $\theta$'s being equal?}
 \begin{version}{}
 Match functions $f$ operate on the principal decompositions, requiring the
 property of \emph{uniformity}:
@@ -1527,6 +1537,67 @@ resolutions are guided by contextual information rather than arbitrary
 choices.
 \end{example}
 
+\begin{example}
+Suspended constraints interact subtly with polymorphism
+and let-generalisation. We illustrate this by considering
+%
+% Partially generalised type schemes (example)
+% Backpropagation
+
+A further subtle---but crucial---feature of our semantics is its support for
+\emph{backpropagation}.
+%
+\Geninst-directional inference, as exemplified by \OCaml, performs inference
+in a strictly let-directional manner:
+each let-binding is inferred using only local information,
+\Xdidier{not quite true---monorphic parts are non locally inferred, but
+they are not part of the known information}\Xdidier{This repeats, less
+precsisely, I think from what has been told in the introduction. Perhaps,
+the introduction should be more detailed, but repeateing it here, which a
+different story could be confusing} and generalisation forms a boundary that
+prevents information from later use sites from influencing the generalised
+type--this is why polymorphic type information is considered `known'.
+
+\Xdidier
+{There is now  a variant of this example \ocaml$e_7$ in the introduction.
+Could we be reused it here instead of using another one?}
+For example, the following program is rejected by \OCaml:
+\begin{program}[input]
+  let e$_{11}$ = let getx r = r.x in getx {x = 1; y = 1}
+\end{program}
+Yet this example ought to be well-typed: the type of \code{f}'s
+argument is unambiguously the record type \code{three}. The reason
+this is ill-typed is that \geninst-directional inference cannot propagate
+the known type of the record (\ie \code{three}) \textbf{back} to
+\code{f}'s type.
+
+By contrast, our approach permits such refinement.
+The (simplified) constraint generated when typing \code{e}$_{11}$ is:
+\begin{mathpar}
+  \cexists \tv
+  \clet f \delta
+     {\cexists {\tvb, \tvc} \Parens {\strut
+        \cunif \delta {\tvb \to \tvc} \cand
+        \cmatchdots \tvb
+        }}
+    {\cinst f {(\mathsf{three} \to \tv)}}
+\end{mathpar}
+Here, type information flows from an instance constraint ($\cinst f
+{(\mathsf{three} \to \tv)}$) into a potentially generalisable variable
+$\tvb$ within the constraint abstraction.  At generalisation time, $\tvb$
+remains abstract. However, at the use site, the instance type \code{three}
+is known, and thus uniquely determines the shape of $\tvb$ to be
+$\mathsf{three}$. The unicity predicate can be used to show that no other
+shape can be inferred, without the constraint being unsatisfiable.
+
+This controlled backpropagation allows us to resolve the suspended constraint
+\emph{without} requiring $\tvb$ to be marked as a non-generalisable variable.
+
+\TODO{derivation}
+
+
+\end{example}
+
 \subsection{Technical details}
 
 Having motivated and illustrated the semantics of suspended constraints,
@@ -1592,70 +1663,6 @@ inference rules we have so far defined hold and are
 invertible.  We give the full details for this in \Cref{appendix:wf}.
 This ensures that the semantics is well-defined, even if not syntactically
 inductive.
-
-\paragraph{Interaction with polymorphism}
-
-\Xalistair{I'm not too sure this belongs here, but I think
-it is a tricky part of our semantics}
-
-Suspended constraints interact subtly with polymorphism
-and let-generalisation. Though our semantics appears modular,
-it is carefully crafted to give us the desired properties.
-%
-% Partially generalised type schemes (example)
-% Backpropagation
-
-A further subtle---but crucial---feature of our semantics is its support for
-\emph{backpropagation}.
-%
-\Geninst-directional inference, as exemplified by \OCaml, performs inference
-in a strictly let-directional manner:
-each let-binding is inferred using only local information,
-\Xdidier{not quite true---monorphic parts are non locally inferred, but
-they are not part of the known information}\Xdidier{This repeats, less
-precsisely, I think from what has been told in the introduction. Perhaps,
-the introduction should be more detailed, but repeateing it here, which a
-different story could be confusing} and generalisation forms a boundary that
-prevents information from later use sites from influencing the generalised
-type--this is why polymorphic type information is considered `known'.
-
-\Xdidier
-{There is now  a variant of this example \ocaml$e_7$ in the introduction.
-Could we be reused it here instead of using another one?}
-For example, the following program is rejected by \OCaml:
-\begin{program}[input]
-  let e$_{11}$ = let getx r = r.x in getx {x = 1; y = 1}
-\end{program}
-Yet this example ought to be well-typed: the type of \code{f}'s
-argument is unambiguously the record type \code{three}. The reason
-this is ill-typed is that \geninst-directional inference cannot propagate
-the known type of the record (\ie \code{three}) \textbf{back} to
-\code{f}'s type.
-
-By contrast, our approach permits such refinement.
-The (simplified) constraint generated when typing \code{e}$_{11}$ is:
-\begin{mathpar}
-  \cexists \tv
-  \clet f \delta
-     {\cexists {\tvb, \tvc} \Parens {\strut
-        \cunif \delta {\tvb \to \tvc} \cand
-        \cmatchdots \tvb
-        }}
-    {\cinst f {(\mathsf{three} \to \tv)}}
-\end{mathpar}
-Here, type information flows from an instance constraint ($\cinst f
-{(\mathsf{three} \to \tv)}$) into a potentially generalisable variable
-$\tvb$ within the constraint abstraction.  At generalisation time, $\tvb$
-remains abstract. However, at the use site, the instance type \code{three}
-is known, and thus uniquely determines the shape of $\tvb$ to be
-$\mathsf{three}$. The unicity predicate can be used to show that no other
-shape can be inferred, without the constraint being unsatisfiable.
-
-This controlled backpropagation allows us to resolve the suspended constraint
-\emph{without} requiring $\tvb$ to be marked as a non-generalisable variable.
-
-\TODO{derivation}
-
 \paragraph{Summary}
 
 To recap, the semantics of suspended constraints is governed by three
@@ -1742,15 +1749,8 @@ resolution, capable of both deferring and resolving shape information as
 determined by the constraint context. Importantly, the same style of contextual
 reasoning extends naturally to the static semantics of terms.
 
-\section{The language}
+\section{The \OML calculus}
 \label{sec:language}
-
-\Xdidier{We need to add structure to this section, with subsections}
-
-\Xdidier {We need to define $\G \th \t$}
-\Xalistair {The definition is entirely standard? We could add an
-`ok' or `wf' suffix to the judgement to make it clearer that it is
-well-formedness}
 
 \parcomment {Running example: tuple projection disambiguation}
 
@@ -1761,16 +1761,6 @@ constraint generation translation, we must first define a formal
 specification in the form of a calculus and accompanying type
 system. Surprisngly, identifying an appropriate declarative type system to
 use as a specification is itself an interesting problem!
-
-\parcomment {Why is it hard? Examples of prev work:}
-
-\Xdidier {This paragraph is repeating (or should be added to) the
-introduction}
-Much work has been done on various extensions of \ML with features such as
-static overloading \citep{TODO} and first-class polymorphism
-\citep{TODO}. However, many of these approaches either fail to ensure
-principality or require intricate menachisms -- such as labelled types -- to
-do so.
 
 \parcomment {Why do naive approaches not guarantee principal types.}
 
@@ -1788,7 +1778,7 @@ premise. This multiplicity undermines principality.
 \parcomment {Partial annotations (shapes) to the rescue!}
 
 Our first insight is that partial type annotations often suffices to
-recover principality. We refer to these annotations as \textit{shapes}. For
+recover principality. For
 example, explicitly annotating the tuple projection with its arity, as in
 $\exfield \e n j$, disambiguates the expression:
 \begin{mathpar}
@@ -1800,36 +1790,22 @@ Yet, requiring users to write such annotations manually is impractical.
 
 \parcomment {Inference of shapes}
 
-Our solution is to permit \textit{inference} of shapes, provided that the
-inferred annotation is \textit{uniquely determined by context}.  This
-approach ensures principality by construction and yields a clear
-specification with predictable annotability requirements for the everyday
-programmer.
-
-\parcomment {A note on stratified type inference}
-
-\Xdidier {This paragraph should also fit into the introduction, I think}
-The idea of leveraging a principled core language with inference of shapes
-is not novel. \textit{Stratified type inference}
-by~\citet{Pottier-Regis-Gianas/stratified@popl06} pursued a similar goal---in
-the context of generalized algebraic data types. It operates in two phases:
-the first phase transforms the program into an intermediate language and
-generates shapes using \textit{bidirectional typing}; the second performs
-\HM type inference for the intermediate language. While the second phase is
-sound, complete and enjoys principal types, the overall system remains
-incomplete due to the heuristic nature of the first phase.
+Our solution is to permit \textit{inference} of such information, provided
+that the inferred annotation is \textit{uniquely determined by context}.  This
+approach ensures principality by construction and yields a clear specification
+with predictable annotability requirements for the everyday programmer.
 
 \parcomment {How do we specify our intuition?}
 
 Specifying the notion of unique inferrability from context is
 tricky. Luckily, we can leverage many of the formal methods developed in the
 previous section---in particular, the manipulation of contexts within the
-derivation=--to prove uniqueness of shapes. Allowing us to
+derivation---to prove uniqueness of these partial annotations. Allowing us to
 systematically replace the ambiguous constructs with their disambiguated
 counterparts:
 \begin{mathpar}
   \inferrule*
-    {\eshape \E e {\Pi\iton \tvs} \\ \G \th E[\exfield \e n j] : \t}
+    {\eshape \E e {\any \tvcs \Pi\iton \tvcs} \\ \G \th E[\exfield \e n j] : \t}
     {\G \th \E[\efield \e j] : \t}
 \end{mathpar}
 The intuition here is that the context $E$ is sufficiently large to
@@ -1844,34 +1820,36 @@ resolving $\efield e j$ by assuming the tuple has arity $j$. While
 appealing, such defaults compromise principality. We return to this
 pragmatic tradeoff in \cref{sec:implementation}.
 
-\subsection{The language and its core-\ML typing rules}
+\subsection{Syntax}
 
-\begin{bnffig}{fig/syntax}{Syntax of types and terms}
+\begin{bnffig}{fig/syntax}{Syntax of \OML}
 \entry[Terms]{\e}{
   x \and
   () \and
   \efun x e \and
   \eapp \eone \etwo \and
   \elet x \eone \etwo \and
-  (e : \exi \tvs \t) \andcr
-  \erecord {\overline{\elab = e} } \and
-  \efield e \elab \and
-  \exfield e \F \elab \andcr
+  \eannot \e \tvs \t \andcr
+  \erecord {\overline{\el = \e} } \and
+  \efield e \el \andcr
    (\eone, \ldots, \en) \and
    \efield e j \and
    \exfield e n j \andcr
    \epoly e \and
-   \epoly[\exi \tvs. \ts] e  \and
+   \epoly[\exi \tvs \ts] e  \and
    \einst e \and
    \exinst e \tvs \ts
+}\\
+\entry[Labels]{l}{
+  \elab \and \elab / \T
 }\\[1ex]
 \entry[Types]{\t}{
    \tv \and
    1 \and
    \tya \to \tyb \and
-   \tys \F \and
-   \Pi_{i = 1}^n \ti \and
-   \tpoly {\exi \tvs \ts}
+   \tys \T \and
+   \Pi \iton \ti \and
+   \tpoly \ts
 }\\
 \entry[Type schemes]{\ts}{
      \t \and
@@ -1889,38 +1867,36 @@ pragmatic tradeoff in \cref{sec:implementation}.
 In \cref {fig/syntax}, we give the grammar for our calculus. Terms include
 all of the \ML calculus: variables $x$, the unit literal $\eunit$,
 lambda-abstractions $\efun x e$, applications $\eapp \eone \etwo$,
-annotations $(e
-: \t)$ and let-bindings $\elet x \eone \etwo$. Our extensions include:
+annotations $\eannot \e \tvs \t$ and let-bindings $\elet x \eone \etwo$.
+Our extensions include:
 \begin{enumerate}
 \item
   Constructor and record label disambiguation, modelled using record
-  literals $\erecord { \labone = \eone; \ldots; \labn = \en }$ and field
+  literals $\erecord { \ela = \eone; \ldots; \el_n = \en }$ and field
   projections $\efield e l$.
 
 \item
   Tuples $(\eone, \ldots, \en)$ with overloaded tuple projections
-  $\efield e i$.
+  $\efield e j$.
 
 \item
   For semi-explicit first-class polymorphism, we have the boxing construct
   $\epoly \e$  and the unboxing construct $\einst e$.
 
 \end{enumerate}
-Each construct that endangers principality (written $\e^i$) has an
-explicitly annotated counterpart (written $\e^x$) that is $\erecord
-{\overline{\ell / \F = \e}}$, $\eproj [\F] \e \elab$, $\eproj [n] \e j$,
-$\epoly [\exi \tvs \ts] \e$, or $\einst [\exi
-\tvs \ts] \e$.
+Each construct that endangers principality (written $\e^i$ or $\el^i$) has an
+explicitly annotated counterpart (written $\e^x$ or $\el^x$) that is
+$\eproj [n] \e j$, $\epoly [\exi \tvs \ts]
+\e$, $\einst [\exi \tvs \ts] \e$, or $\elab / \T$ for record labels.
 
 \paragraph{Types}
 
-As usual, types are split into monotypes (or just types) and type
-schemes. Types $\t$ include the variables $\tv$, the unit type $1$, function
-types $\tone \to \ttwo$, $n$-ary product types $\Pi_{i = 1}^n \ti$ and
-nominal record types $\tys \F$. Type schemes $\sigma$ extend monotypes
-allowing the universal quantification of zero or more type variables $\all
-\tvs \t$. We write $\tv, \tvb, \tvc$, \etc for type variables.  We also have
-polytypes \textit{without the annotations} $[\ts]$ as monotypes.
+As usual, types are split into monotypes (or just types) and type schemes.
+Types $\t$ include the variables $\tv$, the unit type $1$, function types
+$\tone \to \ttwo$, $n$-ary product types $\Pi \iton \ti$ and nominal
+record types $\tys \T$. Type schemes $\sigma$ extend monotypes allowing the
+universal quantification of zero or more type variables $\all \tvs \t$. We
+also have polytypes \textit{without the annotations} $[\ts]$ as monotypes.
 
 \paragraph{Typing contexts}
 
@@ -1930,10 +1906,43 @@ presentation of \ML explicitly tracks the type variables in scope in the type
 context $\G$. (This may differ from traditional presentations that permit type
 variables to ``float around''.)
 
+\paragraph{Shapes}
 
-\paragraph{Typing}
+The structure of principal shapes induced by syntax of types
+in \cref{fig/syntax} is a shape $\any \tvcs \t$ where
+\begin{itemize}
 
-\begin{mathparfig}{fig/typing}{Typing rules}
+\item $\tvcs$ are the linear free variables of $\t$ \ie each type variable
+  $\tvc$ in $\tvcs$ occurs exactly once in $\t$
+
+\item
+  $\t$ is shallow, which means the following:
+\begin{itemize}
+
+\item
+  when $\t$ is not a polytype, all subterms of $\t$ are variables \ie $\tvca
+    \to \tvcb$, $\Pi\iton \tvci$, or $\tvcs \T$
+
+\item
+  when $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, then all subterms of
+  $\tsp$ that do not lead to a polymorphic variable $\tv$ in $\tvs$
+  are a variable in $\tvcs$.
+
+\end{itemize}
+\end{itemize}
+
+
+\subsection{Typing rules}
+
+As usual, the main typing judgment $\G \th \e : \ts$ states that in context
+$\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
+{fig/typing}.  They use auxiliary typing judgemnents $\G \th \elab = \e : \t$
+and $\G \th \el : \t \to \tp$ for the typing of record assignments and
+label instantiations respectively. The judgement $\G \th \t$, defined in
+\cref{fig/ty-wf}, is used to ensure the well-formedness of $\t$ under the
+context $\G$.
+
+\begin{mathparfig}{fig/typing}{Typing rules of \OML}
   \inferrule[Var]
     {x : \sigma \in \G}
     {\G \th x : \sigma}
@@ -1961,9 +1970,9 @@ variables to ``float around''.)
     {\G \th e : \tfor \tv \sigma}
 
   \inferrule[Inst]
-    {\G \th e : \sigmaone \\
-     \G \th \sigmaone \leq \sigmatwo}
-    {\G \th e : \sigmatwo}
+    {\G \th e : \tfor \tv \ts \\
+     \G \th \t}
+    {\G \th e : \tv \where{\tv \is \t}}
 
   \inferrule[Let]
     {\G \th \eone : \sigma \\
@@ -1980,105 +1989,114 @@ variables to ``float around''.)
     {\G \th \exfield \e n j : \tj}
 
   \inferrule[Proj-I]
-    {\eshape E e {\Pi\iton \tvs} \\
+    {\eshape E e {\any \tvcs \Pi\iton \tvcs} \\
      \G \th E[\exfield e n j] : \t}
     {\G \th E[\efield e j] : \t}
-
-  %% \inferrule [Use-X]
-  %%   {\G \th \e : \tpoly {\ts \where {\tvs \is \tys}}}
-  %%   {\G \th \einst[\exi \tvs \ts] \e : \ts \where {\tvs \is \tys}}
-
-  %% \inferrule [Use-I]
-  %%   {\eshape \E \e {\tpoly {\ts \where {\tvs \is \tys}}} \\
-  %%    \G \th \E \where {\einst[\exi \tvs \ts] \e : \t}}
-  %%   {\G \th \E \where {\einst \e} : \t}
 
   \inferrule [Poly-X]
     {\G \th \e : \ts\where {\tvs \is \tys}}
     {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
 
   \inferrule [Poly-I]
-%%     {\Eshape \E \e {\tpoly {\exi \tvs \ts}} \\
-%%      \G \th \E \where {\epoly[\exi \tvs \ts] \e} : \t}
-%%     {\G \th \E \where {\epoly \e} : \t}
-    {\Eshape \E \e {{\exi \tvs \tpoly \ts}} \\
-     \G \th \E [\epoly[\exi \tvs \ts] \e] : \t}
+    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
+     \G \th \E [\epoly[\exi \tvcs \ts] \e] : \t}
     {\G \th \E [\epoly \e] : \t}
 
   \inferrule [Use-X]
     {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
-    {\G \th \exinst e \tvs \sigma : \ts \where {\tvs \is \tys}}
+    {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
 
   \inferrule [Use-I]
-    {\eshape E  \e {\exi \tvs \tpoly \ts} \\
+    {\eshape E  \e {\any \tvcs \tpoly \ts} \\
      \G \th E[\exinst e \tvs \ts] : \t}
     {\G \th E[\einst e] : \t}
 
   \inferrule[Rcd-Assn]
     {\G \th \e : \t \\
-     \G \th \elab \leq \t \to \tys \Fapp}
-    {\G \th \elab = \e : \tys \Fapp}
+     \G \th \el : \t \to \tp}
+    {\G \th \el = \e : \tp}
 
   \inferrule[Rcd]
-    {\parens{\G \th \labi = \ei : \t}\iton}
-    {\G \th \erecord {\elaba = \eone; \ldots; \elab_n = \en} : \t}
+    {\parens{\G \th \eli = \ei : \t}\iton \\
+     \G \th \bar \el \uni \t}
+    {\G \th \erecord {\ela = \eone; \ldots; \el_n = \en} : \t}
 
   \inferrule[Rcd-Proj]
     {\G \th \e : \tp \\
-     \G \th \elab \leq \t \to \tp}
-    {\G \th \efield \e \elab : \t}
+     \G \th \el : \t \to \tp \\
+     \G \th \el \uni \t }
+    {\G \th \efield \e \el : \t}
 
   \inferrule[Lab-X]
-    {\elab / \F : \ts \in \D \\
-     \G \th \ts \leq \tsp}
-    {\G \th \elab / \F \leq \tsp}
+    {\Omega(\elab / \T) = \tfor \tvs \t \to \tvs \T \\
+     \G \th \tys}
+    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \tys \T}
 
   \inferrule[Lab-I]
-    {\Lshape \Lab \elab \F \\
-      \G \th \Lab[\elab / \F] : \t}
+    {\Lshape \Lab \elab \T \\
+      \G \th \Lab[\elab / \T] : \t}
     {\G \th \Lab[\elab] : \t}
 
+  \inferrule[Lab-!]
+    {\bar \el \uni \T \in \labenv \\
+     \G \th \tys}
+    {\G \th \bar \el \uni \tys \T}
+
+  \inferrule[Lab-?]
+    {\G \th \t}
+    {\G \th \bar \el \uni \t}
 \end{mathparfig}
 
 \begin{mathparfig}
-  {fig:inst-rel}
-  {Instantiation relation $\mlsub \ts \tsp$}
+  {fig:ty-wf}
+  {Well-formedness of types}
+  \inferrule[Var-Wf]
+    {\tv \in \G}
+    {\G \th \tv}
 
-  \infer[Inst-Refl]
+  \inferrule[Unit-Wf]
     {}
-    {\mlsub \t \t}
+    {\G \th \tunit}
 
-  \infer[Inst-ForallL]
-    {\mltyp \t \\
-     \mlsub {\ts[\tv := \t]} \tsp}
-    {\mlsub {\tfor \tv \ts} \tsp}
+  \inferrule[Arr-Wf]
+    {\G \th \t \\ \G \th \tp}
+    {\G \th \t \to \tp}
 
-  \infer[Inst-ForallR]
-    {\tv \disjoint \G \\
-      \mlsub [\G, \tv] \ts \tsp}
-    {\mlsub \ts {\tfor \tv \tsp}}
+  \inferrule[Prof-Wf]
+    {(\G \th \ti)\iton}
+    {\G \th \Pi\iton \ti}
+
+  \inferrule[Rcd-Wf]
+    {(\G \th \ti)\iton \\
+     \T \in \dom \Omega}
+    {\G \th \tys \T}
+
+  \inferrule[Poly-Wf]
+    {\G \th \ts}
+    {\G \th \tpoly \ts}
+
+  \inferrule[Forall-Wf]
+    {\G, \tv \th \ts \\
+     \tv \disjoint \G}
+    {\G \th \tfor \tv \ts}
 \end{mathparfig}
 
-As usual, the main typing judgment $\G \th \e : \ts$ states that in context
-$\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on
-\cref {fig/typing}.  They use auxiliary typing judgemnents $\G \th \elab :
-\ts$ and $\G \th \elab = \e : \ts$ and an instance typing judgement
-$\mlsub [\G] \ts \tsp$.
 
 \parcomment {Simple typing rules explained}
 
 \Xdidier {I am not sure that we need and will have space to read in details
 the typing rules of Core \ML}
+\Xalistair{Perhaps, I added them for completeness}
 
 Rule \Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
 Function types are introduced via lambda abstractions: in Rule \Rule{Fun}, the
-system guesses a well-formed type $\tone$ for the type of $x$, typechecks
-the body $e$ is under the extended context $\G, \x : \tya$ producing the
-return type $\tyb$, and assigns the abstraction the function type
-$\tya \to \tyb$. Conversely, function types are eliminated by applications;
-in Rule \Rule{App}, the type of the argument must match the function's parameter
-type $\tya$ and application returns the type $\tyb$. Rule \Rule{Unit} asserts
-that $()$ has the unit type $\tunit$.
+system guesses a well-formed type $\tone$ for the type of $x$, typechecks the
+body $e$ is under the extended context $\G, \x : \tya$ producing the return
+type $\tyb$, and assigns the abstraction the function type $\tya \to \tyb$.
+Conversely, function types are eliminated by applications; in Rule \Rule{App},
+the type of the argument must match the function's parameter type $\tya$ and
+application returns the type $\tyb$. Rule \Rule{Unit} asserts that $\eunit$ has
+the unit type $\tunit$.
 
 \parcomment {Gen/Inst explained}
 
@@ -2086,46 +2104,29 @@ Rules \Rule{Gen} and \Rule{Inst} correspond to implicit
 \textit{generalization} and \textit{instantiation} respectively.
 Generalization universally quantifies a type variable $\tv$, introducing it
 as a fresh polymorphic variable in the typing context. In \Rule{Inst}, we
-specialize a type scheme $\tsa$ to $\tsb$ using the \emph{instantiation
-relation} given in \cref{fig:inst-rel}.  This expresses that one type scheme
-is a polymorphic generalization of another.
-
-\parcomment {Instantiation relation}
-
-\Xdidier {Is there a reason to use an intermediate instantiation relation,
-rather than just a Rule \Rule {Inst}---since there is already a rule \Rule
-{Gen}, which we must keep?}
-
-Rules \Rule{Inst-Refl} trivially asserts that a monotype is an instance of
-itself. In \Rule{Inst-ForallL}, a universally quantified type on the left may be
-instantiated by substituting $\tv$ with any monotype to match the right hand
-side. Conversely, \Rule{Inst-ForallR} has a type scheme $\tfor \tv \ts$ on the
-right-hand side. In this case, we introduce a fresh polymorphic type variable
-$\tv$ into the context to test whether the $\tsa$ is an instance of $\tsb$
-under any instantiation of $\tv$---this is essentially a form of skolemization.
+specialize a type scheme $\tfor \tv \ts$ to $\ts \where{\tv \is \t}$,
+substituting $\tv$ for an arbitrary monotype $\t$.
 
 \parcomment {Let rule}
 
-Let-polymorphism is handled by the \Rule{Let} rule, where a \textit{polymorphic}
-term can be bound. This allows a single definition to be instantiated differently
-at each use site---an essential feature of \ML. In this rule, the term $\eone$
-has a polymorphic type scheme $\ts$, adds $\x : \ts$ into the context $\G$ to
-typecheck $\etwo$.
+Let-polymorphism is handled by the \Rule{Let} rule, where a
+\textit{polymorphic} term can be bound. This allows a single definition to be
+instantiated differently at each use site---an essential feature of \ML. In
+this rule, the term $\eone$ has a polymorphic type scheme $\ts$, adds $\x :
+\ts$ into the context $\G$ to typecheck $\etwo$.
 
 \parcomment {Annotations}
 
 Annotations $(e : \exi \tvs \t)$ ensures that the type of $e$ is (an instance
-of) the type $\t$. The type variables $\tvs$ are
-\emph{flexibly} (or existentially) bound in $\t$, meaning that $\tvs$ may be
-unified with some types $\tys$ to produce a well-typed term. For instance,
-the term $(\efun x x + 1 : \exi \tv
-\tv \to
-\tv)$ is well-typed with $\tv := \tint$ in \Rule{Annot}.
+of) the type $\t$. The type variables $\tvs$ are \emph{flexibly} (or
+existentially) bound in $\t$, meaning that $\tvs$ may be unified with some
+types $\tys$ to produce a well-typed term. For instance, the term $(\efun x x
++ 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv := \tint$ in
+\Rule{Annot}.
 
 \parcomment {Contextual rules (Poly-*, Use-*, Proj-*)}
 
-\subsection {Shape-aware typing rules}
-
+\paragraph{Polytypes and overloaded tuples}
 The typing rules for fully annotated terms ($\e^x$) are unsurprising.
 However, typing rules for terms with omitted type annotations are
 non-compositional as they depend on a surrounding one-hole context
@@ -2139,138 +2140,13 @@ We then request that (the shape of) the annotation is fully determined from
 context, either from the type of the expression, which we write $\eshape \E
 \e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
 
-\parcomment {Shapes}
-
-%% exchange the boolean definition to see the old definition
-
-\newcommand{\ShapesNewVersion}{\True}%\False
-
-\paragraph{Shapes\ShapesNewVersion{}{--- old definition}}
-
-\begin{version}{\Not\ShapesNewVersion}
-Shapes are one of the following form:
-\begin{mathpar}
-\begin{bnfgrammar}[\def \and {\wide\mid}]
-\entry{\sh}{
-       \tunit
-  \and \tva \to \tvb
-  \and \Pi\iton \tvs
-  \and \tvs \F
-  \and \exi \tvs \tpoly \ts
-}
-\end{bnfgrammar}
-\end{mathpar}
-\Xalistair{This syntax is a bit odd for polytypes as no other shape quantifies
-over its monomorphic part}\Xdidier{Initially, shapes where just
-constructors for me---not shallow terms}\Xdidier{The syntax is not enough:
-we should ensure that all type variables are disjoint, so that shapes are
-equivalent to constructors..., even for polytypes thanks to the existence of
-a canonical representation.}\Xdidier {Shapes should be closed, or we should
-be clearer with $\alpha$-conversion.}
-
-The shape of a variable is undefined (as in \cref{fig:shape-fn-def-typing}).
-The shape of the unit type $\tunit$ is $\tunit$. Monotypes that contain
-nested types, such as the function type $\t \to \tp$, have the shape of
-their top-level type constructor with their children replaced by variables,
-\ie $\tva \to \tvb$.
-%
-The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
-$\tpoly \ts$ abstracted over the monomorphic parts. It is the minimal
-closed type expression $\exi \tvas {\tpoly {\all \tvbs \t}}$ (up to the
-ordering of variables) such that there exists types $\tys$ such that
-$\tfor \tvbs \t \where {\tvas \is \tys}$ is equal to $\ts$.
-%
-Closed, means that $\tvas$ is equal to the free type variables
-$\ftv \ts$ of $\ts$. The minimality condition is equivalent to the fact that
-any suffix of a non-variable node in $\t$ leads to a polymorphic type
-variable, \ie a variable in $\tvbs$.
-%
-When $\exi \tvs \tpoly \ts$ is a polytype skeleton, we write $\cpoly \tys
-\ts$ for the polytype $\tpoly \ts \where {\tvs \is \tys}$.
-
-\begin{mathparfig}[t]
-{fig:shape-fn-def-typing}
-{Definition of $\deshape \t a$, a partial function from types to
-shape-substitution pairs $\angles {\sh, \theta}$, extended for all
-types defined in the calculus.
-}
-  \deshape \tv \eqdef \bot
-
-  \deshape 1 \eqdef 1
-
-  \deshape {\t \to \tp} \eqdef
-      \angles {\tv \to \tv', \where {\tv \is \t, \tv' \is \tp}}
-
-  \deshape {\Pi\iton \tys} \eqdef
-      \angles {\Pi\iton \tvs, \where {\tvs \is \tys}}
-
-  \deshape {\tys \F} \eqdef
-      \angles {\tvs \F, \where {\tvs \is \tys}}
-
-  \deshape {\tpoly \ts} \eqdef
-      \angles {\exi \tvs \tpoly \ts, \where {\tvs \is \tys}}
-\end{mathparfig}
-
-\Xalistair{I feel the definition for $\tpoly \ts$ is not formal enough}
-
-\end{version}
-\begin{version}{\True}
-We use letter $\sh$ to range over shapes, which are a generalization of the
-notion of type constructor $\F$ to cope with polytypes.  As shape is an
-existentially closed quantified linear shallow type $\any \tvs \t$.
-That is,
-\begin{itemize}
-
-\item
-  $\tvs$  $\tvs$ are the free variables of $\t$
-
-\item
-  $\t$ is linear, \ie each type variable $\tv$ in $\tvs$ occurs eactly only
-  once in $\t$,
-
-\item
-  $\t$ is shallow, which means the following:
-\begin{itemize}
-
-\item
-  when $\t$ is not a polytype, all subterms of $\t$ are variables.
-
-\item
-  when $\t$ is a polytype $\tpoly {\all \tvbs \tsp}$, then all subterms of
-  $\tsp$ that do not lead to a polymorphic variable $\tvb$ in $\tvbs$
-  are a variable in $\tvs$.
-
-\end{itemize}
-
-\end{itemize}
-For example, the shape of a type $\tys \F$ is $\any \tvs \tvs \F$ where
-$\tvs$ is a tuple of disjoint variables of length the arity of $\F$.  The
-shape of $\tpoly {\all \tv {(\tv \to \tv) \to \tvb \to \tvb}}$ is $\any \tvb
-{\tpoly {\all \tv {(\tv \to \tv) \to \tvbp}}}$.  The shape is defined up to
-the ordering of quantifiers. We may require $\tvs$ to be be in their order
-of appearance in $\t$.
-
-The shape of a variable is undefined and we write $\deshape \t = \bot$ or
-$\deshape \t \Undefined$.  The shape of a nonvariable monotype $\t$ is always
-defined, which we write $\deshape \t \Defined$ and is unique up
-$\alpha$-renaming. We may then write $\deshape \t = \sh$.
-
-A nonvariable monotype can be uniquely decomposed into a pair $\deshaped
-[\tvs] \tyz \tys$ such that $\t$ is equal to $\tyz \where{\tvs \is \tys}$ and
-$\any \tvs \tyz$ is the shape of $\t$.  We then write $\t = \deshaped
-[\tvs] \tyz \tys$.
-
-\end{version}
-
-\paragraph {Unavoidable shapes}
-
 In order to describe the judgments $\eshape \E \e \sh$ and
 $\Eshape \E \e \sh$, we introduce a cast operation $\ecast \e \t \tp$
 that allows an expression $\e$ of type $\t$ to be seen with type $\tp$.
 That is the typing rule for casts is:
 \begin{mathpar}
   \inferrule[Cast]
-    {\G \th e : \t}
+    {\G \th e : \t \\ \G \th \t, \tp}
     {\G \th \ecast e \t \tp : \tp}
 \end{mathpar}
 Casts expressions are not allowed on source terms and are just a device for
@@ -2280,14 +2156,14 @@ shape to be determined from the type of a context or an expression:
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
 \eshape E \e \sh \Eqdef
-  \forall \G, \t, \tp, \uad
-  \G \th E \where {\ecast \e \typ \typp} : \t \wedge \deshaped \typ \downarrow
-      \wide\implies \deshaped \typ = \sh
+  \forall \G, \t \in \Types, \tp, \typp \in \Ground, \uad
+  \G \th E \where {\ecast \e \typ \typp} : \t
+      \wide\implies \shape \tp = \sh
 \\[1ex]
 \Eshape E \e \sh \Eqdef
-  \forall \G, \t, \tp, \uad
-      \G \th E\where{\ecast \e \typ \typp} : \t \wedge \deshaped \typp \downarrow
-      \wide\implies \deshaped \typp = \sh
+  \forall \G, \t \in \Types, \tp, \typp \in \Ground, \uad
+      \G \th E\where{\ecast \e \typ \typp} : \t
+      \wide\implies \shape \typp = \sh
 \end{tabular}}
 \end{mathpar}
 These states that the shape $\sh$ of expression $\e$ in context $\E$ is
@@ -2297,8 +2173,6 @@ $\E$ in the latter case.
 %% Shapes are equal modulo alpha equivalence and the removal of useless
 %% polymorphic type variables. They do not have useless existential variables.
 
-\paragraph {Structural tuples and polytypes}
-
 % Expression-based implicit rules
 
 The implicit rule \Rule{Proj-I} types the projection $\eproj \e j$ provided the
@@ -2307,88 +2181,117 @@ Similarly, \Rule{Use-I} permits instantiating a polytype in $\einst e$ if
 the context $\E$ infers that the type of $\e$ must be a polytype with skeleton
 $\exi \tvs \tpoly \ts$. The rule \Rule{Poly-I} types the implicit boxing
 construct $\epoly \e$ by \emph{checking} the expected type of $\epoly \e$ in the
-context $\E$ is a polytype with the skeleton $\exi \tvs \tpoly \ts$. This rule
+context $\E$ is a polytype with the shape $\any \tvcs \tpoly \ts$. This rule
 differs from the previous two as the shape is determined by the expected type
 within the context as opposed to the inferred type of $\e$.
 
 
-\paragraph {Nominal records}
-
 % Labels
 
-We adopt a similar non-compositional approach for elaborating overloaded labels,
-whether in record projection ($\efield e \elab$) or record construction
-($\erecord {\overline{\elab = \e}}$), although the definitions are slighly
-more involved.  Here, a one-hole label context $\Lab$
-provides the surrounding context in which a label $\elab$ may appear:
+\paragraph{Overloaded record labels}
+% Contextual rules
+We adopt a similar non-compositional approach for elaborating overloaded
+labels, whether in record projection ($\efield e \elab$) or record
+construction ($\erecord {\overline{\elab = \e}}$), although the definitions
+are slighly more involved.  Here, a one-hole label context $\Lab$ provides the
+surrounding context in which a label $\elab$ may appear:
 \begin{mathpar}
 \begin{bnfgrammar}
 \entry [Label contexts]{\Lab}{
     \E \where {\e.\square} \and
     \E \where
          {\erecord
-            {\elaba = \eone; \ldots; \square = \ei ; \ldots; \elab_n = \en}
+            {\ela = \eone; \ldots; \square = \ei ; \ldots; \el_n = \en}
          }
 }
 \end{bnfgrammar}
 \end{mathpar}
-We then require that the record type $\F$ associated with $\elab$ is
-uniquely determined.  This is expressed by the judgment $\Lshape \Lab \elab
-\F$, which holds if either:
-\begin{enumerate*}
-\item \label{enum/lab/1}
-  the label $\elab$ can be uniquely resolved to a record type $\F$ in the
-  typing context, written $\eshape \Lab {\elab ~} \F$;
-\item \label{enum/lab/2}
-  the context $\Lab$ infers that $\elab$ must be instantiated to the record
-  type $\tys \Fapp$, written $\Eshape \Lab \elab \F$.
-\end{enumerate*}
-We thus define:
-\begin{mathpar}
-  \Lshape \Lab \elab \F \Wide \eqdef
-     \eshape \Lab \elab \F \vee \Eshape \Lab \elab \F
-\end{mathpar}
-Case~\ref {enum/lab/1} applies when the record type is uniquely determined by the
-syntax of the context, without needing shape inference. There are two main
-subcases:
-\begin{enumerate*}[label*=\textbf{(\alph*)}]
-\item
-  in a record projection context $\E[\e.\elab]$, if the label $\elab$ is not
-  overloaded, then the global record typing context $\labenv$ assigns a
-  unqiue record type $\F$ to $\elab$;
 
-\item
-  in a record expression $\E [\erecord {\elab_1 = \eone; \ldots; \elab_n =
-  \en}]$, if the set of labels ${ \elab_1, \ldots, \elab_n }$ uniquely
-  identifies a record type $\F$ in the typing context $\labenv$.
-\end{enumerate*}
-\begin{mathpar}
-  \infer[Lab-Uniq-Proj]
-    {\elab \mathop{!} \F \in  \labenv}
-    {\eshape {\E[\e.\square]} \elab \F}
+As with our contextual rules for expressions, we define two rules for labels.
+\Rule{Lab-X} handles explicitly annotated labels $\elab / \T$ by instantiating
+the type scheme $\tfor \tvs \t \to \tvs \T$ associated with $\elab$ in label
+environment $\labenv$. \Rule{Lab-I} handles unannotated labels by elaborating
+$\elab$ to $\elab / \T$ if the context $\Lab$ uniquely infers the record type
+$\T$ for $\elab$ and the resulting elaboration is well-typed.
 
-  \infer[Lab-Uniq-Rcd]
-    {\bar \elab \mathop{!} \F \in \labenv}
-    {\eshape
-      {\E[\erecord
-            {\elaba = \eone; \ldots; \square = \ei; \ldots;  \elab_n = \en }]}
-      \elab \F }
-\end{mathpar}
-To support case~\ref {enum/lab/2} case, we introduce a casting label judgment
-(\Rule{Lab-Cast}) that behaves analogously to the cast operator in
-expression contexts. It enables us to assume that a hole $\square : \t$ in
-label position may be instantiated to a function type $\tp \to \t$:
+The unicity of the inferred record type is captured by the judgement
+$\Lshape \Lab \elab \T$. The definition fits into the framework we established
+for expressions above by introducing a label cast operator $\elcast \elab \t$,
+analogous to the cast operator for expressions, which asserts that the
+label is instantiated to the type $\tp \to \t$ for any $\tp$.
 \begin{mathpar}
   \infer[Lab-Cast]
-    {}
-    {\G \th \square : \t \leq \tp \to \t}
+    {\G \th \tp, \t}
+    {\G \th \elcast \elab \t : \tp \to \t}
 
-\Eshape \Lab \elab \F \Wide\eqdef
-   \forall \G, \t, \tp, \G \th \Lab[\square : \tp] : \t \implies
-        \deshaped \tp.1 = \tvs \F
+\Eshape \Lab \elab \T \Wide\eqdef
+   \forall \G, \t \in \Types, \tp \in \Ground,
+     \G \th \Lab[\elcast \elab \tp] : \t \implies \shape \tp = \any \tvcs \tvcs \T
 \end{mathpar}
 
-% Contexts can be the entire term
+% Rules
+\Rule{Rcd} types a record $\erecord {\overline{\el = \e}}$ as a record type
+$\t$ provided that each field assignment $\el = \e$ can be assigned the record
+type $\t$.
+\Rule{Rcd-Assn} checks that $\e$ has the appropriate field type in $\el = \e$
+and returns the instantiated record type $\tp$ for the label $\el$.
+\Rule{Rcd-Proj} types the projection $\efield \e \el$ by checking that the
+type of $\e$ matches the record type associated with label $\el$, returning
+the field type $\t$.
+
+% Closed world reasoning
+Both \Rule{Rcd} and \Rule{Rcd-Proj} impose additional constraints on their
+record types to support \emph{closed-world} reasoning. These constraints
+exploit the uniqueness of type definitions in the global label environment
+$\labenv$ to resolve overloaded labels:
+\begin{enumerate*}
+\item
+  in a record projection $\efield \e \elab$, if the label $\elab$ is not
+  overloaded, then the global record typing context $\labenv$ assigns a
+  unqiue record type $\T$ to $\elab$;
+
+\item
+  in a record expression $\erecord {\ela = \eone; \ldots; \el_n =
+  \en}$, if the set of labels ${ \ela, \ldots, \el_n }$ uniquely
+  identifies a record type $\T$ in the typing context $\labenv$, then
+  we can assign this type to the record expression.
+\end{enumerate*}
+
+We formalize this with the judgement $\G \th \bar \el \uni \t$, which
+either:
+\begin{enumerate*}
+  \item enforces $\t$ to be of the form $\tys \T$ if the labels $\bar \el$
+    uniquely identify a nominal record type $\T$ in $\labenv$ (\Rule{Lab-!}),
+    or
+  \item imposes no constraint on $\t$ in the ambiguous case
+    (\Rule{Lab-?}).
+\end{enumerate*}
+
+Label declarations in $\labenv$ have the form $\elab : \tfor \tvs \tp \to \tvs
+\T$, assigning labels to field types and record types\footnote{For a given
+record type $\T$, we assume each label associated with it is unique.}. We
+write $\elab / \T \in \labenv$ if such a declaration of $\elab$ exists for the
+record type $\T$. This membership relation extends to explicitly annotated and
+casted labels:
+\begin{mathpar}
+  \infer[Lab-$\in$X]
+    {\elab / \T \in \labenv}
+    {(\elab / \T) / \T \in \labenv}
+
+  \infer[Lab-$\in$Cast]
+    {\elab / \T \in \labenv}
+    {\elcast \elab \t / \T \in \labenv}
+\end{mathpar}
+We then define the uniqueness predicate $\bar \el \uni \T \in \labenv$ as:
+\begin{mathpar}
+  \infer[Lab-U]
+    {\bar \el / \T \in \labenv \\
+     \all {\T'} \uad\bar \el / \T' \in \labenv \implies \T = ~\T'}
+    {\bar \el \uni \T \in \labenv}
+\end{mathpar}
+This states that the set of labels $\bar \el$ determines a unique nominal type
+$\T$ in $\labenv$ if no other type $\T'$ can be associated with the same label
+set.
 
 \subsection {Examples of typings}
 
@@ -2737,7 +2640,7 @@ $\G \th \e : \t$ iff\/
 $\th \csem {\G \th \e : \t}$.
 \end{theorem}
 
-\subsection{Type system properties}
+\subsection{Metatheory}
 \label{sec:constraint-prop}
 
 
@@ -3268,7 +3171,7 @@ We assign the following semantics to partial application constraints:
    \dom \ren \subseteq \tvs \\
    \semenv, \tv \is \semenv(\t) \th \ueqs [\ren] \implies
    \semenv \th \capp \x \t                              \\
-}{% -------------------------------------------------------              
+}{% -------------------------------------------------------
    \semenv \th \cpapp \x \ren \ueqs \t
 }
 \end{mathpar}
@@ -3335,7 +3238,7 @@ $\tvbs$ are uniquely fixed by the solutions to other variables in $\c$.
 
 \begin{definition}
   $\cdetermines \c \tvbs$ if and only if every ground assignments
-  $\semenv$ and $\semenvp$ that satisfy $\c$ and coincide outside of $\tvb$ 
+  $\semenv$ and $\semenvp$ that satisfy $\c$ and coincide outside of $\tvb$
   concide on $\tvbs$ as well.
   \begin{mathpar}
     \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
@@ -3477,9 +3380,9 @@ accordingly when unifying types.
 
 \paragraph{Interaction with let-polymorphism}
 \Xgabriel{This was moved from the introduction, it's related to ``choice
-points'' below.} 
+points'' below.}
 
-\parcomment {% Our intuition is not entirely correct here.}
+\parcomment{Our intuition is not entirely correct here.}
 
 While the above constraint generation already improves on
 OCaml's current inference approach, it is not powerful enough to capture the

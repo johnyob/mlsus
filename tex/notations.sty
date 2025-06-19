@@ -161,6 +161,8 @@
 %% Could be factored as
 \newcommand{\eproj}[3][]{#2.#3\ifempty{#1}{}{/#1}}
 \newcommand{\erecord}[1]{\braces{#1}}
+\defmetavar{\el}{l}
+\newcommand{\elcast}[2]{\parens {{#1} \mathop{\triangleleft} {#2}}}
 \defmetavar{\elab}{\ell}
 \newcommand{\eannot}[3]{\parens {#1 : \exi #2 #3}}
 \newcommand{\etuple}[1]{\parens{#1}}
@@ -257,6 +259,7 @@
 \newcommand{\all}[2]{\forall #1.\,#2}
 \newcommand{\exi}[2]{\exists #1.\,#2}
 \newcommand{\any}[2]{\nu #1.\,#2}
+\newcommand{\uni}{\mathop{!}}
 
 \newcommand{\eqdef}{\mathrel{\triangleq}}
 \newcommand \uad [1][1ex]{\hskip #1}
