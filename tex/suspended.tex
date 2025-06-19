@@ -570,7 +570,7 @@ constraint $\cexists \tvs \cunif \tp \t$, where $\ts$ is a universally
 quantified type $\tfor \tvs \tp$; its intended meaning is the instantiation of
 the polymorphic type $\ts$.
 
-% Constraint abstractions
+\parcomment{Constraint abstractions}
 
 There are two constructs that deal with the introduction and elimination of
 constraint abstractions. As the name suggests, a constraint abstraction
@@ -582,7 +582,7 @@ $\ctwo$---additionally ensuring the abstraction is satisfiable. They are
 eliminated using the application constraint $\capp \x \t$ which applies the
 type $\t$ to the abstraction bound to $x$.
 
-% Suspended match constraints
+\parcomment {Suspended match constraints}
 
 Finally, we introduce \textit{suspended match constraints}\footnote {Previously
 dubbed `frozen constraints' \citep{TODO}}. These constraints defer resolution
@@ -612,13 +612,13 @@ $\cmatch \t \cbrs$, where:
   than one pattern in the list.
 \end{enumerate}
 
-% Informal semantics
+\parcomment {Informal semantics}
 Suspended match constraints thus express case analysis on the structure of
 types in a delayed, declarative form. Once the shape of $\t$ is known, a unique
 branch is selected and its associated constraint is solved. If the shape is
 never determined, the constraint remains unsatisfiable.
 
-% Applications
+\parcomment {Applications}
 
 The remainder of this section illustrates the role of suspended constraints
 in supporting \emph{fragile} language features as defined above.
@@ -640,7 +640,7 @@ the declarative typing rules for these features is deferred to
 \subsection{Semi-explicit first-class polymorphism}
 \label {sec/constraints/polytypes}
 
-% Intro (and annotations)
+\parcomment {Intro (and annotations)}
 Semi-explicit first-class polymorphism \citep{Garrigue-Remy/poly-ml} uses
 \textit{annotated types} to track the origins of polymorphic types.
 %
@@ -652,7 +652,7 @@ may themselves be generalized, yielding type schemes such as
 $\tfor \av {\tapoly \ts \av}$.
 
 
-% Boxing
+\parcomment {Boxing}
 
 The introduction form for polytypes is a boxing operator $\expoly
 \e {\exi \tvs \ts}$ with an explicit polytype annotation $\exi \tvs \ts$
@@ -665,7 +665,7 @@ The annotation variable $\av$ can thus be generalized.  That is $\expoly \e
 {\exi \tvs \ts}$ can also be assigned the type scheme $\all \av {\tapoly {\ts
 \where {\tvs \is \tys}} \av}$.
 
-% Unboxing (principality restriction)
+\parcomment {Unboxing (principality restriction)}
 
 Conversely, to instantiate a polytype expression, one must use an explicit
 unboxing operator $\einst \e$, which requires no accompanying type
@@ -676,7 +676,7 @@ $\tapoly \ts \av$ for some non-generalizable annotation variable $\av$, then
 $\einst \e$ is ill-typed.  It is precisely the polymorphism of $\av$ that
 ensures that the polytype is indeed known and not being inferred.
 
-% Example ill-typed term
+\parcomment {Example ill-typed term}
 
 In particular $\efun \x {\einst \x}$ is not typable, since the
 $\lambda$-bound variable $\x$ is assigned a monotype. Consequently, the
@@ -685,7 +685,7 @@ However, since $\av$ is bound in the surrounding context at the point of
 typing $\einst \x$, it cannot be generalized prior to unboxing, rendering the
 term ill-typed.
 
-% Annotations
+\parcomment {Annotations}
 
 However, type annotations can be used to freshen annotation variables.
 We usually omit annotation variables in annotations, since we can
@@ -696,7 +696,7 @@ well-typed because the explicit annotation introduces a fresh
 variable annotation $\ava$, which can then be generalized, yielding
 $\tfor \ava {\tapoly \ts \ava}$.
 
-% Short commings of annotation variables
+\parcomment {Short commings of annotation variables}
 
 The very purpose of annotation variables is to distinguish \emph{known},
 polymorphic polytypes from yet-unknown, monomorphic ones. However, they are
@@ -723,7 +723,7 @@ type is assigned to $f$ at its binding site, $\ava$ is bound in the context
 when typing $\einst f$, and cannot be generalized. As unboxing requires a
 generalized polytype, the second term is ill-typed despite the annotation.
 
-% Suspended match constraints fixes this
+\parcomment {Suspended match constraints fixes this}
 
 Suspended match constraints eliminate this sensitivity to directionality,
 by allowing any type information to be treated as known---rendering annotation
@@ -766,7 +766,7 @@ implementation without relying on runtime information---in contrast to
 \emph{dynamic overloading}, which defers resolution to runtime via
 mechanisms such as dictionary-passing or dynamic dispatch.
 
-% Other languages
+\parcomment {Other languages}
 
 Many languages offer statically resolved overloading to avoid the overhead
 of dynamic dispatch. C++ and Java resolve overloaded functions through
@@ -798,7 +798,7 @@ labels and data type constructors.
   type n = L
 \end{program}
 
-% OCaml's approach (PI-directionality)
+\parcomment {OCaml's approach (PI-directionality)}
 
 When encountering overloaded labels or constructors, \OCaml resolves ambiguity
 using local type information. This process is underpinned by
@@ -808,7 +808,7 @@ annotation variables $\av$, written $\tys \Tapp^\av$, to track which types are
 allows one to deduce known types from generalized type constructors $\tfor \av
 {\tys \Tapp^\av}$.
 
-% A note on bidirectional expected type propagation
+\parcomment {A note on bidirectional expected type propagation}
 
 Because static overloading involves more intricate flows of information than
 polytype instance, \OCaml complements \geninst-directionality with a
@@ -818,7 +818,8 @@ following to be well-typed:
   let e$_{10}$ = (function (L : m) | _ -> 1) L
 \end{program}
 
-% Closed-world reasoning
+\parcomment {Closed-world reasoning}
+
 Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to resolve
 ambiguities in record types. For instance:
 \begin{program}[input]
@@ -832,7 +833,8 @@ Here, \code{x} and \code{y} appear together only in the type \code{two},
 allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
 \code{two -> two}.
 
-% Default rules
+\parcomment {Default rules}
+
 If local type information and closed-world reasoning are insufficient,
 \OCaml falls back to a syntactic default: it selects the most recently
 defined compatible type. For example:
@@ -862,7 +864,8 @@ causes errors downstream:
 	 There is no field x within type three
 \end{program}
 
-% Record field disambiguation in suspended constraints
+\parcomment {Record field disambiguation in suspended constraints}
+
 We propose an alternative account of static overloading using suspended
 match constraints.  For example, in the case of an ambiguous record
 projection $\efield \e \elab$, we generate the typing constraint:
@@ -924,7 +927,8 @@ under our account but rejected by \OCaml's current type checker.
 \SML supports positional projections from tuples using expressions of the form
 \ocaml{#$j$ e} to extract the $j$-th component of the tuple \code{e}.
 
-% SML typing rule
+\parcomment {SML typing rule}
+
 Internally, tuples in \SML are treated as structural records with numeric
 labels. While the specification \cite{TODO} does not provide a dedicated typing
 rule for tuple projection, its semantics are captured by the following
@@ -988,7 +992,7 @@ are discharged accordingly.
 \section{Semantics of constraints}
 \label{sec:semantics}
 
-% Judgement shape
+\parcomment {Judgement shape}
 
 The semantics of constraints is given, as is standard, by a satisfiability
 judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied
@@ -999,7 +1003,7 @@ expressions with no free type variables.\footnote {Ground types are thus
 finite trees. In \cref{sec/rec-types}, we dissuss the alternative choice
 of regular trees for the set of ground types that models equirecursive types.}
 
-% Definition exampled
+\parcomment {Definition exampled}
 
 The judgment is defined, for all constraint-formers except suspended
 constraints, in \cref{fig:constraint-semantics}. $\ctrue$ is satisfied in
@@ -1092,7 +1096,7 @@ derivation:
 
 \subsection{Shapes}
 
-% Definition of shape
+\parcomment {Definition of shape}
 
 A shape $\Sh$ is a type with holes, written $\any \tvs \t$, where $\tvs$
 denotes the set of type variables representing the holes, is exactly the
@@ -1114,7 +1118,7 @@ When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
 actually equal. The trivial shape $\bot$ is the most general shape.
 
-\parcomment{Define decomposition}
+\parcomment {Define decomposition}
 
 Given a shape $\any \tvcs \t$, we write $\deshaped [\tvcs] \t \tys$ for $\t
 \where {\tvcs \is \tys}$. This is uniquely determined, since it is
@@ -1149,7 +1153,7 @@ A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff:
 Any nonvariable type $\t$ has a non-trivial principal shape $\sh$.
 \end{theorem}
 
-% Define canonical shape
+\parcomment {Define canonical shape}
 
 \Xdidier
 [A shape $\any \tvs \t$ is canonical if the sequence of free variables
@@ -1377,7 +1381,7 @@ may contain parts that have been ``guessed'' in $\semenv$, this version demands
 that the shape of $\t$ must already be known in the constraint ($\shape \t
 \Defined$), statically. Hence, it does not allow to guess.
 
-% Contextual rule
+\parcomment {Contextual rule}
 
 The key innovation of the contextual semantics lies in the following rule,
 which---unlike the others---is not syntax-directed:
@@ -1405,7 +1409,7 @@ is a unique possible shape.  This rule is typically used in combinatino with
 \Rule {Susp-Use} which can then be used in the proof of the right-hand-side
 premise.
 
-% Examples
+\parcomment {Examples}
 
 We illustrate the contextual semantics for suspended constraints
 with a series of examples.
@@ -1518,10 +1522,11 @@ $\C\where{\square}$, the variable $\tv$ must have shape $\sh$ in any
 satisfying assignment.
 
 \begin{definition}
-  A type variable $\tv$ has a \emph{uniquely known} principal shape within the
-  context $\C\where{\square}$, written $\Cshape \C \tv \sh$, iff for all assignments
-  $\semenv$ and ground types $\t$, then $\semenv \vdash \C\where{\cunif \tv \t}$
-  implies that the principal shape of $\t$ is equal to $\sh$.
+  A type variable $\tv$ has a \emph{uniquely known} principal shape within
+  the context $\C\where{\square}$, written $\Cshape \C \tv \sh$, iff for all
+  assignments $\semenv$ and ground types $\t$, then $\semenv \vdash
+  \C\where{\cunif \tv \t}$ implies that the principal shape of $\t$ is equal
+  to $\sh$.
 %
   In other words:
   \begin{mathpar}
@@ -1550,8 +1555,9 @@ us from interpreting the rules as a well-behaved inference system.
 
 However, it can easily be resolved by obersving that the rules, while not
 syntactically well-founded, can be defined in a decreasing way by noting
-that the conclusion of \Rule{Susp-Ctx} $\C\where{\cmatch \tv \cbrs}$ is structurally
-larger than the negatively-occurring judgement $\C\where{\cunif \tv \t}$.
+that the conclusion of \Rule{Susp-Ctx} $\C\where{\cmatch \tv \cbrs}$ is
+structurally larger than the negatively-occurring judgement $\C\where{\cunif
+\tv \t}$.
 
 Instead of consdering the rules defined above as a \emph{single}
 inductive definition, we consider them to determine a function
@@ -1724,9 +1730,9 @@ reasoning extends naturally to the static semantics of terms.
 `ok' or `wf' suffix to the judgement to make it clearer that it is
 well-formedness}
 
-% Running example: tuple projection disambiguation
+\parcomment {Running example: tuple projection disambiguation}
 
-% We need a spec, but this itself is hard
+\parcomment {We need a spec, but this itself is hard}
 
 In order to show our approach is sound and complete with respect to our
 constraint generation translation, we must first define a formal
@@ -1734,7 +1740,7 @@ specification in the form of a calculus and accompanying type
 system. Surprisngly, identifying an appropriate declarative type system to
 use as a specification is itself an interesting problem!
 
-% Why is it hard? Examples of prev work:
+\parcomment {Why is it hard? Examples of prev work:}
 
 \Xdidier {This paragraph is repeating (or should be added to) the
 introduction}
@@ -1744,7 +1750,7 @@ static overloading \citep{TODO} and first-class polymorphism
 principality or require intricate menachisms -- such as labelled types -- to
 do so.
 
-% Why do naive approaches not guarantee principal types.
+\parcomment {Why do naive approaches not guarantee principal types.}
 
 Na\"ive specifications, though accessible, often lack principal types. Take
 overloaded tuple projects \textit{\`a la \SML}: an expression $\efield e j$
@@ -1757,7 +1763,7 @@ governed by the rule:
 admits many typings, as any tuple of at least size $j$ satisfies the
 premise. This multiplicity undermines principality.
 
-% Partial annotations (shapes) to the rescue!
+\parcomment {Partial annotations (shapes) to the rescue!}
 
 Our first insight is that partial type annotations often suffices to
 recover principality. We refer to these annotations as \textit{shapes}. For
@@ -1770,7 +1776,7 @@ $\exfield \e n j$, disambiguates the expression:
 \end{mathpar}
 Yet, requiring users to write such annotations manually is impractical.
 
-% Inference of shapes
+\parcomment {Inference of shapes}
 
 Our solution is to permit \textit{inference} of shapes, provided that the
 inferred annotation is \textit{uniquely determined by context}.  This
@@ -1778,7 +1784,7 @@ approach ensures principality by construction and yields a clear
 specification with predictable annotability requirements for the everyday
 programmer.
 
-% A note on stratified type inference
+\parcomment {A note on stratified type inference}
 
 \Xdidier {This paragraph should also fit into the introduction, I think}
 The idea of leveraging a principled core language with inference of shapes
@@ -1791,7 +1797,7 @@ generates shapes using \textit{bidirectional typing}; the second performs
 sound, complete and enjoys principal types, the overall system remains
 incomplete due to the heuristic nature of the first phase.
 
-% How do we specify our intuition?
+\parcomment {How do we specify our intuition?}
 
 Specifying the notion of unique inferrability from context is
 tricky. Luckily, we can leverage many of the formal methods developed in the
@@ -1807,7 +1813,7 @@ counterparts:
 The intuition here is that the context $E$ is sufficiently large to
 constrain the shape of $e$'s type as a tuple of size $n$.
 
-% Limitations
+\parcomment {Limitations}
 
 The chief limitation of our approach is that disambiguation can still
 require explicit annotations in inherently ambiguous scenarios.  This is
@@ -1879,8 +1885,9 @@ annotations $(e
 
 \end{enumerate}
 Each construct that endangers principality (written $\e^i$) has an
-explicitly annotated counterpart (written $\e^x$) that is $\erecord {\overline{\ell / \F = \e}}$, $\eproj [\F] \e
-\elab$, $\eproj [n] \e j$, $\epoly [\exi \tvs \ts] \e$, or $\einst [\exi
+explicitly annotated counterpart (written $\e^x$) that is $\erecord
+{\overline{\ell / \F = \e}}$, $\eproj [\F] \e \elab$, $\eproj [n] \e j$,
+$\epoly [\exi \tvs \ts] \e$, or $\einst [\exi
 \tvs \ts] \e$.
 
 \paragraph{Types}
@@ -2036,7 +2043,7 @@ $\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on
 \ts$ and $\G \th \elab = \e : \ts$ and an instance typing judgement
 $\mlsub [\G] \ts \tsp$.
 
-% Simple typing rules explained
+\parcomment {Simple typing rules explained}
 
 \Xdidier {I am not sure that we need and will have space to read in details
 the typing rules of Core \ML}
@@ -2051,7 +2058,7 @@ in Rule \Rule{App}, the type of the argument must match the function's parameter
 type $\tya$ and application returns the type $\tyb$. Rule \Rule{Unit} asserts
 that $()$ has the unit type $\tunit$.
 
-% Gen/Inst explained
+\parcomment {Gen/Inst explained}
 
 Rules \Rule{Gen} and \Rule{Inst} correspond to implicit
 \textit{generalization} and \textit{instantiation} respectively.
@@ -2061,7 +2068,8 @@ specialize a type scheme $\tsa$ to $\tsb$ using the \emph{instantiation
 relation} given in \cref{fig:inst-rel}.  This expresses that one type scheme
 is a polymorphic generalization of another.
 
-% Instantiation relation
+\parcomment {Instantiation relation}
+
 \Xdidier {Is there a reason to use an intermediate instantiation relation,
 rather than just a Rule \Rule {Inst}---since there is already a rule \Rule
 {Gen}, which we must keep?}
@@ -2074,7 +2082,7 @@ right-hand side. In this case, we introduce a fresh polymorphic type variable
 $\tv$ into the context to test whether the $\tsa$ is an instance of $\tsb$
 under any instantiation of $\tv$---this is essentially a form of skolemization.
 
-% Let rule
+\parcomment {Let rule}
 
 Let-polymorphism is handled by the \Rule{Let} rule, where a \textit{polymorphic}
 term can be bound. This allows a single definition to be instantiated differently
@@ -2082,7 +2090,7 @@ at each use site---an essential feature of \ML. In this rule, the term $\eone$
 has a polymorphic type scheme $\ts$, adds $\x : \ts$ into the context $\G$ to
 typecheck $\etwo$.
 
-% Annotations
+\parcomment {Annotations}
 
 Annotations $(e : \exi \tvs \t)$ ensures that the type of $e$ is (an instance
 of) the type $\t$. The type variables $\tvs$ are
@@ -2092,7 +2100,7 @@ the term $(\efun x x + 1 : \exi \tv
 \tv \to
 \tv)$ is well-typed with $\tv := \tint$ in \Rule{Annot}.
 
-% Contextual rules (Poly-*, Use-*, Proj-*)
+\parcomment {Contextual rules (Poly-*, Use-*, Proj-*)}
 
 \subsection {Shape-aware typing rules}
 
@@ -2109,7 +2117,7 @@ We then request that (the shape of) the annotation is fully determined from
 context, either from the type of the expression, which we write $\eshape \E
 \e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
 
-% Shapes
+\parcomment {Shapes}
 
 %% exchange the boolean definition to see the old definition
 
@@ -3425,7 +3433,7 @@ application constraint.
 \section{HM Prototype and discussion}
 \label{sec:implementation}
 
-% Generalization trees
+\parcomment {Generalization trees}
 
 % Ranks
 In practice, this
@@ -3439,16 +3447,17 @@ In practice, the unification algorithm is aware of ranks and lowers them
 accordingly when unifying types.
 
 
-% Lazy generalization
+\parcomment {Lazy generalization}
 
-% Schedulers
+\parcomment {Schedulers}
 
-% Partial generics and instances
+\parcomment {Partial generics and instances}
 
 \paragraph{Interaction with let-polymorphism}
-\Xgabriel{This was moved from the introduction, it's related to ``choice points'' below.}
+\Xgabriel{This was moved from the introduction, it's related to ``choice
+points'' below.} 
 
-%% Our intuition is not entirely correct here.
+\parcomment {% Our intuition is not entirely correct here.}
 
 While the above constraint generation already improves on
 OCaml's current inference approach, it is not powerful enough to capture the
