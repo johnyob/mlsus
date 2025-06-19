@@ -91,11 +91,12 @@ Consider impredicative higher-rank polymorphism:
   let self f = f f
 \end{program}
 With higher-rank types, one could \emph{guess} the type of \code{f} to be
-either $\tfor \tv \tv \to \tv$ or $\tfor \tv \to \tv \to \tv$ in order to
-typecheck \code{self} --- neither of which is more general than the other,
+either $\tfor \tv \tv \to \tv$ or $\tfor  \tv \tv \to \tv \to \tv$ in order to
+typecheck \code{self}---neither of which is more general than the other,
 violating principality.
 
-% Current approaches are kinda bad
+\parcomment {Current approaches are kinda bad}
+
 To fix this, inference algorithms require a minimal amount of \emph{known}
 type information (\ie annotations) to restore principality. Yet specifying
 such requirements declaratively is difficult. As a result, the specifications
@@ -107,8 +108,13 @@ whose type could easily be guessed. For instance, \citep{TODO} reject:
 \begin{program}[input]
   let self' f = if true then f f else (f : 'a. 'a -> 'a)
 \end{program}
+\Xdidier {This example is problematic as we do not known in which langage
+it should be typed. You assuming some OCaml-like syntax, so I would say
+Ocaml with polymorphic parameters, but his is \Geninst-directional.
+Still I would you a more explicit syntax $\all \tv \tv \to \tv \to \tv$}
 
-% Annotations fixes all the issues (but they're problematic)
+\parcomment {Annotations fixes all the issues (but they're problematic)}
+
 Optional type annotations may sometimes but not always be omitted: the
 return type of overloaded data constructors can be annotated; polymorphic
 expressions can be annotated with a type scheme; for GADTs, the type of the
@@ -162,7 +168,9 @@ limit its downsides.
 
  \Xdidier {See other choices in \texttt{./abbreviations.sty}}
  \Xalistair {In my report, I used $\pi$-directional `pi-directional' --
- thought it was quite cute. What do you think?}
+ thought it was quite cute. What do you think?}\Xdidier {$\pi$- for
+ polymorphism? Then $\Lambda$- could perhaps better carry the idea of
+ polymorphism?}
 \OCaml uses another mechanism for propagation of type information,
 based on polymorphism, which actually enforces an ordering in the
 typechecking of let-bindings, where the (polymorphic part of) a the
@@ -349,7 +357,7 @@ Our proposal with omnidirectional type inference succeeds
 on \ocaml{e_6}, \ocaml{e_7}, and \ocaml{e_8}.\Xdidier{to be checked}
 \Xalistair{I'm fairly certain your implementation (and our theory) does not
 typecheck \code{e_8}. It is another example of incompleteness (like
-\code{e_9})}
+\code{e_9})}\Xdidier {My prototype solves $e_8$ but not $e_9$}
 %% \Xgabriel{Does it? My implementation with Olivier would reject this example,
 %%   because it is not robust to the addition of additional type definitions in
 %%   the context. Even where there is a single type declaration with a given
@@ -545,10 +553,11 @@ Our contributions are
 
 \Xdidier {We never defined the syntax of types?}
 
-\Xdidier {We need to define $\G \th \t$}
+\Xdidier [Reinstalled]{We need to define $\G \th \t$}
 \Xalistair {The definition is entirely standard? We could add an
 `ok' or `wf' suffix to the judgement to make it clearer that it is
 well-formedness}
+\Xdidier {We still need to say something...}
 
 \parcomment{Syntax!}
 
