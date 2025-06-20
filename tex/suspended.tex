@@ -325,7 +325,7 @@ incompleteness, which is actually three-fold:
 \end{enumerate}
 Let us consider a few more examples:
 \begin{program}[error]
-let e_6 r = (r.x, r.y)
+let e_6 r = (r.x, r.y) 
 let e_7 = let getx r = r.x in getx {x = 1}
 let e_8 r = (r.x : bool)
 let e_9 r = r.x.x
@@ -342,7 +342,7 @@ This illustrates case~\ref {item/order}.
 
 \OCaml also fails on \ocaml$e_7$, since it typechecks the let-binding first,
 where it fails as ambiguous, while omnidirectional type inference
-has a view on the whole program and know from the body of the let-binding
+has a view on the whole program and may learn from the body of the let-binding
 that the instance of $getx$ must have type \ocaml"int one -> int" and is
 therefore its let-bound type (scheme) should be \ocaml$'a one -> 'a$ and is
 non-ambiguous.
@@ -1136,7 +1136,6 @@ instantiation ordering, defined by:
     {\bar \tvcb \disjoint \any {\bar \tvca} \t}
     {\any {\bar \tvca} \t \preceq \any {\bar \tvcb} \t \where {\tvas \is \tys}}
 \end{mathpar}
-\Xalistair{I quite like using $\tvc$ for shape type variables (as a convention)}
 When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
 actually equal. The trivial shape $\bot$ is the most general shape.
@@ -1205,6 +1204,7 @@ The canonical principal shape of a type governs its decomposition. We write
 $\decomp \t$ for the decomposition of $\t$ induced by its canonical
 principal shape.
 
+\TODO {Discuss and fix comments below}
 \Xdidier {Too many
 notations.  I replaced the canonical shape notation by forcing $\sh$ to only
 range over principal shapes and introduced $\zeta$ (we could have used $s$
@@ -1225,15 +1225,19 @@ beeing used. Actually, it should be equivalent to $\t \in \Typesz$, which is
 a lighther more intuitive condition.}
 \Xalistair {I personally find $\shape \t \Defined$ clearer, it is obvious
 to me that $\decomp \t$ is defined when $\shape \t$ is defined. But I
-don't have a strong opinion on this. }
+don't have a strong opinion on this.}\Xdidier {(1) We would just avoid another
+definition (2) I don't like to work with partial definitions: more difficult
+to remember the invariants.}
 
 \Xdidier {Where is uniformity discussed}
-\Xalistair {Uniformity isn't really required anymore since our
+\Xalistair{Uniformity isn't really required anymore since our
 matches predicate operates directly on principal decompositions of
 types as opposed to types and we control the structure of patterns (enforcing
 that they're 'shallow'). We could re-introduce it with an analogous
 property \eg if a pattern matches a decomposition, then it matches a more
 principal decomposition of the type with the $\theta$'s being equal?}
+\Xdidier{Fine. Let's remove this---or rather, still leave a comment on the
+fact that our definition ensures ``uniformity''.}
 \begin{version}{}
 Match functions $f$ operate on the principal decompositions, requiring the
 property of \emph{uniformity}:
@@ -1621,7 +1625,8 @@ satisfying assignment.
   \C\where{\cunif \tv \t}$ implies that the principal shape of $\t$ is equal
   to $\sh$.
 %
-  In other words:
+  In other words:\Xdidier {Repeating the formular from \cref
+  {fig:contextual-semantics}}
   \begin{mathpar}
     \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \t \in \Ground, \uad
       \semenv \vdash \C\where{\cunif \tv \t} \implies \shape \t = \sh
@@ -1663,6 +1668,7 @@ inference rules we have so far defined hold and are
 invertible.  We give the full details for this in \Cref{appendix:wf}.
 This ensures that the semantics is well-defined, even if not syntactically
 inductive.
+
 \paragraph{Summary}
 
 To recap, the semantics of suspended constraints is governed by three

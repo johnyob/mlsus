@@ -4,10 +4,13 @@
 \RequirePackage{keyval}
 
 \DeclareBoolOption [false]{types}
-\DeclareBoolOption[false]{i}
-\DeclareComplementaryOption{I}{i}
-\DeclareBoolOption[false]{j}
-\DeclareComplementaryOption{J}{j}
+\DeclareBoolOption[false]{i}\DeclareComplementaryOption{I}{i}
+\DeclareBoolOption[false]{j}\DeclareComplementaryOption{J}{j}
+\DeclareBoolOption[false]{k}\DeclareComplementaryOption{K}{k}
+\DeclareBoolOption[false]{s}\DeclareComplementaryOption{S}{s}
+\DeclareBoolOption[false]{as}
+\DeclareBoolOption[false]{bs}
+\DeclareBoolOption[false]{ps}
 \ProcessKeyvalOptions*
 
 \def \mva@@newcommand #1#2\relax#3#4%
@@ -25,6 +28,11 @@
 \newcommand {\setmetavar} [1]{\setkeys{metavar}{#1}}
 \define@key {metavar}{i}[]{\metavar@itrue}
 \define@key {metavar}{j}[]{\metavar@jtrue}
+\define@key {metavar}{k}[]{\metavar@ktrue}
+\define@key {metavar}{s}[]{\metavar@strue}
+\define@key {metavar}{as}[]{\metavar@astrue}
+\define@key {metavar}{bs}[]{\metavar@bstrue}
+\define@key {metavar}{ps}[]{\metavar@pstrue}
 
 
 \newcommand{\defmetavar}[3][]{%
@@ -40,9 +48,20 @@
   \mva@newcommand {#2}{zp}{{#3_0'}}%
   \mva@newcommand {#2}{ap}{{#3_1'}}%
   \mva@newcommand {#2}{bp}{{#3_2'}}%
+  \let \mva@do \empty%
+  \def \mva@add ##1##2{\g@addto@macro \mva@do{\mva@newcommand{#2}{##1}{##2}}}%
+  \begingroup
   \setmetavar{#1}%
-  \ifmetavar@i \mva@newcommand {#2}{i}{{#3_i}}\fi%
-  \ifmetavar@j \mva@newcommand {#2}{j}{{#3_j}}\fi%
+  \ifmetavar@i  {#2}{i}{{#3_i}}\fi%
+  \ifmetavar@j \mva@add{j}{{#3_j}}\fi%
+  \ifmetavar@k \mva@add{k}{{#3_k}}\fi%
+  \ifmetavar@s \mva@add{s}{{\bar #3}}\fi%
+  \ifmetavar@as \mva@add{as}{{\bar #3_1}}\fi%
+  \ifmetavar@bs \mva@add{bs}{{\bar #3_2}}\fi%
+  \ifmetavar@bs \mva@add{ps}{{\bar #3'}}\fi%
+  \endgroup
+  \mva@do
+  \let \mva@do \empty
 }
 
 \newcommand {\defmetatypes}{%

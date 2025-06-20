@@ -62,15 +62,13 @@
 
 \defmetavar{\cpat}{\rho}
 \newcommand{\cpatprod}[2]{\Pi~{{#1}_{#2}}}
-\defmetavar{\cbr}{\chi}
-\newcommand{\cbrs}{\bar \cbr}
+\defmetavar[s]{\cbr}{\chi}
 \newcommand{\cbranch}[2]{#1 \to #2}
 \newcommand{\cpapp}[4]{{#1} \where{{#2} \th {#3}} \; #4}
 \defmetavar{\ren}{\rho}
 
 \defmetavar{\up}{U}
-\defmetavar{\ueq}{\epsilon}
-\newcommand{\ueqs}{\bar \ueq}
+\defmetavar[s]{\ueq}{\epsilon}
 \defmetavar{\Up}{\mathcal{U}}
 
 
@@ -109,15 +107,17 @@
 \newcommand{\ttwo}{\t_2}
 \newcommand{\ti}{\t_i}
 \newcommand{\tj}{\t_j}
+\defmetavar[s]{\tva}{\alpha}
+\defmetavar[s]{\tvb}{\beta}
+\defmetavar[s]{\tvc}{\gamma}
+%% Aliases for \tva
 \newcommand{\tv}{\tva}
-\newcommand{\tvp}{\tv'}
-\newcommand{\tvs}{\bar\tv}
-\newcommand{\tvps}{\bar\tv'}
-\newcommand{\tvi}{\tv_i}
-\defmetavar{\tva}{\alpha}\newcommand{\tvas}{\bar \tva}
-\defmetavar{\tvb}{\beta}\newcommand{\tvbs}{\bar\tvb}
-\defmetavar{\tw}{\beta}
-\defmetavar{\tvc}{\gamma}\newcommand{\tvcs}{\bar\tvc}
+\newcommand{\tvp}{\tvap}
+\newcommand{\tvs}{\tvas}
+\newcommand{\tvps}{\tvaps}
+\newcommand{\tvi}{\tvai}
+\defmetavar{\tw}{\tvb}
+
 \newcommand{\tarrow}{\to}
 \newcommand{\tprod}{\mathbin\ast}
 \newcommand{\tProd}[1]{\Pi\iton {#1}}
