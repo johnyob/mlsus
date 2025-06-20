@@ -3411,17 +3411,6 @@ treating the head of the variable monomorphically and the rest
 polymorphically.
 \Xalistair{An explaination of kinded(1) types here }
 
-\subsection{Choice points}
-
-\Xdidier {Is this subsection obsolete?}
-\begin{version}{}
-The current typing rules don't support back-propagation:
-\begin{program}
-fun (r1 : one) -> let g r = r.x in g r1
-\end{program}
-\end{version}
-
-
 \subsection{Default rules}
 
 Type inference may failed either because of a typing error (the constraint
