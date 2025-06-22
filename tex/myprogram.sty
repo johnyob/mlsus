@@ -105,6 +105,7 @@
      {_7}{\ensuremath{_7}}1
      {_8}{\ensuremath{_8}}1
      {_9}{\ensuremath{_9}}1
+     {_{10}}{\ensuremath{_{10}}}1
      }}}
 
 \define@key{lst}{greek}[]{}
@@ -134,13 +135,13 @@
   {\@ifstar
       {\lst@true \lst@moreLiteratekey}
       {\lst@false\lst@moreLiteratekey}#1\@nil@}
-      
+
 
 \lstdefinestyle{inputnumbers}
     {numbers=right,numberstyle=\tiny}
 \lstdefinestyle{program}
     {language=ocaml,framerule=4pt,framesep=1pt}
-   
+
 \lstdefinestyle{input}
     {}
 \lstdefinestyle{output}
@@ -207,7 +208,7 @@
   \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
 }
 \def\bt@HL@endenv{%
-  \end{btHighlight}%   
+  \end{btHighlight}%
   \egroup
 }
 \newenvironment{btHighlightBis}[1][]
@@ -217,7 +218,7 @@
   \begin{btHighlightBis}[#1]\bgroup\aftergroup\bt@HR@endenv%
 }
 \def\bt@HR@endenv{%
-  \end{btHighlightBis}%   
+  \end{btHighlightBis}%
   \egroup
 }
 \let \btHL@orig \btHL

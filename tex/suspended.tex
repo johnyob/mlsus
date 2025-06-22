@@ -112,6 +112,7 @@ whose type could easily be guessed. For instance, \citep{TODO} reject:
 it should be typed. You assuming some OCaml-like syntax, so I would say
 Ocaml with polymorphic parameters, but his is \Geninst-directional.
 Still I would you a more explicit syntax $\all \tv \tv \to \tv \to \tv$}
+\Xalistair{I agree, but I'm not too sure what you have in mind as a fix.}
 
 \parcomment {Annotations fixes all the issues (but they're problematic)}
 
@@ -170,7 +171,7 @@ limit its downsides.
  \Xalistair {In my report, I used $\pi$-directional `pi-directional' --
  thought it was quite cute. What do you think?}\Xdidier {$\pi$- for
  polymorphism? Then $\Lambda$- could perhaps better carry the idea of
- polymorphism?}
+ polymorphism?} \Xalistair{$\pi$ for 'PI' \ie polymorphism to instance}
 \OCaml uses another mechanism for propagation of type information,
 based on polymorphism, which actually enforces an ordering in the
 typechecking of let-bindings, where the (polymorphic part of) a the
@@ -280,7 +281,7 @@ For example, the following would be rejected as ambiguous with
 \begin{program}[input]
 let g : ('a one -> int) -> int = fun f -> f {x = 1} in g (fun r -> r.x)
 \end{program}
-However,, \OCaml, which use \geninst-directional type inference as the primary
+However, \OCaml, which use \geninst-directional type inference as the primary
 mechanism, also uses a weak form of bidirectional propagation,
 by passing the expected type of the argument so that
 \ocaml{(fun r -> r.x)} is typed with the expected type
@@ -305,7 +306,7 @@ While they come with \emph{complete} algorithms, this is with respect to
 their specifications, which include some choices that are subjective and may
 sometimes look arbitrary.
 
-Indeed, they all reject examples as ambiguous when sometimes they would be a
+Indeed, they all reject examples as ambiguous when sometimes there would be a
 unique well-typed solution, as seen in the limitation of directional type
 inference.  The first source of incompleteness results from the ordering
 enforced between the resolution of core-language constraints that prevents
@@ -315,23 +316,26 @@ However, the resolution of each ambiguity is another source of
 incompleteness, which is actually three-fold:
 \begin{enumerate}
 \item\label {item/order}
-  the resolution is not considering type information from all ambiguous
-  nodes into account.
+  the resolution is not considering type information from all
+  terms into account. \Xalistair{I don't see how this is a
+  new source of incompleteness? The reader already knows that
+    directionality results in incompleteness at this point.}
 \item\label {item/info}
   the resolution is not taking all contextual type information from
-  each ambiguous node into account.
+  each ambiguous term into account.
 \item\label {item/simultaneous}
-  each ambiguity node is solved independently of other, yet unresolved ones;
+  each ambiguity is solved independently of other, yet unresolved ones;
 \end{enumerate}
 Let us consider a few more examples:
 \begin{program}[error]
-let e_6 r = (r.x, r.y) 
+let e_6 r = (r.x, r.y)
 let e_7 = let getx r = r.x in getx {x = 1}
-let e_8 r = (r.x : bool)
-let e_9 r = r.x.x
+let e_8 r = let x = r.x in x + r.y
+let e_9 r = (r.x : bool)
+let e$_{10}$ r = r.x.x
 \end{program}
 All examples are ambiguous for \OCaml\footnote{Its succeeds on \ocaml{e_6},
-using the default choice, but it fails if we inverse the order of the type
+using the default choice, but it fails if we reverse the order of the type
 declarations.}.  However, \ocaml{r} can only be of type
 \ocaml{two} in \ocaml{e_6}. Indeed, considering the second projection first,
 we should learn that \ocaml{r} is of type \ocaml{two} and since it is
@@ -340,21 +344,22 @@ The failure is a matter of solving the constraint in the right order, which
 should wishfully be eliminated by omnidirectional type inference.
 This illustrates case~\ref {item/order}.
 
+\parcomment{Backpropagation and old-variable cases}
+
 \OCaml also fails on \ocaml$e_7$, since it typechecks the let-binding first,
-where it fails as ambiguous, while omnidirectional type inference
-has a view on the whole program and may learn from the body of the let-binding
-that the instance of $getx$ must have type \ocaml"int one -> int" and is
-therefore its let-bound type (scheme) should be \ocaml$'a one -> 'a$ and is
-non-ambiguous.
-
-In \ocaml{e_8}, the only possible type is \ocaml{one} if we take into account
-the return of the projection. This illustrates case~\ref {item/info}.
-However, there may be a design choice of whether we allow the return type of
-the projection into account before we have resolved the projection as non
-amnbiguous.
-
+where it fails as ambiguous, while omnidirectional type inference has a view on
+the whole program and may learn from the body of the let-binding that the
+instance of $getx$ must have type \ocaml"int one -> int" and is therefore its
+let-bound type (scheme) should be \ocaml$'a one -> 'a$ and is non-ambiguous. A
+similar failure occurs in \ocaml{e_8}\footnote{Ignoring default rules}, where
+the type of the $\lambda$-bound variable \code{r} is initially ambiguous and
+unknown. It is only ypon typing the projection \code{r.y} that \code{r} is
+forced to have the type \ocaml{two}.
+%
 Our proposal with omnidirectional type inference succeeds
-on \ocaml{e_6}, \ocaml{e_7}, and \ocaml{e_8}.\Xdidier{to be checked}
+on \ocaml{e_6}, \ocaml{e_7}, and \ocaml{e_8}.
+\begin{version}{}
+\Xdidier{to be checked}
 \Xalistair{I'm fairly certain your implementation (and our theory) does not
 typecheck \code{e_8}. It is another example of incompleteness (like
 \code{e_9})}\Xdidier {My prototype solves $e_8$ but not $e_9$. See below:}
@@ -370,6 +375,11 @@ Hence, the return type which is unified with \ocaml{'c} cancels the left
 options (of the binary variation type), which becomes a singleton.  Since,
 this is the same variational type on \ocaml{'b}, this is also solved.
 \end{version}
+\Xalistair{Ok, that is not how I understood your prototype to work. I
+thought anti-unifiers were only used for overloading (and not record
+fields). Regardless, our theory described in this paper does not typecheck
+\code{e_8}.}
+\end{version}
 
 %% \Xgabriel{Does it? My implementation with Olivier would reject this example,
 %%   because it is not robust to the addition of additional type definitions in
@@ -383,11 +393,21 @@ this is the same variational type on \ocaml{'b}, this is also solved.
 %% difficulties, even if we don't solve them at the end. We should not cheat
 %% and let the example we solve them all.  We should also do better than OCaml
 %% wihout default clauses (which is the case).}
-Omnidirectional still fails on \ocaml{e_9}, which is an instance of the
-case~\ref {item/simultaneous} of incompleteness. Indeed, it requires to
-consider both projections simultaneously to conclude that the type of
-\ocaml{r} must be \ocaml{one}.
 
+
+In \ocaml{e_9}, the only possible type is \ocaml{one} if we take into account
+the return type of the projection. This illustrates case~\ref {item/info}.
+Our current presentation, in this paper, treats this term as ambiguous,
+since we do not permit the return type to influence resolution until
+the projection itself has been disambiguated. Nonetheless, it is
+entirely possible to typecheck such expressions using the omnidirectional
+framework, as we discuss in \cref{sec:future-work}.
+
+Omnidirectional still fails on \ocaml{e$_{10}$}, which is an instance of the
+case~\ref {item/simultaneous} of incompleteness. Here, both projections
+must be considered simultaneously to infer that the type of
+\ocaml{r} must be \ocaml{one}.
+%
 Requiring an order in which overloarding sites could be solved one after the
 other is actually a reasonable design to keep type inference effective,
 since the complexity of general overloading without such a restriction is
@@ -397,17 +417,15 @@ NP-hard, even in the absence of let-polymorphism, as shown by an encoding of
 
 \paragraph{Omnidirectional type inference}
 
-The idea of \emph{omnidirectional} type inference is to take all program
-core-expression constraints into account before resolving ambiguities. This
-requires typing constraint to be solved in disorder.
+The idea of \emph{omnidirectional} type inference is that types can be inferred
+in any order. This requires typing constraint to be solved in disorder.
 %
 This approach eliminates the source~\ref {item/order} of incompleteness.  It
-leave design space for the source~\ref {item/info}, but intendedly keeps
+leave room to address source~\ref {item/info}, but intendedly keeps
 source~\ref {ref/simulteanous} of incompleteness by design.
-
-Our proposal with omnidirectional type inference will
-correctly type all examples above (from \ocaml{e_1} to
-\ocaml{e_8})\ignorespaces
+%
+With omnidirectional inference, all examples from \ocaml{e_1} through
+\ocaml{e_8} are correctly typed\ignorespaces
 \INFO
 {See \url
 {https://gitlab.inria.fr/remy/semiun/-/blob/main/su/examples/record_fields.ml}}
@@ -544,33 +562,36 @@ Our contributions are
 \entry[Type variables]{\tva, \tvb, \tvc}{}{}
 \\
 \entryset[Types]{\t}{\Types}\\
-\entry[Constraints]{\C}{
+\entry[Constraints]{\c}{
         \ctrue
   \and  \cfalse
   \and  \ca \cand \cb
   \and  \cexists \tv \c
   \and 	\cfor \tv \c
-  \And  \cunif \tone \ttwo
+  \and  \cunif \tone \ttwo
   \nextline
   \and  \clet \x \tv \ca \cb
-  \and  \cinst \x \t
+  \and  \capp \x \t
   \nextline
   \and  \cmatch \t \cbrs
 }\\
 \entry[Branches]{\cbr}{\cbranch \cpat \c} \\
 \entry[Patterns]{\cpat}{}{} \\
-%% \entry[Constraint abstractions]{}{\clam \tv \C}
-%% \\
+\entry[Constraint contexts]{\C}{
+  \square
+  \and \C \cand \c
+  \and \c \cand \C
+  \and \cexists \tv \C
+  \and \cfor \tv \C
+  \nextline
+  \and \clet \x \tv \C \c
+  \and \clet \x \tv \c \C
+  \nextline
+  \and \cmatch \t {\cbrs_1, \cbranch \cpat \C, \cbrs_2}
+
+} \\
 \entry[Shapes] \sh {} {}
 \end{bnffig}
-
-\Xdidier {We never defined the syntax of types?}
-
-\Xdidier [Reinstalled]{We need to define $\G \th \t$}
-\Xalistair {The definition is entirely standard? We could add an
-`ok' or `wf' suffix to the judgement to make it clearer that it is
-well-formedness}
-\Xdidier {We still need to say something...}
 
 \parcomment{Syntax!}
 
@@ -579,6 +600,7 @@ Building atop the constraint-based type inference framework of
 term and type variables. Its syntax is given in~\Cref{fig:constraint-syntax}.
 We write $\Types$ the set of types and $\Typesz$ the subset of nonvariable
 types.
+
 %
 The constraint language contains tautologic constraints ($\ctrue$),
 unsatisfiable constraints ($\cfalse$), and logical conjunctions ($\cone \cand
@@ -639,6 +661,14 @@ Suspended match constraints thus express case analysis on the structure of
 types in a delayed, declarative form. Once the shape of $\t$ is known, a unique
 branch is selected and its associated constraint is solved. If the shape is
 never determined, the constraint remains unsatisfiable.
+
+\parcomment {Constraint contexts}
+
+Throughout this paper, we will find it convenient to work with \emph{constraint
+contexts}. A constraint context is simply a constraint with a ``hole'',
+analogous to evaluation contexts $\E$ used extensively in operational
+semantics. We write $\C\where{\c}$ to denote filling the hole of $\C$ with
+$\c$. Hole filling may capture variables.
 
 \parcomment {Applications}
 
@@ -913,6 +943,8 @@ qualified types would solve this example statically.
 Nominal records are an example where we should allow to combine information
 from two different use points---of the same type. That is several matches on
 the same variable should be combined.}
+\Xalistair {My mistake, the amount of example changes does indeed make this
+ill-typed.}
 
 We assume a global typing environment $\Omega$, which provides type scheme
 declarations for
@@ -962,9 +994,6 @@ matching of records, function applications and the syntactic sugar $\eproj \e j
     {\G \th \e : \tsrecord {j = \tj; \varrho }}
     {\G \th \eproj \e j : \tj}
 \end{mathpar}
-\Xdidier {Beware! Overloading of meta-variable $\rho$}
-\Xalistair {Renamed to $\varrho$ -- hopefully shouldn't be confused for a
-renaming.}
 
 Here, the projection retrieves the $j$-th field from a record with tail
 $\varrho$. However, \SML enforces an additional restriction: the tail
@@ -1017,37 +1046,49 @@ are discharged accordingly.
 \parcomment {Judgement shape}
 
 The semantics of constraints is given, as is standard, by a satisfiability
-judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied
-by the solution, or valuation, $\semenv$. The semantic environment $\semenv$
-maps term variables to constraint abstractions of the from $\clam \tv \C$
-and type variables to \emph{ground} types, \ie the subset $\Ground$ of type
-expressions with no free type variables.\footnote {Ground types are thus
-finite trees. In \cref{sec/rec-types}, we dissuss the alternative choice
-of regular trees for the set of ground types that models equirecursive types.}
+judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied by
+the solution, or valuation, $\semenv$. The semantic environment $\semenv$ maps
+type variables to \emph{ground} types---types with no free
+variables\footnote{Ground types are thus finite trees, assuming the existence
+of a base type such as $\tint$. In \cref{sec/rec-types}, we dissuss the
+alternative choice of regular trees for the set of ground types that models
+equirecursive types.}---ranged over by $\gt \in \Ground$, where $\Ground
+\subseteq \Types$ denotes the set of ground types. Term variables are mapped to
+sets $\glam \subseteq \Ground$, representing the set of ground types for which the
+application $\capp \x \t$ is satisfiable under the closure of $\x$.
 
 \parcomment {Definition exampled}
 
 The judgment is defined, for all constraint-formers except suspended
-constraints, in \cref{fig:constraint-semantics}. $\ctrue$ is satisfied in
-any environment, and $\cfalse$ in none. An environment $\semenv$ satisfies
-$\cone \cand \ctwo$ if it satisfies both $\cone$ and $\ctwo$. The
-existential rule $\semenv \vdash \cexists \tv \c$ requires that $\semenv$
-provides a ``solution'' for $\tv$: it maps it to a type $\t$ that
-satisfies the expected constraints in $\c$. The universal constraint
-$\cfor \tv \c$ requires $\c$ to be satisfiable under any type mapped to $\tv$
-in $\semenv$. A unification constraint holds if both sides are
-mapped to the exact same type under the environment.
+constraints, in \cref{fig:constraint-semantics}. $\ctrue$ is satisfied in any
+environment, and $\cfalse$ in none. An environment $\semenv$ satisfies $\cone
+\cand \ctwo$ if it satisfies both $\cone$ and $\ctwo$. The existential rule
+$\semenv \vdash \cexists \tv \c$ requires that $\semenv$ provides a
+``solution'' for $\tv$: it maps $\tv$ to a type $\gt$ that satisfies the expected
+constraints in $\c$. The universal constraint $\cfor \tv \c$ requires $\c$ to
+be satisfiable under any type mapped to $\tv$ in $\semenv$. A unification
+constraint holds if both sides are mapped to the exact same type under the
+environment.
 
 The rule for let-bindings reflects that the constraint abstraction $\cabs
 \tv \c$ must first be \emph{satisfiable}, checking that $\cone$ holds under
-some instantiation of its bound variable; then the resulting constraint
-abstraction is bound to $\x$ in $\semenv$ and may subsequently be used in
-$\ctwo$.
+some instantiation of its bound variable; then binding the abstraction's
+interpretation to $\x$ in $\semenv$ when checking the satisfiability of $\ctwo$.
+Formally, constraint abstractions $\clam \tv \c$ are interpreted semantically as
+the set of ground types $\gt$ that satisfy $\semenv, \tv \is \gt \th \c$:
+\begin{mathpar}
+  \semenv(\clam \tv \c) \uad\eqdef\uad \set {\gt \in \Ground : \semenv, \tv \is \gt \th \c}
+\end{mathpar}
 
-Application of a constraint abstraction $\cinst x \t$ is interpreted as
-follows: if the environment maps $\x$ to an abstraction $\cabs \tv \c$, then
-applying $\t$ to $\x$ succeeds just when the body $\c$ of the abstraction is
-satisfied after sunstituting $\tv$ for $\t$.
+Application constraints $\capp \x \t$ are interpreted by checking that $\t$
+belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
+\in \semenv(\x)$. Equivalently, if $\x$ is mapped to the interpretation
+$\semenvp(\clam \tv \c)$ of the abstraction $\clam \tv \c$, then this
+membership holds if and only if the body $\c$ is satisfied under the extended
+environment $\semenvp, \tv \is \semenv(\t)$ --- here, $\semenvp$ is the
+environment at the binding site of $\x$ and thus serves as the closure of
+$\clam \tv \c$.
+
 
 \begin{mathparfig}[t]%
   {fig:constraint-semantics}%
@@ -1055,8 +1096,8 @@ satisfied after sunstituting $\tv$ for $\t$.
   \begin{bnfgrammar}
     \entry[Semantic environment]{\semenv}{
       \cdot
-      \and \semenv, \tv := \t
-      \and \semenv, \x := \cabs \tv \c
+      \and \semenv, \tv := \gt
+      \and \semenv, \x := \glam
     }
   \end{bnfgrammar}
 \\
@@ -1070,11 +1111,11 @@ satisfied after sunstituting $\tv$ for $\t$.
     {\semenv \vdash \cone \cand \ctwo}
 
   \infer[Exists]
-    {\semenv, \tv := \tau \vdash \c}
+    {\semenv, \tv := \gt \vdash \c}
     {\semenv \vdash \cexists \tv \c}
 
   \infer[Forall]
-    {\forall \t, ~ \semenv, \tv := \t \vdash \c}
+    {\forall \gt, ~ \semenv, \tv := \gt \vdash \c}
     {\semenv \vdash \tfor \tv \c}
 
   \infer[Unif]
@@ -1083,12 +1124,11 @@ satisfied after sunstituting $\tv$ for $\t$.
 
   \infer[Let]
     {\semenv \vdash \exists \tv. \cone \\
-     \semenv, \x :=  \cabs \tv \cone \vdash \ctwo}
+     \semenv, \x :=  \semenv(\cabs \tv \cone) \vdash \ctwo}
     {\semenv \vdash \clet \x \tv \cone \ctwo}
 
   \infer[App]
-    {\semenv(x) = \cabs \tv \c \\
-     \semenv, \alpha := \semenv(\t) \vdash \c}
+    {\semenv(\t) \in \semenv(\x)}
     {\semenv \vdash \cinst x \t}
 \end{mathparfig}
 
@@ -1204,6 +1244,19 @@ The canonical principal shape of a type governs its decomposition. We write
 $\decomp \t$ for the decomposition of $\t$ induced by its canonical
 principal shape.
 
+%\parcomment{Patterns and matching}
+%
+%Shapes and decompositions are used in suspended match constraints for describing the
+%structure of types. We write $\cmatches \cpat {\shapp \tys} \theta$ to denote that the
+%pattern $\cpat$ matches the principal decomposition $\shapp \tys$ of a type,
+%producing a substitution $\theta$ for variables bound by the pattern.
+%The matcing function $- \Matches \mathop{=}$ is partial: it is undefined when
+%the pattern $\cpat$ does not match the given shape $\sh$. We introduce this
+%function abstractly and defer its formal definition to \cref{sec:constraint-gen}
+%along with the syntax of patterns, as it depends on the concrete grammar of types,
+%given in \cref{sec:language}.
+%
+
 \TODO {Discuss and fix comments below}
 \Xdidier {Too many
 notations.  I replaced the canonical shape notation by forcing $\sh$ to only
@@ -1220,15 +1273,6 @@ type construtor $\F$, since they are isormophic to the nonpolytype shapes}
 suggestion to treat $\zeta$ more like a type constructor (though personally I
 find $\sh$ more readable that $\zeta$ as a shape).}
 
-\Xdidier {The notation $\shape \t \Defined$ is not longer defined before
-beeing used. Actually, it should be equivalent to $\t \in \Typesz$, which is
-a lighther more intuitive condition.}
-\Xalistair {I personally find $\shape \t \Defined$ clearer, it is obvious
-to me that $\decomp \t$ is defined when $\shape \t$ is defined. But I
-don't have a strong opinion on this.}\Xdidier {(1) We would just avoid another
-definition (2) I don't like to work with partial definitions: more difficult
-to remember the invariants.}
-
 \Xdidier {Where is uniformity discussed}
 \Xalistair{Uniformity isn't really required anymore since our
 matches predicate operates directly on principal decompositions of
@@ -1238,6 +1282,11 @@ property \eg if a pattern matches a decomposition, then it matches a more
 principal decomposition of the type with the $\theta$'s being equal?}
 \Xdidier{Fine. Let's remove this---or rather, still leave a comment on the
 fact that our definition ensures ``uniformity''.}
+\Xalistair{I couldn't actually think of what we wanted to say for
+uniformity -- to me it doesn't make much sense anymore, since the function we
+give is defined on principal decompositions and thus would never use a
+less-principal shape}
+
 \begin{version}{}
 Match functions $f$ operate on the principal decompositions, requiring the
 property of \emph{uniformity}:
@@ -1300,12 +1349,11 @@ unsatisfiable by definition.
 
 \parcomment {Matches predicate}
 
-We have thus far left the syntax of shape patterns deliberately abstract,
-as it is extension-specific. Accordingly, the matching predicate
-$\cmatches \cpat {\pshapp \tys} \theta$ is also left unspecified. This
-predicate matches a pattern $\cpat$ against a principal shape $\sh$ with
-components $\tys$, yielding a substitution $\theta$ for any variables bound in
-the pattern.
+We have thus far left the syntax of shape patterns deliberately abstract, as
+it is extension-specific. Accordingly, the matching function $\cmatches \cpat
+{\pshapp \tys} \theta$ is also left unspecified. This partial function matches
+a pattern $\cpat$ against a principal shape $\sh$ with components $\tys$,
+yielding a substitution $\theta$ for any variables bound in the pattern.
 
 \parcomment {Wildcard patterns}
 
@@ -1406,16 +1454,16 @@ First, we introduce a simplified variant of the natural rule
 (\Rule{Susp-Nat}) that only applies when $\t$ already has a shape:
 \begin{mathpar}
   \infer[Susp-Use]
-    { \shape \t \Defined \\
+    { \t \in \Typesz \\
       \cmatches \cpati {\decomp \t} \theta \\
-      \semenv, \semenv(\theta)  \th \Ci
+      \semenv, \semenv(\theta)  \th \ci
     }
     {\semenv \vdash \cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}
 \end{mathpar}
 Unlike the natural rule, which considers the shape of $\semenv(\tau)$, which
 may contain parts that have been ``guessed'' in $\semenv$, this version demands
-that the shape of $\t$ must already be known in the constraint ($\shape \t
-\Defined$), statically. Hence, it does not allow to guess.
+that the shape of $\t$ must already be known in the constraint (\ie $\t$ is
+not a variable), statically. Hence, it does not allow us to guess.
 
 \parcomment {Contextual rule}
 
@@ -1433,17 +1481,28 @@ This rule lets us substitute the matchee variable $\tv$ by a more defined
 non-variable type $\t$, provided the constraint context $\C$ determines $\tv$
 to have precisely the shape $\any \tvcs \t$.
 %
-The uniqueness-condition $\Cshape \C \tv {\any \tvcs \t}$ ensures this
+The uniqueness condition $\Cshape \C \tv {\any \tvcs \t}$ ensures this
 precisely: it expresses that the context $\C$ constrains all the solutions
 of $\tv$ to have the \emph{same} principal shape $\any \tvcs \t$,
-modulo $\alpha$-equivalence of shapes. The formal definition of this condition,
-which is somewhat technical, will be introduced later.
+modulo $\alpha$-equivalence of shapes. The formal definition of this
+predicate, which is somewhat technical, is given below.
 
-In other words, we can \emph{discover} a shape, as in the natural semantics,
-but only if ambient constraint context $\C\where{\square}$ guarantees that there
-is a unique possible shape.  This rule is typically used in combination with
-\Rule {Susp-Use} which can then be used in the proof of the right-hand-side
-premise.
+\begin{definition}
+  A type variable $\tv$ has a \emph{uniquely known} principal shape within
+  the context $\C\where{\square}$, written $\Cshape \C \tv \sh$, iff for all
+  assignments $\semenv$ and ground types $\gt$, then $\semenv \vdash
+  \C\where{\cunif \tv \gt}$ implies that the principal shape of $\gt$ is equal
+  to $\sh$.
+%
+  In other words:
+  \begin{mathpar}
+    \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \gt, \uad
+      \semenv \vdash \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
+  \end{mathpar}
+  This condition ensures that we are not guessing a shape arbitrarily;
+  the shape must already be determined by the ambient constraint.
+\end{definition}
+
 
 \parcomment {Examples}
 
@@ -1458,15 +1517,14 @@ Consider the two examples from above:
 
   \cexists \tv \cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}
 \end{mathpar}
-In the first example, we apply the contextual rule with the context $\C$
-equals to $(\exists \tv. \tv = \tint \cand \square)$. Any solution $\phi$ of
-this part of the constraint necessarily satisfies $\tv = \tint$. Hence,
-the shape of $\tv$ is uniquely determined. The uniqueness condition of
-\Rule{Susp-Ctx} rule is therefore satisfied, and the suspended constraint
-can be resolved.
+In the first example, we apply the contextual rule with the context $\C \is
+(\exists \tv. \tv = \tint \cand \square)$. Any solution $\phi$ of this part
+of the constraint necessarily satisfies $\tv = \tint$. Hence, the shape of
+$\tv$ is uniquely determined. The uniqueness condition of \Rule{Susp-Ctx}
+rule is therefore satisfied, and the suspended constraint can be resolved.
 
 In constrast, the second example has no contextual information around
-the suspended constraint ($\C\where{\square} = \square$), so any solution
+the suspended constraint ($\C \is \square$), so any solution
 $\semenv$ satisfies it, and $\tv$ can take an arbitrary shape in this context.
 Consequently, the uniqueness condition fails, the \Rule{Susp-Ctx} rule
 cannot be applied, and the constraint remains unsatisfiable---as intended.
@@ -1542,98 +1600,73 @@ choices.
 \end{example}
 
 \begin{example}
-Suspended constraints interact subtly with polymorphism
-and let-generalisation. We illustrate this by considering
-%
-% Partially generalised type schemes (example)
-% Backpropagation
-
-A further subtle---but crucial---feature of our semantics is its support for
-\emph{backpropagation}.
-%
-\Geninst-directional inference, as exemplified by \OCaml, performs inference
-in a strictly let-directional manner:
-each let-binding is inferred using only local information,
-\Xdidier{not quite true---monorphic parts are non locally inferred, but
-they are not part of the known information}\Xdidier{This repeats, less
-precsisely, I think from what has been told in the introduction. Perhaps,
-the introduction should be more detailed, but repeateing it here, which a
-different story could be confusing} and generalisation forms a boundary that
-prevents information from later use sites from influencing the generalised
-type--this is why polymorphic type information is considered `known'.
-
-\Xdidier
-{There is now  a variant of this example \ocaml$e_7$ in the introduction.
-Could we be reused it here instead of using another one?}
-For example, the following program is rejected by \OCaml:
+Considering the example \code{e_8} from \cref{sec:introduction}:
 \begin{program}[input]
-  let e$_{11}$ = let getx r = r.x in getx {x = 1; y = 1}
+let e_8 r = let x = r.x in x + r.y
 \end{program}
-Yet this example ought to be well-typed: the type of \code{f}'s
-argument is unambiguously the record type \code{three}. The reason
-this is ill-typed is that \geninst-directional inference cannot propagate
-the known type of the record (\ie \code{three}) \textbf{back} to
-\code{f}'s type.
-
-By contrast, our approach permits such refinement.
-The (simplified) constraint generated when typing \code{e}$_{11}$ is:
+The simplified constraint generated when typing \code{e_8} is:
 \begin{mathpar}
   \cexists \tv
-  \clet f \delta
-     {\cexists {\tvb, \tvc} \Parens {\strut
-        \cunif \delta {\tvb \to \tvc} \cand
-        \cmatchdots \tvb
-        }}
-    {\cinst f {(\mathsf{three} \to \tv)}}
+    \clet x \tvb
+      {\cmatch \tva \parens {\cbranch {(\wild \Tapp[t])} {\labenv(\x / t) \leq \tvb \to \tv}}}
+      {\cinst x \tint \cand \cunif \tv {\mathsf{two}}}
 \end{mathpar}
-Here, type information flows from an instance constraint ($\cinst f
-{(\mathsf{three} \to \tv)}$) into a potentially generalisable variable
-$\tvb$ within the constraint abstraction.  At generalisation time, $\tvb$
-remains abstract. However, at the use site, the instance type \code{three}
-is known, and thus uniquely determines the shape of $\tvb$ to be
-$\mathsf{three}$. The unicity predicate can be used to show that no other
-shape can be inferred, without the constraint being unsatisfiable.
+Here, $\tv$ stands for \code{r}'s type. The constraint remains
+suspended until \code{r.y} forces \code{r}'s type to be \code{two}.
 
-This controlled backpropagation allows us to resolve the suspended constraint
-\emph{without} requiring $\tvb$ to be marked as a non-generalisable variable.
+This constraint is satisfiable under our semantics. We apply the
+\Rule{Susp-Ctx} rule with context $\C \is \clet \x \tvb \square \capp \x
+\tint \cand \cunif \tv {\mathsf{two}}$. Although the context includes a
+\code{let}-binding --- which in practice involves let-generalization --- we
+can still deduce $\Cshape \C \tv {\mathsf{two}}$, since any solution to $\C$
+requires $\tv$ to be \code{two} (thanks to the equality $\cunif \tv
+{\mathsf{two}}$).
 
-\TODO{derivation}
-
-
+This example illustrates that our formulation of suspended constraints interacts
+nicely with let-polymorphism. Although the two features are specified in a modular
+fashion, they are carefully crafted to work together (as we will further show
+in our next example).
 \end{example}
 
-\subsection{Technical details}
-
-Having motivated and illustrated the semantics of suspended constraints,
-we now turn to some of the more technical details before summarizing the
-rules. We begin defining the so-called unicity predicate, the condition
-under which a variable's shape can be considered uniquely determined by
-a context.
-
-\paragraph{Unicity predicate}
-A key ingredient of the contextual rule \Rule{Susp-Ctx} is determining
-when a type variable's shape is uniquely fixed by its surrounding
-constraint context. We formalize this using the unicity predicate
-$\Cshape \C \tv \sh$, which expresses that within the context
-$\C\where{\square}$, the variable $\tv$ must have shape $\sh$ in any
-satisfying assignment.
-
-\begin{definition}
-  A type variable $\tv$ has a \emph{uniquely known} principal shape within
-  the context $\C\where{\square}$, written $\Cshape \C \tv \sh$, iff for all
-  assignments $\semenv$ and ground types $\t$, then $\semenv \vdash
-  \C\where{\cunif \tv \t}$ implies that the principal shape of $\t$ is equal
-  to $\sh$.
+\begin{example}
+A further subtle---but crucial---feature of our semantics is its support for
+\emph{backpropagation}. We illustrate this with the example \code{e_9}:
+\begin{program}[input]
+let e_9 = let getx r = r.x in getx { x = 1 }
+\end{program}
+\OCaml rejects this example, as it types the \code{let}-bound expression first
+and fails to infer the unique type of \code{'a one} for  \code{r}.
 %
-  In other words:\Xdidier {Repeating the formular from \cref
-  {fig:contextual-semantics}}
-  \begin{mathpar}
-    \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \t \in \Ground, \uad
-      \semenv \vdash \C\where{\cunif \tv \t} \implies \shape \t = \sh
-  \end{mathpar}
-  This condition ensures that we are not guessing a shape arbitrarily;
-  the shape must already be determined by the ambient constraint.
-\end{definition}
+In constrast, our approach accepts it. The constraint generated when typing
+\code{e_9} is:
+\begin{align*}
+  \cexists \tv
+  &\clet {getx} \delta
+     {\cexists {\tvb, \tvc} \Parens {\strut
+        \cunif \delta {\tvb \to \tvc} \cand
+	\cmatch \tvb {\cbranch {(\wild \Tapp[t])} {\labenv(\x/t) \leq \tvc \to \tvb}}
+        }}
+    {\\&\cinst {getx} {(\tint \ \mathsf{one} \to \tv)}}
+\end{align*}
+
+The unicity predicate $\Cshape \C \tvb \sh$ can be used to show that no other
+shape than $\sh \is \any \tvc \tvc \ \mathsf{one}$ can be inferred for $\tvb$,
+without rendering the constraint unsatisfiable. In particular, with
+the context $\C \is \clet {getx}
+\delta {\cexists {\tvb, \tvc} \cunif \delta {\tvb \to \tvc} \cand \square}
+{\capp {getx} {(\tint \ \mathsf{one} \to \tv)}}$, we have:
+\begin{mathpar}
+  \all {\semenv, \gt} \uad
+    \semenv \th \C\where{\cunif \tvb \gt} \implies \shape \gt = \any \tvc \tvc \ \mathsf{one}
+\end{mathpar}
+
+Any attempt to assign a differently shaped type (\eg \code{two}) to $\tvb$
+would cause the instantiation constraint to fail in the context $\C$.
+%
+This trick allows the unicity predicate to propagate shape information from
+instantiation constraints \textbf{back} into the let-bound abstraction,
+earning its name \emph{backpropagation}.
+\end{example}
 
 \paragraph{Well-foundedness}
 
@@ -1671,8 +1704,23 @@ inductive.
 
 \paragraph{Summary}
 
-To recap, the semantics of suspended constraints is governed by three
-principles:
+To recap, suspended constraints provide a principled mechanism
+for deferring constraint resolution until the structure of a type
+is known---at which point a matching branch is selected, if one exists.
+%
+We formalize the notion of structure using \emph{shapes}, eqiupped with a
+notion of principality that captures the most general decomposition of a
+type.
+
+Suspended constraints prove particularly useful in typing several
+fragile \ML extensions:
+\begin{enumerate*}
+  \item semi-explicit first-class polymorphism,
+  \item static overloading of record fields and datatype constructors, and
+  \item structural tuple projections from \SML.
+\end{enumerate*}
+
+Their semantics are govered by three rules:
 \begin{enumerate*}
   \item If the shape of the matchee is statically known, we use it
     directly via \Rule{Susp-Use};
@@ -1688,14 +1736,23 @@ These rules, together with the base rules from
 we collect all the rules pertaining to the satisfiability judgement in
 \cref{fig:contextual-semantics}.
 
+% Contextual semantics is cool, and our approach extends to type systems
+Suspended match constraints form a general and reusable mechanism, with
+potential applications beyond those discussed here\footnote{See
+\cref{sec:future}}. Our semantics integrates cleanly with \ML-style
+let-polymorphism, while maintaining a modular and compositional specification.
+Moreover, the contextual reasoning underpinning our semantics extends naturally
+to the typing rules for the \ML extensions considered in this section, as
+we demonstrate in the next.
+
 \begin{mathparfig}[t]
   {fig:contextual-semantics}
   {Semantics of constraints including suspended constraints}
   \begin{bnfgrammar}
     \entry[Semantic environment]{\semenv}{
       \cdot
-      \and \semenv, \tv := \t
-      \and \semenv, \x := \cabs \tv \c
+      \and \semenv, \tv := \gt
+      \and \semenv, \x := \glam
     }
   \end{bnfgrammar}
 \\
@@ -1709,11 +1766,11 @@ we collect all the rules pertaining to the satisfiability judgement in
     {\semenv \vdash \cone \cand \ctwo}
 
   \infer[Exists]
-    {\semenv, \tv := \tau \vdash \c}
+    {\semenv, \tv := \gt \vdash \c}
     {\semenv \vdash \cexists \tv \c}
 
   \infer[Forall]
-    {\forall \t, ~ \semenv, \tv := \t \vdash \c}
+    {\forall \gt, ~ \semenv, \tv \is \gt \vdash \c}
     {\semenv \vdash \tfor \tv \c}
 
   \infer[Unif]
@@ -1722,16 +1779,15 @@ we collect all the rules pertaining to the satisfiability judgement in
 
   \infer[Let]
     {\semenv \vdash \exists \tv. \cone \\
-     \semenv, \x :=  \cabs \tv \cone \vdash \ctwo}
+     \semenv, \x := \semenv(\cabs \tv \cone) \vdash \ctwo}
     {\semenv \vdash \clet \x \tv \cone \ctwo}
 
   \infer[App]
-    {\semenv(x) = \cabs \tv \c \\
-     \semenv, \alpha := \semenv(\t) \vdash \c}
-    {\semenv \vdash \cinst x \t}
+    {\semenv(\t) \in \semenv(\x)}
+    {\semenv \vdash \capp \x \t}
 
   \infer[Susp-Use]
-    {\shape \t \Defined  \\
+    {\t \in \Typesz  \\
      \cmatches \cpati {\decomp \t} \theta \\
      \semenv, \semenv(\theta) \th \ci
     }
@@ -1744,16 +1800,13 @@ we collect all the rules pertaining to the satisfiability judgement in
     }
     {\semenv \vdash \C\where{\cmatch \tv \cbrs}}
 \\
+\semenv(\cabs \tv \c) \Wide\eqdef \
+  \set {\gt \in \Ground : \semenv, \tv \is \gt \th \c}
+\\
 \Cshape \C \tv \sh \Wide\eqdef \
-  \forall \semenv, \t \in \Ground,
-      \semenv \th \C\where{\cunif \tv \t} \implies \shape \t = \sh
+  \forall \semenv, \gt, \uad
+      \semenv \th \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
 \end{mathparfig}
-
-% Contextual semantics is cool, and our approach extends to type systems
-Together, these rules define a flexible but principled system for constraint
-resolution, capable of both deferring and resolving shape information as
-determined by the constraint context. Importantly, the same style of contextual
-reasoning extends naturally to the static semantics of terms.
 
 \section{The \OML calculus}
 \label{sec:language}
@@ -2503,7 +2556,7 @@ we may pick a fresh type variable $\tv$ for $\t$.
 
 \begin{mathparfig}
   {fig:constraint-gen}
-  {The constraint generation translation for ??}
+  {The constraint generation translation for \OML}
 \newcommand {\Crule}[2]{#1 &\eqdef& #2}
 \def \arraystretch{1.2}%4
 \begin{tabular}{LCL}
@@ -3551,6 +3604,36 @@ heuristics to refine it, a two-phase process. It's fine.}
 \TODO{Show weel-foundedness of the constraint definition}
 
 
+\section{Proofs for \cref{sec:constraint-gen}}
+
+\begin{theorem}
+  Let $\G \th \e : \t$. Then $\th \bbrackets {\G \th \e : \t}$ holds.
+
+  \begin{proof}
+    By rule induction on $\G \th \e : \t$.
+
+    \proofcase {\Rule{Var}} We have $\G \th \x : \t$. By inversion, we have $\G \th \x : \ts$ and $\G \th \ts \leq \t$.
+    So we have $\x : \ts \in \G$. It sufficies to show that $\semenv \th \capp \x \t$ for any $\semenv \in \bbrackets{\G}$, that is
+    $\semenv, \tv \is \semenv(\t) \th \ts \leq \tv$, that is $\semenv \th \semenv(\ts) \leq \semenv(\t)$. We have this by Lemma ??.
+
+  \end{proof}
+\end{theorem}
+
+\begin{theorem}
+  If $\th \bbrackets {\G \th \e : \t}$, then $\G \th \e : \t$.
+
+  \begin{proof}
+    We proceed by structural induction on $\e$.
+
+    \proofcase {$\e$ is $\x$}
+    We have $\th \bbrackets {\G \th \x : \t}$. By inversion, we have $\semenv \th \capp \x \t$ for any $\semenv \in \bbrackets \G$.
+    By \Rule{App}, we have $\semenv(\x) = \clam \tv \ts \leq \tv$ for $\x : \ts \in \G$ and $\semenv, \tv \is \semenv(\t) \th \ts \leq \tv$.
+    \TODO{This is obviously true}
+
+
+
+  \end{proof}
+\end{theorem}
 %%% Below this line will is a draft
 \Draft{}{\end{document}}\color{blue}
 
