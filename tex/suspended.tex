@@ -61,6 +61,7 @@ Alternative titles (the long list has shrunk to):
 \end{version}
 
 \section{Introduction}
+\label{sec:introduction}
 
 % Introduction (ML, principality)
 The Damas-Hindley-Milner (\HM) \TODO{citations} type system has long occupied a
@@ -602,6 +603,7 @@ least somewhere.}
 `ok' or `wf' suffix to the judgement to make it clearer that it is
 well-formedness}
 \Xdidier {We still need to say something, just that it is obvious...}
+\Xalistair {This is fixed, see \cref{fig:ty-wf}}
 
 \parcomment{Syntax!}
 
@@ -1686,35 +1688,30 @@ constraints \textbf{back} into the let-bound abstraction, earning its name
 
 The astute reader may have noticed a compilication resulting
 from our definition of the unicity predicate:
-$\Cshape \C \tv \sh$ contains a negative occurrence of the
+$\Cshape \C \tv \sh$ includes a negative occurrence of the
 satisfiability judgement, in order to express that $\sh$
 is unique among all solutions of the ambient context $\C$.
 %
-This negative occurrence means that \emph{a priori}, the rules
+This negative occurrence means that, \emph{a priori}, the rules
 from \cref{fig:constraint-semantic} including \Rule{Susp-Use}, \Rule{Susp-Ctx}
-do not form an inductive definition in the usual sense.
+do not form an inductive definition in the usual syntactic sense.
 
-This is not merely a technical quirk: it threatens the foundational
-structure of the semantics. If left unaddressed, it would prevent
-us from interpreting the rules as a well-behaved inference system.
+This is not merely a technicality: it threatens the foundational
+structure of the semantics, preventing us from interpreting the
+rules as a well-founded inference system.
 
-However, it can easily be resolved by observing that the rules, while not
-syntactically well-founded, can be defined in a decreasing way by noting
+Fortunately, this issue can be resolved. Although the rules are not
+structurally well-founded, they can be defined in a decreasing way by noting
 that the conclusion of \Rule{Susp-Ctx} $\C\where{\cmatch \tv \cbrs}$ is
 structurally larger than the negatively-occurring judgement $\C\where{\cunif
-\tv \t}$.
+\tv \gt}$, as it contains one additional unresolved suspended match constraint.
+We formalize this decreasing measure in \Cref{appendix:wf}. This ensures that
+the semantics is well-defined, even if not syntactically inductive.
 
-Instead of consdering the rules defined above as a \emph{single}
-inductive definition, we consider them to determine a function
-$\bbrackets -$ from constraints $\c$ to sets of valuations $\semenv$.
-The satisfiability relation is defined as
-$\semenv \vdash \c \iff \semenv \in \bbrackets \c$.
-We can prove that $\bbrackets \c$ is well-defined by
-metered recursion of~$\c$. Furthermore, we show that the
-inference rules we have so far defined hold and are
-invertible.  We give the full details for this in \Cref{appendix:wf}.
-This ensures that the semantics is well-defined, even if not syntactically
-inductive.
+\begin{theorem}
+  The relation $\semenv \th \c$ is well-founded.
+\end{theorm}
+\Xalistair{@Didier, is there a way to link theorems between the appendix and the main body of the paper?}
 
 \paragraph{Summary}
 
@@ -1758,6 +1755,9 @@ let-polymorphism, while maintaining a modular and compositional specification.
 Moreover, the contextual reasoning underpinning our semantics extends naturally
 to the typing rules for the \ML extensions considered in this section, as
 we demonstrate in the next.
+
+\Xalistair{Not a huge fan of this summary --- its point is less clear to
+me and it reads strangely. }
 
 \begin{mathparfig}[t]
   {fig:contextual-semantics}
@@ -3609,9 +3609,135 @@ heuristics to refine it, a two-phase process. It's fine.}
 
 \appendix
 
-\section{Well-foundedness}
-\label {appendix:wf}
-\TODO{Show weel-foundedness of the constraint definition}
+\section{Syntax and semantics of constraints}
+\Xalistair{We introduce a lot of constraint constructs (later on for solving)
+           We should probably have an appendix for all the rules}
+
+\section{Syntax and typing rules of \OML}
+
+\section{Well-foundedness of satisfiability}
+\label{appendix:wf}
+
+In this appendix, we give the full details of the well-foundedness of the
+semantics of constraints, that is the satisfiability judgement $\semenv \th \c$.
+
+\newcommand{\cnmatches}[1]{\#\Match #1}
+\begin{theorem}
+  The relation $\semenv \th \c$ is well-founded.
+\begin{proof}
+  For the relation $\semenv \th \c$, the following measure on such judgements is
+  adequate to prove well-foundedness:
+  \begin{mathpar}
+    \angles{\cnmatches \c, \c}
+  \end{mathpar}
+  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
+  \begin{enumerate}
+
+    \item $\cnmatches \c$ is the number of $\cmatch \tv \cbrs$ constraints in
+      $\c$---that is, suspended match constraints whose matchee is a variable.
+
+    \item the last component $\c$ is a structural measure of constraints \ie a
+      conjunction $\cone \cand \ctwo$ is larger than the two conjuncts $\cone,
+      \ctwo$. \Xalistair{Should we be more formal here? we could introduce a
+      measure that characterizes this}
+
+  \end{enumerate}
+
+
+  We will now show that every rule uses a premise whose measure is smaller than
+  the conclusion.
+
+  \proofcase{\Rule{True}} No premises
+
+  \proofcase{\Rule{Conj}}
+    Each premise involves on conjuct (either $\cone$ or $\ctwo$) of the
+    constraint $\cone \cand \ctwo$. Since both are structurally smaller than
+    the full conjunction, and by definition, $\cnmatches {\cone}, \cnmatches
+    {\ctwo} \leq \cnmatches {\cone \cand \ctwo}$, the premises are strictly
+    smaller according to the measure.
+
+  \proofcase{\Rule{Exists}}
+    The premise involving the constraint $\c$ is structurally smaller than
+    $\cexists \tv \c$. Moreover, since quantification does not affect
+    $\cnmatches -$, we have $\cnmatches {\c} = \cnmatches{\cexists \tv \c}$.
+
+  \proofcase{\Rule{Forall}}
+    Analogous to the existential case: the qualified constraint $\c$ is
+    structurally smaller than $\cfor \tv \c$, and again, $\cnmatches$ is
+    preserved.
+
+  \proofcase{\Rule{Multi-Unif}} No premises involving constraints.
+
+  \proofcase{\Rule{Let}}
+    The first premise involves the existential $\cexists \tv \cone$, which can
+    be unrolled to a subjudgement on $\cone$ alone (using a single application
+    of \Rule{Exists}). Since $\cone$ is structurally smaller than the full
+    $\Let$ constraint $\clet \x \tv \cone \ctwo$, and $\cnmatches \cone \leq
+    \cnmatches \clet \x \tv \cone \ctwo$, the measure decreases.
+
+    The second premise involves $\ctwo$, which is again smaller than the
+    conclusion both structurally and in terms of $\cnmatches$. This premise
+    also relies on interpreting $\cabs \tv \cone$, which in turn involves a
+    subjudgement over $\cone$, already shown to be smaller.
+
+  \proofcase{\Rule{App}} No premises involving constraints.
+
+  \proofcase{\Rule{Susp-Use}}
+    Here, the premise involving the branch constraint $\ci$ is structurally
+    smaller than the entire match constraint $\cmatch \t {\cbranch {\bar \cpat}
+    {\bar \c}}$. Since $\t$ is not a type variable, the number of matches does
+    not \emph{strictly} decrease: $\cnmatches \ci \leq \cnmatches
+    {\cmatch \t {\cbranch {\cbar \cpat} {\bar \c}}}$.
+
+  \proofcase{\Rule{Susp-Ctx}}
+    The first premise $\Cshape \C \tv {\any \tvcs \t}$ involves a judgement of
+    the form $\C\where{\cunif \tv \gt}$ (for any $\gt$), which is strictly
+    smaller than the full match $\C\where{\cmatch \tv \cbrs}$ in terms of
+    $\cnmatches$.
+
+    The second premise is subtler: $\C\where{\cexists \tvcs \cunif \tv \t \cand
+    \cmatch \t \cbrs}$ appears to be larger at first glance, but it is smaller
+    in our measure becuase $\t$ is guaranteed not to be a type variable (by
+    definition of principal shapes). Thus $\cnamtches {\C\where{\cexists \tvcs
+    \cunif \tv \t \cand \cmatch \t \cbrs}} < \cnmatches {\C\where{\cmatch \tv
+    \cbrs}}$.
+
+  \proofcase{\Rule{LetR}}
+    Analogous to the \Rule{Let} case, and the argument proceeds similarly.
+    The only difference lies in the region bindings.
+
+    The first premise involving $\cexists {\tv, \tvs} \cone$, which again
+    reduces to a subjudgement involving $\cone$ (using $|\tvs| + 1$
+    applications  of \Rule{Exists}), is structurally is smaller than the
+    conclusion $\cletr \x \tv \tvs \cone \ctwo$. The measure similarly
+    satisfies $\cnmatches \cone \leq \cnmatches \cletr \x \tv \tvs \cone
+    \ctwo$.
+
+    The second premise involving $\ctwo$ is structurally smaller and depends on
+    the interpretation of the regional abstraction $\cabsr \tv \tvs \cone$. As
+    in the non-regional case, this abstraction uses a judgement involving
+    $\cone$, which has already been shown to be smaller.
+
+  \proofcase{\Rule{AppR}} No premises involving constraints.
+
+  \proofcase{\Rule{Papp}}
+    The premises involving $(\ueqi\where\ren)\iton$ each include a component of
+    the partial application $\cpapp \x \ren \ueqs \t$. Since renaming preserves
+    structural size and $\ueqi$ is strictly smaller than the full constraint,
+    the structural measure decreases (\Xalistair{Should we be more formal
+    here? giving a lemma that renaming preserves size (unlike substitution)}).
+    %
+    Moreover, $\cnmatches {\cpapp \x \ren \ueqs \t} = \cnmatches \ueqi = 0$, so
+    each premise has strictly smaller measure.
+\end{proof}
+\end{theorem}
+
+\section{Well-foundedness of \OML typing rules}
+
+\Xalistair{The same problem of well-foundedness comes up
+with the \OML typing rules. Should we have a separate
+section? Or deal with it in the above section (A single
+section for well-foundedness concerns)}
 
 
 \section{Proofs for \cref{sec:constraint-gen}}
