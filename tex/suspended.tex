@@ -167,11 +167,12 @@ limit its downsides.
 
 \paragraph{\Geninst-directional type inference}
 
- \Xdidier {See other choices in \texttt{./abbreviations.sty}}
- \Xalistair {In my report, I used $\pi$-directional `pi-directional' --
+\Xdidier {See other choices in \texttt{./abbreviations.sty}}
+\Xalistair {In my report, I used $\pi$-directional `pi-directional' --
  thought it was quite cute. What do you think?}\Xdidier {$\pi$- for
  polymorphism? Then $\Lambda$- could perhaps better carry the idea of
  polymorphism?} \Xalistair{$\pi$ for 'PI' \ie polymorphism to instance}
+
 \OCaml uses another mechanism for propagation of type information,
 based on polymorphism, which actually enforces an ordering in the
 typechecking of let-bindings, where the (polymorphic part of) a the
@@ -593,6 +594,15 @@ Our contributions are
 \entry[Shapes] \sh {} {}
 \end{bnffig}
 
+\Xdidier {We never defined the syntax of types? This, we need to do, at
+least somewhere.}
+
+\Xdidier [Reinstalled]{We need to define $\G \th \t$.}
+\Xalistair {The definition is entirely standard? We could add an
+`ok' or `wf' suffix to the judgement to make it clearer that it is
+well-formedness}
+\Xdidier {We still need to say something, just that it is obvious...}
+
 \parcomment{Syntax!}
 
 Building atop the constraint-based type inference framework of
@@ -754,7 +764,7 @@ The very purpose of annotation variables is to distinguish \emph{known},
 polymorphic polytypes from yet-unknown, monomorphic ones. However, they are
 \Xdidier[somewhat difficult to understand and]{I would cut this as I
 somewhat disagree...}\Xalistair{I still find them somewhat confusing, I
-propose we let Gabriel break this stalemate} sensitive to the placement of type
+propose we let Gabriel break this stalemate}\TODO{Discuss} sensitive to the placement of type
 annotation, an artifact of the fixed directionality of generalization in
 \geninst-directional inference. For instance, the following two terms differ
 only in the position of the annotation, yet only the one on the left-hand
@@ -835,7 +845,8 @@ be able to reuse the examples from the intro}
 \Xalistair {I've tried to reconcile some of the examples with the intro ---
  though I find myself thinking we're repeating bits of the intro here.
  My feeling is that this section should be the intro to this feature (as
- opposed to the introduction). }
+ opposed to the introduction).}\Xdidier{We need some examples in the intro,
+ before we do maths.  2.1 above contain maths.}
 
 \OCaml supports a limited yet useful form of static overloading for record
 labels and data type constructors.
@@ -891,11 +902,11 @@ If local type information and closed-world reasoning are insufficient,
 \OCaml falls back to a syntactic default: it selects the most recently
 defined compatible type. For example:
 \begin{program}[input]
-  let proj$_y$ = fun {y; _} -> y
+  let gety = fun {y; _} -> y
 \end{program}
 \programjoin
 \begin{program}[output]
-  val proj$_y$ : three -> int
+  val gety : three -> int
 \end{program}
 The expression is compatiable with both \code{two} and \code{three},
 since each defines a field \code{y}. But \code{three} is chosen simply
@@ -942,7 +953,10 @@ and $y$ and there is a unique solution. In fact, an approach based on
 qualified types would solve this example statically.
 Nominal records are an example where we should allow to combine information
 from two different use points---of the same type. That is several matches on
-the same variable should be combined.}
+the same variable should be combined. I cannot either for the moment, but at
+some point I wanted to merge overloaded constraint on the same variable to
+take take the intersection of their head constructors. Still planing to do
+that, which would solve this example}
 \Xalistair {My mistake, the amount of example changes does indeed make this
 ill-typed.}
 
@@ -994,7 +1008,6 @@ matching of records, function applications and the syntactic sugar $\eproj \e j
     {\G \th \e : \tsrecord {j = \tj; \varrho }}
     {\G \th \eproj \e j : \tj}
 \end{mathpar}
-
 Here, the projection retrieves the $j$-th field from a record with tail
 $\varrho$. However, \SML enforces an additional restriction: the tail
 $\varrho$ must be fully determined (\ie cannot be a polymorphic row variable).
@@ -1639,33 +1652,34 @@ and fails to infer the unique type of \code{'a one} for  \code{r}.
 %
 In constrast, our approach accepts it. The constraint generated when typing
 \code{e_9} is:
-\begin{align*}
-  \cexists \tv
+\begin{mathpar}
+\begin{tabular}{L.L}
+  \cexists \tv {}
   &\clet {getx} \delta
      {\cexists {\tvb, \tvc} \Parens {\strut
         \cunif \delta {\tvb \to \tvc} \cand
 	\cmatch \tvb {\cbranch {(\wild \Tapp[t])} {\labenv(\x/t) \leq \tvc \to \tvb}}
-        }}
-    {\\&\cinst {getx} {(\tint \ \mathsf{one} \to \tv)}}
-\end{align*}
-
-The unicity predicate $\Cshape \C \tvb \sh$ can be used to show that no other
-shape than $\sh \is \any \tvc \tvc \ \mathsf{one}$ can be inferred for $\tvb$,
-without rendering the constraint unsatisfiable. In particular, with
-the context $\C \is \clet {getx}
+        }}{}
+    \\&\cinst {getx} {(\tint \ \mathsf{one} \to \tv)}
+\end{tabular}
+\end{mathpar}
+The unicity predicate $\Cshape \C \tvb \sh$ can be used to show that no
+other shape than $\sh$ equal to $\any \tvc {\parens {\tvc \; \mathsf{one}}}$
+can be inferred for $\tvb$---without rendering the constraint
+unsatisfiable. In particular, with the context $\C$ equal to $\clet {getx}
 \delta {\cexists {\tvb, \tvc} \cunif \delta {\tvb \to \tvc} \cand \square}
 {\capp {getx} {(\tint \ \mathsf{one} \to \tv)}}$, we have:
 \begin{mathpar}
   \all {\semenv, \gt} \uad
     \semenv \th \C\where{\cunif \tvb \gt} \implies \shape \gt = \any \tvc \tvc \ \mathsf{one}
 \end{mathpar}
-
 Any attempt to assign a differently shaped type (\eg \code{two}) to $\tvb$
 would cause the instantiation constraint to fail in the context $\C$.
 %
-This trick allows the unicity predicate to propagate shape information from
-instantiation constraints \textbf{back} into the let-bound abstraction,
-earning its name \emph{backpropagation}.
+This \Xdidier[trick]{This is not a trick. It is just math} allows the
+unicity predicate to propagate shape information from instantiation
+constraints \textbf{back} into the let-bound abstraction, earning its name
+\emph{backpropagation}.
 \end{example}
 
 \paragraph{Well-foundedness}
@@ -2142,10 +2156,6 @@ context $\G$.
 
 
 \parcomment {Simple typing rules explained}
-
-\Xdidier {I am not sure that we need and will have space to read in details
-the typing rules of Core \ML}
-\Xalistair{Perhaps, I added them for completeness}
 
 Rule \Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
 Function types are introduced via lambda abstractions: in Rule \Rule{Fun}, the
