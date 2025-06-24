@@ -61,7 +61,7 @@ Alternative titles (the long list has shrunk to):
 \end{version}
 
 \section{Introduction}
-\label{sec:introduction}
+\label{sec/introduction}
 
 % Introduction (ML, principality)
 The Damas-Hindley-Milner (\HM) \TODO{citations} type system has long occupied a
@@ -1615,7 +1615,7 @@ choices.
 \end{example}
 
 \begin{example}
-Considering the example \code{e_8} from \cref{sec:introduction}:
+Considering the example \code{e_8} from \cref{sec/introduction}:
 \begin{program}[input]
 let e_8 r = let x = r.x in x + r.y
 \end{program}
@@ -1637,10 +1637,10 @@ can still deduce $\Cshape \C \tv {\mathsf{two}}$, since any solution to $\C$
 requires $\tv$ to be \code{two} (thanks to the equality $\cunif \tv
 {\mathsf{two}}$).
 
-This example illustrates that our formulation of suspended constraints interacts
-nicely with let-polymorphism. Although the two features are specified in a modular
-fashion, they are carefully crafted to work together (as we will further show
-in our next example).
+This example illustrates that our formulation of suspended constraints
+interacts nicely with let-polymorphism. Although the two features are
+specified in a modular fashion, they are carefully crafted to work together,
+as we will further show in our next example.
 \end{example}
 
 \begin{example}
@@ -1652,7 +1652,7 @@ let e_9 = let getx r = r.x in getx { x = 1 }
 \OCaml rejects this example, as it types the \code{let}-bound expression first
 and fails to infer the unique type of \code{'a one} for  \code{r}.
 %
-In constrast, our approach accepts it. The constraint generated when typing
+In contrast, our approach accepts it. The constraint generated when typing
 \code{e_9} is:
 \begin{mathpar}
 \begin{tabular}{L.L}
