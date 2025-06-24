@@ -1710,7 +1710,7 @@ the semantics is well-defined, even if not syntactically inductive.
 
 \begin{theorem}
   The relation $\semenv \th \c$ is well-founded.
-\end{theorm}
+\end{theorem}
 \Xalistair{@Didier, is there a way to link theorems between the appendix and the main body of the paper?}
 
 \paragraph{Summary}
@@ -3687,7 +3687,7 @@ semantics of constraints, that is the satisfiability judgement $\semenv \th \c$.
     smaller than the entire match constraint $\cmatch \t {\cbranch {\bar \cpat}
     {\bar \c}}$. Since $\t$ is not a type variable, the number of matches does
     not \emph{strictly} decrease: $\cnmatches \ci \leq \cnmatches
-    {\cmatch \t {\cbranch {\cbar \cpat} {\bar \c}}}$.
+    {\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}$.
 
   \proofcase{\Rule{Susp-Ctx}}
     The first premise $\Cshape \C \tv {\any \tvcs \t}$ involves a judgement of
@@ -3698,7 +3698,8 @@ semantics of constraints, that is the satisfiability judgement $\semenv \th \c$.
     The second premise is subtler: $\C\where{\cexists \tvcs \cunif \tv \t \cand
     \cmatch \t \cbrs}$ appears to be larger at first glance, but it is smaller
     in our measure becuase $\t$ is guaranteed not to be a type variable (by
-    definition of principal shapes). Thus $\cnamtches {\C\where{\cexists \tvcs
+    definition of principal shapes).
+    Thus $\cnmatches {\C\where{\cexists \tvcs
     \cunif \tv \t \cand \cmatch \t \cbrs}} < \cnmatches {\C\where{\cmatch \tv
     \cbrs}}$.
 
