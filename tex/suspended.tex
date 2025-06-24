@@ -2978,12 +2978,11 @@ considered equal. These generalize binary equalities and their semantic
 interpretation is given by:
 \begin{mathpar}
   \infer[Multi-Unif]
-    {\tp \in \Ground \\
-     \all {\t \in \ueq}\, \semenv(\t) = \tp}
+    {\all {\t \in \ueq}\, \semenv(\t) = \gt}
     {\semenv \vdash \ueq}
 \end{mathpar}
 That is, $\semenv$ satisfies $\ueq$ if all members of $\ueq$ are mapped to a
-single ground type $\tp$ by $\semenv$. We consider multi-equations equal
+single ground type $\gt$ by $\semenv$. We consider multi-equations equal
 modulo permutation of their members. \Xdidier{Then, we could also
 identify $\t = \eset$ with $\t$.}
 
@@ -3113,7 +3112,7 @@ equational theory of types implemented by the unifier.
     \dots \and \cletr \x \tv \tvs \ca \cb \and \cpapp \x \ren \ueqs \t
   } \\
   \entry[Semantic environment]{\semenv}{
-    \dots \and \semenv, \x := \cabsr \tv \tvs \c
+    \dots \and \semenv, \x := \gabsr \tv \tvs
   } \\
   \entry[Renaming]{\ren}{
     \eset \and \rho[\tv := \tvb]
@@ -3123,29 +3122,33 @@ equational theory of types implemented by the unifier.
 In general, existential quantifiers $\cexists \tv \c$ are lifted to the
 nearest enclosing $\Let$, if any, or otherwise to the top of the constraint.
 We refer to the resulting existential prefix $\exists \tvs$ as a
-\emph{region}. To make regions explicit, we introduce the syntax
-$\cletr \x \tv \tvs \ca \cb$, where $\tv$ is the \emph{root} of the region
-and $\tvs$ are auxiliary existential variables.  Both $\tv$ is bound in
-$\ca$ but not in $\cb$, while $\tvs$ are bound in $\ca$ but may also appear
-in $\cb$ but only in a partial application of $\x$.  In particular, $\tvs$
-cannot appear in $\cb$ when $\x$ does not appear in $\cb$.  The order of
-$\tvs$ is immaterial, and regions are considered equal up to permutation of
-these variables.
+\emph{region}. To make regions explicit, we introduce the syntax $\cletr \x
+\tv \tvs \ca \cb$, where $\tv$ is the \emph{root} of the region and $\tvs$ are
+auxiliary existential variables. Both $\tv, \tvs$ are bound in $\ca$ but they
+may also appear in $\cb$ but only in a partial application of $\x$.  In
+particular, $\tvs$ cannot appear in $\cb$ when $\x$ does not appear in $\cb$.
+The order of $\tvs$ is immaterial, and regions are considered equal up to
+permutation of these variables.
 
 The satisfiability of regional $\Let$-constraints is defined by:
 \begin{mathpar}
   \infer[LetR]
     {\semenv \th \cexists {\tv, \tvs} \ca \\
-     \semenv, \x \is \cabsr \tv \tvs \ca \th \cb}
+     \semenv, \x \is \semenv(\cabsr \tv \tvs \ca) \th \cb}
     {\semenv \th \cletr \x \tv \tvs \ca \cb}
 
   \infer[AppR]
-    {\semenv(\x) = \cabsr \tv {\tvs'} \c \\
-     \semenv, \tv \is \semenv(\t), \tvs' \is \tys' \th \c}
+    {\semenv(\x) = \gabsr \tv \tvs \\
+     \semenv(\t) \in \glam}
     {\semenv \th \capp \x \t}
+\\
+  \semenv(\cabsr \tv \tvs \c) \uad\eqdef\uad \gabsr[\set {\gt \in \Ground :
+  \semenv, \tv \is \gt, \tvs \is \bar \gt \th \c}] \tv \tvs
 \end{mathpar}
-We introduce an abstraction with a region, written $\cabsr \tv \tvs \c$, to
-track the region introduced in \Rule{LetR}. Region-based $\Let$-constraints
+The semantic interpretation of an abstraction with a region, written
+$\semenv(\cabsr \tv \tvs \c)$, is a set of ground types $\glam \subseteq
+\Ground$ for which the applications are satisfiable with the region
+$\tv\;\where\tvs$. Region-based $\Let$-constraints
 strictly generalize ordinary constraint abstractions:
 \begin{mathpar}
   \clet \x \tv \ca \cb \cequiv \cletr \x \tv \eset \ca \cb
@@ -3406,10 +3409,10 @@ the abstraction and propagation additional equations to the application sites.
 We assign the following semantics to partial application constraints:
 \begin{mathpar}
 \infer[Papp]{
-   \semenv(\x) = \cabsr \tv \tvs \c \\
+   \semenv(\x) = \gabsr \tv \tvs \\
    \dom \ren \subseteq \tvs \\
    \semenv, \tv \is \semenv(\t) \th \ueqs [\ren] \implies
-   \semenv \th \capp \x \t                              \\
+   \semenv(\t) \in \glam                             \\
 }{% -------------------------------------------------------
    \semenv \th \cpapp \x \ren \ueqs \t
 }
