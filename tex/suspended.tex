@@ -57,34 +57,41 @@ Alternative titles (the long list has shrunk to):
 \begin{itemize}
 \item principality revisited for advanced \ML extensions
 \end{itemize}
-
+\Xdidier {I prefer \emph{principality revisied} than
+\emph{principled principality}}. The \Geninst-directionality does less,
+but is also principled, and work perhaprs behaves better for polymorphic
+params. \emph{Principality revisited} is thus more accurate, and still
+suggest that we do better, at least under some viewsince otherwise,
 \end{version}
 
 \section{Introduction}
 \label{sec/introduction}
 
-% Introduction (ML, principality)
-The Damas-Hindley-Milner (\HM) \TODO{citations} type system has long occupied a
-sweet spot in the design space of strongly typed programming languages, as it
-enjoys the \emph{principal type property}: every well-typed expression $\e$ has
-a most general type $\ts$ from which all other valid types for $\e$ are
-instances of $\ts$. For example, the identity function $\efun \x \x$ has
-the principal type $\tfor \tv \tv \to \tv$, generalizing types like
-$\tint \to \tint$ and $\tbool \to \tbool$.
+\parcomment {Introduction (ML, principality)}
 
-% Benefits of principality
+The Damas-Hindley-Milner (\HM) \cite{Damas-Milner/W@popl82} type system has
+long occupied a sweet spot in the design space of strongly typed programming
+languages, as it enjoys the \emph{principal type property}: every well-typed
+expression $\e$ has a most general type $\ts$ from which all other valid
+types for $\e$ are instances of $\ts$. For example, the identity function
+$\efun \x \x$ has the principal type $\tfor \tv \tv \to \tv$, generalizing
+types like $\tint \to \tint$ and $\tbool \to \tbool$.
+
+\parcomment {Benefits of principality}
+
 This property ensures predictable and efficient inference. Local typing
 decisions are always optimal, yielding most general types, without guessing or
 backtracking. As a result, inference of subexpressions can proceed in any
 order, and well-typedness is preserved under common program transformations
 such as let-contraction, let-expansion, and argument reordering.
 
-% Extensions often break pincipality
+\parcomment {Extensions often break pincipality}
+
 Over the years, many extensions of \ML have been proposed. Some of the new
 constructs, such as extensible records with row-polymorphism, higher-kinded
 types, or dimensional types, fit perfectly into the \ML framework. Others such
-as GADTs, higher-rank polymorphism, or static overloading
-\TODO{citations}, are \emph{fragile}, as they sometimes require explicit type
+as GADTs, higher-rank polymorphism, or static overloading, are
+\emph{fragile}, as they sometimes require explicit type
 annotations.
 %
 Consider impredicative higher-rank polymorphism:
@@ -92,8 +99,8 @@ Consider impredicative higher-rank polymorphism:
   let self f = f f
 \end{program}
 With higher-rank types, one could \emph{guess} the type of \code{f} to be
-either $\tfor \tv \tv \to \tv$ or $\tfor  \tv \tv \to \tv \to \tv$ in order to
-typecheck \code{self}---neither of which is more general than the other,
+either $\tfor \tv \tv \to \tv$ or $\tfor \tv \tv \to \tv \to \tv$ in order
+to typecheck \code{self}---neither of which is more general than the other,
 violating principality.
 
 \parcomment {Current approaches are kinda bad}
@@ -114,6 +121,14 @@ it should be typed. You assuming some OCaml-like syntax, so I would say
 Ocaml with polymorphic parameters, but his is \Geninst-directional.
 Still I would you a more explicit syntax $\all \tv \tv \to \tv \to \tv$}
 \Xalistair{I agree, but I'm not too sure what you have in mind as a fix.}
+\Xdidier{I would not use explicit polymorphism, but nomial records.}
+\begin{version}{}
+\begin{program}
+let foo r = r.x °\ocamlcomment{fails}°
+let foo r = if r.x then r else {x = false; y = 2}
+\end{program}
+
+\end{version}
 
 \parcomment {Annotations fixes all the issues (but they're problematic)}
 
@@ -161,9 +176,11 @@ principal solutions to the type inference problem, but with respect to a
 specification that made non-principal choices.
 %
 Bidirectional type inference has been largely used for languages with
-higher-rank polymorphism or subtyping~\TODO{citations}. Still, both \OCaml
-and \Haskell only use a limited form of bidirectional type inference to
-limit its downsides.
+higher-rank polymorphism, dependent types, or
+subtyping~\TODO{citations}. Still, both \OCaml and \Haskell only use a
+limited form of bidirectional type checking
+with an underlying first-order-unification based type inference engine,
+which limits the downsides of bidirectional type checking,
 
 
 \paragraph{\Geninst-directional type inference}
@@ -308,26 +325,30 @@ While they come with \emph{complete} algorithms, this is with respect to
 their specifications, which include some choices that are subjective and may
 sometimes look arbitrary.
 
-Indeed, they all reject examples as ambiguous when sometimes there would be a
-unique well-typed solution, as seen in the limitation of directional type
+\locallabelreset
+
+Indeed, they all reject examples as ambiguous when sometimes there would be
+a unique well-typed solution, as seen in the limitation of directional type
 inference.  The first source of incompleteness results from the ordering
 enforced between the resolution of core-language constraints that prevents
-some core information to be taken into account when resolving ambiguities.
+some core information to be taken into account when resolving ambiguities
+\llabel {item/order}.
 
-However, the resolution of each ambiguity is another source of
-incompleteness, which is actually three-fold:
-\begin{enumerate}
-\item\label {item/order}
-  the resolution is not considering type information from all
-  terms into account. \Xalistair{I don't see how this is a
-  new source of incompleteness? The reader already knows that
-    directionality results in incompleteness at this point.}
-\item\label {item/info}
+However, the resolution of ambiguities is another source of
+incompleteness, which is actually two-fold:
+\begin{enumerate*}
+%% \item\label {item/order}
+%%   the resolution is not considering type information from all
+%%   terms into account. \Xalistair{I don't see how this is a
+%%   new source of incompleteness? The reader already knows that
+%%     directionality results in incompleteness at this point.}
+\item[\llabel {item/info}]
   the resolution is not taking all contextual type information from
   each ambiguous term into account.
-\item\label {item/simultaneous}
-  each ambiguity is solved independently of other, yet unresolved ones;
-\end{enumerate}
+\item[\llabel {item/simultaneous}]
+  each ambiguity is solved independently of other, yet unresolved ones.
+\end{enumerate*}
+
 Let us consider a few more examples:
 \begin{program}[error]
 let e_6 r = (r.x, r.y)
@@ -344,7 +365,7 @@ we should learn that \ocaml{r} is of type \ocaml{two} and since it is
 $\lambda$-bound, this should then make the first projection unambiguous.
 The failure is a matter of solving the constraint in the right order, which
 should wishfully be eliminated by omnidirectional type inference.
-This illustrates case~\ref {item/order}.
+This illustrates case~\lref {item/order}.
 
 \parcomment{Backpropagation and old-variable cases}
 
@@ -352,10 +373,12 @@ This illustrates case~\ref {item/order}.
 where it fails as ambiguous, while omnidirectional type inference has a view on
 the whole program and may learn from the body of the let-binding that the
 instance of $getx$ must have type \ocaml"int one -> int" and is therefore its
-let-bound type (scheme) should be \ocaml$'a one -> 'a$ and is non-ambiguous. A
+let-bound type (scheme) should be \ocaml$'a one -> 'a$ and is non-ambiguous.
+This is an example of case~\lref{item/info}.
+A
 similar failure occurs in \ocaml{e_8}\footnote{Ignoring default rules}, where
 the type of the $\lambda$-bound variable \code{r} is initially ambiguous and
-unknown. It is only ypon typing the projection \code{r.y} that \code{r} is
+unknown. It is only upon typing the projection \code{r.y} that \code{r} is
 forced to have the type \ocaml{two}.
 %
 Our proposal with omnidirectional type inference succeeds
@@ -398,7 +421,7 @@ fields). Regardless, our theory described in this paper does not typecheck
 
 
 In \ocaml{e_9}, the only possible type is \ocaml{one} if we take into account
-the return type of the projection. This illustrates case~\ref {item/info}.
+the return type of the projection. This also illustrates case~\lref {item/info}.
 Our current presentation, in this paper, treats this term as ambiguous,
 since we do not permit the return type to influence resolution until
 the projection itself has been disambiguated. Nonetheless, it is
@@ -406,7 +429,7 @@ entirely possible to typecheck such expressions using the omnidirectional
 framework, as we discuss in \cref{sec:future-work}.
 
 Omnidirectional still fails on \ocaml{e$_{10}$}, which is an instance of the
-case~\ref {item/simultaneous} of incompleteness. Here, both projections
+case~\lref {item/simultaneous} of incompleteness. Here, both projections
 must be considered simultaneously to infer that the type of
 \ocaml{r} must be \ocaml{one}.
 %
@@ -595,15 +618,8 @@ Our contributions are
 \entry[Shapes] \sh {} {}
 \end{bnffig}
 
-\Xdidier {We never defined the syntax of types? This, we need to do, at
-least somewhere.}
-
-\Xdidier [Reinstalled]{We need to define $\G \th \t$.}
-\Xalistair {The definition is entirely standard? We could add an
-`ok' or `wf' suffix to the judgement to make it clearer that it is
-well-formedness}
-\Xdidier {We still need to say something, just that it is obvious...}
-\Xalistair {This is fixed, see \cref{fig:ty-wf}}
+\Xdidier{Give the syntax of type and point to their well-formedness
+\cref{fig:ty-wf}}
 
 \parcomment{Syntax!}
 
@@ -3599,6 +3615,9 @@ heuristics to refine it, a two-phase process. It's fine.}
 
 \section{Future work}
 \label{sec:future-work}
+
+\Xdidier{How would we solved example $e_9$ as announce in \cref
+{sec/introduction}?}
 
 % \begin{acks}
 % \end{acks}

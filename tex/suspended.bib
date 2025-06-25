@@ -1234,3 +1234,72 @@
   month        = jun,
   pages        = {1–24}
 }
+
+@inproceedings{10.1145/3385412.3386003,
+  author       = {Emrich, Frank and Lindley, Sam and Stolarek, Jan and
+                  Cheney, James and Coates, Jonathan},
+  title        = {FreezeML: complete and easy type inference for first-class
+                  polymorphism},
+  year         = {2020},
+  isbn         = {9781450376136},
+  publisher    = {Association for Computing Machinery},
+  address      = {New York, NY, USA},
+  url          = {https://doi.org/10.1145/3385412.3386003},
+  doi          = {10.1145/3385412.3386003},
+  abstract     = {ML is remarkable in providing statically typed
+                  polymorphism without the programmer ever having to write
+                  any type annotations. The cost of this parsimony is that
+                  the programmer is limited to a form of polymorphism in
+                  which quantifiers can occur only at the outermost level of
+                  a type and type variables can be instantiated only with
+                  monomorphic types.  Type inference for unrestricted System
+                  F-style polymorphism is undecidable in
+                  general. Nevertheless, the literature abounds with a range
+                  of proposals to bridge the gap between ML and System F.
+                  We put forth a new proposal, FreezeML, a conservative
+                  extension of ML with two new features. First, let- and
+                  lambda-binders may be annotated with arbitrary System F
+                  types. Second, variable occurrences may be frozen,
+                  explicitly disabling instantiation. FreezeML is equipped
+                  with type-preserving translations back and forth between
+                  System F and admits a type inference algorithm, an
+                  extension of algorithm W, that is sound and complete and
+                  which yields principal types.},
+  booktitle    = {Proceedings of the 41st ACM SIGPLAN Conference on
+                  Programming Language Design and Implementation},
+  pages        = {423–437},
+  numpages     = {15},
+  keywords     = {first-class polymorphism, impredicative types, type
+                  inference},
+  location     = {London, UK},
+  series       = {PLDI 2020}
+}
+
+
+@inproceedings{Damas-Milner/W@popl82,
+  author       = {Damas, Luis and Milner, Robin},
+  title        = {Principal type-schemes for functional programs},
+  year         = {1982},
+  isbn         = {0897910656},
+  publisher    = {Association for Computing Machinery},
+  address      = {New York, NY, USA},
+  url          = {https://doi.org/10.1145/582153.582176},
+  doi          = {10.1145/582153.582176},
+  booktitle    = {Proceedings of the 9th ACM SIGPLAN-SIGACT Symposium on
+                  Principles of Programming Languages},
+  pages        = {207--212},
+  numpages     = {6},
+  location     = {Albuquerque, New Mexico},
+  series       = {POPL '82}
+}
+
+@article{Hindley/Principal@tams1969,
+    title = {The Principal Type-Scheme of an Object in Combinatory Logic},
+    volume = {146},
+    doi = {10.2307/1995158},
+    pages = {29},
+    journaltitle = {Transactions of the American Mathematical Society},
+    author = {Hindley, R.},
+    date = {1969},
+}
+
