@@ -63,8 +63,14 @@
 
 \defmetavar{\cpat}{\rho}
 \newcommand{\cpatprod}[2]{\Pi~{{#1}_{#2}}}
+\newcommand{\cpatpoly}[1]{\tpoly {#1}}
+\newcommand{\cpatwild}{\wild}
+\newcommand{\cpatrcd}[1]{\wild \Tapp[#1]}
+\defmetavar{\cs}{s}
+\defmetavar{\ct}{t}
 \defmetavar[s]{\cbr}{\chi}
 \newcommand{\cbranch}[2]{#1 \to #2}
+
 \newcommand{\cpapp}[4]{{#1} \where{{#2} \th {#3}} \; #4}
 \defmetavar{\ren}{\rho}
 
@@ -120,6 +126,8 @@
 \defmetavar{\tw}{\tvb}
 \defmetavar{\gt}{\mathfrak{g}}
 \defmetavar{\glam}{\mathfrak{G}}
+\newcommand{\gabsr}[3][\glam]{{#1} [#2\;\where{#3}]}
+\defmetavar{\gscm}{\mathfrak{s}}
 \newcommand{\Powerset}[1]{\mathcal{P}(#1)}
 
 \newcommand{\tarrow}{\to}
@@ -192,6 +200,9 @@
 
 \newcommand{\csem}[1]{\bbrackets {#1}}
 \newcommand{\cinfer}[2]{\csem {#1 : #2}}
+\newcommand{\cinferlab}[3]{\csem {#1 : #2 \to #3}}
+\newcommand{\cinferlabuni}[2]{\csem {#1 \uni #2}}
+\newcommand{\cinferassn}[3]{\csem {#1 = #2 : #3}}
 
 %% \newcommand{\TODO}{\textcolor{red}{TODO}}
 \newcommand{\disjoint}{\mathop{\#}}
