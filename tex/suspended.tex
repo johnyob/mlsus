@@ -2638,7 +2638,7 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     }
   \end{bnfgrammar}
   \\
-  \renewcommand{\Mrule}[4][]{{#2} \Matches {#3} &\eqdef& {#4} & #1}
+  \newcommand{\Mrule}[4][]{{#2} \Matches {#3} &\eqdef& {#4} & #1}
   \begin{tabular}{RCLL}
     \Mrule[\text{if } n \geq j]
       {\cpatprod \tv j}
@@ -2668,7 +2668,7 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     {\semenv \th \x \leq \semenv(\cs)}
     {\semenv \th \x \leq \cs}
   \\
-  \renewcommand{\Srule}[3][]{{#2} &\eqdef& {#3} & {#1}}
+  \newcommand{\Srule}[3][]{{#2} &\eqdef& {#3} & {#1}}
   \begin{tabular}{RCLL}
     \Srule[\text{if } \labenv(\elab/\T) = \tfor \tvs \t \to \tvs \Tapp]
       {\labenv(\elab/\T) \leq \tone \to \ttwo}
