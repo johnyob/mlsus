@@ -584,11 +584,11 @@ Our contributions are
 \entry[Type variables]{\tva, \tvb, \tvc}{}{}
 \\
 %% \entryset[Types]{\t}{\Types}\\
-\entry[(Simple) types]{\t}{
+\entry[Types]{\t}{
     \tv \and
     \tunit \and
-    \t \to \t \and
-    \Pi \parens \t\iton \and
+    \tone \to \ttwo \and
+    \Pi\iton \ti \and
     \tys \T \and
     \tpoly \ts
 }\\
@@ -629,17 +629,25 @@ Our contributions are
 
 \Xdidier{Give the syntax of type and point to their well-formedness
 \cref{fig/types/wf}}
+\Xalistair{I have removed well-formedness. It was getting in the way of proofs.}
 
 \parcomment{Syntax!}
 
 The syntax of types and constraints is given
-in~\Cref{fig:constraint-syntax}.  Types are as usual type variables $\tv$,
-the unit type $\tunit$, arrow types, structual tuples $\Pi {\ti}\iton$,
-nominal types $\tys \T$, or polytypes $\tpoly \ts$ where type schemes $\ts$
-are, as usual, of the form $\all \tvs \t$, since we treat them up to the
+in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are as usual
+including: type variables $\tv$,
+the unit type $\tunit$, arrow types, structual tuples $\Pi\iton {\ti}$,
+nominal types $\tys \T$, or polytypes $\tpoly \ts$. Type schemes $\ts$
+are of the form $\all \tvs \t$, they are equal up to the
 reordering of binders.
 We write $\Types$ the set of types and $\Typesz$ the subset of nonvariable
 types.
+\Xalistair{We left patterns abstract since types were abstract. Perhaps
+we could give the syntax of patterns here? My idea was that we left types /
+patterns abstract and we could then present our approach as a `framework'.
+But I appreciate that this makes the explainations harder. Although now
+thinking about it, we introduce polytypes before talking about semi-explicit
+first-class polymorphism. We also duplicate bits from \cref{sec/language}}
 
 Building atop the constraint-based type inference framework of
 \citet{Pottier-Remy/emlti}, we adopt a constraint language that includes both
@@ -800,18 +808,12 @@ $\tfor \ava {\tapoly \ts \ava}$.
 
 The very purpose of annotation variables is to distinguish \emph{known},
 polymorphic polytypes from \emph{not-yet-known}, monomorphic ones. However,
-\Xdidier{I wanted to cut \emph{they are somewhat difficult
-to understand} as I disagreed and but Alistair disagreed with the
-cut:}\Xalistair{I still find them somewhat confusing, I propose we let
-Gabriel break this stalemate}\Xdidier {So, instead, I propose the more
-detailed explaination tha comes next:} they may be sometimes be unintuitive
-as some information that has just been inferred must still be considered as
-yet-unknown until its generalization.  They are also sensitive to the
-placement of type annotation, an artifact of the fixed directionality of
-generalization in
-\geninst-directional inference. For instance, the following two terms differ
-only in the position of the annotation, yet only the one on the left-hand
-side is well-typed.
+they may be sometimes be unintuitive as some information that has just been
+inferred must still be considered as yet-unknown until its generalization.
+They are also sensitive to the placement of type annotation, an artifact of the
+fixed directionality of generalization in \geninst-directional inference. For
+instance, the following two terms differ only in the position of the
+annotation, yet only the one on the left-hand side is well-typed.
 \begin{mathpar}
  \efun f {\eapp {\einst {(f : \tpoly {\tfor \tv {\tv \to \tv}})}} f}
 
@@ -1114,6 +1116,9 @@ equirecursive types.}---ranged over by $\gt \in \Ground$, where $\Ground
 \subseteq \Types$ denotes the set of ground types. Term variables are mapped to
 sets $\glam \subseteq \Ground$, representing the set of ground types for which the
 application $\capp \x \t$ is satisfiable under the closure of $\x$.
+\Xalistair{We should make semantic environments less 'ordered' and total --
+\ie two total mappings from type variables to ground types and term variables
+to sets of ground types.}
 
 \parcomment {Definition exampled}
 
@@ -1973,12 +1978,10 @@ pragmatic tradeoff in \cref{sec:implementation}.
 }\\
 \entry[Contexts]{\G}{
    \eset \and
-   \G, x : \ts \and
-   \G, \tv
+   \G, x : \ts
 }\\
 \end{bnffig}
 
-\paragraph{Terms}
 
 In \cref {fig/syntax}, we give the grammar for our calculus. Terms include
 all of the \ML calculus: variables $x$, the unit literal $\eunit$,
@@ -2006,7 +2009,6 @@ explicitly annotated counterpart (written $\e^x$ or $\el^x$) that is
 $\eproj [n] \e j$, $\epoly [\exi \tvs \ts]
 \e$, $\einst [\exi \tvs \ts] \e$, or $\elab / \T$ for record labels.
 
-\paragraph{Types}
 
 As usual, types are split into monotypes (or just types) and type schemes.
 Types $\t$ include the variables $\tv$, the unit type $1$, function types
@@ -2014,6 +2016,10 @@ $\tone \to \ttwo$, $n$-ary product types $\Pi \iton \ti$ and nominal
 record types $\tys \T$. Type schemes $\sigma$ extend monotypes allowing the
 universal quantification of zero or more type variables $\all \tvs \t$. We
 also have polytypes \textit{without the annotations} $[\ts]$ as monotypes.
+Typing contexts $\Gamma$ are an ordered sequence of expression variable
+typings $x : \sigma$.
+
+
 The structure of principal shapes $\sh$ induced by syntax of types given here
 is a shape $\any \tvcs \t$ where
 \begin{itemize}
@@ -2037,14 +2043,6 @@ is a shape $\any \tvcs \t$ where
 \end{itemize}
 \end{itemize}
 
-\paragraph{Typing contexts}
-
-Tying contexts $\Gamma$ are an ordered sequence of expression variable
-typings $x : \sigma$ and universally quantified type variables. Our
-presentation of \ML explicitly tracks the type variables in scope in the type
-context $\G$. (This may differ from traditional presentations that permit type
-variables to ``float around''.)
-
 
 \subsection{Typing rules}
 \label{sec/language/typing-rules}
@@ -2053,11 +2051,7 @@ As usual, the main typing judgment $\G \th \e : \ts$ states that in context
 $\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
 {fig/typing}.  They use auxiliary typing judgemnents $\G \th \elab = \e : \t$
 and $\G \th \el : \t \to \tp$ for the typing of record assignments and
-label instantiations respectively. The judgement $\G \th \t$, defined in
-\cref{fig/types/wf}, is used to ensure the well-formedness of $\t$ under the
-context $\G$.
-
-
+label instantiations respectively.
 
 \begin{mathparfig}{fig/typing}{Typing rules of \OML}
   \inferrule[Var]
@@ -2065,8 +2059,7 @@ context $\G$.
     {\G \th x : \sigma}
 
   \inferrule[Fun]
-    {\G \th \tone \\
-     \G, x : \tone \th e : \ttwo }
+    {\G, x : \tone \th e : \ttwo }
     {\G \th \efun x e : \tone \to \ttwo}
 
   \inferrule[App]
@@ -2083,12 +2076,11 @@ context $\G$.
     {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
 
   \inferrule[Gen]
-    {\G, \tv \th e : \sigma }
+    {\G \th e : \sigma \\ \tv \disjoint \G}
     {\G \th e : \tfor \tv \sigma}
 
   \inferrule[Inst]
-    {\G \th e : \tfor \tv \ts \\
-     \G \th \t}
+    {\G \th e : \tfor \tv \ts}
     {\G \th e : \tv \where{\tv \is \t}}
 
   \inferrule[Let]
@@ -2145,8 +2137,7 @@ context $\G$.
     {\G \th \efield \e \el : \t}
 
   \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \tvs \T \\
-     \G \th \tys}
+    {\Omega(\elab / \T) = \tfor \tvs \t \to \tvs \T }
     {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \tys \T}
 
   \inferrule[Lab-I]
@@ -2155,8 +2146,7 @@ context $\G$.
     {\G \th \Lab[\elab] : \t}
 
   \inferrule[Lab-!]
-    {\bar \el \uni \T \in \labenv \\
-     \G \th \tys}
+    {\bar \el \uni \T \in \labenv}
     {\G \th \bar \el \uni \tys \T}
 
   \inferrule[Lab-?]
@@ -2164,6 +2154,7 @@ context $\G$.
     {\G \th \bar \el \uni \t}
 \end{mathparfig}
 
+\begin{version}{}
 \begin{bnffig}{fig/types/bnf}{aaa}
 \entry[Types]{\t}{
     \tv \and
@@ -2207,6 +2198,7 @@ context $\G$.
     {\G, \tv \th \ts}
     {\G \th \tfor \tv \ts}
 \end{mathparfig}
+\end{version}
 
 
 \parcomment {Simple typing rules explained}
@@ -2269,7 +2261,7 @@ that allows an expression $\e$ of type $\t$ to be seen with type $\tp$.
 That is the typing rule for casts is:
 \begin{mathpar}
   \inferrule[Cast]
-    {\G \th e : \t \\ \G \th \t, \tp}
+    {\G \th e : \t}
     {\G \th \ecast e \t \tp : \tp}
 \end{mathpar}
 Casts expressions are not allowed on source terms and are just a device for
@@ -2344,7 +2336,7 @@ analogous to the cast operator for expressions, which asserts that the
 label is instantiated to the type $\tp \to \t$ for any $\tp$.
 \begin{mathpar}
   \infer[Lab-Cast]
-    {\G \th \tp, \t}
+    {}
     {\G \th \elcast \elab \t : \tp \to \t}
 \\
 \Eshape \Lab \elab \T \Wide\eqdef
