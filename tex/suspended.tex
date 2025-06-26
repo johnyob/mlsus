@@ -115,25 +115,10 @@ are often twisted with some direct or indirect algorithmic flavor in order to
 preserve principality and completeness.
 %
 Moreover, these (more or less) ad-hoc restrictions commonly reject examples
-whose type could easily be guessed. For instance, \citep{TODO} reject:
+whose type could easily be guessed. For instance, \MLF~ rejects:
 \begin{program}[input]
   let self' f = if true then f f else (f : $\forall$'a. 'a -> 'a)
 \end{program}
-\Xdidier {This example is problematic as we do not known in which langage
-it should be typed. You assuming some OCaml-like syntax, so I would say
-Ocaml with polymorphic parameters, but his is \Geninst-directional.
-Still I would you a more explicit syntax $\all \tv \tv \to \tv \to \tv$}
-\Xalistair{I agree, but I'm not too sure what you have in mind as a fix.}
-\Xdidier{I used \MLF, which allows inline polytypes.
-Otherwise, I would use an example with nominal records instead of
-first-class polymorphism.}
-\begin{version}{}
-\begin{program}
-let foo r = r.x °\ocamlcomment{fails}°
-let foo r = if r.x then r else {x = false; y = 2}
-\end{program}
-
-\end{version}
 
 \parcomment {Annotations fixes all the issues (but they're problematic)}
 
@@ -1107,18 +1092,23 @@ are discharged accordingly.
 
 The semantics of constraints is given, as is standard, by a satisfiability
 judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied by
-the solution, or valuation, $\semenv$. The semantic environment $\semenv$ maps
-type variables to \emph{ground} types---types with no free
+the solution, or valuation, $\semenv$. The semantic environment $\semenv$ is a
+total map from type variables to \emph{ground} types---types with no free
 variables\footnote{Ground types are thus finite trees, assuming the existence
 of a base type such as $\tint$. In \cref{sec/rec-types}, we dissuss the
 alternative choice of regular trees for the set of ground types that models
 equirecursive types.}---ranged over by $\gt \in \Ground$, where $\Ground
-\subseteq \Types$ denotes the set of ground types. Term variables are mapped to
-sets $\glam \subseteq \Ground$, representing the set of ground types for which the
-application $\capp \x \t$ is satisfiable under the closure of $\x$.
-\Xalistair{We should make semantic environments less 'ordered' and total --
-\ie two total mappings from type variables to ground types and term variables
-to sets of ground types.}
+\subseteq \Types$ denotes the set of ground types.
+%
+Term variables are mapped to sets $\glam \subseteq \Ground$, representing the
+set of ground types for which the application $\capp \x \t$ is satisfiable
+under the closure of $\x$.
+
+We write $\semenv\where{\tv \is \gt}$ to denote the enviroment that agrees with
+$\semenv$ everywhere except at $\tv$, which is mapped to $\gt$; likewise, $\semenv
+\where{\x \is \glam}$ denotes the environment identical to $\semenv$ except that
+$\x$ is mapped to $\glam$. By homomorphism, $\semenv$ determines a total mapping
+from types to ground types, written $\semenv(\t)$.
 
 \parcomment {Definition exampled}
 
@@ -1138,9 +1128,9 @@ The rule for let-bindings reflects that the constraint abstraction $\cabs
 some instantiation of its bound variable; then binding the abstraction's
 interpretation to $\x$ in $\semenv$ when checking the satisfiability of $\ctwo$.
 Formally, constraint abstractions $\clam \tv \c$ are interpreted semantically as
-the set of ground types $\gt$ that satisfy $\semenv, \tv \is \gt \th \c$:
+the set of ground types $\gt$ that satisfy $\semenv\where{\tv \is \gt} \th \c$:
 \begin{mathpar}
-  \semenv(\clam \tv \c) \uad\eqdef\uad \set {\gt \in \Ground : \semenv, \tv \is \gt \th \c}
+  \semenv(\clam \tv \c) \uad\eqdef\uad \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
 \end{mathpar}
 
 Application constraints $\capp \x \t$ are interpreted by checking that $\t$
@@ -1148,7 +1138,7 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
 \in \semenv(\x)$. Equivalently, if $\x$ is mapped to the interpretation
 $\semenvp(\clam \tv \c)$ of the abstraction $\clam \tv \c$, then this
 membership holds if and only if the body $\c$ is satisfied under the extended
-environment $\semenvp, \tv \is \semenv(\t)$ --- here, $\semenvp$ is the
+environment $\semenvp\where{\tv \is \semenv(\t)}$ --- here, $\semenvp$ is the
 environment at the binding site of $\x$ and thus serves as the closure of
 $\clam \tv \c$.
 
@@ -1156,43 +1146,35 @@ $\clam \tv \c$.
 \begin{mathparfig}[t]%
   {fig:constraint-semantics}%
   {Semantics of constraints (without suspended constraints)}
-  \begin{bnfgrammar}
-    \entry[Semantic environment]{\semenv}{
-      \cdot
-      \and \semenv, \tv := \gt
-      \and \semenv, \x := \glam
-    }
-  \end{bnfgrammar}
-\\
   \infer[True]
     {}
-    {\semenv \vdash \ctrue}
+    {\semenv \th \ctrue}
 
   \infer[Conj]
-    {\semenv \vdash \cone \\
-     \semenv \vdash \ctwo}
-    {\semenv \vdash \cone \cand \ctwo}
+    {\semenv \th \cone \\
+     \semenv \th \ctwo}
+    {\semenv \th \cone \cand \ctwo}
 
   \infer[Exists]
-    {\semenv, \tv := \gt \vdash \c}
-    {\semenv \vdash \cexists \tv \c}
+    {\semenv\where{\tv \is \gt} \vdash \c}
+    {\semenv \th \cexists \tv \c}
 
   \infer[Forall]
-    {\forall \gt, ~ \semenv, \tv := \gt \vdash \c}
-    {\semenv \vdash \tfor \tv \c}
+    {\forall \gt, ~ \semenv\where{\tv \is \gt} \vdash \c}
+    {\semenv \th \tfor \tv \c}
 
   \infer[Unif]
     {\semenv(\tone) = \semenv(\ttwo)}
-    {\semenv \vdash \cunif \tone \ttwo}
+    {\semenv \th \cunif \tone \ttwo}
 
   \infer[Let]
     {\semenv \vdash \exists \tv. \cone \\
-     \semenv, \x :=  \semenv(\cabs \tv \cone) \vdash \ctwo}
-    {\semenv \vdash \clet \x \tv \cone \ctwo}
+     \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
+    {\semenv \th \clet \x \tv \cone \ctwo}
 
   \infer[App]
     {\semenv(\t) \in \semenv(\x)}
-    {\semenv \vdash \cinst x \t}
+    {\semenv \th \capp x \t}
 \end{mathparfig}
 
 % Why this semantics is useful
@@ -1207,17 +1189,24 @@ as for reasoning about the correctness of the solver.
 
 % Example
 
-Closed constraints are either satisfiable in the empty semantic environment
-$(\cdot)$ or unsatisfiable. For example, consider the constraint $\cexists
+Closed constraints are either satisfiable in any semantic environment (\ie they are tautologies)
+or unsatisfiable. For example, consider the constraint $\cexists
 \tv {\cunif \tv \tint}$, its satisfiability is established by the following
 derivation:
 \begin{mathpar}
   \infer*[Right=Exists]
     {\infer*[Right=Unif]
       {\infer*{}{\tint = \tint}}
-      {\cdot, \tv := \tint \vdash \cunif \tv \tint}}
-  {\cdot \vdash \cexists \tv \cunif \tv \tint}
+      {\semenv\where{\tv \is \tint} \vdash \cunif \tv \tint}}
+  {\semenv \vdash \cexists \tv \cunif \tv \tint}
 \end{mathpar}
+
+% Equivalence and entailment
+
+We write $\cone \centails \ctwo$ to express that $\cone$ \emph{entails} $\ctwo$,
+meaning every solution $\semenv$ to $\cone$ is also a solution to $\ctwo$.
+We write $\cone \cequiv \ctwo$ to indicate that $\cone$ and $\ctwo$ are equivalent,
+that is, they have exactly the same set of solutions.
 
 \subsection{Shapes}
 
@@ -1387,7 +1376,7 @@ is to propose the following rule---henceforth referred to as the
 \begin{mathpar}
 \infer[Susp-Nat]
   {\cmatches \cpati {\decomp {\semenv(\t)}} \theta \\
-   \semenv, \theta \th \ci}
+   \semenv \compose \theta \th \ci}
   {\semenv \vdash \cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}
 \end{mathpar}
 
@@ -1399,7 +1388,7 @@ matches the principal shape of the ground type $\semenv(\t)$\footnote{This is
 guaranteed to be defined by Theorem ??.}. The match yields a substitution
 $\theta$ that binds the subcomponents introduced by the pattern. The
 corresponding branch constraint $\ci$ must then be satisfied under the extended
-environment $\semenv, \theta$. In effect, the principal shape of
+environment $\semenv \compose \theta$. In effect, the principal shape of
 $\semenv(\t)$ provides the structural information needed to discharge the match
 constraint, while $\theta$ ensures correct scoping of the extracted components.
 
@@ -1433,13 +1422,13 @@ Consider the constraint $\cexists \tv \cunif \tv \tint \cand \cmatch \tv
 semantics, as shown by the derivation:
 \begin{mathpar}
 \def \cmatchex {\cmatch \tv {\cbranch \cwild \ctrue}}
-\def \semenv {\cdot, \tv \is \tint}
+\def \semenvex {\semenv\where{\tv \is \tint}}
     \infer*[Right=Conj]
     {
      \infer*[Left=Unif]
       {\tint = \tint}
       % -------------------------------
-      {\semenv \vdash \cunif \tv \tint}
+      {\semenvex \vdash \cunif \tv \tint}
      \\
      \infer*[Right=Susp-Nat]
       {
@@ -1448,16 +1437,16 @@ semantics, as shown by the derivation:
 	\infer*[Right=True]
 	  { }
 	  % ---------------------
-	  {\semenv \vdash \ctrue}
+	  {\semenvex \vdash \ctrue}
       }
       % ------------------------
-      {\semenv \vdash \cmatchex}
+      {\semenvex \vdash \cmatchex}
     \hspace{-2em}
 }{% ---------------------
     \infer*[Right=Exists]
-      {\semenv \vdash \cunif \tv \tint \cand \cmatchex}
+      {\semenvex \vdash \cunif \tv \tint \cand \cmatchex}
     % ------------------------------------------------------------
-      {\cdot \vdash \cexists \tv \cunif \tv \tint \cand \cmatchex}
+      {\semenv \vdash \cexists \tv \cunif \tv \tint \cand \cmatchex}
 }
 \end{mathpar}
 In this case, the shape of $\tv$ is first determined by the unification with
@@ -1475,7 +1464,7 @@ suggesting that the constraint should be unsatisfiable. Yet under the
 natural semantics, it is considered satisfiable:
 \begin{mathpar}
 \def \cmatchex {\cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}}
-\def \semenv {\cdot, \tv \is \tint}
+\def \semenvex {\semenv\where{\tv \is \tint}}
     \infer*[Right=Susp-Nat]
     {
       \cmatches \cwild {\pshapp[\tint]\cdot} \eset
@@ -1483,12 +1472,12 @@ natural semantics, it is considered satisfiable:
       \infer*[Right=Unif]
         {\tint = \tint}
 	% -------------------------------
-    {\semenv \vdash \cunif \tv \tint}
+    {\semenvex \vdash \cunif \tv \tint}
 }{% ---------------------------------
     \infer*[Right=Exists]
-    {\semenv \vdash \cmatchex}
+    {\semenvex \vdash \cmatchex}
   % -----------------------------------
-  {\cdot \vdash \cexists \tv \cmatchex}
+  {\semenv \vdash \cexists \tv \cmatchex}
 }
 \end{mathpar}
 In this case, the semantics les us \emph{guess} the type of $\tv$
@@ -1519,7 +1508,7 @@ First, we introduce a simplified variant of the natural rule
   \infer[Susp-Use]
     { \t \in \Typesz \\
       \cmatches \cpati {\decomp \t} \theta \\
-      \semenv, \semenv(\theta)  \th \ci
+      \semenv \compose \theta \th \ci
     }
     {\semenv \vdash \cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}
 \end{mathpar}
@@ -1552,18 +1541,24 @@ predicate, which is somewhat technical, is given below.
 
 \begin{definition}
   A type variable $\tv$ has a \emph{uniquely known} principal shape within
-  the context $\C\where{\square}$, written $\Cshape \C \tv \sh$, iff for all
-  assignments $\semenv$ and ground types $\gt$, then $\semenv \vdash
+  the context $\C\where{\square}$, written $\Cshape \C \tv \sh$, iff
+  $\C\where{\ctrue}$ is satisfiable and for all
+  assignments $\semenvp$ and ground types $\gt$, then $\semenvp \vdash
   \C\where{\cunif \tv \gt}$ implies that the principal shape of $\gt$ is equal
   to $\sh$.
 %
   In other words:
   \begin{mathpar}
-    \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \gt, \uad
-      \semenv \vdash \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
+    \Cshape \C \tv \sh \Wide\eqdef \exists \semenv. \uad \semenv \th \C\where{\ctrue}
+    \wedge
+    \forall \semenvp, \gt. \uad
+      \semenvp \vdash \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
   \end{mathpar}
   This condition ensures that we are not guessing a shape arbitrarily;
   the shape must already be determined by the ambient constraint.
+  The requirement that $\C\where{\ctrue}$ is satisfiable rules
+  out vacuous satisfaction of unicity: $\Cshape \C \tv \sh$
+  should not hold merely because the constraint is unsatisfiable.
 \end{definition}
 
 
@@ -1602,33 +1597,43 @@ Consider the more intricate example:
     {} \cand \tva = \tint
   \end{array}}
 \end{mathpar}
-To prove that this constraint is satisfiable we can use the \Rule{Susp-Ctx}
-twice, once with a hole around the suspension on $\tva$, and once with a
-hole around the suspension on $\tvb$. In fact, this can be done in any order:
-\begin{itemize}
-\item
-  If you focus on $\tva$ first, it is easy to prove that the context around it,
-    $(\square \cand \cmatchdots \tvb \cand \cunif \tva \tint)$, imposes a
-    unique solution thanks to $\cunif \tva \tint$. Then, we use the
-    $\Rule{Susp-Ctx}$ rule in the context $((\cmatch \tint {\cbranch \cwild
-    {\cunif \tvb \tbool}}) \cand \square \cand \cunif \tva \tint)$, and we have
-    to prove that $\tvb$ is uniquely determined in this context. This is in
-    turn proved by using the conjunction rule followed by \Rule{Susp-Use},
-    which gives us access to the unification $\cunif \tvb \tbool$.
 
-\item
-  If you focus on $\tvb$ first, proving that $\tvb$ is uniquely determined
-    in the context $(\cmatch \tva {\cbranch \cwild {\cunif \tvb \tbool}} \cand
-  \square \cand \cunif \tva \tint)$ requires using the \Rule{Susp-Ctx} again as
-  in the case above. Then, we end up with the constraint $(\cmatchdots \tva
-  \cand \cmatchdots \tbool \cand \tva = \tint)$, and we can use
-  \Rule{Susp-Ctx} yet another time on $\alpha$.
+Suppose we attempt to apply \Rule{Susp-Ctx} to the suspension on $\tva$ first.
+This requires us to show that $\tva$ has a uniquely determined shape in the
+context $\C \is \square \cand \cmatch \tvb {\cbranch \cpatwild \ctrue} \cand
+\cunif \tva \tint$.
 
-\end{itemize}
-This example illustrates that the declarative semantics supports arbitrary
-orders of resolution for suspended constraints---as long as the contextual
-conditions are met. This flexibility accommodates both top-down and
-bottom-up reasoning styles.
+However, this fails: $\tvb$ is unconstrained in $\C$, and thus the match
+constraint involving $\tvb$ cannot be resolved. As a result, no shape
+for $\tva$ can be justified, and the application of \Rule{Susp-Ctx} fails.
+
+Now consider instead applying \Rule{Susp-Ctx} to the suspension on $\tvb$
+first. To do, so, we must show that $\tvb$ has a uniquely determined shape
+in the context $\C \is \cmatch \tva {\cbranch \cpatwild {\cunif \tvb \tbool}}
+\cand \square \cand \cunif \tva \tint$.
+
+We begin by showing $\C\where{\ctrue}$ is satisfiable. This again requires
+applying \Rule{Susp-Ctx}, now considering the context $\Cp \is \square \cand
+\ctrue \cand \cunif \tva \tint$. This context is clearly satisfiable and
+determines the shape of $\tva$ to be $\tint$, thanks to $\cunif \tva \tint$.
+
+Next, we show that for any ground type $\gt$, if $\C\where{\cunif \tvb \gt}$ is
+satisfiable, then $\gt$ has the shape $\tbool$. Applying \Rule{Susp-Ctx} again
+to match on $\tva$ (as above), we gain access to the equality $\cunif \tvb
+\tbool$ in the resulting constraint. Any choice of $\gt$ other than $\tbool$
+would violate this equaltiy, making the constraint unsatisfiable. Thus, $\tvb$
+is uniquely determined to have shnape $\tbool$.
+
+We may now resolve the suspension on $\tvb$, rewriting the constraint to
+$\cmatchdots \tva \cand \cunif \tvb \tbool \cand \cmatch \tbool {\cbranch
+\cpatwild \ctrue} \cand \cunif \tva \tint$. At this point, we can safely
+apply \Rule{Susp-Ctx} to the remaining match constraint on $\tva$. This
+application succeeds now, uniquely determining $\tva$ to have the shape
+$\tint$, thereby eliminating the final suspended match.
+
+This demonstrates that suspended match constraints must be resolved in a
+dependency-respecting, top-down order: attempting to resolve a match
+constraint too early may result in unsatisfiability.
 \end{example}
 
 \begin{example}
@@ -1726,10 +1731,9 @@ unsatisfiable. In particular, with the context $\C$ equal to $\clet {getx}
 Any attempt to assign a differently shaped type (\eg \code{two}) to $\tvb$
 would cause the instantiation constraint to fail in the context $\C$.
 %
-This \Xdidier[trick]{This is not a trick. It is just math} allows the
-unicity predicate to propagate shape information from instantiation
-constraints \textbf{back} into the let-bound abstraction, earning its name
-\emph{backpropagation}.
+This allows the unicity predicate to propagate shape information from
+instantiation constraints \textbf{back} into the let-bound abstraction,
+earning its name \emph{backpropagation}.
 \end{example}
 
 \paragraph{Well-foundedness}
@@ -1759,7 +1763,6 @@ the semantics is well-defined, even if not syntactically inductive.
 \begin{theorem}
   The relation $\semenv \th \c$ is well-founded.
 \end{theorem}
-\Xalistair{@Didier, is there a way to link theorems between the appendix and the main body of the paper?}
 
 \paragraph{Summary}
 
@@ -1810,48 +1813,40 @@ me and it reads strangely. }
 \begin{mathparfig}[t]
   {fig:contextual-semantics}
   {Semantics of constraints including suspended constraints}
-  \begin{bnfgrammar}
-    \entry[Semantic environment]{\semenv}{
-      \cdot
-      \and \semenv, \tv := \gt
-      \and \semenv, \x := \glam
-    }
-  \end{bnfgrammar}
-\\
-\infer[True]
+  \infer[True]
     { }
-    {\semenv \vdash \ctrue}
+    {\semenv \th \ctrue}
 
   \infer[Conj]
-    {\semenv \vdash \cone \\
-     \semenv \vdash \ctwo}
-    {\semenv \vdash \cone \cand \ctwo}
+    {\semenv \th \cone \\
+     \semenv \th \ctwo}
+    {\semenv \th \cone \cand \ctwo}
 
   \infer[Exists]
-    {\semenv, \tv := \gt \vdash \c}
-    {\semenv \vdash \cexists \tv \c}
+    {\semenv\where{\tv \is \gt} \th \c}
+    {\semenv \th \cexists \tv \c}
 
   \infer[Forall]
-    {\forall \gt, ~ \semenv, \tv \is \gt \vdash \c}
-    {\semenv \vdash \tfor \tv \c}
+    {\forall \gt, ~ \semenv\where{\tv \is \gt} \th \c}
+    {\semenv \th \tfor \tv \c}
 
   \infer[Unif]
     {\semenv(\tone) = \semenv(\ttwo)}
-    {\semenv \vdash \cunif \tone \ttwo}
+    {\semenv \th \cunif \tone \ttwo}
 
   \infer[Let]
-    {\semenv \vdash \exists \tv. \cone \\
-     \semenv, \x := \semenv(\cabs \tv \cone) \vdash \ctwo}
-    {\semenv \vdash \clet \x \tv \cone \ctwo}
+    {\semenv \th \exists \tv. \cone \\
+     \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
+    {\semenv \th \clet \x \tv \cone \ctwo}
 
   \infer[App]
     {\semenv(\t) \in \semenv(\x)}
-    {\semenv \vdash \capp \x \t}
+    {\semenv \th \capp \x \t}
 
   \infer[Susp-Use]
     {\t \in \Typesz  \\
      \cmatches \cpati {\decomp \t} \theta \\
-     \semenv, \semenv(\theta) \th \ci
+     \semenv \compose \theta \th \ci
     }
     {\semenv \vdash \cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}
 
@@ -1860,14 +1855,15 @@ me and it reads strangely. }
       \semenv \th \C\where{\cexists \tvcs \cunif \tv \t \cand
       \cmatch \t \cbrs}
     }
-    {\semenv \vdash \C\where{\cmatch \tv \cbrs}}
+    {\semenv \th \C\where{\cmatch \tv \cbrs}}
 \\
 \semenv(\cabs \tv \c) \Wide\eqdef \
-  \set {\gt \in \Ground : \semenv, \tv \is \gt \th \c}
+  \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
 \\
 \Cshape \C \tv \sh \Wide\eqdef \
-  \forall \semenv, \gt, \uad
-      \semenv \th \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
+  \exists \semenv. \uad \semenv \th \C\where{\ctrue}
+  \wedge \forall \semenvp, \gt. \uad
+      \semenvp \th \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
 \end{mathparfig}
 
 \section{The \OML calculus}
