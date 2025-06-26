@@ -583,7 +583,19 @@ Our contributions are
   {Syntax of types and constraints}
 \entry[Type variables]{\tva, \tvb, \tvc}{}{}
 \\
-\entryset[Types]{\t}{\Types}\\
+%% \entryset[Types]{\t}{\Types}\\
+\entry[(Simple) types]{\t}{
+    \tv \and
+    \tunit \and
+    \t \to \t \and
+    \Pi \parens \t\iton \and
+    \tys \T \and
+    \tpoly \ts
+}\\
+\entry[Type schemes]{\ts}{
+    \t \and
+    \all \tv \ts
+}\\[1ex]
 \entry[Constraints]{\c}{
         \ctrue
   \and  \cfalse
@@ -596,9 +608,9 @@ Our contributions are
   \and  \capp \x \t
   \nextline
   \and  \cmatch \t \cbrs
-}\\
+}\\[1ex]
 \entry[Branches]{\cbr}{\cbranch \cpat \c} \\
-\entry[Patterns]{\cpat}{}{} \\
+\entry[Patterns]{\cpat}{}{} \\[1ex]
 \entry[Constraint contexts]{\C}{
   \square
   \and \C \cand \c
@@ -616,15 +628,22 @@ Our contributions are
 \end{bnffig}
 
 \Xdidier{Give the syntax of type and point to their well-formedness
-\cref{fig:ty-wf}}
+\cref{fig/types/wf}}
 
 \parcomment{Syntax!}
+
+The syntax of types and constraints is given
+in~\Cref{fig:constraint-syntax}.  Types are as usual type variables $\tv$,
+the unit type $\tunit$, arrow types, structual tuples $\Pi {\ti}\iton$,
+nominal types $\tys \T$, or polytypes $\tpoly \ts$ where type schemes $\ts$
+are, as usual, of the form $\all \tvs \t$, since we treat them up to the
+reordering of binders.
+We write $\Types$ the set of types and $\Typesz$ the subset of nonvariable
+types.
 
 Building atop the constraint-based type inference framework of
 \citet{Pottier-Remy/emlti}, we adopt a constraint language that includes both
 term and type variables. Its syntax is given in~\Cref{fig:constraint-syntax}.
-We write $\Types$ the set of types and $\Typesz$ the subset of nonvariable
-types.
 
 %
 The constraint language contains tautologic constraints ($\ctrue$),
@@ -634,7 +653,7 @@ quantified type variable $\tv$ in $\c$, while the constraint $\cfor \tv \c$
 binds $\tv$ universally. The constraint form $\cunif \tone \ttwo$ asserts that
 the types $\tone$ and $\ttwo$ are equal.
 %
-For convenience, we use the notation $\ts \leq \t$ as syntactic sugar for the
+For convenience, we use the notation $\cleq \ts \t$ as syntactic sugar for the
 constraint $\cexists \tvs \cunif \tp \t$, where $\ts$ is a universally
 quantified type $\tfor \tvs \tp$; its intended meaning is the instantiation of
 the polymorphic type $\ts$.
@@ -654,7 +673,7 @@ type $\t$ to the abstraction bound to $x$.
 \parcomment {Suspended match constraints}
 
 Finally, we introduce \textit{suspended match constraints}\footnote {Previously
-dubbed `frozen constraints' \citep{TODO}}. These constraints defer resolution
+dubbed `frozen constraints' in \citep{TODO}}. These constraints defer resolution
 until the \textit{shape} of a type, such as its top-level
 constructor\footnote{We intentionally leave the notion of shape underspecified
 here; it is formalized in \cref{sec:semantics}.}, is known. Once the shape is
@@ -677,23 +696,26 @@ $\cmatch \t \cbrs$, where:
   $\c$ is then solved in the extended context.
   %
   To ensure determinism, the set of patterns $\bar \cpat$
-  must be \emph{shape-disjoint} -- that is, no shape may be matched by more
+  must be \emph{shape-disjoint}---that is, no shape may be matched by more
   than one pattern in the list.
 \end{enumerate}
-
 \parcomment {Informal semantics}
 Suspended match constraints thus express case analysis on the structure of
-types in a delayed, declarative form. Once the shape of $\t$ is known, a unique
-branch is selected and its associated constraint is solved. If the shape is
-never determined, the constraint remains unsatisfiable.
+types in a delayed, declarative form. Once the shape of $\t$ is known, a
+unique branch is selected and its associated constraint is discharged and
+may be solved. If the shape is never determined, the constraint remains
+inaccessible (it cannot be inspected and help solve over constraints)
+and unsatisfiable.
 
 \parcomment {Constraint contexts}
 
-Throughout this paper, we will find it convenient to work with \emph{constraint
-contexts}. A constraint context is simply a constraint with a ``hole'',
-analogous to evaluation contexts $\E$ used extensively in operational
-semantics. We write $\C\where{\c}$ to denote filling the hole of $\C$ with
-$\c$. Hole filling may capture variables.
+Throughout this paper, we will find it convenient to work with
+\emph{constraint contexts}. A constraint context is simply a constraint with
+a ``hole'', analogous to evaluation contexts $\E$ used extensively in
+operational semantics. We write $\C\where{\c}$ to denote filling the hole of
+the context $\C$ with the constraint $\c$. Hole filling may capture
+variables.  (Hence, we need explicit side-conditions when we mean to avoid
+capture of a particular variable.)
 
 \parcomment {Applications}
 
@@ -701,10 +723,10 @@ The remainder of this section illustrates the role of suspended constraints
 in supporting \emph{fragile} language features as defined above.
 These include:
 \begin{enumerate}
-  \item Semi-explicit first-class polymorphism.
+  \item Semi-explicit first-class polymorphism;
   \item Constructor and record label overloading for nominal algebraic
   datatypes;
-  \item Overloaded tuple projection in the style of \SML;
+  \item Overloaded tuple projection in the style of \SML.
 \end{enumerate}
 We demonstrate how the typablity of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
@@ -750,15 +772,16 @@ annotation.  However, the operator requires $e$ to have a polytype scheme of
 the form $\all \av \tapoly \ts \av$ and then assigns $\einst \e$ the type
 $\t$ that is an instance of $\ts$. If, by constrast, $\e$ has the type
 $\tapoly \ts \av$ for some non-generalizable annotation variable $\av$, then
-$\einst \e$ is ill-typed.  It is precisely the polymorphism of $\av$ that
-ensures that the polytype is indeed known and not being inferred.
+$\e$ is considered of a not-yet-known polytype, and therefore $\einst \e$ is
+ill-typed.  It is precisely the polymorphism of $\av$ that ensures that the
+polytype is indeed known and not being inferred.
 
 \parcomment {Example ill-typed term}
 
 In particular $\efun \x {\einst \x}$ is not typable, since the
 $\lambda$-bound variable $\x$ is assigned a monotype. Consequently, the
 only admissible type for $\x$ is $x : \tapoly \ts \av$ for some $\ts$ and $\av$.
-However, since $\av$ is bound in the surrounding context at the point of
+Since $\av$ is bound in the surrounding context at the point of
 typing $\einst \x$, it cannot be generalized prior to unboxing, rendering the
 term ill-typed.
 
@@ -776,11 +799,16 @@ $\tfor \ava {\tapoly \ts \ava}$.
 \parcomment {Short commings of annotation variables}
 
 The very purpose of annotation variables is to distinguish \emph{known},
-polymorphic polytypes from yet-unknown, monomorphic ones. However, they are
-\Xdidier[somewhat difficult to understand and]{I would cut this as I
-somewhat disagree...}\Xalistair{I still find them somewhat confusing, I
-propose we let Gabriel break this stalemate}\TODO{Discuss} sensitive to the placement of type
-annotation, an artifact of the fixed directionality of generalization in
+polymorphic polytypes from \emph{not-yet-known}, monomorphic ones. However,
+\Xdidier{I wanted to cut \emph{they are somewhat difficult
+to understand} as I disagreed and but Alistair disagreed with the
+cut:}\Xalistair{I still find them somewhat confusing, I propose we let
+Gabriel break this stalemate}\Xdidier {So, instead, I propose the more
+detailed explaination tha comes next:} they may be sometimes be unintuitive
+as some information that has just been inferred must still be considered as
+yet-unknown until its generalization.  They are also sensitive to the
+placement of type annotation, an artifact of the fixed directionality of
+generalization in
 \geninst-directional inference. For instance, the following two terms differ
 only in the position of the annotation, yet only the one on the left-hand
 side is well-typed.
@@ -823,12 +851,14 @@ information is available.  We capture this behaviour in the following constraint
     \cmatch  \tvb {\parens {\cbranch {\tpoly s} s \leq \tva}}
 \end{mathpar}
 Here, the match constraint $(\cmatchdots \tvb)$ suspends the instantiation
-until $\tvb$ is resolved to a polytype matching the pattern $\tpoly s$, which
-binds the type scheme to the variable $s$. The selected branch then performs
-the instantiation $s \leq \tva$.
+until $\tvb$ is resolved to a polytype $\tpoly \ts$ matching the pattern
+$\tpoly s$, which binds the type scheme $\ts$ to the variable $s$. The
+selected branch then performs the instantiation $\cleq s \tva$, that is
+$\cleq \ts \tva$.
 %
 If $\tvb$ is already known to be a polytype, the constraint discharges
-immediately and behaves like a standard instantiation constraint.
+immediately and behaves like a standard instantiation constraint $\cleq \ts
+\tva$.
 %
 By waiting for $e$'s type to be \emph{known}, we may ensure principal types
 without annotation variables.
@@ -2024,8 +2054,10 @@ $\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
 {fig/typing}.  They use auxiliary typing judgemnents $\G \th \elab = \e : \t$
 and $\G \th \el : \t \to \tp$ for the typing of record assignments and
 label instantiations respectively. The judgement $\G \th \t$, defined in
-\cref{fig/ty-wf}, is used to ensure the well-formedness of $\t$ under the
+\cref{fig/types/wf}, is used to ensure the well-formedness of $\t$ under the
 context $\G$.
+
+
 
 \begin{mathparfig}{fig/typing}{Typing rules of \OML}
   \inferrule[Var]
@@ -2132,8 +2164,19 @@ context $\G$.
     {\G \th \bar \el \uni \t}
 \end{mathparfig}
 
+\begin{bnffig}{fig/types/bnf}{aaa}
+\entry[Types]{\t}{
+    \tv \and
+    \tunit \and
+    \t \to \t \and
+    \Pi \parens \t\iton \and
+    \tys \T \and
+    \tpoly \ts
+}
+\end{bnffig}
+
 \begin{mathparfig}
-  {fig:ty-wf}
+  {fig/types/wf}
   {Well-formedness of types}
   \inferrule[Var-Wf]
     {\tv \in \G}
@@ -3964,6 +4007,24 @@ section for well-foundedness concerns)}
 \Draft{}{\end{document}}\color{blue}
 
 \section{DRAFT: a later TODO  list}
+
+Problems to solve or leave unsolved:
+\begin{itemize}
+
+\item
+  Overloading of the bracket notation for context filling and polytypes,
+  as in $E\where{\epoly \e}$.
+
+  A possibility would be to use braces for either one. Although they are
+  used for record expressions, I would say the overlapping with either
+  polytypes (they never appear simultaneously) or context (idem, since we
+  put label accesses but not records in contexts.
+
+  Alternatively, we could use $\ceils \e$ for polytypes---and then $\floors
+  \e$ for the projections.
+
+
+\end{itemize}
 
 
 \end{document}
