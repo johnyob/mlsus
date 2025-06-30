@@ -1040,14 +1040,18 @@ matching of records, function applications and the syntactic sugar $\eproj \e j
     {\G \th \e : \tsrecord {j = \tj; \varrho }}
     {\G \th \eproj \e j : \tj}
 \end{mathpar}
-Here, the projection retrieves the $j$-th field from a record with tail
-$\varrho$. However, \SML enforces an additional restriction: the tail
-$\varrho$ must be fully determined (\ie cannot be a polymorphic row variable).
-This ensures that the arity of the tuple is \emph{known} statically from the
-surrounding context, thereby avoiding the need for row polymorphic and any
-associated runtime representation overhead. The restriction is not reflected
-in the typing rules themselves, but is instead enforced within \SML's type
-inference algorithm.
+Here, the projection retrieves the $j$-th field from a record with
+tail $\varrho$. However, \SML enforces an additional restriction: the
+tail $\varrho$ must be fully determined (\ie cannot be a polymorphic
+row variable).  This ensures that the arity of the tuple is
+\emph{known} statically from the surrounding context, thereby avoiding
+the need for row polymorphic \Xgabriel[and any associated runtime
+representation overhead]{A polymorphic numeric-field-accessor can be
+  implemented efficiently as long as numeric fields have the same
+  layout at all types. I would drop the remark which could put SML
+  people on the defensive.}. The restriction is not reflected in the typing
+rules themselves, but is instead enforced within \SML's type inference
+algorithm.
 
 \parcomment {Tuple projection is statically overloaded}
 
@@ -1325,20 +1329,6 @@ type construtor $\F$, since they are isormophic to the nonpolytype shapes}
 suggestion to treat $\zeta$ more like a type constructor (though personally I
 find $\sh$ more readable that $\zeta$ as a shape).}
 
-\Xdidier {Where is uniformity discussed}
-\Xalistair{Uniformity isn't really required anymore since our
-matches predicate operates directly on principal decompositions of
-types as opposed to types and we control the structure of patterns (enforcing
-that they're 'shallow'). We could re-introduce it with an analogous
-property \eg if a pattern matches a decomposition, then it matches a more
-principal decomposition of the type with the $\theta$'s being equal?}
-\Xdidier{Fine. Let's remove this---or rather, still leave a comment on the
-fact that our definition ensures ``uniformity''.}
-\Xalistair{I couldn't actually think of what we wanted to say for
-uniformity -- to me it doesn't make much sense anymore, since the function we
-give is defined on principal decompositions and thus would never use a
-less-principal shape}
-
 \begin{version}{}
 Match functions $f$ operate on the principal decompositions, requiring the
 property of \emph{uniformity}:
@@ -1480,7 +1470,7 @@ natural semantics, it is considered satisfiable:
   {\semenv \vdash \cexists \tv \cmatchex}
 }
 \end{mathpar}
-In this case, the semantics les us \emph{guess} the type of $\tv$
+In this case, the semantics can \emph{guess} the type of $\tv$
 and use it to unlock the match constraint, rather than requiring it to be
 known from the surrounding context. This does not match the intended meaning
 of suspended match constraints, and raises several problems:
@@ -1489,8 +1479,8 @@ of suspended match constraints, and raises several problems:
   \item A reasonable solver---one that avoids guessing or backtracking---cannot
     be complete with respect to this semantics.
 
-  \item More seriously, this breaks the existence of principal solutions.
-    Consider the function $\efun \x \efield \x 2$, which projects the second
+  \item This breaks the existence of principal solutions.
+    Consider the function $\efun \x (\efield \x 2)$, which projects the second
     component of a tuple. Under the current semantics, the generated constraint
     permits us to guess any tuple type of arity at least two to be guessed for
 $\x$. But there is no most general tuple type encompasing all such sizes---so
@@ -1498,9 +1488,8 @@ no principal type exists for $\x$. \end{enumerate*}
 
 \paragraph {Contextual semantics}
 
-Rather than relying on the guesswork inherent in the natural semantics,
-we adopt a \emph{contextual} semantics. This formulation ensures
-the shape is \emph{known} from the surrounding context.
+To rule out guessing we adopt a \emph{contextual} semantics, that
+ensures the shape is \emph{known} from the surrounding context.
 % Open/use rule for suspended constraints
 First, we introduce a simplified variant of the natural rule
 (\Rule{Susp-Nat}) that only applies when $\t$ already has a shape:
@@ -1512,15 +1501,16 @@ First, we introduce a simplified variant of the natural rule
     }
     {\semenv \vdash \cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}
 \end{mathpar}
-Unlike the natural rule, which considers the shape of $\semenv(\tau)$, which
-may contain parts that have been ``guessed'' in $\semenv$, this version demands
-that the shape of $\t$ must already be known in the constraint (\ie $\t$ is
-not a variable), statically. Hence, it does not allow us to guess.
+Unlike the natural rule, which considers the shape of $\semenv(\tau)$,
+which may contain parts that have been ``guessed'' in $\semenv$, this
+version demands that the shape of $\t$ must already be known in the
+constraint: the premise $\t \in \Typesz$ enforces that $\t$ is not
+a type variable.
 
 \parcomment {Contextual rule}
 
 The key innovation of the contextual semantics lies in the following rule,
-which---unlike the others---is not syntax-directed:
+which is the only non-syntax-directed rule in our semantics:
 \begin{mathpar}
   \infer[Susp-Ctx]
     {\Cshape \C \tv {\any \tvcs \t} \\
@@ -1559,6 +1549,8 @@ predicate, which is somewhat technical, is given below.
   The requirement that $\C\where{\ctrue}$ is satisfiable rules
   out vacuous satisfaction of unicity: $\Cshape \C \tv \sh$
   should not hold merely because the constraint is unsatisfiable.
+
+\Xgabriel{We have a problem in this definition, due to the fact that $\phi$ also contains polymorphic schemes, which are not necessarily the same as the one at the point where we use the \Rule{Susp-Ctx} rule. For example when the current environment $\phi$ has $x : \forall \alpha. \tint$, one would expect that $\phi \vdash \capp x \alpha \cand \cmatch \alpha \dots$ is satisfiable as $\capp x \alpha$ is morally equivalent to $\alpha = \tint$, but technically it is not because we can pick $\phi' := [x := \forall \alpha. \tbool]$.}
 \end{definition}
 
 
@@ -1797,18 +1789,6 @@ These rules, together with the base rules from
 \cref{fig:constraint-semantics}, define the full semantics. For convenience,
 we collect all the rules pertaining to the satisfiability judgement in
 \cref{fig:contextual-semantics}.
-
-% Contextual semantics is cool, and our approach extends to type systems
-Suspended match constraints form a general and reusable mechanism, with
-potential applications beyond those discussed here\footnote{See
-\cref{sec:future}}. Our semantics integrates cleanly with \ML-style
-let-polymorphism, while maintaining a modular and compositional specification.
-Moreover, the contextual reasoning underpinning our semantics extends naturally
-to the typing rules for the \ML extensions considered in this section, as
-we demonstrate in the next.
-
-\Xalistair{Not a huge fan of this summary --- its point is less clear to
-me and it reads strangely. }
 
 \begin{mathparfig}[t]
   {fig:contextual-semantics}
