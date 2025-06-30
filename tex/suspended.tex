@@ -1551,6 +1551,8 @@ predicate, which is somewhat technical, is given below.
   should not hold merely because the constraint is unsatisfiable.
 
 \Xgabriel{We have a problem in this definition, due to the fact that $\phi$ also contains polymorphic schemes, which are not necessarily the same as the one at the point where we use the \Rule{Susp-Ctx} rule. For example when the current environment $\phi$ has $x : \forall \alpha. \tint$, one would expect that $\phi \vdash \capp x \alpha \cand \cmatch \alpha \dots$ is satisfiable as $\capp x \alpha$ is morally equivalent to $\alpha = \tint$, but technically it is not because we can pick $\phi' := [x := \forall \alpha. \tbool]$.}
+\Xalistair{Actually it's okay if this example fails, the ``fix'' is to use a wider $\C$ that contains the $\mathsf{let}~ x$ definition as part of the constraint.}
+\Xgabriel{This example/discussion should go in the Unicity Testsuite Appendix.}
 \end{definition}
 
 
