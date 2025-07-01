@@ -161,9 +161,10 @@ the downsides of bidirectional type checking.
 based on polymorphism, which actually enforces an ordering in the
 typechecking of let-bindings, where the (polymorphic part of) a the bound
 expression must be typed before the body of the let-expression.  We call it
-\textbf{\geninst}-directional type inference, to mean that polymorphic
-expressions must be typed before their instances.  Initially introduced with
-the extension of \ML with semi-explicit first-class polymorphism by~\citet
+\textbf{\geninst}-directional (to be read \textbf{pi}-directional) type
+inference, to mean that \textbf{p}olymorphic expressions must be typed
+before their \textbf{i}nstances.  Initially introduced with the extension of
+\ML with semi-explicit first-class polymorphism by~\citet
 {Garrigue-Remy/poly-ml}, and later used by~\citet
 {LeBotlan-Remy/recasting-mlf} for empowering \MLF, it has also been utilized
 for the overloading of record fields in \OCaml, which we use for
@@ -598,8 +599,9 @@ the unit type $\tunit$, arrow types, structual tuples $\Pi\iton {\ti}$,
 nominal types $\tys \T$, or polytypes $\tpoly \ts$. Type schemes $\ts$
 are of the form $\all \tvs \t$, they are equal up to the
 reordering of binders.
-We write $\Types$ the set of types and $\Typesz$ the subset of nonvariable
-types.
+\Xdidier{
+We write $\Types$ the set of types and $Typesz$ the subset of nonvariable
+types.}
 \Xalistair{We agreed to keep patterns abstract for now.}
 
 \Xalistair{We introduce polytypes before talking about semi-explicit
@@ -1300,32 +1302,7 @@ type construtor $\F$, since they are isormophic to the nonpolytype shapes}
 suggestion to treat $\zeta$ more like a type constructor (though personally I
 find $\sh$ more readable that $\zeta$ as a shape).}
 
-\begin{version}{}
-Match functions $f$ operate on the principal decompositions, requiring the
-property of \emph{uniformity}:
-\begin{mathpar}
-  \forall (\any \tvs \t) \in \Shapesz,
-  \forall % \tvps, \tys, \uad
-  (\any \tvps \t \where {\tvs \is \tys}) \in \Shapes,
-  \uad %\implies
-    \cexists \tvs {\cunif \tvs \tys \wedge f(\t)}
-    \cequiv f(\t \where {\tvs \is \tys})
-\end{mathpar}
-\Xgabriel
-{I would call this \emph{uniformity} rather than parametricity.\Xdidier{I
-committed.} I believe that the definition is wrong: for example, it is not
-the case a-priori that $(\exists \tv. f(\tv \tlist)) \equiv f(\tint
-\tlist)$. Instead we want to ask that if the substitution $\theta$ witnesses
-$\sh \leq \sh'$ then we have $f(\sh') \cequiv f(\sh)[\theta].$}\Xdidier{Is
-this fixed?}
 
-\Xgabriel{Many remarks in the rest of the text below read incorrectly if we
-consider that $\bot$ is a valid shape. Should we consider defining shapes in
-a way that actually rules $\bot$ out? Then the decomposition $\ty =
-\sh(\tys)$ becomes a partial relation, and/but I think this is
-fine?}\Xdidier {Yes, I know. But the trivial shape first the definition
-based on the ordering.}
-\end{version}
 
 
 \subsection{Suspended constraints}
@@ -1796,7 +1773,7 @@ we collect all the rules pertaining to the satisfiability judgement in
     {\semenv \th \capp \x \t}
 
   \infer[Susp-Use]
-    {\t \in \Typesz  \\
+    {\t \notin \TyVars  \\
      \cmatches \cpati {\decomp \t} \theta \\
      \semenv \compose \theta \th \ci
     }
