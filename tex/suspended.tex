@@ -587,7 +587,7 @@ Our contributions are
   \and \cmatch \t \cbrs
 
 } \\
-\entry[Shapes] \sh {} {}
+\entryset[Shapes] {\Sh, \sh} {\Shapes} {}
 \end{bnffig}
 
 \parcomment{Syntax!}
@@ -838,64 +838,38 @@ like Rust and Haskell primarily employ dynamic overloading via traits and
 type classes, respectively, which can incur runtime overhead unless
 optimized away by monomorphization and aggressive inlining.
 
-% How it relates to OCaml?
+\parcomment {OCaml and OCaml's approach (PI-directionality)}
 
-\Xdidier {why pick other examples and not reuse those of the introductino?}
-\Xalistair {I think the sections were written in parallel, we should
-be able to reuse the examples from the intro}
-\Xalistair {I've tried to reconcile some of the examples with the intro ---
- though I find myself thinking we're repeating bits of the intro here.
- My feeling is that this section should be the intro to this feature (as
- opposed to the introduction).}\Xdidier{We need some examples in the intro,
- before we do maths.  2.1 above contain maths.}
-
-\OCaml supports a limited yet useful form of static overloading for record
-labels and data type constructors.
-\begin{program}[input]
-  type 'a one = {x : 'a}
-  type two = {x : int; y : int}
-  type three = {y : int; z : int}
-\end{program}
-\programjoin
-\begin{program}[input]
-  type m = L | M
-  type n = L
-\end{program}
-
-\parcomment {OCaml's approach (PI-directionality)}
-
-When encountering overloaded labels or constructors, \OCaml resolves ambiguity
-using local type information. This process is underpinned by
-\geninst-directional inference, where nominal types $\tys \Tapp$ carry
-annotation variables $\av$, written $\tys \Tapp^\av$, to track which types are
-\emph{known}. As discussed in \cref{sec/constraints/polytypes}, this mechanism
-allows one to deduce known types from generalized type constructors $\tfor \av
-{\tys \Tapp^\av}$.
+As noted in the introduction, \OCaml supports a limited yet useful form of
+static overloading for record labels and data type constructors. When
+encountering overloaded labels or constructors, \OCaml resolves ambiguity using
+local type information, guided by \geninst-directional inference. Nominal types
+$\tys \Tapp$ carry annotation variables $\av$, written $\tys \Tapp^\av$, to
+track which types are \emph{known}. As discussed in
+\cref{sec/constraints/polytypes}, this mechanism allows one to deduce known
+types from generalized type constructors $\tfor \av {\tys \Tapp^\av}$.
 
 \parcomment {A note on bidirectional expected type propagation}
 
 Because static overloading involves more intricate flows of information than
-polytype instance, \OCaml complements \geninst-directionality with a
-limited form of bidirectional propagation of expected types. This allows the
-following to be well-typed:
-\begin{program}[input]
-  let e$_{10}$ = (function (L : m) | _ -> 1) L
-\end{program}
+polytype inference, \OCaml supplements \geninst-directionality with a limited,
+ad-hoc form of bidirectional type inference. This mechanism is folklore; no
+formal account has previously been given.
 
 \parcomment {Closed-world reasoning}
 
 Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to resolve
 ambiguities in record types. For instance:
 \begin{program}[input]
-  let e$_{11}$ = fun {x; y} -> {x = -y; y = x}
+  let e$_{11}$ = {x = 42; y = 1337}
 \end{program}
 \programjoin
 \begin{program}[output]
-  val e$_{11}$ : two -> two
+  val e$_{11}$ : two
 \end{program}
 Here, \code{x} and \code{y} appear together only in the type \code{two},
 allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
-\code{two -> two}.
+\code{two}.
 
 \parcomment {Default rules}
 
@@ -903,29 +877,32 @@ If local type information and closed-world reasoning are insufficient,
 \OCaml falls back to a syntactic default: it selects the most recently
 defined compatible type. For example:
 \begin{program}[input]
-  let gety = fun {y; _} -> y
+  let getx r = r.x
 \end{program}
 \programjoin
 \begin{program}[output]
-  val gety : three -> int
+  val getx : two -> int
 \end{program}
-The expression is compatiable with both \code{two} and \code{three},
-since each defines a field \code{y}. But \code{three} is chosen simply
+The expression is compatiable with both \code{one} and \code{two},
+since each defines a field \code{x}. But \code{two} is chosen simply
 because it appears later in the source.
 We do not treat this behaviour as principal; accordingly, we provide
-no formalisation of such ``default'' rules, though their implementation is
+no formalization of such ``default'' rules, though their implementation is
 discussed further in \cref{sec:implementation}.
 
 This fallback mechanism highlights the directionality of \OCaml inference.
 Once the compiler selects a type, it commits to it---even if that choice
-causes errors downstream:
+causes errors downstream. Consider the example where we flip the order of the
+definitons of \code{one} and \code{two}:
 \begin{program}[error]
-  let e$_{12}$ = fun r -> let y (* infers [three] *) = r.y in r.x + y
+  type two = {x : int; y : int}
+  type 'a one = {x : 'a}
+  let e$_{12}$ = fun r -> let x (* infers ['a one] *) = r.x in x + r.y
 \end{program}
 \programjoin
 \begin{program}[error, style=message]
-  Error: The expression has type three
-	 There is no field x within type three
+  Error: The expression has type int one
+	 There is no field y within type one
 \end{program}
 
 \parcomment {Record field disambiguation in suspended constraints}
@@ -940,41 +917,37 @@ projection $\efield \e \elab$, we generate the typing constraint:
   \cmatch \tvb
     \parens
       {\cbranch {(\wild \Tapp[t])}
-	{\Omega(\elab / t) \leq \tva \to \tvb}
+	{\labenv(\elab / t) \leq \tva \to \tvb}
       }
 \end{mathpar}
 This constraint defers resolution until more information is available:
 specifically, until the type constructor of $\tvb$ of the record expression
 $\e$ is known.
 
-We assume a global typing environment $\Omega$, which provides type scheme
-declarations for
-constructors and record fields. These are written in the form:
-\begin{align*}
-  \K : \tfor \tvs \t \to \tvs \Tapp &\in \Omega \\
-  \elab : \tfor \tvs \t \to \tvs \Tapp &\in \Omega
-\end{align*}
-Since constructors and labels may be overloaded across distinct type
-constructors, $\Omega$ may contain multiple such schemes for a given
-constructor or label.  However, within a given data type, we assume that
-each constructor or label is uniquely defined. Thus, we write $\Omega(\elab
-/ \T)$ or $\Omega(\K / \T)$ to denote the unique type scheme associated with
-a specific label or constructor in the context of the type $\T$.
+We assume a global typing environment $\labenv$ mapping labels to type schemes,
+written $\elab : \tfor \tvs \t \to \tys \Tapp \in \labenv$. Since labels may be
+overloaded across distinct type constructors, $\labenv$ may contain multiple
+such schemes for a given label.  However, each label is assumed to be uniquely
+defined within a given type constructor $\T$, allowing
+$\labenv(\elab / \T)$ to denote the unique type scheme for $\elab$ in
+$\T$ (if it exists).
 
 Once the record type of $\tvb$ is known, the suspended constraint $(\cmatchdots
-\tvb)$ is triggered. It matches against the nominal type pattern $\wild
-\Tapp[t]$, binding the type constructor name to $t$. Using this, the
-appropriate type scheme for $\elab$ is retrieved from $\Omega(\elab/t)$,
-instantiated, and the resulting constraints are imposed on the argument and
-return types of the label access.
+\tvb)$ is triggered. It matches against the nominal type pattern $\cpatrcd t$,
+binding the type constructor name to $t$. Using this, the appropriate type
+scheme for $\elab$ is retrieved from $\labenv(\elab/t)$, instantiated, and the
+resulting constraints are imposed on the argument and return types of the label
+access.
 
 \TODO{Do some typing constraints for the examples presented in this section}
+\Xalistair{What did you have in mind? I think it might be hard to talk about
+the constraints without a semantics.}
 
 \parcomment{Suspended constraints are better}
 
 As seen in the examples above, this approach is faithful to \OCaml's current
 behaviour\footnote {Modulo default disambiguation rules.}, and in fact
-improves on it: certain expressions, such as \code{e}$_{10}$ are well-typed
+improves on it: certain expressions, such as \code{e}$_{12}$ are well-typed
 under our account but rejected by \OCaml's current type checker.
 
 \subsection{Tuple projections \`a la \SML}
@@ -986,27 +959,20 @@ under our account but rejected by \OCaml's current type checker.
 
 Internally, tuples in \SML are treated as structural records with numeric
 labels. While the specification \cite{TODO} does not provide a dedicated typing
-rule for tuple projection, its semantics are captured by the following
-rule\footnote{This rule is reconstructed using the typing rules for pattern
-matching of records, function applications and the syntactic sugar $\eproj \e j
-\eqdef \eapp {\parens {\efun {\erecord {j = \x; \wild}} \x}} \e$}:
-\begin{mathpar}
-  \infer[Sml-Proj]
-    {\G \th \e : \tsrecord {j = \tj; \varrho }}
-    {\G \th \eproj \e j : \tj}
-\end{mathpar}
-Here, the projection retrieves the $j$-th field from a record with
-tail $\varrho$. However, \SML enforces an additional restriction: the
-tail $\varrho$ must be fully determined (\ie cannot be a polymorphic
-row variable).  This ensures that the arity of the tuple is
-\emph{known} statically from the surrounding context, thereby avoiding
-the need for row polymorphic \Xgabriel[and any associated runtime
-representation overhead]{A polymorphic numeric-field-accessor can be
-  implemented efficiently as long as numeric fields have the same
-  layout at all types. I would drop the remark which could put SML
-  people on the defensive.}. The restriction is not reflected in the typing
-rules themselves, but is instead enforced within \SML's type inference
-algorithm.
+rule for tuple projection, its semantics are captured by desugaring $\eproj \e
+j$ as $\eapp {\parens {\efun {\erecord {j = \x; \wild}} \x}} \e$. From this
+encoding\footnote{This encoding relies on the standard function typing rules
+and the \SML typing rule for the pattern matching of record.}, one recovers the
+expected typing rule: if $\e$ has the type $\tsrecord {j = \tj; \varrho}$,
+where $\varrho$ is a row describing the remaining tuple fields, then $\eproj \e
+j$ has type $\tj$.
+
+\SML enforces an additional restriction: the tail $\varrho$ must be fully
+determined (\ie cannot be a polymorphic row variable).  This ensures that the
+arity of the tuple is \emph{known} statically from the surrounding context,
+thereby avoiding the need for row polymorphic. The restriction is not reflected
+in the typing rules themselves, but is instead enforced within \SML's type
+inference algorithm.
 
 \parcomment {Tuple projection is statically overloaded}
 
@@ -1031,7 +997,7 @@ constraint:
 The suspended constraint $\cmatch \tvb {\cbranch {\cpatprod \tvc j} {\cunif
 \tva \tvc}}$ blocks until the shape of $\e$ ($\tvb$) is known to be a tuple
 of sufficient arity. The pattern $\cpatprod
-\tvc j$ matches only tuple shapes $\tProd \tvi$, where $n \geq j$, binding the
+\tvc j$ matches only tuple types $\tProd \ti$, where $n \geq j$, binding the
 $j$-th component to $\tvc$, which is then unified with the expected result type
 $\tva$.
 
