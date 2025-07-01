@@ -544,13 +544,13 @@ Our contributions are
 \begin{bnffig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
-\entry[Type variables]{\TyVars \ni \tva, \tvb, \tvc}{}{}
+\entryset[Type variables]{\tva, \tvb, \tvc}{\TyVars}{}
 \\
 %% \entryset[Types]{\t}{\Types}\\
-\entry[Types]{\Types \ni \t}{
+\entry[Types]{\t}{
     \tv \and
     \tunit \and
-    \tone \to \ttwo \and
+    \tone \to \ttwo \color{gray} \and
     \Pi\iton \ti \and
     \tys \T \and
     \tpoly \ts
@@ -595,17 +595,13 @@ Our contributions are
 The syntax of types and constraints is given
 in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are as usual
 including: type variables $\tv$,
-the unit type $\tunit$, arrow types, structual tuples $\Pi\iton {\ti}$,
-nominal types $\tys \T$, or polytypes $\tpoly \ts$. Type schemes $\ts$
+the unit type $\tunit$, arrow types as usual---and also
+structual tuples, nominal types $\tys \T$, and polytypes,
+in gray, as they which will be introduced in the following subsections.
+Type schemes $\ts$
 are of the form $\all \tvs \t$, they are equal up to the
-reordering of binders.
-\Xdidier{
-We write $\Types$ the set of types and $Typesz$ the subset of nonvariable
-types.}
-\Xalistair{We agreed to keep patterns abstract for now.}
+reordering of binders. We write $\TyVars$ the set of type variables.
 
-\Xalistair{We introduce polytypes before talking about semi-explicit
-first-class polymorphism. We also duplicate bits from \cref{sec/language}.}
 
 Building atop the constraint-based type inference framework of
 \citet{Pottier-Remy/emlti}, we adopt a constraint language that includes both
@@ -950,20 +946,6 @@ projection $\efield \e \elab$, we generate the typing constraint:
 This constraint defers resolution until more information is available:
 specifically, until the type constructor of $\tvb$ of the record expression
 $\e$ is known.
-\Xdidier {Then, it seems that we cannot solve
-$\efun r {r.x + r.y}$, since the two accesses $r.x$ and $r.y$ will both wait
-for the type of $r$ to be known independently of the other.
-Since we could collect the information that $r$ must have two fields $x$
-and $y$ and there is a unique solution. In fact, an approach based on
-qualified types would solve this example statically.
-Nominal records are an example where we should allow to combine information
-from two different use points---of the same type. That is several matches on
-the same variable should be combined. I cannot either for the moment, but at
-some point I wanted to merge overloaded constraint on the same variable to
-take take the intersection of their head constructors. Still planing to do
-that, which would solve this example}
-\Xalistair {My mistake, the amount of example changes does indeed make this
-ill-typed.}
 
 We assume a global typing environment $\Omega$, which provides type scheme
 declarations for
@@ -3621,6 +3603,46 @@ treating the head of the variable monomorphically and the rest
 polymorphically.
 \Xalistair{An explaination of kinded(1) types here }
 
+\subsection{Variants on static overloading---Variational types}
+
+\begin{version}{\color{blue}\Draft}
+Title to adjust.
+This section is to explain
+\begin{itemize}
+
+\item
+  that there are possible variants on static overloading.
+
+\item
+  The main idea of omnidirectional type inference is to collect as
+  many constraints that can help resolve overloading, statically.
+  Hence, we may be more aggressive, in some cases,
+
+\item
+  Variational types in general---but the have a cost
+
+\item
+  Using rows in nomimal records to merge contraints on the same record.
+\end{itemize}
+
+
+\end{version}
+
+\Xdidier [From 2.1]{Then, it seems that we cannot solve
+$\efun r {r.x + r.y}$, since the two accesses $r.x$ and $r.y$ will both wait
+for the type of $r$ to be known independently of the other.
+Since we could collect the information that $r$ must have two fields $x$
+and $y$ and there is a unique solution. In fact, an approach based on
+qualified types would solve this example statically.
+Nominal records are an example where we should allow to combine information
+from two different use points---of the same type. That is several matches on
+the same variable should be combined. I cannot either for the moment, but at
+some point I wanted to merge overloaded constraint on the same variable to
+take take the intersection of their head constructors. Still planing to do
+that, which would solve this example}
+
+
+
 \subsection{Default rules}
 
 Type inference may failed either because of a typing error (the constraint
@@ -3680,6 +3702,7 @@ canonical representation proposed by~\cite
 Should we cite \cite{Leijen-Ye/prefix@pldi2025} ?
 
 \subsection{Qualified types}
+
 
 \Xdidier {The following paragaph is just take from the old introduction}
 
