@@ -543,10 +543,10 @@ Our contributions are
 \begin{bnffig}[t]%
   {fig:constraint-syntax}%
   {Syntax of types and constraints}
-\entry[Type variables]{\tva, \tvb, \tvc}{}{}
+\entry[Type variables]{\TyVars \ni \tva, \tvb, \tvc}{}{}
 \\
 %% \entryset[Types]{\t}{\Types}\\
-\entry[Types]{\t}{
+\entry[Types]{\Types \ni \t}{
     \tv \and
     \tunit \and
     \tone \to \ttwo \and
@@ -589,10 +589,6 @@ Our contributions are
 \entry[Shapes] \sh {} {}
 \end{bnffig}
 
-\Xdidier{Give the syntax of type and point to their well-formedness
-\cref{fig/types/wf}}
-\Xalistair{I have removed well-formedness. It was getting in the way of proofs.}
-
 \parcomment{Syntax!}
 
 The syntax of types and constraints is given
@@ -604,12 +600,10 @@ are of the form $\all \tvs \t$, they are equal up to the
 reordering of binders.
 We write $\Types$ the set of types and $\Typesz$ the subset of nonvariable
 types.
-\Xalistair{We left patterns abstract since types were abstract. Perhaps
-we could give the syntax of patterns here? My idea was that we left types /
-patterns abstract and we could then present our approach as a `framework'.
-But I appreciate that this makes the explainations harder. Although now
-thinking about it, we introduce polytypes before talking about semi-explicit
-first-class polymorphism. We also duplicate bits from \cref{sec/language}}
+\Xalistair{We agreed to keep patterns abstract for now.}
+
+\Xalistair{We introduce polytypes before talking about semi-explicit
+first-class polymorphism. We also duplicate bits from \cref{sec/language}.}
 
 Building atop the constraint-based type inference framework of
 \citet{Pottier-Remy/emlti}, we adopt a constraint language that includes both
@@ -1472,7 +1466,7 @@ First, we introduce a simplified variant of the natural rule
 (\Rule{Susp-Nat}) that only applies when $\t$ already has a shape:
 \begin{mathpar}
   \infer[Susp-Use]
-    { \t \in \Typesz \\
+    { \t \notin \TyVars \\
       \cmatches \cpati {\decomp \t} \theta \\
       \semenv \compose \theta \th \ci
     }
@@ -1480,9 +1474,8 @@ First, we introduce a simplified variant of the natural rule
 \end{mathpar}
 Unlike the natural rule, which considers the shape of $\semenv(\tau)$,
 which may contain parts that have been ``guessed'' in $\semenv$, this
-version demands that the shape of $\t$ must already be known in the
-constraint: the premise $\t \in \Typesz$ enforces that $\t$ is not
-a type variable.
+version demands that the shape of $\t$ (which cannot be
+a type variable) must already be known in the constraint.
 
 \parcomment {Contextual rule}
 
