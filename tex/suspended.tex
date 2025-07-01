@@ -1167,7 +1167,8 @@ meaning every solution $\semenv$ to $\cone$ is also a solution to $\ctwo$.
 We write $\cone \cequiv \ctwo$ to indicate that $\cone$ and $\ctwo$ are equivalent,
 that is, they have exactly the same set of solutions.
 
-\subsection{Shapes}
+\subsection{Shapes
+\label{sec/shapes}}
 
 \parcomment {Definition of shape}
 
@@ -1184,8 +1185,9 @@ Shapes are equipped with an ordering---that of the standard
 instantiation ordering, defined by:
 \begin{mathpar}
   \infer[Inst-Shape]
-    {\bar \tvcb \disjoint \any {\bar \tvca} \t}
-    {\any {\bar \tvca} \t \preceq \any {\bar \tvcb} \t \where {\tvas \is \tys}}
+    {\bar \tvcs_2 \disjoint \any {\tvcs_1} \t}
+    {\any {\tvcs_1} \t \preceq
+     \any {\tvcs_2} \t \where {\tvcs_1 \is \tys_1}}
 \end{mathpar}
 When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
@@ -1217,12 +1219,10 @@ A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff:
   \item
     $\forall \Shp \in \Shapesz, \t = \shapp[\Shp] \typs
     \implies \Sh \preceq \Shp$
-    %% For any other non-trivial decomposition $\t = \shapp[\shp] \typs$,
-    %% $\sh \preceq \shp$
 \end{enumerate}
 \end{definition}
 
-\begin{theorem}
+\begin{theorem}[principal shapes]\label{th/shapes/principal}
 Any nonvariable type $\t$ has a non-trivial principal shape $\Sh$.
 \end{theorem}
 
@@ -1235,7 +1235,7 @@ well-defined for all shapes, for instance $\any {\tvca, \tvcb} (\tvca \to
 \tvcb) \to (\tvcb \to \tvca)$.}. We write $\sh$ for canonical principal
 shapes.
 
-We write $\shape \t = \sh$ for the canonical principal shape of $\t$ (if
+We write $\shape \t = \sh$ for the canoni cal principal shape of $\t$ (if
 defined). Thus $\shape {\tys \Tapp}$ is $\any \tvcs \tvcs \Tapp$.
 Canonical principal shapes can be seen as a generalization of type
 constructors, capable of coping with polytypes.
@@ -2875,7 +2875,7 @@ inference preserve it.
 In core \ML, Factorization is a consequence of principal types and
 compositionality.  It is definitely broken by overloading, since the inlined
 version may has several overloading sites that may be resolved differently.
-However, we may wonder about linear factorization, \ie. when $\x$ occurs
+However, we may wonder about linear factorization, \ie when $\x$ occurs
 exactly once in~$\e$.  This is again broken by bidirectional type inference,
 but preserved by both \Geninst-directional and omnidirectional type inference,
 although for different reasons: for \Geninst-directional type inference, it
@@ -3788,6 +3788,79 @@ heuristics to refine it, a two-phase process. It's fine.}
 
 \section{Syntax and typing rules of \OML}
 
+\subsection{Principal shapes}
+
+\newcommand{\tc}{\mathprefix{c}}
+
+\Cref {th/shapes/principal} states that any non variable type $\t$ has a
+principal shape. We show that this is indeed the case.
+
+When $\t$ is not a polytype, it has a toplevel constructor $c$ of fixed
+arity $n$, which in our setting may be the nullary $\tunit$, the binary
+arrow, an n-ary product, or a nominal type of some fixed arity. In all such
+cases, the shape of $\t$ is $\any \tvcs \tc \tvcs$ where $\tvcs$ is a
+sequence of $n$ distinct type variables, the arity of~$\tc$.
+
+It only remains to check that a polytype $\tpoly {\all \tvs \t}$ also has a
+unique shape. We may assume \Wlog that each variable of $\tvs$ occurs free in
+$\t$.
+%
+Let $(\pi_i)\iton$ be the sequence of shortest paths in $\t$ that cannot be
+extended to reach a variable in $\tvcs$, in lexicographic order and $\tvcs$
+be a sequence $(\tvci)\iton$ of distinct variables that do not appear in~$\t$.
+%
+Let $\tyz$ be $\t \where {\pi_i \is \tvci}$, \ie the term $\t$ where each
+path $\pi_i$ has been substituted by the variable $\tvci$.  Let $\Sh$ be the
+shape $\any \tvcs {\tpoly {\all \tvs \tyz}}$.
+We claim that $\Sh$ is actually the principal shape of $\tpoly {\all \tvs
+\t}$.
+
+\locallabelreset
+
+Let $\ti$ be $\t/\pi_i$ and $\tys$ be the sequence $(\ti)\iton$.
+%
+By construction, $\t$ is equal to $\shapp[\Sh] \tys$~\llabel 1.  Indeed, by
+definition, $\shapp[\Sh] \tys$ is equal to $(\t\where {\pi_i \is \tvci}\iton)
+\where {\tvci \is \ti}$ which is obviously equal to $\t$.
+
+It remains to check that $\Sh$ is principal~\llabel 2.  Thus, assuming that
+$\Sh'$ is another shape such that $\tpoly {\all\tvs\t}$ is
+equal to $\shapp [\Shp] \typs$ for some $\typs$~\llabel H, we show $\Sh
+\preceq \Shp$~\llabel C.
+
+It follows From~\lref H that:
+\begin{enumerate*}
+
+\item[\llabel{H1}]
+  $\Shp$ must be a polytype shape, \ie of the form $\any \tvcps {\tpoly
+  {\all \tvbs \typ}}$; and
+
+\item[\llabel{H2}]
+  $\tpoly {\all \tvs \t}$ is equal to $\tpoly {\all\tvbs \tp \where {\tvcps
+  \is \typs}}$.
+\end{enumerate*}
+\relax
+We may assume \Wlog that $\tvbs$ does not contain
+variables, \ie that they all appear in $\tp$ and that they actually appear
+in lexicographic order.
+\relax
+Then, the equality~\lref {H2} implies that $\t$, \ie $\t\where {\pi \is
+\tvci} \where {\tvci \is \ti}$ is equal to
+\relax
+$(\tp \where {\tvbs\is \tvas}) \where {\tvcps \is \typs}$.
+\relax
+Since $\t'$ does not contain any variable in $\tvs$, all paths $\pi$ must
+end in $\t' \where {\tvbs \is \tvas}$.
+\relax
+Therefore, $\t'$ and can be extended to the end of $\tp$, \ie so that $\tp$
+is equal to $\tyz \where {\tvci \is
+\tyip}\iton$ (and $\tyip$ is actually $\tp / \pi_i$).
+\relax
+We have $\any
+\tvas \tyz \preceq \any \tvbs \tyz \where {\tvci \is \tyip}\iton$,
+by Rule \Rule {Inst-Shape}, which is then nothing else but~\lref C.
+
+
 \section{Well-foundedness of satisfiability}
 \label{appendix:wf}
 
@@ -4310,7 +4383,7 @@ Problems to solve or leave unsolved:
 % LocalWords:  omnidirectional typecheck polymorphism Hindley Milner kinded
 % LocalWords:  GADTs typechecked codomain typechecking subexpressions Bodin
 % LocalWords:  monomorphic subexpression Dunfield Riboulet jfla subtyping
-% LocalWords:  greek Chargueraud typable monotype polytype Garrigue Remy
+% LocalWords:  greek Chargueraud typable monotype polytype Garrigue Remy th
 % LocalWords:  impredicative polytypes minimality RCL ary Proj toplevel
 % LocalWords:  typability backpropagation arity Compositionality equi
-% LocalWords:  equitypable compositionality inlined equitypability
+% LocalWords:  equitypable compositionality inlined equitypability nullary
