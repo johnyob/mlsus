@@ -3901,6 +3901,98 @@ list of figures and definitions. Some of them are repeated from the main paper.
 
 \subsection{Principality of shapes}
 
+
+\Cref {th/shapes/principal} states that any non variable type $\t$ has a
+principal shape. We show that this is indeed the case.
+
+\medskip
+
+When $\t$ is not a polytype, it has a toplevel constructor $c$ of
+arity $n$, which in our setting may be the nullary $\tunit$, the binary
+arrow, the n-ary product, or a $n$-ary nominal type. In all these
+cases, the shape of $\t$ is $\any \tvcs \tc \tvcs$ where $\tvcs$ is a
+sequence of $n$ distinct type variables.
+
+\medskip
+
+It only remains to check that a polytype $\tpoly {\all \tvs \t}$ also has a
+unique shape. We may assume \Wlog that each variable of $\tvs$ occurs free in
+$\t$.
+%
+Let $(\pi_i)\iton$ be the sequence of shortest paths in $\t$ that cannot be
+extended to reach a (polymorphic) variable in $\tvas$, in lexicographic
+order and $\tvcs$ be a sequence $(\tvci)\iton$ of distinct variables that do
+not appear in~$\t$.
+%
+Let $\tyz$ be $\t \where {\pi_i \is \tvci}\iton$, \ie the term $\t$ where each
+path $\pi_i$ has been substituted by the variable $\tvci$.  Let $\Sh$ be the
+shape $\any \tvcs {\tpoly {\all \tvs \tyz}}$.
+We claim that $\Sh$ is actually the principal shape of $\tpoly {\all \tvs
+\t}$.
+
+\medskip
+\locallabelreset
+
+By construction, $\t$ is equal to $\shapp[\Sh] \tys$~\llabel 1.
+where $\tys$ is the sequence composed of $\ti$ equal to $\t/\pi_i$
+for $i$ ranging from $1$ to $n$.
+%
+Indeed, by
+definition, $\shapp[\Sh] \tys$ is equal to $(\t\where {\pi_i \is \tvci}\iton)
+\where {\tvci \is \ti}$ which is obviously equal to $\t$.
+The remaining of the proof checks that $\Sh$ is minimal~\llabel 2, that is,
+we assume that $\Sh'$ is another shape such that $\tpoly {\all\tvs\t}$ is
+equal to $\shapp [\Shp] \typs$ for some $\typs$~\llabel H and show that $\Sh
+\preceq \Shp$~\llabel C.
+
+\medskip
+
+It follows from~\lref H that
+  $\Shp$ must be a polytype shape, \ie of the form $\any \tvcps {\tpoly
+  {\all \tvbs \typ}}$ and
+  $\tpoly {\all \tvs \t}$ is equal to $\tpoly {\all\tvbs \tp} \where {\tvcps
+  \is \typs}$~\llabel{P}.
+\relax
+We may assume \Wlog that $\tvbs$ and $\tvcps$ are disjoint, that
+$\tvcps$ does not contain useless variables, \ie
+that they all appear in $\tp$ and that they actually appear in lexicographic
+order.  Let $\typp$ be $\tp \where {\tvbs \is \tvas}$.
+\relax
+We now have $\tpoly {\all \tvs \t}$ equal to
+$\tpoly {\all \tvs \typp \where {\tvcps \is \typs}}$~\llabel{PP},
+which implies that $\t$ is equal to $\typp \where {\tvcps \is
+\typs}$~\llabel T.
+\relax
+
+\medskip
+
+Since $\typp$ does not contain any variable in $\tvs$, every path $\pi_i$
+ends in $\typp$.
+\relax
+Hence, we have $\typp/\pi_i$, say $\tyip$ is equal to
+$\typp \where {\tvcps \is \typs}/\pi_i$, \ie. $\tyz/\pi_i$.
+We can write $\typp$ as
+\relax $\typp \where {\pi_i \is \tyi''}\iton$ where $\tyi''$ is $\typp/\pi_i$.
+This is also equal to
+\relax $(\typp \where {\pi_i \is \tvci}\iton) \where {\tvci \is \tyi''}\iton$,
+\ie. $\tyz\where {\tvci \is \tyi''}\iton$.
+In summary, we have $\typp = \tyz \where {\tvci \is \tyi''}\iton$.
+\relax
+This implies that
+ $\tpoly {\all \tvs \typp}$, \ie
+ $\tpoly {\all \tvbs \typ}$ is equal to
+ $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
+ $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$~\llabel E.
+%
+By Rule \Rule {Inst-Shape}, we have
+\begin{mathpar}[inline]
+\any \tvcs  \tpoly {\all \tvs \tyz} \preceq
+\any \tvcps\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton,
+\end{mathpar}
+which, given~\lref E, is exactly~\lref C.
+
+
+
 \subsection{Well-foundedness of satisfiability}
 \label{appendix:sat-wf}
 
@@ -4416,101 +4508,6 @@ entailment in our system.
 \Xgabriel{We have a problem in this definition, due to the fact that $\phi$ also contains polymorphic schemes, which are not necessarily the same as the one at the point where we use the \Rule{Susp-Ctx} rule. For example when the current environment $\phi$ has $x : \forall \alpha. \tint$, one would expect that $\phi \vdash \capp x \alpha \cand \cmatch \alpha \dots$ is satisfiable as $\capp x \alpha$ is morally equivalent to $\alpha = \tint$, but technically it is not because we can pick $\phi' := [x := \forall \alpha. \tbool]$.}
 \Xalistair{Actually it's okay if this example fails, the ``fix'' is to use a wider $\C$ that contains the $\mathsf{let}~ x$ definition as part of the constraint.}
 \Xgabriel{This example/discussion should go in the Unicity Testsuite Appendix.}
-
-\subsection{Principal shapes}
-
-
-\Cref {th/shapes/principal} states that any non variable type $\t$ has a
-principal shape. We show that this is indeed the case.
-
-\medskip
-
-When $\t$ is not a polytype, it has a toplevel constructor $c$ of
-arity $n$, which in our setting may be the nullary $\tunit$, the binary
-arrow, the n-ary product, or a $n$-ary nominal type. In all these
-cases, the shape of $\t$ is $\any \tvcs \tc \tvcs$ where $\tvcs$ is a
-sequence of $n$ distinct type variables.
-
-\medskip
-
-It only remains to check that a polytype $\tpoly {\all \tvs \t}$ also has a
-unique shape. We may assume \Wlog that each variable of $\tvs$ occurs free in
-$\t$.
-%
-Let $(\pi_i)\iton$ be the sequence of shortest paths in $\t$ that cannot be
-extended to reach a (polymorphic) variable in $\tvas$, in lexicographic
-order and $\tvcs$ be a sequence $(\tvci)\iton$ of distinct variables that do
-not appear in~$\t$.
-%
-Let $\tyz$ be $\t \where {\pi_i \is \tvci}\iton$, \ie the term $\t$ where each
-path $\pi_i$ has been substituted by the variable $\tvci$.  Let $\Sh$ be the
-shape $\any \tvcs {\tpoly {\all \tvs \tyz}}$.
-We claim that $\Sh$ is actually the principal shape of $\tpoly {\all \tvs
-\t}$.
-
-\medskip
-\locallabelreset
-
-By construction, $\t$ is equal to $\shapp[\Sh] \tys$~\llabel 1.
-where $\tys$ is the sequence composed of $\ti$ equal to $\t/\pi_i$
-for $i$ ranging from $1$ to $n$.
-%
-Indeed, by
-definition, $\shapp[\Sh] \tys$ is equal to $(\t\where {\pi_i \is \tvci}\iton)
-\where {\tvci \is \ti}$ which is obviously equal to $\t$.
-The remaining of the proof checks that $\Sh$ is minimal~\llabel 2, that is,
-we assume that $\Sh'$ is another shape such that $\tpoly {\all\tvs\t}$ is
-equal to $\shapp [\Shp] \typs$ for some $\typs$~\llabel H and show that $\Sh
-\preceq \Shp$~\llabel C.
-
-\medskip
-
-It follows from~\lref H that
-  $\Shp$ must be a polytype shape, \ie of the form $\any \tvcps {\tpoly
-  {\all \tvbs \typ}}$ and
-  $\tpoly {\all \tvs \t}$ is equal to $\tpoly {\all\tvbs \tp} \where {\tvcps
-  \is \typs}$~\llabel{P}.
-\relax
-We may assume \Wlog that $\tvbs$ and $\tvcps$ are disjoint, that
-$\tvcps$ does not contain useless variables, \ie
-that they all appear in $\tp$ and that they actually appear in lexicographic
-order.  Let $\typp$ be $\tp \where {\tvbs \is \tvas}$.
-\relax
-We now have $\tpoly {\all \tvs \t}$ equal to
-$\tpoly {\all \tvs \typp \where {\tvcps \is \typs}}$~\llabel{PP},
-which implies that $\t$ is equal to $\typp \where {\tvcps \is
-\typs}$~\llabel T.
-\relax
-
-\medskip
-
-Since $\typp$ does not contain any variable in $\tvs$, every path $\pi_i$
-ends in $\typp$.
-\relax
-Hence, we have $\typp/\pi_i$, say $\tyip$ is equal to
-$\typp \where {\tvcps \is \typs}/\pi_i$, \ie. $\tyz/\pi_i$.
-We can write $\typp$ as
-\relax $\typp \where {\pi_i \is \tyi''}\iton$ where $\tyi''$ is $\typp/\pi_i$.
-This is also equal to
-\relax $(\typp \where {\pi_i \is \tvci}\iton) \where {\tvci \is \tyi''}\iton$,
-\ie. $\tyz\where {\tvci \is \tyi''}\iton$.
-In summary, we have $\typp = \tyz \where {\tvci \is \tyi''}\iton$.
-\relax
-This implies that
- $\tpoly {\all \tvs \typp}$, \ie
- $\tpoly {\all \tvbs \typ}$ is equal to
- $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
- $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$~\llabel E.
-%
-By Rule \Rule {Inst-Shape}, we have
-\begin{mathpar}[inline]
-\any \tvcs  \tpoly {\all \tvs \tyz} \preceq
-\any \tvcps\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton,
-\end{mathpar}
-which, given~\lref E, is exactly~\lref C.
-
-
-
 
 %
 %\section{Well-foundedness of satisfiability}
