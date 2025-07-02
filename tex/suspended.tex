@@ -583,9 +583,6 @@ Our contributions are
   \nextline
   \and \clet \x \tv \C \c
   \and \clet \x \tv \c \C
-  \nextline
-  \and \cmatch \t {\cbrs_1, \cbranch \cpat \C, \cbrs_2}
-
 } \\
 \entryset[Shapes] {\Sh, \sh} {\Shapes} {}
 \end{bnffig}
@@ -1384,23 +1381,23 @@ no principal type exists for $\x$. \end{enumerate*}
 
 \paragraph {Contextual semantics}
 
-To rule out guessing we adopt a \emph{contextual} semantics, that
-ensures the shape is \emph{known} from the surrounding context.
-% Open/use rule for suspended constraints
-First, we introduce a simplified variant of the natural rule
-(\Rule{Susp-Nat}) that only applies when $\t$ already has a shape:
+To rule out guessing, we adopt a \emph{contextual} semantics in which
+the shape of a type must be \emph{known} from the surrounding context
+in order to satisfy a match constraint.
+% Elaborated matches
+First, we introduce the syntactic sugar $\cmatched \t \sh \cbrs$ for a match constraint
+when the shape $\sh$ of the matchee $\t$ is already known:
 \begin{mathpar}
-  \infer[Susp-Use]
-    { \t \notin \TyVars \\
-      \cmatches \cpati {\decomp \t} \theta \\
-      \semenv \compose \theta \th \ci
-    }
-    {\semenv \vdash \cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}
+  \cmatched \t {\any \tvcs \tp} {\cbranch \cpats \cs} \uad\eqdef\uad
+    \cexists \tvcs \cunif \t \tp \cand \theta(\ci) \qquad \text{if } \cmatches \cpati {\shapp[\any \tvcs \tp] \tvcs} \theta
 \end{mathpar}
-Unlike the natural rule, which considers the shape of $\semenv(\tau)$,
-which may contain parts that have been ``guessed'' in $\semenv$, this
-version demands that the shape of $\t$ (which cannot be
-a type variable) must already be known in the constraint.
+This desugaring mirrors the premises of \Rule{Susp-Nat} rule, but differs in
+how the shape is obtained. \Rule{Susp-Nat} ``guesses'' the shape of $\t$ using
+the semenatic environment $\semenv$. In contrast, $\cmatched \t \sh \cbrs$
+requires the shape \apriori. The first conjunct ensures that $\t$ indeed has
+shape $\sh$, unifying the shape's parameters $\tvcs$ to the corresponding
+components of $\t$. The second conjunct encodes the selected branch, just as in
+\Rule{Susp-Nat}.
 
 \parcomment {Contextual rule}
 
@@ -1408,45 +1405,50 @@ The key innovation of the contextual semantics lies in the following rule,
 which is the only non-syntax-directed rule in our semantics:
 \begin{mathpar}
   \infer[Susp-Ctx]
-    {\Cshape \C \tv {\any \tvcs \t} \\
-      \semenv \th \C \where {\cexists \tvcs \cunif \tv \t
-                             \cand \cmatch \t \cbrs}
+    {\Cshape \C \t \sh \\
+      \semenv \th \C \where {\cmatched \t \sh \cbrs}
     }
-    {\semenv \vdash \C \where {\cmatch \tv \cbrs}}
+    {\semenv \vdash \C \where {\cmatch \t \cbrs}}
 \end{mathpar}
-This rule lets us substitute the matchee variable $\tv$ by a more defined
-non-variable type $\t$, provided the constraint context $\C$ determines $\tv$
-to have precisely the shape $\any \tvcs \t$.
+This rule lets us infer the shape $\sh$ of the matchee type $\t$,
+provided the constraint context $\C$ determines $\t$
+to have precisely the shape $\sh$.
 %
 \Xalistair{Should we rename this to the non-ambiguity condition?}
-The uniqueness condition $\Cshape \C \tv {\any \tvcs \t}$ ensures this
+The premise $\Cshape \C \t \sh$ ensures this
 precisely: it expresses that the context $\C$ constrains all the solutions
-of $\tv$ to have the \emph{same} principal shape $\any \tvcs \t$,
+of $\t$ to have the \emph{same} principal shape $\sh$,
 modulo $\alpha$-equivalence of shapes. The formal definition of this
 predicate, which is somewhat technical, is given below.
 
 \begin{definition}
-  A type variable $\tv$ has a \emph{uniquely known} principal shape within
-  the context $\C\where{\square}$, written $\Cshape \C \tv \sh$, iff for all
+  A type $\t$ has a \emph{uniquely known} principal shape within
+  the context $\C\where{\square}$, written $\Cshape \C \t \sh$, iff for all
   assignments $\semenv$ and ground types $\gt$, then $\semenv \vdash
-  \cerase {\C\where{\cunif \tv \gt}}$ implies that the principal shape of $\gt$ is equal
+  \cerase {\C\where{\cunif \t \gt}}$ implies that the principal shape of $\gt$ is equal
   to $\sh$.
 %
   In other words:
   \begin{mathpar}
-    \Cshape \C \tv \sh \Wide\eqdef \forall \semenv, \gt. \uad
-      \semenv \vdash \cerase {\C\where{\cunif \tv \gt}} \implies \shape \gt = \sh
+    \Cshape \C \t \sh \Wide\eqdef \forall \semenv, \gt. \uad
+      \semenv \vdash \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
   \end{mathpar}
-  This condition ensures that we are not guessing a shape arbitrarily;
-  the shape must already be determined by the ambient constraint.
-
-  The use of the erasure function $\cerase \c$ (defined in
-  \cref{fig:constraint-erasure}), which erases match constraints with a
-  variable in the matchee $\cmatch \tv \cbrs$, ensures that unicity is proven
-  with respect to what is \emph{known} at present. Match constraints can
-  represent constraints which are \emph{possibly} true in the future and should not be
-  used to prove what is known about the present.
 \end{definition}
+
+This condition ensures that we are not guessing a shape arbitrarily;
+the shape must already be determined by the ambient constraint.
+
+Here, $\cerase \cdot$ (defined in \cref{fig:constraint-erasure}) removes
+all suspended match constraints. This reflects the fact that that such constraints
+represent constraints that are only \emph{possibly} true in the future, and
+thus should not inform what is known in the present. Implicitly, this induces a
+linear partial ordering over suspended match constraints, reflecting \emph{temporal}
+dependency: a match constraint may only be resolved once all of its dependencies
+have been resolved.
+
+% Unicity is only really interesting
+Note that, if $\t$ is not a variable, then $\Cshape \square \t {~\shape \t}$ holds
+trivially. The interesting cases arise when $\t$ is a type variable.
 
 \begin{mathparfig}
   {fig:constraint-erasure}
@@ -1461,10 +1463,7 @@ predicate, which is somewhat technical, is given below.
   \Erule{\cunif \tone \ttwo}{\cunif \tone \ttwo} \\
   \Erule{\clet \x \tv \cone \ctwo}{\clet \x \tv {\cerase \cone} {\cerase \ctwo}} \\
   \Erule{\capp \x \t}{\capp \x \t} \\
-  \Erule{\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}{\begin{cases}
-    \ctrue &\text{if } \t \in \TyVars \\
-    \cmatch \t {\cbranch {\bar \cpat} {\cerase {\bar \c}}} &\text{otherwise}
-  \end{cases}} \\
+    \Erule{\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}{\ctrue} \\
 \end{tabular}
 \end{mathparfig}
 
@@ -1643,8 +1642,8 @@ $\Cshape \C \tv \sh$ includes a negative occurrence of the
 satisfiability judgement. This is essential for expressing that
 $\sh$ is unique among all solutions of the ambient context $\C$.
 %
-However, this negative occurrence means that, \emph{a priori}, the rules
-from \cref{fig:constraint-semantic} including \Rule{Susp-Use}, \Rule{Susp-Ctx}
+However, this negative occurrence means that, \apriori, the rules
+from \cref{fig:constraint-semantic} including \Rule{Susp-Ctx}
 do not form an inductive definition in the usual syntactic sense.
 
 This is not merely a technicality: if left unaddressed, it undermines
@@ -1653,7 +1652,7 @@ rules as a proper inference system.
 
 Fortunately, this issue can be cleanly resolved. Although the rules are not
 structurally well-founded, they can be defined in a decreasing way by noting
-that the conclusion of \Rule{Susp-Ctx} $\C\where{\cmatch \tv \cbrs}$ is
+that the conclusion of \Rule{Susp-Ctx} $\C\where{\cmatch \t \cbrs}$ is
 structurally larger than the negatively-occurring judgement $\cerase {\C\where{\cunif
 \tv \gt}}$: the former contains at least one suspended match constraint yet to be
 discharged, whereas the latter contains no unresolved match constraints.
@@ -1731,26 +1730,18 @@ we collect all the rules pertaining to the satisfiability judgement in
     {\semenv(\t) \in \semenv(\x)}
     {\semenv \th \capp \x \t}
 
-  \infer[Susp-Use]
-    {\t \notin \TyVars  \\
-     \cmatches \cpati {\decomp \t} \theta \\
-     \semenv \compose \theta \th \ci
-    }
-    {\semenv \vdash \cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}
-
   \infer[Susp-Ctx]
-    {\Cshape \C \tv {\any \tvcs \t} \\\\
-      \semenv \th \C\where{\cexists \tvcs \cunif \tv \t \cand
-      \cmatch \t \cbrs}
+    {\Cshape \C \t \sh \\
+      \semenv \th \C\where{\cmatched \t \sh \cbrs}
     }
-    {\semenv \th \C\where{\cmatch \tv \cbrs}}
+    {\semenv \th \C\where{\cmatch \t \cbrs}}
 \\
 \semenv(\cabs \tv \c) \Wide\eqdef \
   \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
 \\
-\Cshape \C \tv \sh \Wide\eqdef \
+\Cshape \C \t \sh \Wide\eqdef \
   \forall \semenv, \gt. \uad
-      \semenv \th \cerase {\C\where{\cunif \tv \gt}} \implies \shape \gt = \sh
+      \semenv \th \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
 \end{mathparfig}
 
 \section{The \OML calculus}
@@ -2405,6 +2396,7 @@ optional, sequentially.  Therefore, the final step, which will eliminate the
 last annotation has a single point of focus of the form $\E\where{e^i}$,
 where $\e^i$ can be any of the three positions with a missing annotation.  We
 consider each case independently, and show that it is actually not typable.
+  \begin{itemize}
 \proofcase
 {$\E$ is $\elet \x \ehole (\eapp {\einst \x} 1, \eapp {\einst \x}\eunit)$}
 %
@@ -2446,6 +2438,7 @@ previous case).
 \proofcase {$\E$ is  $\elet \x \epoly {\efun z z} (\eapp {\einst \ehole} 1, \eapp
 {\einst \x} \eunit)$} This is symmetric to the previous case, which cannot
 hold either.
+  \end{itemize}
 \end{example}
 
 \begin{example}
@@ -2518,15 +2511,15 @@ Patterns include:
   \item Nominal patterns $\cpatrcd \ct$, binding the name of a nominal type
     $\tys \Tapp$ to the nominal variable $\ct$.
 
-  \item Polytype patterns $\cpatpoly \cs$ matching a polytype $\tpoly \ts$ and
-    binding the resulting scheme to the variable $\cs$.
+  \item Polytype patterns $\cpatpoly \cscm$ matching a polytype $\tpoly \ts$ and
+    binding the resulting scheme to the variable $\cscm$.
 
 \end{enumerate*}
 
-Each new constraint has an unsubstituted form ($\cs \leq \t, \x \leq \cs,$
+Each new constraint has an unsubstituted form ($\cscm \leq \t, \x \leq \cs,$
 \etc), whose semantics is defined via substitution into a sugared form ($\ts
 \leq \t, \x \leq \ts,$ \etc). Semantic environments $\semenv$ are extended to
-interpret nominal variables $\ct$ as names $\T$ and scheme variables $\cs$ as
+interpret nominal variables $\ct$ as names $\T$ and scheme variables $\cscm$ as
 ground type schemes $\gscm$, that is type schemes with no unbound variables
 (\ie $\tfor {\fvs \t} \t$).
 
@@ -2537,21 +2530,21 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
    \entry[Patterns]{\cpat}{
       \cpatprod \tv j
       \and \cpatrcd \ct
-      \and \cpatpoly \cs
+      \and \cpatpoly \cscm
     } \\
     \entry[Constraints]{\c}{
       \dots
       \and \labenv(\elab/\ct) \leq \tone \to \ttwo
       \and \labenv(\elab/\T) \leq \tone \to \ttwo
-      \andcr \cs \leq \t
+      \andcr \cscm \leq \t
       \and \ts \leq \t
-      \andcr \x \leq \cs
+      \andcr \x \leq \cscm
       \and \x \leq \ts
     } \\
     \entry[Semantic environments]{\semenv}{
       \dots
       \and \semenv, \ct := ~\T
-      \and \semenv, \cs := \gscm
+      \and \semenv, \cscm := \gscm
     }
   \end{bnfgrammar}
   \\
@@ -2568,9 +2561,9 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
       {[\ct \is ~ \T]}
     \\[1ex]
     \Mrule
-      {\cpatpoly \cs}
+      {\cpatpoly \cscm}
       {\shapp[\any \tvcs \tpoly \ts] \tys}
-      {[\cs \is \ts \where{\tvcs \is \tys}]}
+      {[\cscm \is \ts \where{\tvcs \is \tys}]}
   \end{tabular}
   \\
   \inferrule[Lab-Inst]
@@ -2578,12 +2571,12 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     {\semenv \th \labenv(\elab/\ct) \leq \tone \to \ttwo}
 
   \inferrule[Scm-Inst]
-    {\semenv \th \semenv(\cs) \leq \t}
-    {\semenv \th \cs \leq \t}
+    {\semenv \th \semenv(\cscm) \leq \t}
+    {\semenv \th \cscm \leq \t}
 
   \inferrule[Abs-Inst]
-    {\semenv \th \x \leq \semenv(\cs)}
-    {\semenv \th \x \leq \cs}
+    {\semenv \th \x \leq \semenv(\cscm)}
+    {\semenv \th \x \leq \cscm}
   \\
   \newcommand{\Srule}[3][]{{#2} &\eqdef& {#3} & {#1}}
   \begin{tabular}{RCLL}
@@ -2671,12 +2664,12 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
   {\cinfer {\einst \e} \t}
   {\cexists \tva
     \cinfer \e \tva
-    \cand \cmatch \tva {\cbranch {\cpatpoly \cs} \cs \leq \t}}
+    \cand \cmatch \tva {\cbranch {\cpatpoly \cscm} \cs \leq \t}}
 \\
 \Crule
   {\cinfer {\epoly \e} \t}
   {\clet \x \tv {\cinfer \e \tv}
-    {\cmatch \t {\cbranch {\cpatpoly \cs} {\x \leq \cs}}}}
+    {\cmatch \t {\cbranch {\cpatpoly \cscm} {\x \leq \cs}}}}
 \\
 \Crule
   {\cinfer {\efield \e \el} \t}
@@ -2768,13 +2761,13 @@ $j$-th component with the pattern $\cpatprod \tvb j$,
 For polytypes, boxing asserts that $\e$ has the polymorphic type $\ts$ (using
 universal quantification) and that the expected type is the polytype $\tpoly
 \ts$. Unboxing suspends until the inferred type of $\e$ is known to be a
-polytype, captured by the pattern $\cpatpoly \cs$, at which point we require
-$\t$ to be an instance of $\cs$. Explicit unboxing is analogous, but uses an
+polytype, captured by the pattern $\cpatpoly \cscm$, at which point we require
+$\t$ to be an instance of $\cscm$. Explicit unboxing is analogous, but uses an
 explicit scheme $\ts$ and therefore does not require a suspended match
 constraint. Implicit boxing infers the principal type for $\e$ using a $\Let$
 constraint and suspends until the expected type of the entire term is known to
-be a polytype, bound to $\cs$. We then assert that the principal type of $\e$
-is at least as general as $\cs$, via the constraint $\x \leq \cs$.
+be a polytype, bound to $\cscm$. We then assert that the principal type of $\e$
+is at least as general as $\cscm$, via the constraint $\x \leq \cs$.
 
 
 % Records
@@ -3797,18 +3790,422 @@ heuristics to refine it, a two-phase process. It's fine.}
 %% \bibliographystyle{ACM-Reference-Format}
 \bibliography{suspended}
 
+\newpage
 \appendix
+
+\section{Figures}
+
+This section contains supplementary material to the main paper, including a
+list of figures and definitions. Some of them are repeated from the main paper.
+
+\TODO{Write these here}
+
+\judgbox{\c \simple}{The constraint $\c$ is simple.}
+\begin{mathparfig}
+  {fig:defn-simple}
+  {Simple constraints.}
+
+  \inferrule[Simple-True]
+    {}
+    {\ctrue \simple}
+
+  \inferrule[Simple-False]
+    {}
+    {\cfalse \simple}
+
+  \inferrule[Simple-Conj]
+    {\cone \simple \\ \ctwo \simple}
+    {\cone \cand \ctwo \simple}
+
+  \inferrule[Simple-Exists]
+    {\c \simple}
+    {\cexists \tv \c \simple}
+
+  \inferrule[Simple-Forall]
+    {\c \simple}
+    {\cfor \tv \c \simple}
+
+  \inferrule[Simple-Unif]
+    {}
+    {\cunif \tone \ttwo \simple}
+
+  \inferrule[Simple-Let]
+    {\cone \simple \\ \ctwo \simple}
+    {\clet \x \tv \cone \ctwo \simple}
+
+  \inferrule[Simple-App]
+    {}
+    {\capp \x \t \simple}
+
+  \inferrule[Simple-LetR]
+    {\cone \simple \\ \ctwo \simple}
+    {\cletr \x \tv \tvs \cone \ctwo \simple}
+
+  \inferrule[Simple-Papp]
+    {}
+    {\cpapp \x \ren \ueqs \simple}
+\end{mathparfig}
+
+\judgbox{\semenv \Th \c}
+  {Under the semantic environment $\semenv$,
+   the constraint $\c$ is canonically satisfiable.}
+\begin{mathparfig}
+  {fig:defn-canonical-sat-deriv}
+  {Canonical satisfiability derivations}
+
+  \inferrule[Can-Simple]
+    {\semenv \th \c \\ \c \simple}
+    {\semenv \Th \c}
+
+  \inferrule[Can-Susp-Ctx]
+    {\Cshape \C \t \sh \\ \semenv \Th \C\where{\cmatched \t \sh \cbrs}}
+    {\semenv \Th \C\where{\cmatch \t \cbrs}}
+\end{mathparfig}
+
+
+\section{Properties of the constraint language}
+
+\subsection{Principality of shapes}
+
+\subsection{Well-foundedness of satisfiability}
+
+
+
+\subsection{Canonicalization of satisfiability}
+
+This section aims at proving the canonicalization of satisfiability, that is,
+for any $\semenv \th \c$, there is a canonical derivation $\semenv \Th \c$.
+%
+We begin by proving some auxillary lemmas regarding inversion and
+entailment in our system.
+
+\begin{lemma}
+  \label{lem:match-tv-is-not-simple}
+  For any constraint context $\C\where{\square}$,
+  the constraint $\C\where{\cmatch \t \cbrs}$ is not simple.
+  \begin{proof}
+    Structural induction on $\C$.
+  \end{proof}
+\end{lemma}
+
+\newcommand{\simplePf}[2]{\Pf{}{}{#1 \simple}{#2}}
+\newcommand{\nsimplePf}[2]{\Pf{}{\neg}{#1 \simple}{#2}}
+\newcommand{\shapePf}[4]{\Pf{}{}{\Cshape {#1} {#2} {#3}}{#4}}
+
+\begin{lemma}[Simple inversion]
+  Given $\semenv \th \c$ and $\c \simple$. Then:
+  \begin{enumerate}[(\roman*)]
+    \item If $\c = \cunif \tone \ttwo$, then $\semenv(\tone) = \semenv(\ttwo)$.
+    \item If $\c = \capp \x \t$, then $\semenv(\t) \in \semenv(\x)$.
+    \item If $\c =  \cpapp \x \ren \ueqs$, then $\semenv(\x) = \gabsr \tv \tvs$, $\dom \ren \subseteq \tvs$, and $\semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \glam$.
+    \item If $\c = \cone \cand \ctwo$, then $\semenv \th \cone$ and $\semenv \th \ctwo$.
+    \item If $\c = \cexists \tv \c$, then $\semenv\where{\tv \is \gt} \th \c$ for some $\gt$.
+    \item If $\c = \cfor \tv \c$, then $\semenv\where{\tv \is \gt} \th \c$ for all $\gt$.
+    \item If $\c = \clet \x \tv \cone \ctwo$, then $\semenv \th \cexists \tv \cone$ and $\semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo$.
+  \end{enumerate}
+  \begin{proof}~
+    \begin{enumerate}[(\roman*)]
+      \item Case analysis on the given derivation $\semenv \th \cunif \tone \ttwo$.
+	There is a unique case for the atomic constraint $\cunif \tone \ttwo$:
+	\begin{itemize}
+	    \proofcasederivation
+	      {Unif}
+	      {\semenv(\tone) = \semenv(\ttwo)}
+	      {\semenv \th \cunif \tone \ttwo}
+
+	    \begin{llproof}
+\Hand 		\eqPf{\semenv(\tone)}{\semenv(\ttwo)}  {Premise}
+	    \end{llproof}
+	\end{itemize}
+
+      \item Similar to \Rule{Unif} case.
+      \item Similar to \Rule{Unif} case.
+
+      \item Case analysis on the given derivation $\semenv \th \cone \cand \ctwo$.
+      \begin{itemize}
+	\proofcasederivation
+	  {Conj}
+	  {\semenv \th \cone \\ \semenv \th \ctwo}
+	  {\semenv \th \cone \cand \ctwo}
+
+	\begin{llproof}
+\Hand 	  \vdashPf{\semenv}{\cone} {Premise}
+\Hand     \vdashPf{\semenv}{\ctwo} {Premise}
+	\end{llproof}
+
+	\proofcasederivation
+	  {Susp-Ctx}
+	  {\Cshape \C \tv \sh \\ \semenv \th \C\where{\cmatchesz \tv \sh \cbrs}}
+	  {\semenv \th \C\where{\cmatch \tv \cbrs}}
+
+	\begin{llproof}
+	  \eqPf{\c}{\C\where{\cmatch \tv \cbrs}} {Given}
+	  \simplePf{\C\where{\cmatch \tv \cbrs}} {\ditto}
+	  \nsimplePf{\C\where{\cmatch \tv \cbrs}} {By \cref{lem:match--tv-is-not-simple}}
+\Hand 	  \contraPf{\semenv \th \cone, \semenv \th \ctwo}
+
+
+	\end{llproof}
+
+      \end{itemize}
+
+      \item Similar to \Rule{Conj} case.
+      \item Similar to \Rule{Conj} case.
+      \item Similar to \Rule{Conj} case.
+    \end{enumerate}
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}[Simple congruence]
+  Given simple constraints $\cone, \ctwo$ and simple context $\C$.
+  If \\$\cone \centails \ctwo$, then $\C\where{\cone} \centails \C\where{\ctwo}$.
+  \begin{proof}
+    Induction on the derivation of $\C \simple$.
+  \end{proof}
+\end{lemma}
+
+
+
+\begin{lemma}[Composability of unicity]
+  If $\Cshape \Ca \t \sh$, then $\Cshape {\Cb\where\Ca} \t \sh$.
+  \begin{proof}
+    \TODO{This proof needs doing}
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}[Decanonicalization]
+  If $\semenv \Th \c$, then $\semenv \th \c$.
+  \begin{proof}
+    Induction on the given derivation $\semenv \Th \c$
+  \end{proof}
+\end{lemma}
+
+\newcommand{\VdashPf}[3]{\Pf{#1}{\Vdash}{#2}{#3}}
+\begin{theorem}[Canonicalization]
+  If $\semenv \th \c$, then $\semenv \Th \c$.
+  \begin{proof}
+  We proceed by induction on the height of the derivation $\deriv :: \semenv \th \c$.
+    \TODO{This induction hypothesis is too weak, we likely need a measure on the height
+    of the derivation + num of match constraints}
+  \begin{itemize}
+    \proofcasederivation
+      {True}
+      {}
+      {\semenv \th \ctrue}
+
+      \begin{llproof}
+	\simplePf{\ctrue}{By definition}
+\Hand 	\VdashPf{\semenv}{\ctrue}{By \Rule{Can-Base}}
+      \end{llproof}
+    \proofcasederivation
+      {Unif}
+      {\semenv(\tone) = \semenv(\ttwo)}
+      {\semenv \th \cunif \tone \ttwo}
+
+      \begin{llproof}
+	Similar to the \Rule{True} case.
+      \end{llproof}
+    \proofcasederivation
+      {Conj}
+      {\semenv \th \cone \\ \semenv \th \ctwo}
+      {\semenv \th \cone \cand \ctwo}
+
+      \begin{llproof}
+	\vdashPf{\semenv}{\cone} {Premise}
+	\vdashPf{\semenv}{\ctwo} {Premise}
+	\VdashPf{\semenv}{\cone} {By \ih}
+	\VdashPf{\semenv}{\ctwo} {By \ih}
+	\decolumnizePf
+	\casesPf{\semenv \Th \cone, \semenv \Th \ctwo}
+      \end{llproof}
+
+      \begin{itemize}
+	\proofcasederivationdouble
+	  {Can-Base}
+	  {\semenv \th \cone \\ \cone \simple}
+	  {\semenv \Th \cone}
+	  {Can-Base}
+	  {\semenv \th \ctwo \\ \ctwo \simple}
+	  {\semenv \Th \ctwo}
+
+	  \begin{llproof}
+	    \simplePf{\cone}{Premise}
+	    \simplePf{\ctwo}{Premise}
+	    \simplePf{\cone \cand \ctwo}{By \Rule{Simple-Conj}}
+\Hand 	    \VdashPf{\semenv}{\cone \cand \ctwo}{By \Rule{Can-Base}}
+
+	  \end{llproof}
+
+	\proofcasederivationdouble
+	  {Can-Susp-Ctx}
+	  {\Cshape \C \t \sh \\ \semenv \Th \C\where{\cmatched \t \sh \cbrs}}
+	  {\semenv \Th \underbrace{\C\where{\cmatch \t \cbrs}}_\ca}
+	  {}
+	  {}
+	  {\semenv \Th \cb}
+
+	  \begin{llproof}
+
+	    \VdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs}} {Premise}
+	    \vdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs}} {Lemma XXX}
+	    \vdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs} \cand \cb}{By \Rule{Conj}}
+ 	    \VdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs} \cand \cb}{By \ih}
+	    \Pf{}{}{\Cshape \C \tv \sh}{Premise}
+ 	    \Pf{}{}{\Cshape {\parens {\C \cand \cb}} \tv \sh}{Lemma XXX}
+\Hand 	    \VdashPf{\semenv}{\C\where{\cmatch \t \cbrs}}{By \Rule{Con-Susp-Ctx}}
+	  \end{llproof}
+
+	\proofcasederivationdouble
+	  {}
+	  {}
+	  {\semenv \Th \ca}
+	  {Can-Susp-Ctx}
+	  {\Cshape \C \t \sh \\ \semenv \Th \C\where{\cmatched \t \sh \cbrs}}
+	  {\semenv \Th \underbrace{\C\where{\cmatch \t \cbrs}}_\cb}
+
+	  \begin{llproof}
+	    \Pf{}{}{}{Symmetric to the above case.}
+	  \end{llproof}
+      \end{itemize}
+
+      \proofcasederivation
+	{Exists}
+	{\semenv\where{\tv \is \gt} \th \c}
+	{\semenv \th \cexists \tv \c}
+
+	\begin{llproof}
+	  \vdashPf{\semenv\where{\tv \is \gt}}{\c}{Premise}
+	  \VdashPf{\semenv\where{\tv \is \gt}}{\c}{By \ih}
+	  \casesPf{\semenv\where{\tv \is \gt} \Th \c}
+	\end{llproof}
+
+	\begin{itemize}
+
+	    \proofcasederivation
+	      {Can-Base}
+	      {\semenv\where{\tv \is \gt} \th \c \\ \c \simple}
+	      {\semenv\where{\tv \is \gt} \Th \c}
+
+	      \begin{llproof}
+		\simplePf{\c}{Premise}
+		\simplePf{\cexists \tv \c}{By \Rule{Simple-Exists}}
+\Hand 		\VdashPf{\semenv}{\cexists \tv \c}{By \Rule{Can-Base}}
+	      \end{llproof}
+
+
+	      \proofcasederivation
+		{Can-Susp-Ctx}
+		{\Cshape \C \t \sh \\ \semenv\where{\tv \is \gt} \Th \C\where{\cmatched \t \sh \cbrs}}
+		{\semenv \Th \underbrace{\C\where{\cmatch \t \cbrs}}_\c}
+
+		\begin{llproof}
+		  \VdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
+		  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{Lemma XXX}
+		  \vdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{By \Rule{Exists}}
+		  \VdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{By \ih}
+		  \Pf{}{}{\Cshape \C \t \sh}{Premise}
+		  \Pf{}{}{\Cshape {\parens {\cexists \tv \C}} \t \sh}{Lemma XXX}
+\Hand             \VdashPf{\semenv}{\cexists \tv \C\where{\cmatch \t \cbrs}}{By \Rule{Can-Susp-Ctx}}
+		\end{llproof}
+	\end{itemize}
+
+	\proofcasederivation
+	  {Forall}
+	  {\forall \gt,~ \semenv\where{\tv \is \gt} \th \c}
+	  {\semenv \th \cfor \tv \c}
+
+	  \begin{llproof}
+	    Similar to the \Rule{Exists} case.
+	  \end{llproof}
+
+	\proofcasederivation
+	  {Let}
+	  {\semenv \th \cexists \tv \cone \\ \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
+	  {\semenv \th \clet \x \tv \cone \ctwo}
+
+	  \begin{llproof}
+	    \vdashPf{\semenv}{\cexists \tv \cone}{Premise}
+	    \VdashPf{\semenv}{\cexists \tv \cone}{By \ih}
+	    \vdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\ctwo}{Premise}
+	    \VdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\ctwo}{By \ih}
+	    \decolumnizePf
+	    \casesPf{\semenv \Th \cexists \tv \cone, \semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \ctwo}
+	  \end{llproof}
+
+	  \begin{itemize}
+	    \proofcasederivationdouble
+	      {Can-Base}
+	      {\semenv \th \cexists \tv \cone \\ \cexists \tv \cone \simple}
+	      {\semenv \Th \cexists \tv \cone}
+	      {Can-Base}
+	      {\semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo \\ \ctwo \simple}
+	      {\semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \ctwo}
+
+	      \begin{llproof}
+		\simplePf{\cexists \tv \cone}{Premise}
+		\simplePf{\cone}{Inversion of \Rule{Simple-Exists}}
+		\simplePf{\ctwo}{Premise}
+		\simplePf{\clet \x \tv \cone \ctwo}{By \Rule{Simple-Let}}
+\Hand		\VdashPf{\semenv}{\clet \x \tv \cone \ctwo}{By \Rule{Can-Base}}
+	      \end{llproof}
+
+	    \proofcasederivationdouble
+	      {Can-Susp-Ctx}
+	      {\Cshape {\parens {\cexists \tv \cone}} \t \sh \\ \semenv \Th \cexists \tv \C\where{\cmatched \t \sh \cbrs}}
+	      {\semenv \Th \cexists \tv \underbrace{\C\where{\cmatch \t \cbrs}}_\ca}
+	      {}
+	      {}
+	      {\semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \ctwo}
+
+	      \begin{llproof}
+		\shapePf{\parens {\cexists \tv \C}}{\t}{\sh}{Premise}
+		\shapePf{\C}{\t}{\sh}{Lemma XXX}
+		\VdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{Premise}
+		\vdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{Lemma XXX}
+		\eqPf{\semenv(\cabs \tv \cone)}{\semenv(\cabs \tv \C\where{\cmatched \t \sh \cbrs})}{Lemma XXX}
+		\vdashPf{\semenv}{\clet \x \tv {\C\where{\cmatched \t \sh \cbrs}} \ctwo}{By \Rule{Let}}
+		\VdashPf{\semenv}{\clet \x \tv {\C\where{\cmatched \t \sh \cbrs}} \ctwo}{By \ih}
+		\shapePf{\parens{\clet \x \tv \C \ctwo}}{\t}{\sh}{Lemma XXX}
+\Hand 		\VdashPf{\semenv}{\clet \x \tv {\C\where{\cmatch \t \cbrs}} \ctwo}{By \Rule{Can-Susp-Ctx}}
+	      \end{llproof}
+
+	    \proofcasederivationdouble
+		{}
+		{}
+		{\semenv \Th \cexists \tv \cone}
+		{Can-Susp-Ctx}
+		{\Cshape \C \t \sh \\ \semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \C\where{\cmatched \t \sh \cbrs}}
+		{\semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \underbrace{\C\where{\cmatch \t \cbrs}}_\cb}
+
+		\begin{llproof}
+		  \shapePf{\C}{\t}{\sh}{Premise}
+		  \shapePf{\parens{\clet \x \tv \cone \C}}{\t}{\sh}{Lemma XXX}
+		  \VdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
+		  \vdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\C\where{\cmatched \t \sh \cbrs}}{Lemma XXX}
+		  \vdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatched \t \sh \cbrs}}}{By \Rule{Let}}
+		  \VdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatched \t \sh \cbrs}}}{By \ih}
+\Hand 		  \VdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatch \t \sh}}}{By \Rule{Can-Susp-Ctx}}
+		\end{llproof}
+	  \end{itemize}
+
+      \proofcasederivation
+	{App}
+	{\semenv(\t) \in \semenv(\x)}
+	{\semenv \th \capp \x \t}
+
+      \begin{llproof}
+	Similar to the \Rule{True} case.
+      \end{llproof}
+  \end{itemize}
+  \end{proof}
+\end{theorem}
+
 
 \section{Examples of suspended match constraints}
 
 \Xgabriel{We have a problem in this definition, due to the fact that $\phi$ also contains polymorphic schemes, which are not necessarily the same as the one at the point where we use the \Rule{Susp-Ctx} rule. For example when the current environment $\phi$ has $x : \forall \alpha. \tint$, one would expect that $\phi \vdash \capp x \alpha \cand \cmatch \alpha \dots$ is satisfiable as $\capp x \alpha$ is morally equivalent to $\alpha = \tint$, but technically it is not because we can pick $\phi' := [x := \forall \alpha. \tbool]$.}
 \Xalistair{Actually it's okay if this example fails, the ``fix'' is to use a wider $\C$ that contains the $\mathsf{let}~ x$ definition as part of the constraint.}
 \Xgabriel{This example/discussion should go in the Unicity Testsuite Appendix.}
-\section{Syntax and semantics of constraints}
-\Xalistair{We introduce a lot of constraint constructs (later on for solving)
-           We should probably have an appendix for all the rules}
-
-\section{Syntax and typing rules of \OML}
 
 \subsection{Principal shapes}
 
@@ -3905,499 +4302,500 @@ which, given~\lref E, is exactly~\lref C.
 
 
 
-\section{Well-foundedness of satisfiability}
-\label{appendix:wf}
-
-In this appendix, we give the full details of the well-foundedness of the
-semantics of constraints, that is the satisfiability judgement $\semenv \th \c$.
-
-\newcommand{\cnmatches}[1]{\#\Match #1}
-\begin{theorem}
-  The relation $\semenv \th \c$ is well-founded.
-\begin{proof}
-  For the relation $\semenv \th \c$, the following measure on such judgements is
-  adequate to prove well-foundedness:
-  \begin{mathpar}
-    \angles{\cnmatches \c, \c}
-  \end{mathpar}
-  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
-  \begin{enumerate}
-
-    \item $\cnmatches \c$ is the number of $\cmatch \tv \cbrs$ constraints in
-      $\c$---that is, suspended match constraints whose matchee is a variable.
-
-    \item the last component $\c$ is a structural measure of constraints \ie a
-      conjunction $\cone \cand \ctwo$ is larger than the two conjuncts $\cone,
-      \ctwo$. \Xalistair{Should we be more formal here? we could introduce a
-      measure that characterizes this}
-
-  \end{enumerate}
-
-
-  We will now show that every rule uses a premise whose measure is smaller than
-  the conclusion.
-
-  \proofcase{\Rule{True}} No premises
-
-  \proofcase{\Rule{Conj}}
-    Each premise involves on conjuct (either $\cone$ or $\ctwo$) of the
-    constraint $\cone \cand \ctwo$. Since both are structurally smaller than
-    the full conjunction, and by definition, $\cnmatches {\cone}, \cnmatches
-    {\ctwo} \leq \cnmatches {\cone \cand \ctwo}$, the premises are strictly
-    smaller according to the measure.
-
-  \proofcase{\Rule{Exists}}
-    The premise involving the constraint $\c$ is structurally smaller than
-    $\cexists \tv \c$. Moreover, since quantification does not affect
-    $\cnmatches -$, we have $\cnmatches {\c} = \cnmatches{\cexists \tv \c}$.
-
-  \proofcase{\Rule{Forall}}
-    Analogous to the existential case: the qualified constraint $\c$ is
-    structurally smaller than $\cfor \tv \c$, and again, $\cnmatches$ is
-    preserved.
-
-  \proofcase{\Rule{Multi-Unif}} No premises involving constraints.
-
-  \proofcase{\Rule{Let}}
-    The first premise involves the existential $\cexists \tv \cone$, which can
-    be unrolled to a subjudgement on $\cone$ alone (using a single application
-    of \Rule{Exists}). Since $\cone$ is structurally smaller than the full
-    $\Let$ constraint $\clet \x \tv \cone \ctwo$, and $\cnmatches \cone \leq
-    \cnmatches \clet \x \tv \cone \ctwo$, the measure decreases.
-
-    The second premise involves $\ctwo$, which is again smaller than the
-    conclusion both structurally and in terms of $\cnmatches$. This premise
-    also relies on interpreting $\cabs \tv \cone$, which in turn involves a
-    subjudgement over $\cone$, already shown to be smaller.
-
-  \proofcase{\Rule{App}} No premises involving constraints.
-
-  \proofcase{\Rule{Susp-Use}}
-    Here, the premise involving the branch constraint $\ci$ is structurally
-    smaller than the entire match constraint $\cmatch \t {\cbranch {\bar \cpat}
-    {\bar \c}}$. Since $\t$ is not a type variable, the number of matches does
-    not \emph{strictly} decrease: $\cnmatches \ci \leq \cnmatches
-    {\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}$.
-
-  \proofcase{\Rule{Susp-Ctx}}
-    The first premise $\Cshape \C \tv {\any \tvcs \t}$ involves a judgement of
-    the form $\C\where{\cunif \tv \gt}$ (for any $\gt$), which is strictly
-    smaller than the full match $\C\where{\cmatch \tv \cbrs}$ in terms of
-    $\cnmatches$.
-
-    The second premise is subtler: $\C\where{\cexists \tvcs \cunif \tv \t \cand
-    \cmatch \t \cbrs}$ appears to be larger at first glance, but it is smaller
-    in our measure becuase $\t$ is guaranteed not to be a type variable (by
-    definition of principal shapes).
-    Thus $\cnmatches {\C\where{\cexists \tvcs
-    \cunif \tv \t \cand \cmatch \t \cbrs}} < \cnmatches {\C\where{\cmatch \tv
-    \cbrs}}$.
-
-  \proofcase{\Rule{LetR}}
-    Analogous to the \Rule{Let} case, and the argument proceeds similarly.
-    The only difference lies in the region bindings.
-
-    The first premise involving $\cexists {\tv, \tvs} \cone$, which again
-    reduces to a subjudgement involving $\cone$ (using $|\tvs| + 1$
-    applications  of \Rule{Exists}), is structurally is smaller than the
-    conclusion $\cletr \x \tv \tvs \cone \ctwo$. The measure similarly
-    satisfies $\cnmatches \cone \leq \cnmatches \cletr \x \tv \tvs \cone
-    \ctwo$.
-
-    The second premise involving $\ctwo$ is structurally smaller and depends on
-    the interpretation of the regional abstraction $\cabsr \tv \tvs \cone$. As
-    in the non-regional case, this abstraction uses a judgement involving
-    $\cone$, which has already been shown to be smaller.
-
-  \proofcase{\Rule{AppR}} No premises involving constraints.
-
-  \proofcase{\Rule{Papp}}
-    The premises involving $(\ueqi\where\ren)\iton$ each include a component of
-    the partial application $\cpapp \x \ren \ueqs \t$. Since renaming preserves
-    structural size and $\ueqi$ is strictly smaller than the full constraint,
-    the structural measure decreases (\Xalistair{Should we be more formal
-    here? giving a lemma that renaming preserves size (unlike substitution)}).
-    %
-    Moreover, $\cnmatches {\cpapp \x \ren \ueqs \t} = \cnmatches \ueqi = 0$, so
-    each premise has strictly smaller measure.
-\end{proof}
-\end{theorem}
-
-\section{Well-foundedness of \OML typing rules}
-
-\Xalistair{The same problem of well-foundedness comes up
-with the \OML typing rules. Should we have a separate
-section? Or deal with it in the above section (A single
-section for well-foundedness concerns)}
-
-\section{Ordered substitutions and unifiers}
-
-An ordered substitution $\sub$ is a refinement on substitutions, which
-defines the scope of existential variables in solutions and controls the free
-variables of their solutions.
-
-\begin{mathpar}
-  \begin{bnfgrammar}
-    \entry[Ordered substitution]{\sub}{
-      \cdot
-      \and \sub, \tv
-      \and \sub, \tv := \t
-      \and \sub, \x := \cabs \tv \c
-    }
-  \end{bnfgrammar}
-\end{mathpar}
-Like typing contexts $\G$, substitutions $\sub$ are ordered and contain
-delcarations of polymorphic variables ($\tv$), they also provide term variable
-bindings ($\x \is \cabs \tv \c$). Unlike typing contexts, ordered substitutions
-$\sub$ also contain declarations of existential (flexible) type variables with
-solutions ($\tv \is \t$). We write $\dom \sub$ for the sequence of type
-variables and term variables defined in $\sub$.
-
-The well-formedness of substitutions $\sub$, written $\th \sub$ and defined
-below, enforces an order: if $\sub = \sub_L, \tv \is \t, \sub_R$, the solution
-$\t$ must be well-formed under $\sub_L$.
-
-\begin{mathpar}
-  \infer[Sub-Emp-Wf]
-    {}
-    {\th \eset}
-
-  \infer[Sub-TyVar-Wf]
-    {\th \sub}
-    {\th \sub, \tv}
-
-  \infer[Sub-TyAssn-Wf]
-    {\th \sub \\ \sub \th \t}
-    {\th \sub, \tv \is \t}
-
-  \infer[Sub-Var-Wf]
-    {\th \sub \\ \dom \sub \th \cabs \tv \c}
-    {\th \sub, \x \is \cabs \tv \c}
-\\
-  \infer[S-Var-Wf]
-    {\tv \in \dom \sub}
-    {\sub \th \tv}
-
-  \infer[S-Unit-Wf]
-    {}
-    {\sub \th \tunit}
-
-  \inferrule[S-Arr-Wf]
-    {\sub \th \t \\ \sub \th \tp}
-    {\sub \th \t \to \tp}
-
-  \inferrule[S-Prod-Wf]
-    {(\sub \th \ti)\iton}
-    {\sub \th \Pi\iton \ti}
-
-  \inferrule[S-Rcd-Wf]
-    {(\sub \th \ti)\iton \\
-     \T \in \dom \Omega}
-    {\sub \th \tys \T}
-
-  \inferrule[S-Poly-Wf]
-    {\sub \th \ts}
-    {\sub \th \tpoly \ts}
-
-  \inferrule[S-Forall-Wf]
-    {\sub, \tv \th \ts}
-    {\sub \th \tfor \tv \ts}
-
-\end{mathpar}
-Ordered substitutions $\sub$ can be viewed as parallel substitutions on types,
-substituting solved existential variables. We write $\sub(\t)$ for $\sub$
-applied as a substitution to type $\t$:
-\begin{mathpar}
-  \begin{tabular}{RCLL}
-    \sub(\tv) &\eqdef&
-      \begin{cases}
-	\theta(\t) &\text{if } \tv \is \t \in \theta \\
-	\tv &\text{otherwise}
-      \end{cases}\\
-    \sub(\tunit) &\eqdef& \tunit \\
-    \sub(\t \to \tp) &\eqdef& \sub(\t) \to \sub(\tp) \\
-    \sub(\Pi\iton \ti) &\eqdef& \Pi\iton \sub(\ti) \\
-    \sub(\tys \Tapp) &\eqdef& \sub(\tys) \Tapp \\
-    \sub(\tpoly \ts) &\eqdef& \tpoly {\sub(\ts)} \\
-    \sub(\tfor \tv \ts) &\eqdef& \tfor \tv \sub(\ts) &\text{if } \tv \disjoint
-    \sub
-  \end{tabular}
-\end{mathpar}
-
-We can interpret $\sub$ as a set of semantic environments, written $\csem
-\sub$.
-\TODO{Semantic environments should not be ordered}
-\begin{mathpar}
-  \begin{tabular}{RCL}
-      \csem \cdot &\eqdef& \set {\cdot} \\
-      \csem {\sub, \tv} &\eqdef& \set{\semenv[\tv \is \gt] : \semenv \in \csem
-      \sub} \\
-      \csem {\sub, \tv \is \t} &\eqdef& \set{\semenv[\tv \is \semenv(\t)] :
-	\semenv \in \csem \sub} \\
-      \csem {\sub, \x \is \cabs \tv \c} &\eqdef& \set{\semenv[\x \is
-      \semenv(\cabs \tv \c)] : \semenv \in \csem \sub}
-  \end{tabular}
-\end{mathpar}
-
-We say that $\sub$ is a \emph{unifier} of $\c$ iff $\all {\semenv } \semenv
-\in \csem \sub \implies \semenv \th \c$.
-
-\begin{lemma}
-  If $\sub$ is unifier of $\cexists \tv \c$, there exists type $\t$ such that
-  $\sub \th \t$ and $\sub, \tv \is \t$ is a unifier of $\c$. Conversely,
-  if $\sub, \tv \is \t$ is a unifier of $\c$, then $\sub$ is a unifier of
-  $\cexists \tv \c$.
-
-
-\end{lemma}
-
-\TODO{Add some more stuff on ordered substitutions and unifiers (probably on
-an as need basis)}
-
-\section{Proofs for \cref{sec:constraint-gen}}
-
-In this appendix, we give the details for proving the soundness and completeness
-of the constraint generator, that is $\G \th \e : \ts$ if and only if
-$\cdot \th \cinfer {\G \th \e} \ts$. We begin by reformulating this statement using
-unifiers.
 %
-We write $\csem \G$ for the set of semantic environments induced by $\G$:
-\begin{mathpar}
-  \begin{tabular}{RCL}
-    \csem \cdot &\eqdef& \set \cdot \\
-    \csem {\G, \tv} &\eqdef& \set{\semenv[\tv \is \gt] : \semenv \in \csem \G} \\
-    \csem {\G, \x : \ts} &\eqdef& \set{\semenv[\x \is \semenv(\cabs \tv \ts \leq \tv)] : \semenv \in \csem \G}
-  \end{tabular}
-\end{mathpar}
-
-\begin{lemma}
-  $\cdot \th \csem{\G \th \e : \ts}$ if and only if $\csem \G \Vdash \cinfer \e \ts$
-  \begin{proof}
-    Induction on $\G$.
-  \end{proof}
-\end{lemma}
-
-We also relate $\G$ and ordered substitutions with the translation $\pparens \G$:
-\begin{mathpar}
-  \begin{tabular}{RCL}
-    \pparens \cdot &\eqdef& \cdot \\
-    \pparens {\G, \tv} &\eqdef& \pparens \G, \tv \\
-    \pparens {\G, \x : \ts} &\eqdef& \pparens \G, \x \is \cabs \tv \ts \leq \tv
-  \end{tabular}
-\end{mathpar}
-
-\begin{lemma}
-  $\csem \G = \csem {\pparens \G}$.
-  \begin{proof}
-    Induction on $\G$.
-  \end{proof}
-\end{lemma}
-
-We can now reformulate soundness and completeness as:
-$\G \th \e : \ts$ if and only if $\pparens \G$ is a
-unifier of $\cinfer \e \ts$.
-
-
-
-\begin{lemma}[X-soundness and completeness]
-  For the explicit term $\e$, we have
-  $\G \th \e : \ts$ if and only if $\pparens \G$ is a unifier of $\cinfer \e \ts$.
-  \begin{proof}
-    Structural induction on $\e$.
-  \end{proof}
-\end{lemma}
-
-\pagebreak
-\section{Unicity properties}
-
-\newcommand{\csmatch}[2]{\angles{#1}#2}
-\newcommand{\csmatchsub}[3]{\angles{#1 \is #2}#3}
-\newcommand{\Csshape}[4]{{#1}\where{\csmatch{#2}{#3} \uni #4}}
-\newcommand{\Cscshape}[7]{{#1}\where{\csmatch{#2}{#3} \uni {#4} \mid \csmatch{#5}{#6} \uni {#7}}}
-\newcommand{\cbrsp}{\cbrs'}
-
-In this section, we give details of the unicity predicate along with our main result: \emph{inversion of suspension}.
-We recall the following definition of unicity:
-
-\begin{definition}[Unicity]
-  The type variable $\tv$ has a uniquely known principal shape $\sh$ in the context $\C$,
-  written $\Cshape \C \tv \sh$ (or $\Csshape \C \tv \cbrs \sh$), iff for all assignments
-  $\semenv$ and ground types $\gt$, then $\C\where{\cunif \tv \gt}$ implies that the
-  principal shape of $\gt$ is equal to $\sh$:
-  \begin{mathpar}
-    \Csshape \C \tv \cbrs \sh \uad\eqdef\uad \all {\semenv, \gt} \; \semenv \th \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
-  \end{mathpar}
-\end{definition}
-
-We introduce the notation $\Csshape \C \tv \cbrs \sh$ to be more consistent with our later notation on
-\emph{joint} and \emph{conditional} unicity.
-
-\begin{lemma}
-  If $\Csshape \Cb \tv \cbrs \sh$, then $\Csshape {\parens {\Ca\where\Cb}} \tv \cbrs \sh$.
-  \begin{proof}
-    Induction on $\Ca$.
-  \end{proof}
-\end{lemma}
-
-\begin{definition}[Conditional unicity] For two type variables $\tv, \tvp$, $\tv$ has the conditionally
-  known shape $\sh$ given that $\tvp$ has the shape $\shp$
-  within the match $\csmatch \tvp \cbrsp$, written
-  $\Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp$, is defined as:
-  \begin{mathpar}
-    \Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp \uad\eqdef\uad \Csshape {\parens{\C\where{\square, \csmatchsub \tvp \shp \cbrsp}}} \tv \cbrs \sh
-  \end{mathpar}
-
-  Here $\C$ is a two-hole context and $\C\where{\square, \csmatchsub \tvp \shp \cbrsp}$ is a one-hole context used in
-  the unicity predicate.
-\end{definition}
-
-
-\begin{theorem}[Bayes' theorem]
-  \begin{mathpar}
-    \Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp \wedge \Csshape {\parens{\C\where{\csmatch \tv \cbrs, \square}}} \tvp \cbrsp \shp \\
-    \iff \\
-    \Cscshape \C \tvp \cbrsp \shp \tv \cbrs \sh \wedge \Csshape {\parens{\C\where{\square, \csmatch \tvp \cbrsp}}} \tv \cbrs \sh
-  \end{mathpar}
-  \begin{proof}
-    ??
-  \end{proof}
-\end{theorem}
-
-
-\begin{theorem}[Inversion of suspension]
-  $\semenv \th \C\where{\cmatch \tv \cbrs}$ if and only if
-  $\Cshape \C \tv {\any \tvcs \t}$ and $\semenv \th \C\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$ for some $\tvcs, \t$.
-  \begin{proof}
-    The backwards direction is trivial, using \Rule{Susp-Ctx}.
-    We now consider the forwards direction, by induction on the given derivation.
-
-    \proofcase{\Rule{True}, \Rule{Multi-Unif}, \Rule{App}, \Rule{Susp-Use}, \Rule{AppR}, \Rule{Papp}} Impossible.
-
-    \proofcase{\Rule{Conj}}
-      \begin{mathpar}
-	\infer[Conj]
-	  {\semenv \th \cone \\ \semenv \th \ctwo}
-	  {\semenv \th \cone \cand \ctwo}
-      \end{mathpar}
-      We have $\C\where{\cmatch \tv \cbrs} = \cone \cand \ctwo$. Consider
-      cases on $\C$:
-      \begin{itemize}
-	\item \proofcase{$\C = \Cp \cand \ctwo$}
-	  So we have $\semenv \th \Cp\where{\cmatch \tv \cbrs}$.
-	  By induction, we have $\Cshape \Cp \tv {\any \tvcs \t}$ and
-	  $\semenv \th \Cp\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}$.
-	  By Lemma ??, we have $\Cshape {\parens {\Cp \cand \ctwo}} \tv {\any \tvcs \t}$.
-	  By \Rule{Conj}, we have
-	  \begin{mathpar}
-	    \infer[Conj]
-	      {\semenv \th \Cp\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs} \\
-	       \semenv \th \ctwo}
-	      {\semenv \th \parens{\Cp \cand \ctwo}\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}}
-	  \end{mathpar}
-	\item \proofcase{$\C = \cone \cand \Cp$}
-	  Symmetric.
-      \end{itemize}
-
-    \proofcase{\Rule{Let}}
-      \begin{mathpar}
-	\infer[Let]
-	  {\semenv \th \cexists \tvb \cone \\
-	   \semenv, \x \is \semenv(\cabs \tvb \cone) \th \ctwo}
-	  {\semenv \th \clet \x \tvb \cone \ctwo}
-      \end{mathpar}
-      We have $\C\where{\cmatch \tv \cbrs} = \clet \x \tv \cone \ctwo$.
-      Consider cases on $\C$:
-      \begin{itemize}
-	\item \proofcase{$\C = \clet \x \tvb \Cp \ctwo$}
-	  So we have $\semenv \th \cexists \tvb \Cp\where{\cmatch \tv \cbrs}$ (1)
-	  and $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) \th \ctwo$ (2).
-
-	  By induction (1), we have $\cexists \tvb \Cshape \Cp \tv {\any \tvcs \t}$ and $\semenv \th \cexists \tvb
-	  \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$. By Lemma ??, we have $\Cshape \Cp \tv {\any \tvcs \t}$.
-
-	  We now claim that $\semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) = \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs})$.
-	  That is $\semenv, \tvb \is \gt \th \Cp\where{\cmatch \tv \cbrs} \iff \semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$.
-	  This follows directly from induction, as we have $\Cshape \Cp \tv {\any \tvcs \t}$.
-
-	  So we have $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \ctwo$ from (2).
-	  Applying Lemma ??, we have $\Cshape {\parens {\clet \x \tvb \Cp \ctwo}} \tv {\any \tvcs \t}$, and applying the \Rule{Let} rule
-	  gives us:
-	  \begin{mathpar}
-	    \infer[Let]
-	      {\semenv \th \cexists \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} \\
-	       \semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \ctwo}
-	      {\semenv \th \parens {\clet \x \tvb \Cp \ctwo} \where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} }
-	  \end{mathpar}
-
-
-
-
-	\item \proofcase{$\C = \clet \x \tvb \cone \Cp$}
-	  Similiar to the \Rule{Conj} case.
-
-      \end{itemize}
-
-
-    \proofcase{\Rule{Exists}}
-      \begin{mathpar}
-	\infer[Exists]
-	  {\semenv, \tvb \is \gt \th \c}
-	  {\semenv \th \cexists \tvb \c}
-      \end{mathpar}
-
-      We have $\C\where{\cmatch \tv \cbrs} = \cexists \tvb \c$.
-      Hence $\C = \cexists \tvb \Cp$ and $\Cp\where{\cmatch \tv \cbrs} = \c$.
-
-      By induction, we have $\Cshape \Cp \tv {\any \tvcs \t}$
-      and $\semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$.
-
-      By Lemma ??, we have $\Cshape {\parens {\cexists \tvb \Cp}} \tv {\any \tvcs \t}$.
-      Applying \Rule{Exists} gives us:
-      \begin{mathpar}
-	\infer[Exists]
-	  {\semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}}
-	  {\semenv \th \cexists \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}}
-      \end{mathpar}
-
-
-    \proofcase{\Rule{Forall}} Similiar to the \Rule{Exists} case.
-
-    \proofcase{\Rule{Susp-Ctx}}
-      \begin{mathpar}
-	\infer[Susp-Ctx]
-	  {\Cshape \Cp \tvp {\any \tvcs' \typ} \\
-	   \semenv \th \Cp\where{\cexists {\tvcs'} \cunif \tvp \typ \cand \cmatch \typ \cbrs'}}
-	  {\semenv \th \Cp\where{\cmatch \tvp \cbrs'}}
-      \end{mathpar}
-
-      Consider whether $\C = \Cp$:
-      \begin{itemize}
-	\item \proofcase{$\C = \Cp$} Trivial
-	\item \proofcase{$\C \neq \Cp$}
-	  Bayes' theorem + induction
-      \end{itemize}
-  \end{proof}
-\end{theorem}
-
+%\section{Well-foundedness of satisfiability}
+%\label{appendix:wf}
 %
-%We write $\e^i$ for an \emph{implicit} term, which is either: $\eproj \e j$, $\einst \e$, $\epoly \e$.
-%Let us define $x(\e^i, \sh)$ for the explicit elaboration of an implicit term $\e^i$ using the
-%shape $\sh$:
-%\begin{align*}
-%  x(\eproj \e j, \any \tvcs \Pi\iton \tvcs) &= \eproj[n] \e j \\
-%  x(\einst \e, \any \tvcs \tpoly \ts) &= \exinst \e \tvcs \ts \\
-%  x(\epoly \e, \any \tvcs \tpoly \ts) &= \expoly \e {\exi \tvcs \ts}
-%\end{align*}
+%In this appendix, we give the full details of the well-foundedness of the
+%semantics of constraints, that is the satisfiability judgement $\semenv \th \c$.
 %
+%\newcommand{\cnmatches}[1]{\#\Match #1}
 %\begin{theorem}
-%  $\G \th \E\where{\e^i} : \ts$ if and only if
-%  $\E\where{\e \mathop{\triangleleft\triangleright} \sh}$ and $\G \th \E\where{x(\e^i, \sh)} : \ts$ where
-%  $\decomp {\e^i} = \e, \triangleleft\triangleright$
+%  The relation $\semenv \th \c$ is well-founded.
+%\begin{proof}
+%  For the relation $\semenv \th \c$, the following measure on such judgements is
+%  adequate to prove well-foundedness:
+%  \begin{mathpar}
+%    \angles{\cnmatches \c, \c}
+%  \end{mathpar}
+%  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
+%  \begin{enumerate}
+%
+%    \item $\cnmatches \c$ is the number of $\cmatch \tv \cbrs$ constraints in
+%      $\c$---that is, suspended match constraints whose matchee is a variable.
+%
+%    \item the last component $\c$ is a structural measure of constraints \ie a
+%      conjunction $\cone \cand \ctwo$ is larger than the two conjuncts $\cone,
+%      \ctwo$. \Xalistair{Should we be more formal here? we could introduce a
+%      measure that characterizes this}
+%
+%  \end{enumerate}
+%
+%
+%  We will now show that every rule uses a premise whose measure is smaller than
+%  the conclusion.
+%
+%  \proofcase{\Rule{True}} No premises
+%
+%  \proofcase{\Rule{Conj}}
+%    Each premise involves on conjuct (either $\cone$ or $\ctwo$) of the
+%    constraint $\cone \cand \ctwo$. Since both are structurally smaller than
+%    the full conjunction, and by definition, $\cnmatches {\cone}, \cnmatches
+%    {\ctwo} \leq \cnmatches {\cone \cand \ctwo}$, the premises are strictly
+%    smaller according to the measure.
+%
+%  \proofcase{\Rule{Exists}}
+%    The premise involving the constraint $\c$ is structurally smaller than
+%    $\cexists \tv \c$. Moreover, since quantification does not affect
+%    $\cnmatches -$, we have $\cnmatches {\c} = \cnmatches{\cexists \tv \c}$.
+%
+%  \proofcase{\Rule{Forall}}
+%    Analogous to the existential case: the qualified constraint $\c$ is
+%    structurally smaller than $\cfor \tv \c$, and again, $\cnmatches$ is
+%    preserved.
+%
+%  \proofcase{\Rule{Multi-Unif}} No premises involving constraints.
+%
+%  \proofcase{\Rule{Let}}
+%    The first premise involves the existential $\cexists \tv \cone$, which can
+%    be unrolled to a subjudgement on $\cone$ alone (using a single application
+%    of \Rule{Exists}). Since $\cone$ is structurally smaller than the full
+%    $\Let$ constraint $\clet \x \tv \cone \ctwo$, and $\cnmatches \cone \leq
+%    \cnmatches \clet \x \tv \cone \ctwo$, the measure decreases.
+%
+%    The second premise involves $\ctwo$, which is again smaller than the
+%    conclusion both structurally and in terms of $\cnmatches$. This premise
+%    also relies on interpreting $\cabs \tv \cone$, which in turn involves a
+%    subjudgement over $\cone$, already shown to be smaller.
+%
+%  \proofcase{\Rule{App}} No premises involving constraints.
+%
+%  \proofcase{\Rule{Susp-Use}}
+%    Here, the premise involving the branch constraint $\ci$ is structurally
+%    smaller than the entire match constraint $\cmatch \t {\cbranch {\bar \cpat}
+%    {\bar \c}}$. Since $\t$ is not a type variable, the number of matches does
+%    not \emph{strictly} decrease: $\cnmatches \ci \leq \cnmatches
+%    {\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}$.
+%
+%  \proofcase{\Rule{Susp-Ctx}}
+%    The first premise $\Cshape \C \tv {\any \tvcs \t}$ involves a judgement of
+%    the form $\C\where{\cunif \tv \gt}$ (for any $\gt$), which is strictly
+%    smaller than the full match $\C\where{\cmatch \tv \cbrs}$ in terms of
+%    $\cnmatches$.
+%
+%    The second premise is subtler: $\C\where{\cexists \tvcs \cunif \tv \t \cand
+%    \cmatch \t \cbrs}$ appears to be larger at first glance, but it is smaller
+%    in our measure becuase $\t$ is guaranteed not to be a type variable (by
+%    definition of principal shapes).
+%    Thus $\cnmatches {\C\where{\cexists \tvcs
+%    \cunif \tv \t \cand \cmatch \t \cbrs}} < \cnmatches {\C\where{\cmatch \tv
+%    \cbrs}}$.
+%
+%  \proofcase{\Rule{LetR}}
+%    Analogous to the \Rule{Let} case, and the argument proceeds similarly.
+%    The only difference lies in the region bindings.
+%
+%    The first premise involving $\cexists {\tv, \tvs} \cone$, which again
+%    reduces to a subjudgement involving $\cone$ (using $|\tvs| + 1$
+%    applications  of \Rule{Exists}), is structurally is smaller than the
+%    conclusion $\cletr \x \tv \tvs \cone \ctwo$. The measure similarly
+%    satisfies $\cnmatches \cone \leq \cnmatches \cletr \x \tv \tvs \cone
+%    \ctwo$.
+%
+%    The second premise involving $\ctwo$ is structurally smaller and depends on
+%    the interpretation of the regional abstraction $\cabsr \tv \tvs \cone$. As
+%    in the non-regional case, this abstraction uses a judgement involving
+%    $\cone$, which has already been shown to be smaller.
+%
+%  \proofcase{\Rule{AppR}} No premises involving constraints.
+%
+%  \proofcase{\Rule{Papp}}
+%    The premises involving $(\ueqi\where\ren)\iton$ each include a component of
+%    the partial application $\cpapp \x \ren \ueqs \t$. Since renaming preserves
+%    structural size and $\ueqi$ is strictly smaller than the full constraint,
+%    the structural measure decreases (\Xalistair{Should we be more formal
+%    here? giving a lemma that renaming preserves size (unlike substitution)}).
+%    %
+%    Moreover, $\cnmatches {\cpapp \x \ren \ueqs \t} = \cnmatches \ueqi = 0$, so
+%    each premise has strictly smaller measure.
+%\end{proof}
+%\end{theorem}
+%
+%\section{Well-foundedness of \OML typing rules}
+%
+%\Xalistair{The same problem of well-foundedness comes up
+%with the \OML typing rules. Should we have a separate
+%section? Or deal with it in the above section (A single
+%section for well-foundedness concerns)}
+%
+%\section{Ordered substitutions and unifiers}
+%
+%An ordered substitution $\sub$ is a refinement on substitutions, which
+%defines the scope of existential variables in solutions and controls the free
+%variables of their solutions.
+%
+%\begin{mathpar}
+%  \begin{bnfgrammar}
+%    \entry[Ordered substitution]{\sub}{
+%      \cdot
+%      \and \sub, \tv
+%      \and \sub, \tv := \t
+%      \and \sub, \x := \cabs \tv \c
+%    }
+%  \end{bnfgrammar}
+%\end{mathpar}
+%Like typing contexts $\G$, substitutions $\sub$ are ordered and contain
+%delcarations of polymorphic variables ($\tv$), they also provide term variable
+%bindings ($\x \is \cabs \tv \c$). Unlike typing contexts, ordered substitutions
+%$\sub$ also contain declarations of existential (flexible) type variables with
+%solutions ($\tv \is \t$). We write $\dom \sub$ for the sequence of type
+%variables and term variables defined in $\sub$.
+%
+%The well-formedness of substitutions $\sub$, written $\th \sub$ and defined
+%below, enforces an order: if $\sub = \sub_L, \tv \is \t, \sub_R$, the solution
+%$\t$ must be well-formed under $\sub_L$.
+%
+%\begin{mathpar}
+%  \infer[Sub-Emp-Wf]
+%    {}
+%    {\th \eset}
+%
+%  \infer[Sub-TyVar-Wf]
+%    {\th \sub}
+%    {\th \sub, \tv}
+%
+%  \infer[Sub-TyAssn-Wf]
+%    {\th \sub \\ \sub \th \t}
+%    {\th \sub, \tv \is \t}
+%
+%  \infer[Sub-Var-Wf]
+%    {\th \sub \\ \dom \sub \th \cabs \tv \c}
+%    {\th \sub, \x \is \cabs \tv \c}
+%\\
+%  \infer[S-Var-Wf]
+%    {\tv \in \dom \sub}
+%    {\sub \th \tv}
+%
+%  \infer[S-Unit-Wf]
+%    {}
+%    {\sub \th \tunit}
+%
+%  \inferrule[S-Arr-Wf]
+%    {\sub \th \t \\ \sub \th \tp}
+%    {\sub \th \t \to \tp}
+%
+%  \inferrule[S-Prod-Wf]
+%    {(\sub \th \ti)\iton}
+%    {\sub \th \Pi\iton \ti}
+%
+%  \inferrule[S-Rcd-Wf]
+%    {(\sub \th \ti)\iton \\
+%     \T \in \dom \Omega}
+%    {\sub \th \tys \T}
+%
+%  \inferrule[S-Poly-Wf]
+%    {\sub \th \ts}
+%    {\sub \th \tpoly \ts}
+%
+%  \inferrule[S-Forall-Wf]
+%    {\sub, \tv \th \ts}
+%    {\sub \th \tfor \tv \ts}
+%
+%\end{mathpar}
+%Ordered substitutions $\sub$ can be viewed as parallel substitutions on types,
+%substitutiong solved existential variables. We write $\sub(\t)$ for $\sub$
+%applied as a substitution to type $\t$:
+%\begin{mathpar}
+%  \begin{tabular}{RCLL}
+%    \sub(\tv) &\eqdef&
+%      \begin{cases}
+%	\theta(\t) &\text{if } \tv \is \t \in \theta \\
+%	\tv &\text{otherwise}
+%      \end{cases}\\
+%    \sub(\tunit) &\eqdef& \tunit \\
+%    \sub(\t \to \tp) &\eqdef& \sub(\t) \to \sub(\tp) \\
+%    \sub(\Pi\iton \ti) &\eqdef& \Pi\iton \sub(\ti) \\
+%    \sub(\tys \Tapp) &\eqdef& \sub(\tys) \Tapp \\
+%    \sub(\tpoly \ts) &\eqdef& \tpoly {\sub(\ts)} \\
+%    \sub(\tfor \tv \ts) &\eqdef& \tfor \tv \sub(\ts) &\text{if } \tv \disjoint
+%    \sub
+%  \end{tabular}
+%\end{mathpar}
+%
+%We can interpret $\sub$ as a set of semantic environments, written $\csem
+%\sub$.
+%\TODO{Semantic environments should not be ordered}
+%\begin{mathpar}
+%  \begin{tabular}{RCL}
+%      \csem \cdot &\eqdef& \set {\cdot} \\
+%      \csem {\sub, \tv} &\eqdef& \set{\semenv[\tv \is \gt] : \semenv \in \csem
+%      \sub} \\
+%      \csem {\sub, \tv \is \t} &\eqdef& \set{\semenv[\tv \is \semenv(\t)] :
+%	\semenv \in \csem \sub} \\
+%      \csem {\sub, \x \is \cabs \tv \c} &\eqdef& \set{\semenv[\x \is
+%      \semenv(\cabs \tv \c)] : \semenv \in \csem \sub}
+%  \end{tabular}
+%\end{mathpar}
+%
+%We say that $\sub$ is a \emph{unifier} of $\c$ iff $\all {\semenv } \semenv
+%\in \csem \sub \implies \semenv \th \c$.
+%
+%\begin{lemma}
+%  If $\sub$ is unifier of $\cexists \tv \c$, there exists type $\t$ such that
+%  $\sub \th \t$ and $\sub, \tv \is \t$ is a unifier of $\c$. Conversely,
+%  if $\sub, \tv \is \t$ is a unifier of $\c$, then $\sub$ is a unifier of
+%  $\cexists \tv \c$.
+%
+%
+%\end{lemma}
+%
+%\TODO{Add some more stuff on ordered substitutions and unifiers (probably on
+%an as need basis)}
+%
+%\section{Proofs for \cref{sec:constraint-gen}}
+%
+%In this appendix, we give the details for proving the soundness and completeness
+%of the constraint generator, that is $\G \th \e : \ts$ if and only if
+%$\cdot \th \cinfer {\G \th \e} \ts$. We begin by reformulating this statement using
+%unifiers.
+%%
+%We write $\csem \G$ for the set of semantic environments induced by $\G$:
+%\begin{mathpar}
+%  \begin{tabular}{RCL}
+%    \csem \cdot &\eqdef& \set \cdot \\
+%    \csem {\G, \tv} &\eqdef& \set{\semenv[\tv \is \gt] : \semenv \in \csem \G} \\
+%    \csem {\G, \x : \ts} &\eqdef& \set{\semenv[\x \is \semenv(\cabs \tv \ts \leq \tv)] : \semenv \in \csem \G}
+%  \end{tabular}
+%\end{mathpar}
+%
+%\begin{lemma}
+%  $\cdot \th \csem{\G \th \e : \ts}$ if and only if $\csem \G \Vdash \cinfer \e \ts$
 %  \begin{proof}
-%    \TODO{Unable to prove the hard cases yet (\eg \Rule{Proj-I}) --- this theorem is quite strong, }
+%    Induction on $\G$.
+%  \end{proof}
+%\end{lemma}
+%
+%We also relate $\G$ and ordered substitutions with the translation $\pparens \G$:
+%\begin{mathpar}
+%  \begin{tabular}{RCL}
+%    \pparens \cdot &\eqdef& \cdot \\
+%    \pparens {\G, \tv} &\eqdef& \pparens \G, \tv \\
+%    \pparens {\G, \x : \ts} &\eqdef& \pparens \G, \x \is \cabs \tv \ts \leq \tv
+%  \end{tabular}
+%\end{mathpar}
+%
+%\begin{lemma}
+%  $\csem \G = \csem {\pparens \G}$.
+%  \begin{proof}
+%    Induction on $\G$.
+%  \end{proof}
+%\end{lemma}
+%
+%We can now reformulate soundness and completeness as:
+%$\G \th \e : \ts$ if and only if $\pparens \G$ is a
+%unifier of $\cinfer \e \ts$.
+%
+%
+%
+%\begin{lemma}[X-soundness and completeness]
+%  For the explicit term $\e$, we have
+%  $\G \th \e : \ts$ if and only if $\pparens \G$ is a unifier of $\cinfer \e \ts$.
+%  \begin{proof}
+%    Structural induction on $\e$.
+%  \end{proof}
+%\end{lemma}
+%
+%\pagebreak
+%\section{Unicity properties}
+%
+%\newcommand{\cscmmatch}[2]{\angles{#1}#2}
+%\newcommand{\cscmmatchsub}[3]{\angles{#1 \is #2}#3}
+%\newcommand{\Csshape}[4]{{#1}\where{\cscmmatch{#2}{#3} \uni #4}}
+%\newcommand{\Cscshape}[7]{{#1}\where{\cscmmatch{#2}{#3} \uni {#4} \mid \csmatch{#5}{#6} \uni {#7}}}
+%\newcommand{\cbrsp}{\cbrs'}
+%
+%In this section, we give details of the unicity predicate along with our main result: \emph{inversion of suspension}.
+%We recall the following definition of unicity:
+%
+%\begin{definition}[Unicity]
+%  The type variable $\tv$ has a uniquely known principal shape $\sh$ in the context $\C$,
+%  written $\Cshape \C \tv \sh$ (or $\Csshape \C \tv \cbrs \sh$), iff for all assignments
+%  $\semenv$ and ground types $\gt$, then $\C\where{\cunif \tv \gt}$ implies that the
+%  principal shape of $\gt$ is equal to $\sh$:
+%  \begin{mathpar}
+%    \Csshape \C \tv \cbrs \sh \uad\eqdef\uad \all {\semenv, \gt} \; \semenv \th \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
+%  \end{mathpar}
+%\end{definition}
+%
+%We introduce the notation $\Csshape \C \tv \cbrs \sh$ to be more consistent with our later notation on
+%\emph{joint} and \emph{conditional} unicity.
+%
+%\begin{lemma}
+%  If $\Csshape \Cb \tv \cbrs \sh$, then $\Csshape {\parens {\Ca\where\Cb}} \tv \cbrs \sh$.
+%  \begin{proof}
+%    Induction on $\Ca$.
+%  \end{proof}
+%\end{lemma}
+%
+%\begin{definition}[Conditional unicity] For two type variables $\tv, \tvp$, $\tv$ has the conditionally
+%  known shape $\sh$ given that $\tvp$ has the shape $\shp$
+%  within the match $\cscmmatch \tvp \cbrsp$, written
+%  $\Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp$, is defined as:
+%  \begin{mathpar}
+%    \Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp \uad\eqdef\uad \Csshape {\parens{\C\where{\square, \cscmmatchsub \tvp \shp \cbrsp}}} \tv \cbrs \sh
+%  \end{mathpar}
+%
+%  Here $\C$ is a two-hole context and $\C\where{\square, \cscmmatchsub \tvp \shp \cbrsp}$ is a one-hole context used in
+%  the unicity predicate.
+%\end{definition}
+%
+%
+%\begin{theorem}[Bayes' theorem]
+%  \begin{mathpar}
+%    \Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp \wedge \Csshape {\parens{\C\where{\cscmmatch \tv \cbrs, \square}}} \tvp \cbrsp \shp \\
+%    \iff \\
+%    \Cscshape \C \tvp \cbrsp \shp \tv \cbrs \sh \wedge \Csshape {\parens{\C\where{\square, \cscmmatch \tvp \cbrsp}}} \tv \cbrs \sh
+%  \end{mathpar}
+%  \begin{proof}
+%    ??
 %  \end{proof}
 %\end{theorem}
-
+%
+%
+%\begin{theorem}[Inversion of suspension]
+%  $\semenv \th \C\where{\cmatch \tv \cbrs}$ if and only if
+%  $\Cshape \C \tv {\any \tvcs \t}$ and $\semenv \th \C\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$ for some $\tvcs, \t$.
+%  \begin{proof}
+%    The backwards direction is trivial, using \Rule{Susp-Ctx}.
+%    We now consider the forwards direction, by induction on the given derivation.
+%
+%    \proofcase{\Rule{True}, \Rule{Multi-Unif}, \Rule{App}, \Rule{Susp-Use}, \Rule{AppR}, \Rule{Papp}} Impossible.
+%
+%    \proofcase{\Rule{Conj}}
+%      \begin{mathpar}
+%	\infer[Conj]
+%	  {\semenv \th \cone \\ \semenv \th \ctwo}
+%	  {\semenv \th \cone \cand \ctwo}
+%      \end{mathpar}
+%      We have $\C\where{\cmatch \tv \cbrs} = \cone \cand \ctwo$. Consider
+%      cases on $\C$:
+%      \begin{itemize}
+%	\item \proofcase{$\C = \Cp \cand \ctwo$}
+%	  So we have $\semenv \th \Cp\where{\cmatch \tv \cbrs}$.
+%	  By induction, we have $\Cshape \Cp \tv {\any \tvcs \t}$ and
+%	  $\semenv \th \Cp\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}$.
+%	  By Lemma ??, we have $\Cshape {\parens {\Cp \cand \ctwo}} \tv {\any \tvcs \t}$.
+%	  By \Rule{Conj}, we have
+%	  \begin{mathpar}
+%	    \infer[Conj]
+%	      {\semenv \th \Cp\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs} \\
+%	       \semenv \th \ctwo}
+%	      {\semenv \th \parens{\Cp \cand \ctwo}\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}}
+%	  \end{mathpar}
+%	\item \proofcase{$\C = \cone \cand \Cp$}
+%	  Symmetric.
+%      \end{itemize}
+%
+%    \proofcase{\Rule{Let}}
+%      \begin{mathpar}
+%	\infer[Let]
+%	  {\semenv \th \cexists \tvb \cone \\
+%	   \semenv, \x \is \semenv(\cabs \tvb \cone) \th \ctwo}
+%	  {\semenv \th \clet \x \tvb \cone \ctwo}
+%      \end{mathpar}
+%      We have $\C\where{\cmatch \tv \cbrs} = \clet \x \tv \cone \ctwo$.
+%      Consider cases on $\C$:
+%      \begin{itemize}
+%	\item \proofcase{$\C = \clet \x \tvb \Cp \ctwo$}
+%	  So we have $\semenv \th \cexists \tvb \Cp\where{\cmatch \tv \cbrs}$ (1)
+%	  and $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) \th \ctwo$ (2).
+%
+%	  By induction (1), we have $\cexists \tvb \Cshape \Cp \tv {\any \tvcs \t}$ and $\semenv \th \cexists \tvb
+%	  \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$. By Lemma ??, we have $\Cshape \Cp \tv {\any \tvcs \t}$.
+%
+%	  We now claim that $\semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) = \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs})$.
+%	  That is $\semenv, \tvb \is \gt \th \Cp\where{\cmatch \tv \cbrs} \iff \semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$.
+%	  This follows directly from induction, as we have $\Cshape \Cp \tv {\any \tvcs \t}$.
+%
+%	  So we have $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \ctwo$ from (2).
+%	  Applying Lemma ??, we have $\Cshape {\parens {\clet \x \tvb \Cp \ctwo}} \tv {\any \tvcs \t}$, and applying the \Rule{Let} rule
+%	  gives us:
+%	  \begin{mathpar}
+%	    \infer[Let]
+%	      {\semenv \th \cexists \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} \\
+%	       \semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \ctwo}
+%	      {\semenv \th \parens {\clet \x \tvb \Cp \ctwo} \where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} }
+%	  \end{mathpar}
+%
+%
+%
+%
+%	\item \proofcase{$\C = \clet \x \tvb \cone \Cp$}
+%	  Similiar to the \Rule{Conj} case.
+%
+%      \end{itemize}
+%
+%
+%    \proofcase{\Rule{Exists}}
+%      \begin{mathpar}
+%	\infer[Exists]
+%	  {\semenv, \tvb \is \gt \th \c}
+%	  {\semenv \th \cexists \tvb \c}
+%      \end{mathpar}
+%
+%      We have $\C\where{\cmatch \tv \cbrs} = \cexists \tvb \c$.
+%      Hence $\C = \cexists \tvb \Cp$ and $\Cp\where{\cmatch \tv \cbrs} = \c$.
+%
+%      By induction, we have $\Cshape \Cp \tv {\any \tvcs \t}$
+%      and $\semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$.
+%
+%      By Lemma ??, we have $\Cshape {\parens {\cexists \tvb \Cp}} \tv {\any \tvcs \t}$.
+%      Applying \Rule{Exists} gives us:
+%      \begin{mathpar}
+%	\infer[Exists]
+%	  {\semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}}
+%	  {\semenv \th \cexists \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}}
+%      \end{mathpar}
+%
+%
+%    \proofcase{\Rule{Forall}} Similiar to the \Rule{Exists} case.
+%
+%    \proofcase{\Rule{Susp-Ctx}}
+%      \begin{mathpar}
+%	\infer[Susp-Ctx]
+%	  {\Cshape \Cp \tvp {\any \tvcs' \typ} \\
+%	   \semenv \th \Cp\where{\cexists {\tvcs'} \cunif \tvp \typ \cand \cmatch \typ \cbrs'}}
+%	  {\semenv \th \Cp\where{\cmatch \tvp \cbrs'}}
+%      \end{mathpar}
+%
+%      Consider whether $\C = \Cp$:
+%      \begin{itemize}
+%	\item \proofcase{$\C = \Cp$} Trivial
+%	\item \proofcase{$\C \neq \Cp$}
+%	  Bayes' theorem + induction
+%      \end{itemize}
+%  \end{proof}
+%\end{theorem}
+%
+%%
+%%We write $\e^i$ for an \emph{implicit} term, which is either: $\eproj \e j$, $\einst \e$, $\epoly \e$.
+%%Let us define $x(\e^i, \sh)$ for the explicit elaboration of an implicit term $\e^i$ using the
+%%shape $\sh$:
+%%\begin{align*}
+%%  x(\eproj \e j, \any \tvcs \Pi\iton \tvcs) &= \eproj[n] \e j \\
+%%  x(\einst \e, \any \tvcs \tpoly \ts) &= \exinst \e \tvcs \ts \\
+%%  x(\epoly \e, \any \tvcs \tpoly \ts) &= \expoly \e {\exi \tvcs \ts}
+%%\end{align*}
+%%
+%%\begin{theorem}
+%%  $\G \th \E\where{\e^i} : \ts$ if and only if
+%%  $\E\where{\e \mathop{\triangleleft\triangleright} \sh}$ and $\G \th \E\where{x(\e^i, \sh)} : \ts$ where
+%%  $\decomp {\e^i} = \e, \triangleleft\triangleright$
+%%  \begin{proof}
+%%    \TODO{Unable to prove the hard cases yet (\eg \Rule{Proj-I}) --- this theorem is quite strong, }
+%%  \end{proof}
+%%\end{theorem}
+%
 %%% Below this line will is a draft
 \Draft{}{\end{document}}\color{blue}
 

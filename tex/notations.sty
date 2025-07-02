@@ -22,7 +22,7 @@
 \newcommand{\shq}[2]{\any {#1}{#2}}
 
 \let \c \relax
-\defmetavar{\c}{C}
+\defmetavar[s]{\c}{C}
 \newcommand{\cone}{\c_1}
 \newcommand{\ctwo}{\c_2}
 \newcommand{\ctrue}{\mathsf{true}}
@@ -62,18 +62,23 @@
 \newcommand{\Determines}{\mathinfix{determines}}
 \newcommand{\cdetermines}[2]{#1 \Determines #2}
 \newcommand{\cerase}[1]{\floor {#1}}
+\newcommand{\simple}{\mathpostfix{simple}}
+
+\newcommand{\cmatchesz}[3]{\cmatch {#1 \is #2} {#3}}
+\newcommand{\cmatched}[3]{\cmatch {#1 \is #2} {#3}}
+
 
 \defmetavar{\sub}{\vartheta}
 
 
 \newcommand{\compose}{\circ}
 
-\defmetavar{\cpat}{\rho}
+\defmetavar[s]{\cpat}{\rho}
 \newcommand{\cpatprod}[2]{\Pi~{{#1}_{#2}}}
 \newcommand{\cpatpoly}[1]{\tpoly {#1}}
 \newcommand{\cpatwild}{\wild}
 \newcommand{\cpatrcd}[1]{\wild \Tapp[#1]}
-\defmetavar{\cs}{s}
+\defmetavar{\cscm}{s}
 \defmetavar{\ct}{t}
 \defmetavar[s]{\cbr}{\chi}
 \newcommand{\cbranch}[2]{#1 \to #2}
@@ -98,8 +103,7 @@
 \newcommand{\semmetaenv}{\mathscr{M}}
 \newcommand{\semmetav}{\mathscr{X}}
 
-\newcommand{\deriv}{\mathscr{D}}
-\newcommand{\derivp}{\deriv'}
+\defmetavar{\deriv}{\mathscr{D}}
 
 \newcommand{\ctxindex}[2]{{#1}/{#2}}
 
@@ -155,6 +159,7 @@
 
 
 \renewcommand {\th}{\vdash}
+\newcommand{\Th}{\Vdash}
 \newcommand {\mlexp}[3][\G]{#1 \th #2: #3}
 \newcommand {\mltyp}[2][\G]{#1 \th #2}
 \newcommand {\mlsub}[3][\G]{#1 \th #2 \le #3}

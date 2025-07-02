@@ -104,4 +104,45 @@
   {\begin{mathparfig}[#1]{#2}{#3}\begin{bnfgrammar}}
   {\end{bnfgrammar}\end{mathparfig}}
 
-\newcommand{\proofcase}[2][Case]{\par\smallskip\noindent\emph{#1 #2.}}
+% Judgement boxes should precede a mathpar
+
+\newcommand{\judgbox}[2]{%
+  \fbox{\ensuremath{#1}}%
+  {\begin{tabular}[c]{l} #2 \end{tabular}}%
+  \\[-2ex]
+}
+
+%
+% Proof cases and other things in proofs.
+% These macros assume you use an `itemize' or `enumerate' environment
+%
+
+\newcommand{\proofcase}[2][Case]{\item \emph{#1 #2}. ~}
+\newcommand{\proofcasemath}[2][Case]{\proofcase[#1]{\ensuremath{#2}}}
+\newcommand{\proofcasederivation}[4][Case]{%
+  \item %
+    \parbox[t]{100ex}{%
+      \emph{#1 } \\
+      $~$\hspace*{5ex}
+      \ensuremath{%
+	\inferrule*[Right=#2]{#3}{#4}%
+      }%
+    }%
+    \nopagebreak \\[0.2ex]
+  }
+
+\newcommand{\proofcasederivationdouble}[7][Case]{%
+  \item
+    \parbox[t]{100ex}{%
+      \emph{#1 } \\
+      $~$\hspace*{5ex}
+      \begin{tabular}[C]{L}
+	\inferrule*[Right=#2]{#3}{#4}%
+	\\[1ex]
+	\inferrule*[Right=#5]{#6}{#7}%
+      \end{tabular}
+    }%
+    \nopagebreak \\[0.2ex]
+  }
+
+\newcommand{\Hand}{\text{\Pointinghand~~~~}}
