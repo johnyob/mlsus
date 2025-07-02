@@ -3774,26 +3774,26 @@ heuristics to refine it, a two-phase process. It's fine.}
 
 \subsection{Principal shapes}
 
-\newcommand{\tc}{\mathprefix{c}}
 
 \Cref {th/shapes/principal} states that any non variable type $\t$ has a
 principal shape. We show that this is indeed the case.
 
-When $\t$ is not a polytype, it has a toplevel constructor $c$ of fixed
+When $\t$ is not a polytype, it has a toplevel constructor $c$ of
 arity $n$, which in our setting may be the nullary $\tunit$, the binary
-arrow, an n-ary product, or a nominal type of some fixed arity. In all such
+arrow, the n-ary product, or a $n$-ary nominal type. In all these
 cases, the shape of $\t$ is $\any \tvcs \tc \tvcs$ where $\tvcs$ is a
-sequence of $n$ distinct type variables, the arity of~$\tc$.
+sequence of $n$ distinct type variables.
 
 It only remains to check that a polytype $\tpoly {\all \tvs \t}$ also has a
 unique shape. We may assume \Wlog that each variable of $\tvs$ occurs free in
 $\t$.
 %
 Let $(\pi_i)\iton$ be the sequence of shortest paths in $\t$ that cannot be
-extended to reach a variable in $\tvcs$, in lexicographic order and $\tvcs$
-be a sequence $(\tvci)\iton$ of distinct variables that do not appear in~$\t$.
+extended to reach a (polymorphic) variable in $\tvas$, in lexicographic
+order and $\tvcs$ be a sequence $(\tvci)\iton$ of distinct variables that do
+not appear in~$\t$.
 %
-Let $\tyz$ be $\t \where {\pi_i \is \tvci}$, \ie the term $\t$ where each
+Let $\tyz$ be $\t \where {\pi_i \is \tvci}\iton$, \ie the term $\t$ where each
 path $\pi_i$ has been substituted by the variable $\tvci$.  Let $\Sh$ be the
 shape $\any \tvcs {\tpoly {\all \tvs \tyz}}$.
 We claim that $\Sh$ is actually the principal shape of $\tpoly {\all \tvs
@@ -3801,48 +3801,66 @@ We claim that $\Sh$ is actually the principal shape of $\tpoly {\all \tvs
 
 \locallabelreset
 
-Let $\ti$ be $\t/\pi_i$ and $\tys$ be the sequence $(\ti)\iton$.
+By construction, $\t$ is equal to $\shapp[\Sh] \tys$~\llabel 1.
+where $\tys$ is the sequence composed of $\ti$ equal to $\t/\pi_i$
+for $i$ ranging from $1$ to $n$.
 %
-By construction, $\t$ is equal to $\shapp[\Sh] \tys$~\llabel 1.  Indeed, by
+Indeed, by
 definition, $\shapp[\Sh] \tys$ is equal to $(\t\where {\pi_i \is \tvci}\iton)
 \where {\tvci \is \ti}$ which is obviously equal to $\t$.
-
-It remains to check that $\Sh$ is principal~\llabel 2.  Thus, assuming that
-$\Sh'$ is another shape such that $\tpoly {\all\tvs\t}$ is
-equal to $\shapp [\Shp] \typs$ for some $\typs$~\llabel H, we show $\Sh
+The remaining of the proof checks that $\Sh$ is minimal~\llabel 2, that is,
+we assume that $\Sh'$ is another shape such that $\tpoly {\all\tvs\t}$ is
+equal to $\shapp [\Shp] \typs$ for some $\typs$~\llabel H and show that $\Sh
 \preceq \Shp$~\llabel C.
 
-It follows From~\lref H that:
-\begin{enumerate*}
-
-\item[\llabel{H1}]
+It follows from~\lref H that
   $\Shp$ must be a polytype shape, \ie of the form $\any \tvcps {\tpoly
-  {\all \tvbs \typ}}$; and
+  {\all \tvbs \typ}}$ and
+  $\tpoly {\all \tvs \t}$ is equal to $\tpoly {\all\tvbs \tp} \where {\tvcps
+  \is \typs}$~\llabel{P}.
+\relax
+We may assume \Wlog that $\tvbs$ and $\tvcps$ are disjoint, that
+$\tvcps$ does not contain useless variables, \ie
+that they all appear in $\tp$ and that they actually appear in lexicographic
+order.  Let $\typp$ be $\tp \where {\tvbs \is \tvas}$.
+\relax
+We now have $\tpoly {\all \tvs \t}$ equal to
+$\tpoly {\all \tvs \typp \where {\tvcps \is \typs}}$~\llabel{PP},
+which implies that $\t$ is equal to $\typp \where {\tvcps \is
+\typs}$~\llabel T.
+\relax
 
-\item[\llabel{H2}]
-  $\tpoly {\all \tvs \t}$ is equal to $\tpoly {\all\tvbs \tp \where {\tvcps
-  \is \typs}}$.
-\end{enumerate*}
+Since $\typp$ does not contain any variable in $\tvs$, every path $\pi_i$
+ends in $\typp$.
 \relax
-We may assume \Wlog that $\tvbs$ does not contain
-variables, \ie that they all appear in $\tp$ and that they actually appear
-in lexicographic order.
+Hence, we have $\typp/\pi_i$, say $\tyip$ is equal to
+$\typp \where {\tvcps \is \typs}/\pi_i$, \ie. $\tyz/\pi_i$.
+We can write $\typp$ as
+\relax $\typp \where {\pi_i \is \tyi''}\iton$ where $\tyi''$ is $\typp/\pi_i$.
+This is also equal to
+\relax $(\typp \where {\pi_i \is \tvci}\iton) \where {\tvci \is \tyi''}\iton$,
+\ie. $\tyz\where {\tvci \is \tyi''}\iton$.
+In summary, we have $\typp = \tyz \where {\tvci \is \tyi''}\iton$.
 \relax
-Then, the equality~\lref {H2} implies that $\t$, \ie $\t\where {\pi \is
-\tvci} \where {\tvci \is \ti}$ is equal to
-\relax
-$(\tp \where {\tvbs\is \tvas}) \where {\tvcps \is \typs}$.
-\relax
-Since $\t'$ does not contain any variable in $\tvs$, all paths $\pi$ must
-end in $\t' \where {\tvbs \is \tvas}$.
-\relax
-Therefore, $\t'$ and can be extended to the end of $\tp$, \ie so that $\tp$
-is equal to $\tyz \where {\tvci \is
-\tyip}\iton$ (and $\tyip$ is actually $\tp / \pi_i$).
-\relax
-We have $\any
-\tvas \tyz \preceq \any \tvbs \tyz \where {\tvci \is \tyip}\iton$,
-by Rule \Rule {Inst-Shape}, which is then nothing else but~\lref C.
+This implies that
+ $\tpoly {\all \tvs \typp}$, \ie
+ $\tpoly {\all \tvbs \typ}$ is equal to
+ $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
+ $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$.
+
+By Rule \Rule {Inst-Shape}, we have
+\begin{mathpar}%[inline]
+\any \tvcs  \tpoly {\all \tvs \tyz} \preceq
+\any \tvcps\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton
+\end{mathpar}
+that is
+\begin{mathpar}%[inline]
+\any \tvcs  \tpoly {\all \tvs \tyz} \preceq
+\any \tvcps \tpoly {\all \tvbs \typp}
+\end{mathpar}
+which is nothing else but~\lref C.
+
+
 
 
 \section{Well-foundedness of satisfiability}
