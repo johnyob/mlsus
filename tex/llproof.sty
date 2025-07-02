@@ -144,6 +144,10 @@
 \newcommand{\eqPf}[3] {\Pf{#1}{=\,}{#2}{#3}}
 \newcommand{\neqPf}[3] {\Pf{#1}{\neq\,}{#2}{#3}}
 \newcommand{\nvdashPf}[3] {\Pf{#1}{\nvdash\;}{#2}{#3}}
+\newcommand{\gtPf}[3] {\Pf{#1}{>\,}{#2}{#3}}
+\newcommand{\geqPf}[3] {\Pf{#1}{\geq\,}{#2}{#3}}
+\newcommand{\ltPf}[3] {\Pf{#1}{<\,}{#2}{#3}}
+\newcommand{\leqPf}[3] {\Pf{#1}{\leq\,}{#2}{#3}}
 \newcommand{\PfTwo}[7]{\Pf{\arrayenvr{{#1}\\{#4}}}{\arrayenvl{{#2}\\{#5}}}{\arrayenvl{{#3}\\{#6}}}%
                                               {\drophalf{\!\ensuremath{\left\} \begin{array}{r l} \,\\ \, \end{array}\!\!\!\!\!%
                                                       \text{#7} \right.}}}}
@@ -169,7 +173,9 @@
 \newcommand{\continueequivPf}[2] {\equivPf{~}{#1}{#2}}
 \newcommand{\continueequivPfParen}[2] {\equivPf{~}{#1}{#2}}
 
-
+\newcommand{\continueltPf}[2] {\ltPf{~}{#1}{#2}}
+\newcommand{\continueleqPf}[2] {\leqPf{~}{#1}{#2}}
+\newcommand{\continuegtPf}[2] {\gtPf{~}{#1}{#2}}
 \newcommand{\continueeqPf}[2] {\eqPf{~}{#1}{#2}}
 \newcommand{\continueeqPfParen}[2] {\eqPf{~}{(#1)}{#2}}
 \newcommand{\rightstarteqPf}[1] {\mkpf{~}{~}{#1}{~}}

@@ -1659,9 +1659,10 @@ discharged, whereas the latter contains no unresolved match constraints.
 We formalize this decreasing measure in \Cref{appendix:wf}. This ensures that
 the semantics is well-defined, even if not syntactically inductive.
 
-\begin{theorem}
+\begin{restatable}{theorem}{satwf}
   The relation $\semenv \th \c$ is well-founded.
-\end{theorem}
+\end{restatable}
+
 
 \paragraph{Summary}
 
@@ -3846,6 +3847,39 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\cpapp \x \ren \ueqs \simple}
 \end{mathparfig}
 
+\judgbox{\C \simple}{The constraint context $\C$ is simple.}
+\begin{mathparfig}
+  {fig:defn-ctx-simple}
+  {Simple constraint contexts.}
+  \inferrule[Simple-Ctx-Hole]
+    {}
+    {\square \simple}
+
+  \inferrule[Simple-Ctx-Conj-Left]
+    {\C \simple \\ \c \simple}
+    {\C \cand \c \simple}
+
+  \inferrule[Simple-Ctx-Conj-Right]
+    {\C \simple \\ \c simple}
+    {\c \cand \C \simple}
+
+  \inferrule[Simple-Ctx-Exists]
+    {\C \simple}
+    {\cexists \tv \C \simple}
+
+  \inferrule[Simple-Ctx-Forall]
+    {\C \simple}
+    {\cfor \tv \C \simple}
+
+  \inferrule[Simple-Ctx-Let-Abs]
+    {\C \simple \\ \c \simple}
+    {\clet \x \tv \C \c \simple}
+
+  \inferrule[Simple-Ctx-Let-In]
+    {\c \simple \\ \C \simple}
+    {\clet \x \tv \c \C \simple}
+\end{mathparfig}
+
 \judgbox{\semenv \Th \c}
   {Under the semantic environment $\semenv$,
    the constraint $\c$ is canonically satisfiable.}
@@ -3868,8 +3902,184 @@ list of figures and definitions. Some of them are repeated from the main paper.
 \subsection{Principality of shapes}
 
 \subsection{Well-foundedness of satisfiability}
+\label{appendix:sat-wf}
+
+In this appendix, we give the full details of the well-foundedness of the semantics
+of constraints, that is the satisfiability judgement $\semenv \th \c$.
+
+\satwf
+\newcommand{\cnmatches}[1]{\#\Match #1}
+\newcommand{\csize}[1]{|#1|}
+\newcommand{\cmeasure}[1]{{\| #1 \|}}
+
+\begin{proof}
+  For the relation $\semenv \th \c$, the following measure on such judgements is
+  adequate to prove well-foundedness:
+  \begin{mathpar}
+    \cmeasure \c \uad\eqdef\uad \angles{\cnmatches \c, \csize \c}
+  \end{mathpar}
+  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
+  \begin{enumerate}
+
+    \item $\cnmatches \c$ is the number of $\cmatch \t \cbrs$ constraints in
+      $\c$.
+
+    \item the last component $\csize \c$ is a structural measure of constraints \ie a
+      conjunction $\cone \cand \ctwo$ is larger than the two conjuncts $\cone,
+      \ctwo$.
+
+  \end{enumerate}
+We will now show that every rule uses a premise whose measure is smaller than
+the conclusion.
+\begin{itemize}
+  \proofcasederivation
+      {True}
+      {}
+      {\semenv \th \ctrue}
+
+      \begin{llproof}
+	No premises.
+      \end{llproof}
+
+  \proofcasederivation
+      {Conj}
+      {\semenv \th \cone \\ \semenv \th \ctwo}
+      {\semenv \th \cone \cand \ctwo}
+
+      \begin{llproof}
+	\gtPf{\csize {\cone \cand \ctwo}}{\csize \cone, \csize \ctwo}{By definition}
+	\eqPf{\cnmatches {\cone \cand \ctwo}}{\cnmatches \cone + \cnmatches \ctwo}{By definition}
+	\eqPf{\cmeasure \cone}{\angles{\cnmatches \cone, \csize \cone}}{By defintion}
+\Hand 	\continueltPf{\cmeasure {\cone \cand \ctwo}}{Above}
+	\eqPf{\cmeasure \ctwo}{\angles{\cnmatches \ctwo, \csize \ctwo}}{By defintion}
+\Hand   \continueltPf{\cmeasure {\cone \cand \ctwo}}{\ditto}
+      \end{llproof}
+
+  \proofcasederivation
+      {Exists}
+      {\semenv\where{\tv \is \gt} \th \c}
+      {\semenv \th \cexists \tv \c}
+
+      \begin{llproof}
+	\gtPf{\csize {\cexists \tv \c}}{\csize \c}{By definition}
+	\eqPf{\cnmatches {\cexists \tv \c}}{\cnmatches \c}{By definition}
+	\eqPf{\cmeasure \c}{\angles {\cnmatches \c, \csize \c}}{By definition}
+\Hand 	\continueltPf{\cmeasure {\cexists \tv \c}}{Above}
+      \end{llproof}
+
+  \proofcasederivation
+      {Forall}
+      {\forall \gt,\, \semenv\where{\tv \is \gt} \th \c}
+      {\semenv \th \cfor \tv \c}
+
+      \begin{llproof}
+	Similar to the \Rule{Exists} case.
+      \end{llproof}
+
+  \proofcasederivation
+      {Unif}
+      {\semenv(\tone) = \semenv(\ttwo)}
+      {\semenv \th \cunif \tone \ttwo}
+
+      \begin{llproof}
+	No non-trivial premises.
+      \end{llproof}
+
+  \proofcasederivation
+      {Let}
+      {\semenv \th \cexists \tv \cone \\ \semenv\where{\x \is \semenv(\cabs \tv \c)} \th \ctwo}
+      {\semenv \th \clet \x \tv \cone \ctwo}
+
+      \begin{llproof}
+	\gtPf{\csize {\clet \x \tv \cone \ctwo}}{\csize{\cexists \tv \cone}, \csize{\ctwo}}{By definition}
+	\eqPf{\cnmatches {\clet \x \tv \cone \ctwo}}{\cnmatches \cone + \cnmatches \ctwo}{By definition}
+	\eqPf{\cmeasure {\cexists \tv \cone}}{\angles {\cnmatches {\cexists \tv \cone}, \csize {\cexists \tv \cone}}}{By definition}
+\Hand   \continueltPf{\cmeasure {\clet \x \tv \cone \ctwo}}{Above}
+	\eqPf{\cmeasure \ctwo}{\angles {\cnmatches \ctwo, \csize \ctwo}}{By definition}
+\Hand   \continueltPf{\cmeasure {\clet \x \tv \cone \ctwo}}{\ditto}
+	\eqPf{\semenv(\cabs \tv \cone)}{\set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \cone}}{By definition}
+	\gtPf{\csize {\cexists \tv \cone}}{\csize \cone}{By definition}
+	\eqPf{\cnmatches {\cexists \tv \cone}}{\cnmatches \cone}{By definition}
+	\eqPf{\cmeasure \cone}{\angles {\cnmatches \cone, \csize \cone}}{By definition}
+	\continueltPf{\cmeasure {\cexists \tv \cone}}{Above}
+\Hand   \continueltPf{\cmeasure {\clet \x \tv \cone \ctwo}}{Transitivity}
+      \end{llproof}
+
+  \proofcasederivation
+      {App}
+      {\semenv(\t) \in \semenv(\x)}
+      {\semenv \th \capp \x \t}
+
+      \begin{llproof}
+	No non-trivial premises.
+      \end{llproof}
+
+  \proofcasederivation
+      {Susp-Ctx}
+      {\Cshape \C \t \sh \\ \semenv \th \C\where{\cmatched \t \sh \cbrs}}
+      {\semenv \th \C\where{\cmatch \t \cbrs}}
+
+      \begin{llproof}
+	&$\Cshape \C \t \sh$ $=$\, &$\forall \semenvp, \gt.\, \semenvp \th \cerase {\C\where{\cunif \t \gt}}$ & By definition \\
+	&&\qquad\qquad $\implies \shape \gt = \sh$ \\
+	\eqPf{\cnmatches {\cerase {\C\where{\cunif \t \gt}}}}{0}{Erasure removes all matches}
+	\continueltPf{1}{}
+	\continueleqPf{\cnmatches {\C\where{\cmatch \t \cbrs}}}{}
+	\eqPf{\cmeasure {\cerase {\C\where{\cunif \t \gt}}}}{\angles {0, \csize {\cerase {\C\where{\cunif \t \gt}}}}}{}
+\Hand 	\continueltPf{\cmeasure {\C\where{\cmatch \t \cbrs}}}{Above}
+	\decolumnizePf
+	\eqPf{\cnmatches {\C\where{\cmatched \t \sh \cbrs}}}{\cnmatches \C}{By definition}
+	\continueltPf{1 + \cnmatches \C}{}
+	\continueeqPf{\cnmatches {\C\where{\cmatch \t \cbrs}}}{By definition}
+	\eqPf{\cmeasure {\C\where{\cmatched \t \sh \cbrs}}}
+	  {\angles {\cnmatches \C, \csize {\C\where{\cmatched \t \sh \cbrs}}}}
+	  {}
+\Hand 	\continueltPf{\cmeasure {\C\where{\cmatch \t \cbrs}}}{Above}
+    \end{llproof}
+
+  \proofcasederivation
+      {Multi-Unif}
+      {\all {\t \in \ueq} \semenv(\t) = \gt}
+      {\semenv \th \ueq}
+
+      \begin{llproof}
+	No non-trivial premises.
+      \end{llproof}
+
+  \proofcasederivation
+      {LetR}
+      {\semenv \th \cexists {\tv, \tvs} \cone \\ \semenv\where{\x \is \semenv(\cabsr \tv \tvs \ctwo)} \th \ctwo}
+      {\semenv \th \cletr \x \tv \tvs \cone \ctwo}
+
+      \begin{llproof}
+	Similar to the \Rule{Let} case.
+      \end{llproof}
+
+  \proofcasederivation
+      {AppR}
+      {\semenv(\x) = \gabsr \tv \tvs \\ \semenv(\t) \in \glam}
+      {\semenv \th \capp \x \t}
+
+      \begin{llproof}
+	No non-trivial premises.
+      \end{llproof}
 
 
+  \proofcasederivation
+      {Papp}
+      {\semenv(\x) = \gabsr \tv \tvs \\ \dom \ren \subseteq \tvs \\ \semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \glam}
+      {\semenv \th \cpapp \x \ren \ueqs \t}
+
+      \begin{llproof}
+	\eqPf{\csize {\ueqs\where\ren}}{\csize \ueqs}{Renaming preserves size}
+	\eqPf{\cnmatches {\cpapp \x \ren \ueqs \t}}{0}{By definition}
+	\continueeqPf{\cnmatches {\ueqs\where\ren}}{Multi-equations do not contain matches}
+	\ltPf{\csize \ueqs}{\csize {\cpapp \x \ren \ueqs \t}}{By definition}
+	\eqPf{\cmeasure {\ueqs\where\ren}}{\angles {0, \csize {\ueqs\where\ren}}}{By definition}
+	\continueltPf{\cmeasure {\cpapp \x \ren \ueqs \t}}{}
+      \end{llproof}
+\end{itemize}
+\end{proof}
 
 \subsection{Canonicalization of satisfiability}
 
@@ -4304,123 +4514,7 @@ which, given~\lref E, is exactly~\lref C.
 
 %
 %\section{Well-foundedness of satisfiability}
-%\label{appendix:wf}
-%
-%In this appendix, we give the full details of the well-foundedness of the
-%semantics of constraints, that is the satisfiability judgement $\semenv \th \c$.
-%
-%\newcommand{\cnmatches}[1]{\#\Match #1}
-%\begin{theorem}
-%  The relation $\semenv \th \c$ is well-founded.
-%\begin{proof}
-%  For the relation $\semenv \th \c$, the following measure on such judgements is
-%  adequate to prove well-foundedness:
-%  \begin{mathpar}
-%    \angles{\cnmatches \c, \c}
-%  \end{mathpar}
-%  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
-%  \begin{enumerate}
-%
-%    \item $\cnmatches \c$ is the number of $\cmatch \tv \cbrs$ constraints in
-%      $\c$---that is, suspended match constraints whose matchee is a variable.
-%
-%    \item the last component $\c$ is a structural measure of constraints \ie a
-%      conjunction $\cone \cand \ctwo$ is larger than the two conjuncts $\cone,
-%      \ctwo$. \Xalistair{Should we be more formal here? we could introduce a
-%      measure that characterizes this}
-%
-%  \end{enumerate}
-%
-%
-%  We will now show that every rule uses a premise whose measure is smaller than
-%  the conclusion.
-%
-%  \proofcase{\Rule{True}} No premises
-%
-%  \proofcase{\Rule{Conj}}
-%    Each premise involves on conjuct (either $\cone$ or $\ctwo$) of the
-%    constraint $\cone \cand \ctwo$. Since both are structurally smaller than
-%    the full conjunction, and by definition, $\cnmatches {\cone}, \cnmatches
-%    {\ctwo} \leq \cnmatches {\cone \cand \ctwo}$, the premises are strictly
-%    smaller according to the measure.
-%
-%  \proofcase{\Rule{Exists}}
-%    The premise involving the constraint $\c$ is structurally smaller than
-%    $\cexists \tv \c$. Moreover, since quantification does not affect
-%    $\cnmatches -$, we have $\cnmatches {\c} = \cnmatches{\cexists \tv \c}$.
-%
-%  \proofcase{\Rule{Forall}}
-%    Analogous to the existential case: the qualified constraint $\c$ is
-%    structurally smaller than $\cfor \tv \c$, and again, $\cnmatches$ is
-%    preserved.
-%
-%  \proofcase{\Rule{Multi-Unif}} No premises involving constraints.
-%
-%  \proofcase{\Rule{Let}}
-%    The first premise involves the existential $\cexists \tv \cone$, which can
-%    be unrolled to a subjudgement on $\cone$ alone (using a single application
-%    of \Rule{Exists}). Since $\cone$ is structurally smaller than the full
-%    $\Let$ constraint $\clet \x \tv \cone \ctwo$, and $\cnmatches \cone \leq
-%    \cnmatches \clet \x \tv \cone \ctwo$, the measure decreases.
-%
-%    The second premise involves $\ctwo$, which is again smaller than the
-%    conclusion both structurally and in terms of $\cnmatches$. This premise
-%    also relies on interpreting $\cabs \tv \cone$, which in turn involves a
-%    subjudgement over $\cone$, already shown to be smaller.
-%
-%  \proofcase{\Rule{App}} No premises involving constraints.
-%
-%  \proofcase{\Rule{Susp-Use}}
-%    Here, the premise involving the branch constraint $\ci$ is structurally
-%    smaller than the entire match constraint $\cmatch \t {\cbranch {\bar \cpat}
-%    {\bar \c}}$. Since $\t$ is not a type variable, the number of matches does
-%    not \emph{strictly} decrease: $\cnmatches \ci \leq \cnmatches
-%    {\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}$.
-%
-%  \proofcase{\Rule{Susp-Ctx}}
-%    The first premise $\Cshape \C \tv {\any \tvcs \t}$ involves a judgement of
-%    the form $\C\where{\cunif \tv \gt}$ (for any $\gt$), which is strictly
-%    smaller than the full match $\C\where{\cmatch \tv \cbrs}$ in terms of
-%    $\cnmatches$.
-%
-%    The second premise is subtler: $\C\where{\cexists \tvcs \cunif \tv \t \cand
-%    \cmatch \t \cbrs}$ appears to be larger at first glance, but it is smaller
-%    in our measure becuase $\t$ is guaranteed not to be a type variable (by
-%    definition of principal shapes).
-%    Thus $\cnmatches {\C\where{\cexists \tvcs
-%    \cunif \tv \t \cand \cmatch \t \cbrs}} < \cnmatches {\C\where{\cmatch \tv
-%    \cbrs}}$.
-%
-%  \proofcase{\Rule{LetR}}
-%    Analogous to the \Rule{Let} case, and the argument proceeds similarly.
-%    The only difference lies in the region bindings.
-%
-%    The first premise involving $\cexists {\tv, \tvs} \cone$, which again
-%    reduces to a subjudgement involving $\cone$ (using $|\tvs| + 1$
-%    applications  of \Rule{Exists}), is structurally is smaller than the
-%    conclusion $\cletr \x \tv \tvs \cone \ctwo$. The measure similarly
-%    satisfies $\cnmatches \cone \leq \cnmatches \cletr \x \tv \tvs \cone
-%    \ctwo$.
-%
-%    The second premise involving $\ctwo$ is structurally smaller and depends on
-%    the interpretation of the regional abstraction $\cabsr \tv \tvs \cone$. As
-%    in the non-regional case, this abstraction uses a judgement involving
-%    $\cone$, which has already been shown to be smaller.
-%
-%  \proofcase{\Rule{AppR}} No premises involving constraints.
-%
-%  \proofcase{\Rule{Papp}}
-%    The premises involving $(\ueqi\where\ren)\iton$ each include a component of
-%    the partial application $\cpapp \x \ren \ueqs \t$. Since renaming preserves
-%    structural size and $\ueqi$ is strictly smaller than the full constraint,
-%    the structural measure decreases (\Xalistair{Should we be more formal
-%    here? giving a lemma that renaming preserves size (unlike substitution)}).
-%    %
-%    Moreover, $\cnmatches {\cpapp \x \ren \ueqs \t} = \cnmatches \ueqi = 0$, so
-%    each premise has strictly smaller measure.
-%\end{proof}
-%\end{theorem}
-%
+
 %\section{Well-foundedness of \OML typing rules}
 %
 %\Xalistair{The same problem of well-foundedness comes up
