@@ -3626,51 +3626,89 @@ that, which would solve this example}
 
 Type inference may failed either because of a typing error (the constraint
 if of the form $\C \where \cfalse$), or because some choice point cannot be
-resolved---a stuck constraint containt a suspended match constraint.
+resolved---a stuck constraint contains a suspended match constraint.
 %
 In the later case, we may point the user to at least one choice point that
 could not be solved and invite him to provide additional type annotations.
 
-In fact \OCaml uses default rules in case overloaded contructors or record
-field have not been solved, then selecting the most recently defined type.
+In fact \OCaml uses default rules in case an overloaded constructor or a record
+field could not be solved, then selecting the most recently defined type.
 
 While, we could also introduce similar default rules in our proposal, they
-would break the properties of the type system.  Hence, instead of
-integrating default rules in omnidirectional type inference, we prefer to
-see them as an additional external mechanism that suggests extra type
-annotations in case of failture and calls back type inference, which may
-resume from its previous state.
+would likely break the properties of the type system.
 
-Still, we discuss reasonable choice for defauls.
+One option is not to integrate default rules in omnidirectional type
+inference, and instead combine omnidirectional type inference with another
+external external algorithm that can suggest extra type annotations and
+calls back type inference, or rather, resume type inference from its
+previous state.  In this view, we preserve the properties in
+in the absence of uses of default rules, but give up any property
+as default rule have been used.
 
-\paragraph{Overloading of record fiels or data constructors}
+Hence, it is also appealing to attend to formalize default rules.  In order
+to avoid choices, one option may be to fire all default rules at once and
+independently of one another.  This however may loose opportunities to learn
+useful information after firing one default rule so as to not have to used
+other default rules.
 
-\paragraph{Structural tuples}
-In the case of
+Another track is to computer dependencies between unsolved constraints---and
+solve them in inverse order of dependencies.
 
-\paragraph{Polytypes}
+One the strategy of when firing default rules, the behavior of default rules
+is quite dependent on the feature.  While, the reasonable default for
+overloading of record fields and data constructors is to giving priority to
+the most recent definition, as in \OCaml, there is not obvious choice for
+structural tuples, for which the default should probably remain a failure.
 
+For polytypes, there are actually to opposite meaningful choices, but
+opposite of one another. One is to fallback to a monomorphic polytype.  The
+other one is to pick the principal type scheme of the expression with an
+unresolved polytype.  Of course, there are examples that favor one choice
+and other examples that favor the other.
 
-\subsection{Recursive types}
+While default rules may be convenient in practice, they remain unprincipled
+and may break properties of omnidirectional type infernce.  The strategy of
+when firing them should be precautionary to limit what may look like
+arbitrary or unpredictable choices.
+
+\subsection{Equi-recursive types}
 \label {sec/rec-types}
 
 For sake of simplicity, we have taken finite trees for ground types, that
-is, for the semantics of constraints. However, replacing trees by regular
-trees for ground types would preserver the metatheoretical properties, as
-in~\cite {Pottier-Remy/emlti}, as we never assume finiteness of ground
-types.  This would allow type inference with equirecursive types.
+is, for the semantics of constraints.  Iso-recursive types can easily be
+added as in \ML, using a new datatype definition where  a record label
+or datatype constructor is used to fold or unfold the recursive definition.
+
+\OCaml also allows equi-recursive types, which can be modeled by taking
+regular trees instead of tree for ground types.  Doing this change would
+preserve the main metatheoretical properties, as in~\cite
+{Pottier-Remy/emlti}, as we never rely on finiteness of ground types.  This
+would allow type inference with equi-recursive types.
 
 Technically, we need to extend the syntax of types with
-\begin{mathpar}
-\begin{bnfgrammar}
-\entry {\t}{\ldots \mid \trec \tv \t}
-\end{bnfgrammar}
-\end{mathpar}
-The only technical difficult lies in the definition of shapes.  We must
-ensure the existence of a minimal element for recursive types $\trec \tv
-\t$, including in the presentce of polytypes.  This can be ensured using the
-canonical representation proposed by~\cite
+a new introduction form $\trec \tv \t$ with the condition that $\t$ is
+constructive, \ie a nonvariable type.  Internally, we never manipulate
+recursive types but equations. The change, is a remove
+\Rule {U-Cycle} and consistently allow canonical forms to contain cycles,
+as they now admit regular tree solutions.
+
+Similarly, shapes may be recursive, but only minimal shapes of polytypes may
+be recursive. All types still have unique minimal shapes where equality of
+shapes is taken up to equi-recursion, indeed.  While equality of shapes is
+syntactical in the absence of recursive types, this is no longer the
+case---but this does not raise any issue.
+
+\Xdidier{I line notes}
+\begin{version}{}
+I did not see any difficult with equi-recursive types.
+I am not even sure we need to mention~\cite
 {Gauthier-Pottier/numbering@icfp04}.
+Ths provides a cannonical representation, generalizing de Bruin indicies so
+that second-order equality of terms amount to fisrt-order equality.
+The canonical representation useing shapes is simiular.
+\end{version}
+
+
 \Xdidier {How much more should we say?}
 
 \Xdidier {Should we give the change in unification rules?}
@@ -3778,11 +3816,15 @@ heuristics to refine it, a two-phase process. It's fine.}
 \Cref {th/shapes/principal} states that any non variable type $\t$ has a
 principal shape. We show that this is indeed the case.
 
+\medskip
+
 When $\t$ is not a polytype, it has a toplevel constructor $c$ of
 arity $n$, which in our setting may be the nullary $\tunit$, the binary
 arrow, the n-ary product, or a $n$-ary nominal type. In all these
 cases, the shape of $\t$ is $\any \tvcs \tc \tvcs$ where $\tvcs$ is a
 sequence of $n$ distinct type variables.
+
+\medskip
 
 It only remains to check that a polytype $\tpoly {\all \tvs \t}$ also has a
 unique shape. We may assume \Wlog that each variable of $\tvs$ occurs free in
@@ -3799,6 +3841,7 @@ shape $\any \tvcs {\tpoly {\all \tvs \tyz}}$.
 We claim that $\Sh$ is actually the principal shape of $\tpoly {\all \tvs
 \t}$.
 
+\medskip
 \locallabelreset
 
 By construction, $\t$ is equal to $\shapp[\Sh] \tys$~\llabel 1.
@@ -3812,6 +3855,8 @@ The remaining of the proof checks that $\Sh$ is minimal~\llabel 2, that is,
 we assume that $\Sh'$ is another shape such that $\tpoly {\all\tvs\t}$ is
 equal to $\shapp [\Shp] \typs$ for some $\typs$~\llabel H and show that $\Sh
 \preceq \Shp$~\llabel C.
+
+\medskip
 
 It follows from~\lref H that
   $\Shp$ must be a polytype shape, \ie of the form $\any \tvcps {\tpoly
@@ -3830,6 +3875,8 @@ which implies that $\t$ is equal to $\typp \where {\tvcps \is
 \typs}$~\llabel T.
 \relax
 
+\medskip
+
 Since $\typp$ does not contain any variable in $\tvs$, every path $\pi_i$
 ends in $\typp$.
 \relax
@@ -3846,19 +3893,14 @@ This implies that
  $\tpoly {\all \tvs \typp}$, \ie
  $\tpoly {\all \tvbs \typ}$ is equal to
  $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
- $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$.
-
+ $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$~\llabel E.
+%
 By Rule \Rule {Inst-Shape}, we have
-\begin{mathpar}%[inline]
+\begin{mathpar}[inline]
 \any \tvcs  \tpoly {\all \tvs \tyz} \preceq
-\any \tvcps\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton
+\any \tvcps\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton,
 \end{mathpar}
-that is
-\begin{mathpar}%[inline]
-\any \tvcs  \tpoly {\all \tvs \tyz} \preceq
-\any \tvcps \tpoly {\all \tvbs \typp}
-\end{mathpar}
-which is nothing else but~\lref C.
+which, given~\lref E, is exactly~\lref C.
 
 
 
@@ -4063,7 +4105,7 @@ $\t$ must be well-formed under $\sub_L$.
 
 \end{mathpar}
 Ordered substitutions $\sub$ can be viewed as parallel substitutions on types,
-substitutiong solved existential variables. We write $\sub(\t)$ for $\sub$
+substituting solved existential variables. We write $\sub(\t)$ for $\sub$
 applied as a substitution to type $\t$:
 \begin{mathpar}
   \begin{tabular}{RCLL}
@@ -4389,3 +4431,4 @@ Problems to solve or leave unsolved:
 % LocalWords:  impredicative polytypes minimality RCL ary Proj toplevel
 % LocalWords:  typability backpropagation arity Compositionality equi
 % LocalWords:  equitypable compositionality inlined equitypability nullary
+% LocalWords:  metatheoretical finiteness nonvariable
