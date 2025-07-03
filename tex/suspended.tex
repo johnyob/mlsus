@@ -3014,9 +3014,13 @@ A constraint $C$ is satisfiable if it can be rewritten into a \emph{solved
 form}:
 \begin{mathpar}
   \hat{\up} \uad\triangleq\uad \cexists \tvs \cAnd \iton \ueqi
+  \text{where:}\quad\left\{
+  \begin{array}{l}
+    \text{each $\ueqi$ contains at most one non-variable type,}\\
+    \text{head variables do not occur in multiple equations,}\\
+    \text{the constraint is acyclic}
+  \end{array}
 \end{mathpar}
-where each $\ueqi$ contains at most one non-variable type,
-variables do not occur in multiple equations, and the constraint is acyclic.
 From such a form, a most general solution (\ie a unifier $\vartheta$) can be
 directly read off.
 
