@@ -273,12 +273,12 @@
 
 %% Expression variables
 \defmetavar {\x} {x}
+\defmetavar {\M} {z}
 %% \defmetavar {\Ts} {\chi}
-\defmetavar {\ty} {\tau}\newcommand{\typs}{{\bar\ty'}}
+\defmetavar[s,j] {\ty} {\tau}\newcommand{\typs}{{\bar\ty'}}
 \defmetavar {\E} {E}
 \defmetavar {\Lab} {\mathscr{L}}
 \newcommand {\tss} {\bar\ts}
-\newcommand {\tys} {\bar\ty}
 %% Annotation variables
 \defmetavar {\av} {\varepsilon}
 \defmetavar {\G} {\Gamma}
@@ -307,4 +307,6 @@
 \newcommand \tshape [1]{\mathprefix {shape}{#1}}
 \newcommand \labenv {\Omega}
 
-\defmetavar{\tc}{\mathprefix{c}}
+\defmetavar \tc {\mathprefix{c}}
+\newcommand \vty [1]{\varpi\ifempty{#1}{}{\parens{#1}}}
+\newcommand \vor {\mathbin{\&}}

@@ -517,7 +517,7 @@ All proofs are postponed to appendices.
 Our contributions are
 \begin{enumerate*}
 \item
-  A novel \emph{omnidirectional} type inference technique for
+  A novel \emph{omnidirectional} type inference framework for
   extensions of \ML with advanced features, based on two new devices,
   suspended constraints and partial type schemes;
 
@@ -531,10 +531,11 @@ Our contributions are
 \item
   A complete yet efficient constraint-solving type inference algorithm.
 
-\item New declarative type systems for tuple projection in the style of \SML,
-    static overloading of record fields and datatype constructors, and for
-    semi-explicit first-class polymorphism, and their implementation using
-    suspended constraints.
+\item
+  Three instantiation of our framework that give new declarative type
+  systems and their implementation using suspended constraints for tuple
+  projection in the style of \SML, static overloading of record fields and
+  datatype constructors, and for semi-explicit first-class polymorphism.
 
 \end{enumerate*}
 
@@ -3576,7 +3577,92 @@ treating the head of the variable monomorphically and the rest
 polymorphically.
 \Xalistair{An explaination of kinded(1) types here }
 
-\subsection{Variants on static overloading---Variational types}
+\subsection{Static overloading and variational types}
+
+We applied omnidirectional type inference to three features that have
+already been used in some dialect of \ML.  But applications are not limited
+to those.
+
+In particular, overloading of nominal record fields (or data-consttructors)
+is a very specific case of overloading.  Omnidirectional type inference can
+also be used for a general forms of static overloading.
+
+Following~\cite{Leijen-Ye/prefix@pldi2025},
+we may allow identifiers $\M.\x$ to be prefixed by a
+disambiguation name $\M$ and let the prefix be optional in expressions.
+When absent, such expressions are then overloaded and the prefix must be
+resolved before the program may be compiled.
+
+In this setting an overlaoded symbol $\x$ may have two (or more) definitions
+$\Ma.\x$ an $\Mb.\x$ of respective types $\tya$, $\tyb$, which may have very
+litte in common. In particular, $\tya$ and $\tyb$ may share the same prefix
+an only differ from their leaves.
+
+The framework we presented for \OML may only suspend a constraint on the
+shape of a variable, that is roughtly on the toplevel symbol.  While it
+would be possible to extend the framework to alow more general shapes, we
+can actually encode general overloading without such an extension.
+We present a solution below based on variational types, but other variants
+are possible.
+
+\paragraph{Variational types}
+
+\begin{version}{}
+\color{red}
+Variational types are a mean to factor a tuple of types into a single one so
+as to shape the common prefixes.
+
+The syntax of variational type just extends simple types with a special form
+of n-ary products $\varpi (\ti)\iton$, which however distributes other type
+symbols. For example, $\vty {\tint \to \tint \to \tbool \vor \tbool \to
+\tbool \to \tbool}$ is a 2-variational type $\t$ that represents both the type
+$\tint \to \tint \to \tbool$ and $\tbool \to \tbool \to \tbool$.  However,
+the interest of variational types is to be able to push them down the leaves
+and equivalently write $\vty {\tint \vor \tbool} \to \vty {\tint \vor
+\tbool} \to \tbool$ for $\t$ so as to share the common prefix of all types.
+We may thus maintained variational types in such canonical form.  If $\vty
+{\ti}\iton$ is in canonical form, then at least two $\tyi$ and $\tyj$ have
+different shapes.  The arity of avariational typ must be known from context
+since in the pathological case where all types agrees, its canonical form is
+$\t$.
+
+An n-variational type may be projected on any index of its domain: $\t/1$
+means $\tint \to
+\tint \to \tbool$.
+
+For overloading of two defintions $\Ma.\x$ and $\Mb.\x$ of types $\tya$ and
+$\tyb$, we may assign $\x$ the variational type $\vty {\tya \vor \tyb}$.
+\end{version}
+
+\paragraph {Opaqueness of suspended constraints}
+
+Suspended constraints are opaque, \ie the solve may not learn anything form
+suspended constraints until uniqueness of the shape the control them allows
+to discharge them.
+
+For example, this prevents typing of example \ocaml{e_9}, which we repeat
+below:
+\begin{program}
+let e9 r = (r.x : bool)
+\end{program}
+Hence, the constraint type of \ocaml{r.x} is frozen until the record type
+$r$ can be resolved. Hence, the overloading resolution ignores that the
+return type of \ocaml{r.x} is \ocaml{bool} and fails. While, if we were
+able to take it into account, then the only possibility would be that
+\ocaml{r} has type \ocaml{bool one}---in the closed world view.
+
+
+constaint that the return type of
+\ocaml{r.x} is not taken into account in the overloading resolution.
+
+
+While sometimes there is obvious information that we could learn from them,
+especially by merging constraints on the same variable.
+
+For example,
+
+
+\paragraph {Variational types}
 
 \begin{version}{\color{blue}\Draft}
 Title to adjust.
@@ -3956,33 +4042,38 @@ It follows from~\lref H that
 We may assume \Wlog that $\tvbs$ and $\tvcps$ are disjoint, that
 $\tvcps$ does not contain useless variables, \ie
 that they all appear in $\tp$ and that they actually appear in lexicographic
-order.  Let $\typp$ be $\tp \where {\tvbs \is \tvas}$.
+order.
 \relax
-We now have $\tpoly {\all \tvs \t}$ equal to
-$\tpoly {\all \tvs \typp \where {\tvcps \is \typs}}$~\llabel{PP},
-which implies that $\t$ is equal to $\typp \where {\tvcps \is
+Now that never term contains useless variables, \lref P implies that the
+sequences $\\tvas$ and $\tvbs$ can be put in one-to-one correspondances.
+Besides, since they all ordered in the order of appearance in terms, they
+the correspondance respects the ordering. Hence, the subsitution $\where
+{\tvbs \is \tvas}$ is a renaming. Therefore, we can assume \Wlog that
+$\tvbs$ is $\tvas$,
+\relax
+That is, \lref P becomes that $\tpoly {\all \tvs \t}$ is equal to $\tpoly
+{\all \tvs \typ \where {\tvcps \is \typs}}$, which given that they $\tvs$
+apprear in the same order in both terms, implies that $\t$ is equal to $\typ
+\where {\tvcps \is
 \typs}$~\llabel T.
+
 \relax
 
 \medskip
 
-Since $\typp$ does not contain any variable in $\tvs$, every path $\pi_i$
-ends in $\typp$.
-\relax
-Hence, we have $\typp/\pi_i$, say $\tyip$ is equal to
-$\typp \where {\tvcps \is \typs}/\pi_i$, \ie. $\tyz/\pi_i$.
-We can write $\typp$ as
-\relax $\typp \where {\pi_i \is \tyi''}\iton$ where $\tyi''$ is $\typp/\pi_i$.
+Since $\typs$ does not contain any variable in $\tvs$, every path $\pi_i$
+is a path in $\typ$. Thus, we may write $\typ$ as
+\relax $\typ \where {\pi_i \is \tyi''}\iton$ where $\tyi''$ is $\typ/\pi_i$.
 This is also equal to
-\relax $(\typp \where {\pi_i \is \tvci}\iton) \where {\tvci \is \tyi''}\iton$,
-\ie. $\tyz\where {\tvci \is \tyi''}\iton$.
-In summary, we have $\typp = \tyz \where {\tvci \is \tyi''}\iton$.
-\relax
-This implies that
- $\tpoly {\all \tvs \typp}$, \ie
- $\tpoly {\all \tvbs \typ}$ is equal to
- $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
- $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$~\llabel E.
+\relax $(\typ \where {\pi_i \is \tvci}\iton) \where {\tvci \is \tyi''}\iton$,
+that is $\tyz\where {\tvci \is \tyi''}\iton$.
+%
+In summary, we have $\typ$ is equal to
+\relax $\tyz \where {\tvci \is \tyi''}\iton$,
+which implies that
+\relax  $\tpoly {\all \tvs \typ}$ is equal to
+\relax  $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
+\relax  $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$~\llabel E.
 %
 By Rule \Rule {Inst-Shape}, we have
 \begin{mathpar}[inline]
@@ -3996,10 +4087,11 @@ which, given~\lref E, is exactly~\lref C.
 \subsection{Well-foundedness of satisfiability}
 \label{appendix:sat-wf}
 
-In this appendix, we give the full details of the well-foundedness of the semantics
-of constraints, that is the satisfiability judgement $\semenv \th \c$.
+In this appendix, we give the full details of the well-foundedness of the
+semantics of constraints, that is the satisfiability judgement $\semenv \th
+\c$.
 
-\satwf
+%\satwf
 \newcommand{\cnmatches}[1]{\#\Match #1}
 \newcommand{\csize}[1]{|#1|}
 \newcommand{\cmeasure}[1]{{\| #1 \|}}
