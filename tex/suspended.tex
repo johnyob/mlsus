@@ -3986,7 +3986,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
 \section{Properties of the constraint language}
 
 \subsection{Principality of shapes}
-
+\TODO{Make the styling between this section and other proofs more consistent}
 
 \Cref {th/shapes/principal} states that any non variable type $\t$ has a
 principal shape. We show that this is indeed the case.
@@ -4274,7 +4274,7 @@ We begin by proving some auxillary lemmas regarding inversion and
 entailment in our system.
 
 \begin{lemma}
-  \label{lem:match-tv-is-not-simple}
+  \label{lem:match-is-not-simple}
   For any constraint context $\C\where{\square}$,
   the constraint $\C\where{\cmatch \t \cbrs}$ is not simple.
   \begin{proof}
@@ -4286,16 +4286,20 @@ entailment in our system.
 \newcommand{\nsimplePf}[2]{\Pf{}{\neg}{#1 \simple}{#2}}
 \newcommand{\shapePf}[4]{\Pf{}{}{\Cshape {#1} {#2} {#3}}{#4}}
 
-\begin{lemma}[Simple inversion]
-  Given $\semenv \th \c$ and $\c \simple$. Then:
+\begin{lemma}[Simple inversion]~
+  \label{lem:simple-inversion}
   \begin{enumerate}[(\roman*)]
-    \item If $\c = \cunif \tone \ttwo$, then $\semenv(\tone) = \semenv(\ttwo)$.
-    \item If $\c = \capp \x \t$, then $\semenv(\t) \in \semenv(\x)$.
-    \item If $\c =  \cpapp \x \ren \ueqs$, then $\semenv(\x) = \gabsr \tv \tvs$, $\dom \ren \subseteq \tvs$, and $\semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \glam$.
-    \item If $\c = \cone \cand \ctwo$, then $\semenv \th \cone$ and $\semenv \th \ctwo$.
-    \item If $\c = \cexists \tv \c$, then $\semenv\where{\tv \is \gt} \th \c$ for some $\gt$.
-    \item If $\c = \cfor \tv \c$, then $\semenv\where{\tv \is \gt} \th \c$ for all $\gt$.
-    \item If $\c = \clet \x \tv \cone \ctwo$, then $\semenv \th \cexists \tv \cone$ and $\semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo$.
+    \item If $\semenv \th \cunif \tone \ttwo$, then $\semenv(\tone) = \semenv(\ttwo)$.
+    \item If $\semenv \th \ueq$, then $\semenv(\t) = \gt$ for all $\t \in \ueq$ and some ground type $\gt$.
+    \item If $\semenv \th \capp \x \t$, then $\semenv(\t) \in \semenv(\x)$.
+    \item If $\semenv \th \cpapp \x \ren \ueqs$, then $\semenv(\x) = \gabsr \tv \tvs$, $\dom \ren \subseteq \tvs$, and \\$\semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \glam$.
+
+    \item If $\semenv \th \cone \cand \ctwo$ and $\cone \cand \ctwo \simple$, then $\semenv \th \cone$ and $\semenv \th \ctwo$.
+    \item If $\semenv \th \cexists \tv \c$ and $\cexists \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for some $\gt$.
+    \item If $\semenv \th \cfor \tv \c$ and $\cfor \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for all ground types $\gt$.
+    \item If $\semenv \th \clet \x \tv \cone \ctwo$ and $\clet \x \tv \cone \ctwo \simple$, then $\semenv \th \cexists \tv \cone$ and \\$\semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo$.
+    \item If $\semenv \th \cletr \x \tv \tvs \cone \ctwo$ and $\cletr \x \tv \tvs \cone \ctwo \simple$, then
+      $\semenv \th \cexists {\tv, \tvs} \cone$ and \\$\semenv\where{\x \is \semenv(\cabsr \tv \tvs \cone)} \th \ctwo$.
   \end{enumerate}
   \begin{proof}~
     \begin{enumerate}[(\roman*)]
@@ -4314,6 +4318,7 @@ entailment in our system.
 
       \item Similar to \Rule{Unif} case.
       \item Similar to \Rule{Unif} case.
+      \item Similar to \Rule{Unif} case.
 
       \item Case analysis on the given derivation $\semenv \th \cone \cand \ctwo$.
       \begin{itemize}
@@ -4329,16 +4334,13 @@ entailment in our system.
 
 	\proofcasederivation
 	  {Susp-Ctx}
-	  {\Cshape \C \tv \sh \\ \semenv \th \C\where{\cmatchesz \tv \sh \cbrs}}
-	  {\semenv \th \C\where{\cmatch \tv \cbrs}}
+	  {\Cshape \C \t \sh \\ \semenv \th \C\where{\cmatched \t \sh \cbrs}}
+	  {\semenv \th \underbrace{\C\where{\cmatch \t \cbrs}}_{\cone \cand \ctwo}}
 
 	\begin{llproof}
-	  \eqPf{\c}{\C\where{\cmatch \tv \cbrs}} {Given}
-	  \simplePf{\C\where{\cmatch \tv \cbrs}} {\ditto}
-	  \nsimplePf{\C\where{\cmatch \tv \cbrs}} {By \cref{lem:match--tv-is-not-simple}}
+	  \simplePf{\C\where{\cmatch \t \cbrs}} {Given}
+	  \nsimplePf{\C\where{\cmatch \t \cbrs}} {By \cref{lem:match-is-not-simple}}
 \Hand 	  \contraPf{\semenv \th \cone, \semenv \th \ctwo}
-
-
 	\end{llproof}
 
       \end{itemize}
@@ -4346,11 +4348,22 @@ entailment in our system.
       \item Similar to \Rule{Conj} case.
       \item Similar to \Rule{Conj} case.
       \item Similar to \Rule{Conj} case.
+      \item Similar to \Rule{Conj} case.
     \end{enumerate}
   \end{proof}
 \end{lemma}
 
+\begin{lemma}[Composability of simplicity]
+  \label{lem:compose-simple}
+  If $\c \simple$ and $\C \simple$, then $\C\where\c \simple$.
+  Additionally, if $\Ca \simple$ and $\Cb \simple$, then $\Ca\where\Cb \simple$.
+  \begin{proof}
+    Induction on the derivation of $\C \simple$ and $\Ca \simple$, respectively.
+  \end{proof}
+\end{lemma}
+
 \begin{lemma}[Simple congruence]
+  \label{lem:cong-simple}
   Given simple constraints $\cone, \ctwo$ and simple context $\C$.
   If \\$\cone \centails \ctwo$, then $\C\where{\cone} \centails \C\where{\ctwo}$.
   \begin{proof}
@@ -4358,29 +4371,137 @@ entailment in our system.
   \end{proof}
 \end{lemma}
 
+\begin{lemma}[Erasure is simple]
+  \label{lem:erase-simple}
+  For all constraints $\c$, $\cerase \c \simple$.
+  \begin{proof}
+    Induction on the structure of $\c$.
+  \end{proof}
+\end{lemma}
+
 
 
 \begin{lemma}[Composability of unicity]
+  \label{lem:compose-unicity}
   If $\Cshape \Ca \t \sh$, then $\Cshape {\Cb\where\Ca} \t \sh$.
   \begin{proof}
-    \TODO{This proof needs doing}
+    Induction on the structure of $\Cb$.
+    \begin{itemize}
+      \proofcase{$\square$}
+
+	\begin{llproof}
+	  \shapePf{\Ca}{\t}{\sh}{Premise}
+	  \eqPf{\Cb\where\Ca}{\square\where\Ca}{$\Cb$ is $\square$}
+	  \continueeqPf{\Ca}{By definition}
+\Hand	  \shapePf{\square\where\Ca}{\t}{\sh}{From premise}
+	\end{llproof}
+
+      \proofcase{$\Cc \cand \c$}
+
+	\begin{llproof}
+	  \shapePf{\Ca}{\t}{\sh}{Premise}
+	  \shapePf{\Cc\where\Ca}{\t}{\sh}{By \ih}
+	  \ForallPf{\semenv, \gt}{}{Definition of $\Cshape {\parens{\Cc\where\Ca \cand \c}} \t \sh$}
+	  \vdashPf{\semenv}{\cerase {\Cc\where\Ca\where{\cunif \t \gt} \cand \c}}{$\implies$I}
+	  \eqPf{\cerase {\Cc\where\Ca\where{\cunif \t \gt} \cand \c}}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}} \cand \cerase \c}{By definition}
+	  \simplePf{\cerase {\Cc\where\Ca\where{\cunif \t \gt} \cand \c}}{\cref{lem:erase-simple}}
+	  \vdashPf{\semenv}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:simple-inversion}}
+	  \eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape {\Cc\where\Ca} \t \sh$}
+\Hand 	  \shapePf{\parens{\Cc\where\Ca \cand \c}}{\t}{\sh}{Above}
+	\end{llproof}
+
+      \proofcase{$\c \cand \Cc$}
+
+	\begin{llproof}
+	  Similar to the $\Cc \cand \c$ case.
+	\end{llproof}
+
+      \proofcase{$\cexists \tv \Cc$}
+
+	\begin{llproof}
+	  \shapePf{\Ca}{\t}{\sh}{Premise}
+	  \shapePf{\Cc\where\Ca}{\t}{\sh}{By \ih}
+	  \ForallPf{\semenv, \gt}{}{Definition of $\Cshape {\parens{\cexists \tv \Cc\where\Ca}} \t \sh$}
+	  \vdashPf{\semenv}{\cerase {\cexists \tv \Cc\where\Ca\where{\cunif \t \gt}}}{$\implies$I}
+	  \eqPf{\cerase {\cexists \tv \Cc\where\Ca\where{\cunif \t \gt}}}{\cexists \tv \cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{By definition}
+	  \simplePf{\cerase {\cexists \tv \Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:erase-simple}}
+	  \vdashPf{\semenv\where{\tv \is \gtp}}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:simple-inversion}}
+	  \eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape {\Cc\where\Ca} \t \sh$}
+\Hand 	  \shapePf{\parens{\cexists \tv \Cc\where\Ca}}{\t}{\sh}{Above}
+	\end{llproof}
+
+      \proofcase{$\cfor \tv \Cc$}
+
+	\begin{llproof}
+	  Similar to $\cexists \tv \Cc$ case.
+	\end{llproof}
+
+      \proofcase{$\clet \x \tv \Cc \c$}
+
+	\begin{llproof}
+	  \shapePf{\Ca}{\t}{\sh}{Premise}
+	  \shapePf{\Cc\where\Ca}{\t}{\sh}{By \ih}
+	  \ForallPf{\semenv, \gt}{}{Definition of $\Cshape {\parens {\Let \x \ldots}} \t \sh$}
+	  \vdashPf{\semenv}{\cerase {\clet \x \tv {\Cc\where\Ca\where{\cunif \t \gt}} \c}}{$\implies$I}
+	  &&$\cerase {\clet \x \tv {\Cc\where\Ca\where{\cunif \t \gt}} \c}$ & \\
+	  &&$=\clet \x \tv {\cerase {\Cc\where\Ca\where{\cunif \t \gt}}} {\cerase \c}$ & {By definition} \\
+	  \simplePf{\cerase {\clet \x \tv {\Cc\where\Ca\where{\cunif \t \gt}} \c}}{\cref{lem:erase-simple}}
+	  \vdashPf{\semenv}{\cexists \tv \cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:simple-inversion}}
+	  \simplePf{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:erase-simple}}
+	  \vdashPf{\semenv\where{\tv \is \gtp}}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:simple-inversion}}
+	  \eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape {\Cc\where\Ca} \t \sh$}
+\Hand 	  \shapePf{\parens{\clet \x \tv {\Cc\where\Ca} \c}}{\t}{\sh}{Above}
+	\end{llproof}
+
+      \proofcase{$\clet \x \tv \c \Cc$}
+
+	\begin{llproof}
+	  Similar to $\clet \x \tv \Cc \c$ case.
+	\end{llproof}
+
+      \proofcase{$\cletr \x \tv \tvs \Cc \c$}
+
+	\begin{llproof}
+	  Similar to $\clet \x \tv \Cc \c$ case.
+	\end{llproof}
+
+      \proofcase{$\cletr \x \tv \tvs \c \Cc$}
+
+	\begin{llproof}
+	  Similar to $\clet \x \tv \c \Cc$ case.
+	\end{llproof}
+
+
+    \end{itemize}
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}[Inversion of unicity]
+  \label{lem:unicity-inversion}~
+  \begin{enumerate}[(\roman*)]
+    \item If $\Cshape {\parens{\cexists \tv \C}} \t \sh$, then $\Cshape \C \t \sh$.
+    \item If $\Cshape {\parens{\cfor \tv \C}} \t \sh$, then $\Cshape \C \t \sh$.
+  \end{enumerate}
+  \begin{proof}
+    Follows from \cref{lem:simple-inversion}.
   \end{proof}
 \end{lemma}
 
 \begin{lemma}[Decanonicalization]
+  \label{lem:decanonicalization}
   If $\semenv \Th \c$, then $\semenv \th \c$.
   \begin{proof}
     Induction on the given derivation $\semenv \Th \c$
   \end{proof}
 \end{lemma}
 
+
 \newcommand{\VdashPf}[3]{\Pf{#1}{\Vdash}{#2}{#3}}
 \begin{theorem}[Canonicalization]
+  \label{thm:canonicalization}
   If $\semenv \th \c$, then $\semenv \Th \c$.
   \begin{proof}
-  We proceed by induction on the height of the derivation $\deriv :: \semenv \th \c$.
-    \TODO{This induction hypothesis is too weak, we likely need a measure on the height
-    of the derivation + num of match constraints}
+  We proceed by induction on $\semenv \th \c$ with the measure $\cmeasure \c$.
   \begin{itemize}
     \proofcasederivation
       {True}
@@ -4441,12 +4562,12 @@ entailment in our system.
 	  \begin{llproof}
 
 	    \VdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs}} {Premise}
-	    \vdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs}} {Lemma XXX}
+	    \vdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs}} {\cref{lem:decanonicalization}}
 	    \vdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs} \cand \cb}{By \Rule{Conj}}
  	    \VdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs} \cand \cb}{By \ih}
 	    \Pf{}{}{\Cshape \C \tv \sh}{Premise}
- 	    \Pf{}{}{\Cshape {\parens {\C \cand \cb}} \tv \sh}{Lemma XXX}
-\Hand 	    \VdashPf{\semenv}{\C\where{\cmatch \t \cbrs}}{By \Rule{Con-Susp-Ctx}}
+	    \Pf{}{}{\Cshape {\parens {\C \cand \cb}} \tv \sh}{\cref{lem:compose-unicity}}
+\Hand 	    \VdashPf{\semenv}{\C\where{\cmatch \t \cbrs}}{By \Rule{Can-Susp-Ctx}}
 	  \end{llproof}
 
 	\proofcasederivationdouble
@@ -4494,11 +4615,11 @@ entailment in our system.
 
 		\begin{llproof}
 		  \VdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
-		  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{Lemma XXX}
+		  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{\cref{lem:decanonicalization}}
 		  \vdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{By \Rule{Exists}}
 		  \VdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{By \ih}
 		  \Pf{}{}{\Cshape \C \t \sh}{Premise}
-		  \Pf{}{}{\Cshape {\parens {\cexists \tv \C}} \t \sh}{Lemma XXX}
+		  \Pf{}{}{\Cshape {\parens {\cexists \tv \C}} \t \sh}{\cref{lem:compose-unicity}}
 \Hand             \VdashPf{\semenv}{\cexists \tv \C\where{\cmatch \t \cbrs}}{By \Rule{Can-Susp-Ctx}}
 		\end{llproof}
 	\end{itemize}
@@ -4553,13 +4674,15 @@ entailment in our system.
 
 	      \begin{llproof}
 		\shapePf{\parens {\cexists \tv \C}}{\t}{\sh}{Premise}
-		\shapePf{\C}{\t}{\sh}{Lemma XXX}
+		\shapePf{\C}{\t}{\sh}{\cref{lem:unicity-inversion}}
 		\VdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{Premise}
-		\vdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{Lemma XXX}
-		\eqPf{\semenv(\cabs \tv \cone)}{\semenv(\cabs \tv \C\where{\cmatched \t \sh \cbrs})}{Lemma XXX}
+		\vdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{\cref{lem:decanonicalization}}
+		\eqPf{\semenv(\cabs \tv \cone)}
+		  {\semenv(\cabs \tv \C\where{\cmatched \t \sh \cbrs})}
+		  {\cref{corollary:matched-abstractions}}
 		\vdashPf{\semenv}{\clet \x \tv {\C\where{\cmatched \t \sh \cbrs}} \ctwo}{By \Rule{Let}}
 		\VdashPf{\semenv}{\clet \x \tv {\C\where{\cmatched \t \sh \cbrs}} \ctwo}{By \ih}
-		\shapePf{\parens{\clet \x \tv \C \ctwo}}{\t}{\sh}{Lemma XXX}
+		\shapePf{\parens{\clet \x \tv \C \ctwo}}{\t}{\sh}{\cref{lem:compose-unicity}}
 \Hand 		\VdashPf{\semenv}{\clet \x \tv {\C\where{\cmatch \t \cbrs}} \ctwo}{By \Rule{Can-Susp-Ctx}}
 	      \end{llproof}
 
@@ -4573,9 +4696,9 @@ entailment in our system.
 
 		\begin{llproof}
 		  \shapePf{\C}{\t}{\sh}{Premise}
-		  \shapePf{\parens{\clet \x \tv \cone \C}}{\t}{\sh}{Lemma XXX}
+		  \shapePf{\parens{\clet \x \tv \cone \C}}{\t}{\sh}{\cref{lem:compose-unicity}}
 		  \VdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
-		  \vdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\C\where{\cmatched \t \sh \cbrs}}{Lemma XXX}
+		  \vdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\C\where{\cmatched \t \sh \cbrs}}{\cref{lem:decanonicalization}}
 		  \vdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatched \t \sh \cbrs}}}{By \Rule{Let}}
 		  \VdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatched \t \sh \cbrs}}}{By \ih}
 \Hand 		  \VdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatch \t \sh}}}{By \Rule{Can-Susp-Ctx}}
@@ -4590,9 +4713,170 @@ entailment in our system.
       \begin{llproof}
 	Similar to the \Rule{True} case.
       \end{llproof}
+
+      \proofcasederivation
+	{LetR}
+	{\semenv \th \cexists {\tv, \tvs} \cone \\
+	 \semenv\where{\x \is \semenv(\cabsr \tv \tvs \cone)} \th \ctwo}
+	{\semenv \th \cletr \x \tv \tvs \cone \ctwo}
+
+      \begin{llproof}
+	Similar to the \Rule{Let} case.
+      \end{llproof}
+
+      \proofcasederivation
+	{AppR}
+	{\semenv(\x) = \gabsr \tv \tvs \\
+	 \semenv(\t) \in \glam}
+	{\semenv \th \capp \x \t}
+
+      \begin{llproof}
+	Similar to the \Rule{App} case.
+      \end{llproof}
+
+    \proofcasederivation
+      {Multi-Unif}
+      {\forall \t \in \ueq,~ \semenv(\t) = \gt}
+      {\semenv \th \ueq}
+
+      \begin{llproof}
+	Similar to the \Rule{Unif} case.
+      \end{llproof}
+
+    \proofcasederivation
+      {Papp}
+      {\semenv(\x) = \gabsr \tv \tvs \\ \dom \ren \subseteq \tvs \\
+       \semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \glam}
+      {\semenv \th \cpapp \x \ren \ueqs \t}
+
+
+      \begin{llproof}
+	Similar to the \Rule{App} case.
+      \end{llproof}
+
+
   \end{itemize}
   \end{proof}
 \end{theorem}
+
+\newcommand{\entailsPf}[3]{\Pf{#1}{\centails}{#2}{#3}}
+\begin{lemma}[Inversion of suspension]
+  \label{lem:susp-inversion}
+  If $\semenv \th \C\where{\cmatch \t \cbrs}$ and $\Cshape \C \t \sh$,
+  then\\$\semenv \th \C\where{\cmatched \t \sh \cbrs}$.
+
+  \begin{proof}
+    We use canonicalization (\cref{thm:canonicalization}) to induct on $\semenv \Th
+    \C\where{\cmatch \t \cbrs}$ instead of $\semenv \th \C\where{\cmatch \t
+    \cbrs}$.
+
+    This simplifies the proof, but introduces a circular dependency between
+    \cref{thm:canonicalization} and \cref{lem:susp-inversion}.
+    %
+    However, this does not compromise the well-foundedness of induction, as the
+    application of \cref{lem:susp-inversion} (via
+    \cref{corollary:matched-abstractions}) within the proof of
+    \cref{thm:canonicalization} is restricted to strictly smaller constriaints.
+
+    \begin{itemize}
+      \proofcasederivation
+	{Can-Base}
+	{\semenv \th \C\where{\cmatch \t \cbrs} \\ \C\where{\cmatch \t \cbrs} \simple}
+	{\semenv \Th \C\where{\cmatch \t \cbrs}}
+
+	\begin{llproof}
+	  \simplePf{\C\where{\cmatch \t \cbrs}}{Premise}
+	  \nsimplePf{\C\where{\cmatch \t \cbrs}}{\cref{lem:match-is-not-simple}}
+\Hand 	  \contraPf{\semenv \th \C\where{\cmatched \t \sh \cbrs}}{}
+	\end{llproof}
+
+      \proofcasederivation
+	{Can-Susp-Ctx}
+	{\Cshape \Cp \tp \shp \\ \semenv \Th \Cp\where{\cmatched \tp \shp \cbrs'}}
+	{\semenv \Th \underbrace{\Cp\where{\cmatch \tp \cbrs'}}_{\C\where{\cmatch {~\t~} {~\cbrs}}}}
+
+	\begin{llproof}
+	  \casesPf{\C = \Cp}
+	\end{llproof}
+	\begin{itemize}
+	  \proofcase{$\C = \Cp$}
+
+	    \begin{llproof}
+	      \eqPf{\C}{\Cp}{Premise}
+	      \eqPf{\tp}{\t}{}
+	      \eqPf{\shp}{\sh}{}
+	      \eqPf{\cbrs'}{\cbrs}{}
+\Hand         \VdashPf{\semenv}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
+	    \end{llproof}
+
+	  \proofcase{$\C \neq \Cp$}
+
+	    \TODO{The formatting here is really off. Mainly due to the janky match notation
+	          we have. }
+
+	    \newcommand{\Ctwo}{\C_2}
+	    \begin{llproof}
+	      \eqPf{\Ctwo\where{\cmatch \t \cbrs, \cmatch \tp \cbrs'}}{\C\where{\cmatch \t \cbrs}}{For some 2-hole context $\Ctwo$}
+	      \continueeqPf{\Cp\where{\cmatch \tp \cbrs'}}{}
+	      \decolumnizePf
+	      \VdashPf{\semenv}{\Ctwo\where{\cmatch \t \cbrs, \cmatched \tp \shp \cbrs'}}{Premise}
+	      \decolumnizePf
+	      \ForallPf{\semenvp, \gtp}{}{\hspace{32.5ex}Defn. of $\Cshape {\Ctwo\where{\square, \cmatched \tp \shp \cbrs'}} \t \sh$}
+	      \decolumnizePf
+	      \vdashPf{\semenvp}{\cerase {\Ctwo\where{\cunif \t \gtp, \cmatched \tp \shp \cbrs'}}}{$\implies$I}
+	      \vdashPf{\semenvp}{\cerase {\Ctwo\where{\cunif \t \gtp, \ctrue}}}{\cref{lem:cong-simple}}
+	      \eqPf{\cerase {\Ctwo\where{\cunif \t \gtp, \ctrue}}}{\cerase {\Ctwo\where{\cunif \t \gtp, \cerase {\cmatch \tp \cbrs'}}}}{By definition}
+	      \continueeqPf{\cerase {\C\where{\cunif \t \gtp}}}{By definition}
+	      \vdashPf{\semenvp}{\cerase {\C\where{\cunif \t \gtp}}}{Above}
+	      \eqPf{\shape \gtp}{\sh}{$\implies$E on $\Cshape \C \t \sh$}
+	      \shapePf{\Ctwo\where{\square, \cmatched \tp \shp \cbrs'}}{\t}{\sh}{Above}
+	      \VdashPf{\semenv}{\Ctwo\where{\cmatched \t \sh \cbrs, \cmatched \tp \shp \cbrs'}}{By \ih}
+	      \decolumnizePf
+	      \ForallPf{\semenvp, \gtp}{}{\hspace{32.5ex}Defn. of $\Cshape {\Ctwo\where{\cmatched \t \sh \cbrs, \square}} \tp \shp$}
+	      \decolumnizePf
+	      \vdashPf{\semenvp}{\cerase {\Ctwo\where{\cmatched \t \sh \cbrs, \cunif \tp \gtp}}}{$\implies$I}
+	      \vdashPf{\semenvp}{\cerase {\Ctwo\where{\ctrue, \cunif \tp \gtp}}}{\cref{lem:cong-simple}}
+	      \eqPf{\cerase {\Ctwo\where{\ctrue, \cunif \tp \gtp}}}{\cerase {\Ctwo\where{\cerase {\cmatch \t \cbrs}, \cunif \tp \gtp}}}{By definition}
+	      \continueeqPf{\cerase {\Cp\where{\cunif \tp \gtp}}}{By definition}
+	      \vdashPf{\semenvp}{\cerase {\C\where{\cunif \t \gtp}}}{Above}
+	      \shapePf{\Cp}{\tp}{\shp}{Premise}
+	      \eqPf{\shape \gtp}{\shp}{$\implies$E on $\Cshape \Cp \tp \shp$}
+	      \shapePf{\Ctwo\where{\cmatched \t \sh \cbrs, \square}}{\tp}{\shp}{Above}
+\Hand 	      \VdashPf{\semenv}{\Ctwo\where{\cmatched \t \sh \cbrs, \cmatch \tp \cbrs'}}{By \Rule{Con-Susp-Ctx}}
+	    \end{llproof}
+	\end{itemize}
+    \end{itemize}
+  \end{proof}
+\end{lemma}
+
+\begin{corollary}
+  \label{corollary:matched-abstractions}
+  If $\Cshape \C \t \sh$, then $\semenv(\cabs \tv \C\where{\cmatch \t \cbrs}) = \semenv(\cabs \tv \C\where{\cmatched \t \sh \cbrs})$.
+  Similarly, $\semenv(\cabsr \tv \tvs \C\where{\cmatch \t \cbrs}) = \semenv(\cabsr \tv \tvs \C\where{\cmatched \t \sh \cbrs})$.
+  \begin{proof}
+    It is sufficient to show that $\semenv\where{\tv \is \gt} \th \C\where{\cmatch \t \cbrs}$ if and only if
+    $\semenv \th \C\where{\cmatched \t \sh \cbrs}$.
+
+    \begin{itemize}
+      \proofcase{$\implies$}
+
+	\begin{llproof}
+	  \shapePf{\C}{\t}{\sh}{Premise}
+	  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatch \t \cbrs}}{Premise}
+\Hand 	  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{\cref{lem:susp-inversion}}
+	\end{llproof}
+      \proofcase{$\impliedby$}
+
+	\begin{llproof}
+	  \shapePf{\C}{\t}{\sh}{Premise}
+	  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
+\Hand 	  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatch \t \cbrs}}{By \Rule{Susp-Ctx}}
+	\end{llproof}
+    \end{itemize}
+
+    For $\semenv(\cabsr \tv \tvs \C\where{\cmatch \t \cbrs}) = \semenv(\cabsr \tv \tvs \C\where{\cmatched \t \sh \cbrs})$, the proof is identical.
+  \end{proof}
+\end{corollary}
 
 
 \section{Examples of suspended match constraints}
@@ -4626,7 +4910,7 @@ entailment in our system.
 %      \and \sub, \x := \cabs \tv \c
 %    }
 %  \end{bnfgrammar}
-%\end{mathpar}
+%\end{mathpar
 %Like typing contexts $\G$, substitutions $\sub$ are ordered and contain
 %delcarations of polymorphic variables ($\tv$), they also provide term variable
 %bindings ($\x \is \cabs \tv \c$). Unlike typing contexts, ordered substitutions
