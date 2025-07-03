@@ -3014,12 +3014,14 @@ A constraint $C$ is satisfiable if it can be rewritten into a \emph{solved
 form}:
 \begin{mathpar}
   \hat{\up} \uad\triangleq\uad \cexists \tvs \cAnd \iton \ueqi
+  \quad
   \text{where:}\quad\left\{
   \begin{array}{l}
     \text{each $\ueqi$ contains at most one non-variable type,}\\
     \text{head variables do not occur in multiple equations,}\\
     \text{the constraint is acyclic}
   \end{array}
+  \quad\right\}
 \end{mathpar}
 From such a form, a most general solution (\ie a unifier $\vartheta$) can be
 directly read off.
@@ -3501,11 +3503,10 @@ application constraint.
        {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
                            {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
      \tvp \in \dom \ren \\
-     \C\where{\Cb} \th \theta(\tv) = \t \\
-     \shape \t = \any \tvcs \tp}
-    {\C\where{\clet \x \tvs {\Ca[\cexists \tvcs \cunif \tv \tp
-                           \cand \cmatch \tp \cbrs}}
-		      {\Cb[x[\theta \th U]]}]}
+     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
+     \x \disjoint \Cb}
+    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
+		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
 \end{mathpar}
 
 
@@ -3982,6 +3983,164 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\semenv \Th \C\where{\cmatch \t \cbrs}}
 \end{mathparfig}
 
+\judgbox{\up \unif \upp}
+  {The unifier rewrites $\up$ to $\upp$.}
+\begin{mathparfig}[htpb!]
+  {fig:defn-unification-algorithm}
+  {Unification algorithm.}
+   \rewrite[U-Exists]
+      {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
+      {\cexists \tv {\upa \cand \upb}}
+
+    \rewrite[U-Cycle]
+      {\up \\ \cyclic \up}
+      {\cfalse}
+
+    \rewrite[U-True]
+      {\up \cand \ctrue}
+      {\up}
+
+    \rewrite[U-False]
+      {\up \cand \cfalse}
+      {\cfalse}
+
+    \rewrite[U-Merge]
+      {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
+      {\cunif \tv {\cunif \ueqa \ueqb}}
+
+    \rewrite[U-Stutter]
+      {\cunif \tv {\cunif \tv \ueq}}
+      {\cunif \tv \ueq}
+
+    \rewrite[U-Name]
+      {\cunif {\pshapp \tys[\ti]} \ueq \\ \tv \disjoint \tys, \ueq }
+      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \tys[\tv] } \ueq}}
+
+    \rewrite[U-Decomp]
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
+      {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
+
+    \rewrite[U-Clash]
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }\\
+       \sh \neq \shp}
+      {\cfalse}
+
+    \rewrite[U-Trivial]
+      {\trivial \ueq}
+      {\ctrue}
+\end{mathparfig}
+\FloatBarrier
+
+\judgbox{$\c \csolve \cp$}
+  {The constraint solver rewrites $\c$ to $\cp$.}
+\begin{mathparfig}[htpb!]
+  {fig:defn-solver-basic}
+  {}
+  \rewrite[S-Unif]
+    {\upa \\ \upa \unif \upb}
+    {\upb}
+
+  \rewrite[S-Let]
+    {\clet \x \tv \ca \cb}
+    {\cletr \x \tv \eset \ca \cb}
+
+  \rewrite[S-Exists-Conj]
+    {(\cexists \alpha \ca) \cand \cb \\
+     \tv \disjoint \cb}
+    {\cexists \tv {\ca \cand \cb}}
+
+  \rewrite[S-Let-ExistsLeft]
+    {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
+     \tvb \disjoint \tv, \tvs}
+    {\cletr \x \tv {\tvs, \tvb} \ca \cb}
+
+  \rewrite[S-Let-ExistsRight]
+    {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
+     \tvb \disjoint \tv, \tvs, \cb}
+    {\cexists \tvb {\clet \x \tvs \ca \cb}}
+
+  \rewrite[S-Let-ConjLeft]
+    {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
+     \ca \disjoint \tv, \tvs}
+    {\ca \cand \cletr \x \tv \tvs \cb \cc}
+
+  \rewrite[S-Let-ConjRight]
+    {\cletr \x \tv \tvs \ca (\cb \cand \cc) \\
+     \x \disjoint \cc}
+    {\cc \cand \Clet \x \tv \ca \cb}
+
+  \rewrite[S-Susp-CtxType]
+    {\C\where{\cmatch \t \cbrs} \\ \t \notin \TyVars}
+    {\C\where{\cmatched \t {\shape \t} \cbrs}}
+
+  \rewrite[S-Susp-CtxVar]
+    {\C\where{\cmatch \tv \cbrs} \\
+     \cunif \tv {\cunif \t \ueq} \in \C}
+    {\C\where{\cmatched \tv {\shape \t} \cbrs}}
+
+  \rewrite[S-Let-App]
+    {\cletr \x \tv \tvs \ca \C\where{\capp \x \t} \\
+     \tvc \disjoint \t \\
+     \x \disjoint \C}
+    {\cletr \x \tv \tvs \ca \C\where{\cexists \tvc \cunif \tvc \t
+                               \cand \cpapp \x \eset \eset \tvc }}
+
+  \rewrite[S-Papp-Type]
+    {\cpapp \x \ren \ueqs \t}
+    {\cexists \tvc \cunif \tvc \t \cand \cpapp \x \ren \ueqs \tvc}
+
+  \rewrite[S-Papp-Exists]
+    {\cletr \x \tv {\tvs, \tvb} \c \C\where{\cpapp \x \ren \ueqs \tvc} \\
+     \tvb \notin \dom \ren \\
+     \tvbp \disjoint \ren, \ueqs, \tvc \\
+     \x \disjoint \C}
+    {\cletr \x \tv {\tvs, \tvb} \c
+      \C\where{\cexists \tvbp \cpapp \x {\ren \where {\tvb \is \tvbp}} \ueqs \tvc}}
+
+  \rewrite[S-Papp-Unif]
+    {\cletr \x \tv \tvs {\c \cand \ueq} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
+     \ren : \tvs \\
+     \ueqs \nvDash \ueq \\
+     \x \disjoint \C}
+    {\cletr \x \tv \tvs {\c \cand \ueq}
+      \C\where{\cpapp \x \ren {\ueqs, \ueq} \tvc
+	 \cand \ueq[\ren\where{\tv \is \tvc}}]}
+
+  \rewrite[S-Papp-Solve]
+    {\cletr \x \tv \tvs {\ueqs'} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
+     \ren : \tvs \\
+     \ueqs \vDash \ueqs' \\
+     \x \disjoint \C}
+    {\cletr \x \tv \tvs {\ueqs'} {\C\where{\ctrue}}}
+
+  \rewrite[S-Let-Solve]
+    {\cletr \x \tv \tvs \ueqs \c \\ \x \disjoint \c \\
+     \cexists {\tv, \tvs} \ueqs \cequiv \ctrue}
+    {\c}
+
+  \rewrite[S-Exists-Lower]
+    {\cletr \x \tv {\tvas, \tvbs} \c
+     {\C\where{\overline{\cpapp \x \ren \ueqs \tvc}}} \\
+     \cdetermines {\cexists {\tv, \tvas} \c} \tvbs \\
+     \tvbs \subseteq \dom \bar \ren \\
+     \x, \tvbs \disjoint \C
+     }
+    {\cexists \tvbs
+      \cletr \x \tv \tvas \c
+	{\C\where{{\overline{\cpapp \x {\ren \setminus \tvbs} \ueqs
+			 \cand \cunif {\ren(\tvbs)} \tvbs}}}}}
+
+  \rewrite[S-BackProp]
+    {\C\where
+       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
+                           {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
+     \tvp \in \dom \ren \\
+     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
+     \x \disjoint \Cb}
+    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
+		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
+\end{mathparfig}
+\FloatBarrier
 
 \section{Properties of the constraint language}
 
