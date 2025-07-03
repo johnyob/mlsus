@@ -2925,22 +2925,23 @@ and require explicit polymorphism, which \ML does not need. }
 
 % Explaination of rules
 
-We briefly summarize the purpose of each rule below: Ruke \Rule{U-Exists}
-lifts existential quantifiers to the top of the unification problem,
-enabling applications of rules \Rule{U-Merge} and \Rule{U-Cycle} as all
-multi-equations eventually part of a single conjunction. Rule \Rule{U-Merge}
-combines mutli-equations sharing a common variable. Rule \Rule{U-Stutter}
-remxoves duplicate occurrences of a variable. Rule \Rule{U-Decomp}
-decomposes equal types with matching shapes into equalities between their
-subcomponents. Rule \Rule{U-Clash} complements
-Rule \Rule{U-Decomp}, handling shape mistmatches that result in failure.
-Rule \Rule{U-Name} introduces a fresh variable to expose a subcomponent of a shape,
-ensuring unification over \emph{shallow terms}, making sharing of type
-variables explicit and avoids the need for copying types in rules such as
-\Rule{U-Decomp}. Rules \Rule{U-True} and \Rule{U-Trivial} eliminate trivial
-constraints. The latter occurs when a multi-equation $\ueq$ is trivial, that
-is, when it is either empty ($\eset$) or contains only a single type ($\cunif
-\t \eset$).
+We briefly summarize the purpose of each rule below: Ruke
+\Rule{U-Exists} lifts existential quantifiers to the top of the
+unification problem, enabling applications of rules \Rule{U-Merge} and
+\Rule{U-Cycle} as all multi-equations eventually part of a single
+conjunction. Rule \Rule{U-Merge} combines mutli-equations sharing
+a common variable. Rule \Rule{U-Stutter} remxoves duplicate
+occurrences of a variable. Rule \Rule{U-Decomp} decomposes equal types
+with matching shapes into equalities between their subcomponents. Rule
+\Rule{U-Clash} complements Rule \Rule{U-Decomp}, handling shape
+mistmatches that result in failure.  Rule \Rule{U-Name} introduces
+a fresh variable to expose a subcomponent of a shape, ensuring
+unification over \emph{shallow terms}, making sharing of type
+variables explicit and avoids the need for copying types in rules such
+as \Rule{U-Decomp}.\Xgabriel{I find the syntax $\pshapp \tys[\ti]$
+  hard to read, I would prefer something more discoverable like $\pshapp (\tys, \t_i, \tys')$. Besides, I wonder if we could use the notation $\sh[\tys]$ for shape applications, reminiscent of a standard context-with-holes notation.} Rules \Rule{U-True}, \Rule{U-False} simplify conjunctions.
+Rule \Rule{U-Trivial} occurs when a multi-equation $\ueq$ is trivial, that is, when it is either empty
+($\eset$) or contains only a single type ($\cunif \t \eset$).\Xgabriel{I don't see a formal definition of $\trivial \ueq$ in math notation; ideally it should be in a figure somewhere. We could possibly replace $\trivial \ueq$ with $|\ueq| \leq 1$, the notion of size/cardinality of a multi-equation being obvious.}
 
 
 Rule \Rule{U-Cycle} implements the \emph{occurs check}, ensuring that a type
@@ -2966,6 +2967,10 @@ written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
     \rewrite[U-True]
       {\up \cand \ctrue}
       {\up}
+
+    \rewrite[U-False]
+      {\up \cand \cfalse}
+      {\cfalse}
 
     \rewrite[U-Merge]
       {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
