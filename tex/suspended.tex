@@ -503,8 +503,7 @@ The rest of the paper is organized as follows.
 \item
   In \cref{sec:solving}, we provide a formal definition of our constraint
   solver as a series of non-deterministic rewriting rules.
-\item In \cref{sec:implementation}, we describe an efficient implementation
-  of suspended constraints. We discuss some extensions of suspended
+\item In \cref{sec:discussion}, we discuss some extensions of suspended
   constraints that we have prototyped but whose theory is less clear.
 \item
   In \cref{sec:related-work} and \cref{sec:future-work}, we discuss related
@@ -886,7 +885,7 @@ since each defines a field \code{x}. But \code{two} is chosen simply
 because it appears later in the source.
 We do not treat this behaviour as principal; accordingly, we provide
 no formalization of such ``default'' rules, though their implementation is
-discussed further in \cref{sec:implementation}.
+discussed further in \cref{sec:discussion}.
 
 This fallback mechanism highlights the directionality of \OCaml inference.
 Once the compiler selects a type, it commits to it---even if that choice
@@ -1819,7 +1818,7 @@ require explicit annotations in inherently ambiguous scenarios.  This is
 fine. Another option would be the use of sensible ``defaults'', such as
 resolving $\efield e j$ by assuming the tuple has arity $j$. While
 appealing, such defaults compromise principality. We return to this
-pragmatic tradeoff in \cref{sec:implementation}.
+pragmatic tradeoff in \cref{sec:discussion}.
 
 \subsection{Syntax}
 
@@ -3438,8 +3437,8 @@ To decide when $\cdetermines {\cexists \tvs \c} \tvbs$ holds for $\tvbs
     \tvs, \tvbs$.
 \end{enumerate*}
 For instance, $\cexists \tvba \cunif \tv {\tvba \to \tvbb}$ determines
-$\tvbb$, as $\tvbb$ is free. \cref{sec:implementation} discusses how we
-efficiently decide determinability.
+$\tvbb$, as $\tvbb$ is free. \TODO{describe how the solver should
+determine determinability}.
 
 \parcomment{Why we lower?}
 
@@ -3528,55 +3527,139 @@ application constraint.
 
 
 
-\section{HM Prototype and discussion}
-\label{sec:implementation}
+\section{Discussion}
+\label{sec:discussion}
 
-\parcomment {Generalization trees}
 
+\subsection{Prototype implementation}
+
+\parcomment{We have a solver, but it isn't an algorithm}
+We've formalized our constraint solver, but it is not immediately clear how to
+turn our specification into an executable algorithm. We outline some of the key
+engineering work necessary for this, but omit a full description due to space
+constraints.
+
+\paragraph{Unification and schedulers}
+
+To support suepended match constraints, we must allow a match constraint to
+wait on the resolution of a unification variable. Inspired by
+lightweight-threading implementations \cite{TODO}, we treat unification
+variables as \emph{write-once immutable cells} (or \emph{ivars})
+that, once instantiated, may unblock further constraint solving.
+
+Each unsolved unification variable maintains a \emph{wait list} of suspended
+constraints that are blocked until the variable is unified with a concrete
+type.
+%
+Once unified, the wait list is flushed: the suspended constraints are scheduled
+on the global constraint scheduler, which is responsible for eventually solving
+them.
+
+
+\paragraph{Rank-based generalization}
 % Ranks
-In practice, this
-check is efficiently implemented using \emph{ranks} -- where each regional
-$\Let$ constraint and type variable is allocated an integer rank, which
-informs us the depth of the region within the constraint. type variables of
+To implement generalization (the \Rule{S-Lower-Exists} rule) efficiently, we
+follow the classic rank-based approach to generalization \citep{TODO}. Each
+$\Let$ constraint and type variable is allocated an integer \emph{rank}, which
+informs us the depth of the region within the constraint. Type variables of
 rank $0$ are bound at the top-level region, and type variables of rank $r \geq
-1$ are bound in the region of $\Let$ constraint at depth $r$. Ranks were
-initially described by R\'emy \cite{TODO} for efficient generalization.
-In practice, the unification algorithm is aware of ranks and lowers them
-accordingly when unifying types.
+1$ are bound in the region of $\Let$ constraint at depth $r$.
+
+% Lowering / generalization
+As inference progresses, unification may widen the scope of variables,
+thereby lowering their rank. The set of variables eligible for
+generalization at a given region consists precisely of those
+whose rank remains equal to that of the region.
+
+\TODO{Cool tikz diagram of this -- displaying ranks as a stack against a constraint}
+
+% Ranks are no-longer enough
+While this rank-based stack of regions suffices for \ML generalization,
+it is too inflexible for \emph{partial generalization}. If generalization
+at some region is suspended (\eg due to a suspended match constraint),
+the region must remain alive. Later parts of the constraint may
+introduce a new $\Let$-region at the same rank that is unrelated --
+neither an ancestor nor a descandant -- breaking the linear assumption
+of ranks.
+
+% Generalization trees
+To address this, our implementation replaces the rank stack
+with a \emph{region tree}, where nested $\Let$-regions form
+a proper tree structure. In the specification, this structure
+is encoded syntactically by $\Let$ constraints themselves.
+
+\TODO{Cool tikz diagram of generalization trees with paths for ranks.
+      Using the same example as above.}
+
+Under this scheme, ranks no longer uniquely determine a variable's
+region. Instead, we interpret a rank relative to a path $\pi$ in the
+region tree from the root. When two variables are unified, they must
+always lie on some shared path---by scoping invariants---so computing
+their minimum rank \emph{along $\pi$} sufficies to determine the
+lowered region.
 
 
-\parcomment {Lazy generalization}
+\paragraph{Partial generalization}
 
-\parcomment {Schedulers}
+Partial generalization arises when a region cannot be fully
+generalized due to suspended constraints that may still update
+its variables. To manage this, we classify type variables
+into four categories:
 
-\parcomment {Partial generics and instances}
+\begin{itemize}
+  \item[\textbf{I}] Variables are yet to be generalized. \\
+    \emph{Introduced by applications or source types in constraints} \\
 
-\paragraph{Interaction with let-polymorphism}
-\Xgabriel{This was moved from the introduction, it's related to ``choice
-points'' below.}
+  \item[\textbf{G}] Variables that are generalized. \\
+    \emph{Not accessible from any instance type. Treated polymorphically.} \\
 
-\parcomment{Our intuition is not entirely correct here.}
+  \item[\textbf{PG}] Variables that are generalizable, but may be
+    updated in the future. \\
+    \emph{Variables mentioned by suspended match constraint or partial applications.} \\
 
-While the above constraint generation already improves on
-OCaml's current inference approach, it is not powerful enough to capture the
-simple idea that to resolve an ambiguous constructor we must use contextual
-information to show there is a unique type constructor $\F$ for the
-application.
+  \item[\textbf{PI}] Variables that were previously partially generalized
+    but have since been updated.  \\
+    \emph{Awaiting re-generalization. Introduced by unification of partial generics.}
+\end{itemize}
 
-We demonstrate this is with the following example:
-\begin{program}
-let foo =
-  let f x = match x with L -> 1 in
-  f (L : m)
-\end{program}
-With the above contraint generation, we would keep the type of \code{x}
-as a generalizable variable, thus the application of \code{f} would not
-resolve this ambiguity, requiring an annotation at the definition.
 
-We require some way of splitting the head of the type from the type itself,
-treating the head of the variable monomorphically and the rest
-polymorphically.
-\Xalistair{An explaination of kinded(1) types here }
+It is possible to transition between these states, triggered by generalization
+and unification.
+
+At generalization time, we conservatively approximate whether a variable may be
+updated in the future using \emph{guards}. A guard is a mark on a variable that
+indicates the variable is captured by some suspended constraint that has not
+yet been solved. Guarded variables are generalized as partial generics (PG);
+unguarded ones are fully generalized (G).
+
+When an instance is taken from a partial generic, we retain a forward-reference
+from the partial generic (PG) to the instance. This enables the generic to
+notify the instance that it has been updated, propagating the updated type
+structure to all instances. This is a reversed analogue of how partial
+application constraints track renamings. In addition, the instance remains
+guarded by the partial generic until the latter is either lowered or fully
+generalized.
+
+Once a suspended match constraint is solved, it removes the guard it
+introduced. This may enable previously partial generics to become fully
+generalizable. Conversely, if a partially generalized variable is unified with
+an instance and lowered (\eg by \Rule{S-Lower-Exists}), it must unify all
+instances with itself (once lowered).
+
+\TODO{Draw cool state diagram figure (with colours)}
+
+\paragraph{Lazy generalization}
+
+Repeatedly generalzing a region after every update is expensive.
+Instead, we adopt a lazy approach: we track updates to the region using
+a \emph{generalization tree}, marking regions as ``visited'' when they may
+require re-generalization. Only when an instance is taken do we
+force generalization of a region and all of its descendants---the descendants
+must be fully generalized before generalizing the parent region, since
+generalization may update ancestor regions when lowering variables.
+
+
+
 
 \subsection{Static overloading and variational types}
 
@@ -4031,7 +4114,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
 \end{mathparfig}
 \FloatBarrier
 
-\judgbox{$\c \csolve \cp$}
+\judgbox{\c \csolve \cp}
   {The constraint solver rewrites $\c$ to $\cp$.}
 \begin{mathparfig}[htpb!]
   {fig:defn-solver-basic}
