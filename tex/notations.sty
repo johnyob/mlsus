@@ -186,10 +186,11 @@
 \newcommand{\eproj}[3][]{#2.#3\ifempty{#1}{}{/#1}}
 \newcommand{\erecord}[1]{\braces{#1}}
 \defmetavar{\el}{l}
-\newcommand{\elcast}[2]{\parens {{#1} \mathop{\triangleleft} {#2}}}
+\newcommand{\elcast}[2]{\braces {{#1} \mathop{\triangleleft} {#2}}}
 \defmetavar{\elab}{\ell}
-\newcommand{\eannot}[3]{\parens {#1 : \exi #2 #3}}
+\newcommand{\eannot}[3]{\parens {#1 : \ifempty{#2}{#3}{\exi #2 #3}}}
 \newcommand{\etuple}[1]{\parens{#1}}
+\newcommand{\eerase}[1]{\floor {#1}}
 
 \newcommand {\parens}[1]{(#1)}
 \newcommand {\braces}[1]{\{#1\}}
@@ -276,7 +277,7 @@
 \defmetavar {\M} {z}
 %% \defmetavar {\Ts} {\chi}
 \defmetavar[s,j] {\ty} {\tau}\newcommand{\typs}{{\bar\ty'}}
-\defmetavar {\E} {E}
+\defmetavar {\E} {\mathscr{E}}
 \defmetavar {\Lab} {\mathscr{L}}
 \newcommand {\tss} {\bar\ts}
 %% Annotation variables
