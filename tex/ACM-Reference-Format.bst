@@ -1890,7 +1890,7 @@ FUNCTION { format.lab.names }
 
   's :=
   s num.names$ 'numnames :=
-  numnames #2 >    % change number to number of others allowed before
+  numnames #42 >    % change number to number of others allowed before
                    % forcing "et al".
     { s #1 "{vv~}{ll}" format.name$ " et~al\mbox{.}" * } % jrh: \mbox{} added
     {
