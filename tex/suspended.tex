@@ -823,23 +823,16 @@ access.
 
 \SML supports positional projections from tuples using expressions of the form
 \ocaml{#$j$ e} to extract the $j$-th component of the tuple \code{e}.
-
-\parcomment {SML typing rule}
-
+%
 Internally, tuples in \SML are treated as structural records with numeric
-labels. While the specification \cite{TODO} does not provide a dedicated typing
-rule for tuple projection, its semantics are captured by desugaring $\eproj \e
-j$ as $\eapp {\parens {\efun {\erecord {j = \x; \wild}} \x}} \e$. From this
-encoding\footnote{This encoding relies on the standard function typing rules
-and the \SML typing rule for the pattern matching of record.}, one recovers the
-expected typing rule: if $\e$ has the type $\tsrecord {j = \tj; \varrho}$,
+labels, so \ocaml{#$j$ e} desugars into a structural record field access \ocaml{e.$j$}: if $\e$ has the type $\tsrecord {j = \tj; \varrho}$,
 where $\varrho$ is a row describing the remaining tuple fields, then $\eproj \e
 j$ has type $\tj$.
 
 \SML enforces an additional restriction: the tail $\varrho$ must be fully
 determined (\ie cannot be a polymorphic row variable).  This ensures that the
 arity of the tuple is \emph{known} statically from the surrounding context,
-thereby avoiding the need for row polymorphic. The restriction is not reflected
+thereby avoiding the need for row polymorphism. The restriction is not reflected
 in the typing rules themselves, but is instead enforced within \SML's type
 inference algorithm.
 
@@ -847,9 +840,7 @@ inference algorithm.
 
 From a typing perspective, tuple projection in \SML behaves like a form
 of static overloading: the expression $\eproj \e j$ is valid only when $\e$ is
-known to be an $n$-ary tuple for some fixed $n \geq j$. Unlike record or
-constructor  overloading, the space of possible overloadings in this case is
-countably infinite.
+known to be an $n$-ary tuple for some fixed $n \geq j$..
 
 \parcomment {We can precisely specify this with suspended constraints}
 
@@ -870,17 +861,14 @@ of sufficient arity. The pattern $\cpatprod
 $j$-th component to $\tvc$, which is then unified with the expected result type
 $\tva$.
 
-\parcomment{Next section}
+\section{Semantics of constraints}
+\label{sec:semantics}
 
 Suspended constraints offer a robust mechanism for dealing with extensions of
 \ML that depend on a notion of \emph{known} type information. What remains
 is to formalize this notion: that is, to give a precise semantics for when
 a type variable is considered \emph{known}, and how suspended constraints
 are discharged accordingly.
-
-
-\section{Semantics of constraints}
-\label{sec:semantics}
 
 \parcomment {Judgement shape}
 
