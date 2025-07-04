@@ -731,10 +731,8 @@ As noted in the introduction, \OCaml supports a limited yet useful form of
 static overloading for record labels and data type constructors. When
 encountering overloaded labels or constructors, \OCaml resolves ambiguity using
 local type information, guided by \geninst-directional inference. Nominal types
-$\tys \Tapp$ carry annotation variables $\av$, written $\tys \Tapp^\av$, to
-track which types are \emph{known}. As discussed in
-\cref{sec/constraints/polytypes}, this mechanism allows one to deduce known
-types from generalized type constructors $\tfor \av {\tys \Tapp^\av}$.
+$\tys \Tapp$ carry annotation variables $\av$, written $\tys \Tapp^\av$. As discussed in
+\cref{sec/constraints/polytypes}, this mechanism allows one to deduce that types polymorphic over their annotation variable $\tfor \av {\tys \Tapp^\av}$ are \emph{known}.
 
 \parcomment {A note on bidirectional expected type propagation}
 
@@ -794,6 +792,10 @@ definitons of \code{one} and \code{two}:
 
 \parcomment {Record field disambiguation in suspended constraints}
 
+We assume a global typing environment $\labenv$ mapping labels to type schemes,
+written $\elab : \tfor \tvs \t \to \tys \Tapp \in \labenv$. A given label $\elab$ may be defined several times in $\labenv$, but at most once at a given record type $\T$. We write
+$\labenv(\elab / \T)$ for the type scheme of $\elab$ in $\T$ when it exists.
+
 We propose an alternative account of static overloading using suspended
 match constraints.  For example, in the case of an ambiguous record
 projection $\efield \e \elab$, we generate the typing constraint:
@@ -807,20 +809,7 @@ projection $\efield \e \elab$, we generate the typing constraint:
 	{\labenv(\elab / t) \leq \tva \to \tvb}
       }
 \end{mathpar}
-This constraint defers resolution until more information is available:
-specifically, until the type constructor of $\tvb$ of the record expression
-$\e$ is known.
-
-We assume a global typing environment $\labenv$ mapping labels to type schemes,
-written $\elab : \tfor \tvs \t \to \tys \Tapp \in \labenv$. Since labels may be
-overloaded across distinct type constructors, $\labenv$ may contain multiple
-such schemes for a given label.  However, each label is assumed to be uniquely
-defined within a given type constructor $\T$, allowing
-$\labenv(\elab / \T)$ to denote the unique type scheme for $\elab$ in
-$\T$ (if it exists).
-
-Once the record type of $\tvb$ is known, the suspended constraint $(\cmatchdots
-\tvb)$ is triggered. It matches against the nominal type pattern $\cpatrcd t$,
+This constraint suspends resolution of the return type $\alpha$ until the record type $\tvb$ of $\e$ is known. Its branch matches against the nominal type pattern $\cpatrcd t$,
 binding the type constructor name to $t$. Using this, the appropriate type
 scheme for $\elab$ is retrieved from $\labenv(\elab/t)$, instantiated, and the
 resulting constraints are imposed on the argument and return types of the label
@@ -828,10 +817,7 @@ access.
 
 \parcomment{Suspended constraints are better}
 
-As seen in the examples above, this approach is faithful to \OCaml's current
-behaviour\footnote {Modulo default disambiguation rules.}, and in fact
-improves on it: certain expressions, such as \code{e}$_{12}$ are well-typed
-under our account but rejected by \OCaml's current type checker.
+\OCaml programs that do not use the default rule are accepted by this approach. Certain expressions, such as \code{e}$_{12}$ are well-typed under our account but rejected by \OCaml's current type checker.
 
 \subsection{Tuple projections \`a la \SML}
 
