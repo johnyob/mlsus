@@ -590,15 +590,13 @@ Our contributions are
 \parcomment{Syntax!}
 
 The syntax of types and constraints is given
-in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are as usual
-including: type variables $\tv$,
-the unit type $\tunit$, arrow types as usual---and also
-structual tuples, nominal types $\tys \T$, and polytypes,
-in gray, as they which will be introduced in the following subsections.
-Type schemes $\ts$
-are of the form $\all \tvs \t$, they are equal up to the
-reordering of binders. We write $\TyVars$ the set of type variables.
-
+in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are as
+usual including: type variables $\tv$, the unit type $\tunit$, arrow
+types as usual---and also structural tuples $\Pi\iton \ti$, nominal
+types $\tys \T$, and polytypes $\tpoly \ts$, in gray, as they which
+will be introduced in the following subsections.  Type schemes $\ts$
+are of the form $\all \tvs \t$, they are equal up to the reordering of
+binders. We write $\TyVars$ the set of type variables.
 
 Building atop the constraint-based type inference framework of
 \citet{Pottier-Remy/emlti}, we adopt a constraint language that includes both
@@ -936,10 +934,6 @@ scheme for $\elab$ is retrieved from $\labenv(\elab/t)$, instantiated, and the
 resulting constraints are imposed on the argument and return types of the label
 access.
 
-\TODO{Do some typing constraints for the examples presented in this section}
-\Xalistair{What did you have in mind? I think it might be hard to talk about
-the constraints without a semantics.}
-
 \parcomment{Suspended constraints are better}
 
 As seen in the examples above, this approach is faithful to \OCaml's current
@@ -1193,6 +1187,30 @@ A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff:
 Any nonvariable type $\t$ has a non-trivial principal shape $\Sh$.
 \end{theorem}
 
+\TODO{Check the text of the paragraph below that was moved from later on.}
+The structure of principal shapes $\sh$ induced by syntax of types given here
+is a shape $\any \tvcs \t$ where
+\begin{itemize}
+
+\item $\tvcs$ are the linear free variables of $\t$ \ie each type variable
+  $\tvc$ in $\tvcs$ occurs exactly once in $\t$
+
+\item
+  $\t$ is shallow, which means the following:
+\begin{itemize}
+
+\item
+  when $\t$ is not a polytype, all subterms of $\t$ are variables \ie $\tvca
+    \to \tvcb$, $\Pi\iton \tvci$, or $\tvcs \T$
+
+\item
+  when $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, then all subterms of
+  $\tsp$ that do not lead to a polymorphic variable $\tv$ in $\tvs$
+  are a variable in $\tvcs$.
+
+\end{itemize}
+\end{itemize}
+
 \parcomment {Define canonical shape}
 
 A principal shape $\any \tvcs \t$ is canonical if the sequence of its free
@@ -1202,7 +1220,7 @@ well-defined for all shapes, for instance $\any {\tvca, \tvcb} (\tvca \to
 \tvcb) \to (\tvcb \to \tvca)$.}. We write $\sh$ for canonical principal
 shapes.
 
-We write $\shape \t = \sh$ for the canoni cal principal shape of $\t$ (if
+We write $\shape \t = \sh$ for the canonical principal shape of $\t$ (if
 defined). Thus $\shape {\tys \Tapp}$ is $\any \tvcs \tvcs \Tapp$.
 Canonical principal shapes can be seen as a generalization of type
 constructors, capable of coping with polytypes.
@@ -1235,23 +1253,9 @@ principal shape.
 %given in \cref{sec:language}.
 %
 
-\TODO {Discuss and fix comments below}
-\Xdidier {Too many
-notations.  I replaced the canonical shape notation by forcing $\sh$ to only
-range over principal shapes and introduced $\zeta$ (we could have used $s$
-to range over any shape), or inline them. But it is reversible as I left the
-macro $\pshapp$ in place, and just changed its definition.}\Xdidier {In
-fact, I would prefer to invert the notation, use $\sh$ for any shape (if
-need be) and use $\Sh$ for canonical shapes, since canonical shapes are
-later use in place of type constructors and $\zeta$ looks better when seen
-as a type constructor. Hence I would write $\Sh\; \tys$ rather then
-$\shapp[\Sh] \tys$ for a type where $\Sh$ is either a canonical shape or a
-type construtor $\F$, since they are isormophic to the nonpolytype shapes}
-\Xalistair{I agree with the notation switch -- I also agree with the
-suggestion to treat $\zeta$ more like a type constructor (though personally I
-find $\sh$ more readable that $\zeta$ as a shape).}
+\TODO{Change the $\shapp[\sh] \tys$ notation to just $\sh ~\tys$.}
 
-
+\TODO{Consistently use prefix notation for type constructors, except in OCaml examples.}
 
 
 \subsection{Suspended constraints}
@@ -1418,15 +1422,14 @@ This rule lets us infer the shape $\sh$ of the matchee type $\t$,
 provided the constraint context $\C$ determines $\t$
 to have precisely the shape $\sh$.
 %
-\Xalistair{Should we rename this to the non-ambiguity condition?}
-The premise $\Cshape \C \t \sh$ ensures this
+The \emph{unicity} condition $\Cshape \C \t \sh$ ensures this
 precisely: it expresses that the context $\C$ constrains all the solutions
 of $\t$ to have the \emph{same} principal shape $\sh$,
 modulo $\alpha$-equivalence of shapes. The formal definition of this
 predicate, which is somewhat technical, is given below.
 
-\begin{definition}
-  A type $\t$ has a \emph{uniquely known} principal shape within
+\begin{definition}[Unicity]
+  A type $\t$ has a \emph{unique} principal shape within
   the context $\C\where{\square}$, written $\Cshape \C \t \sh$, iff for all
   assignments $\semenv$ and ground types $\gt$, then $\semenv \vdash
   \cerase {\C\where{\cunif \t \gt}}$ implies that the principal shape of $\gt$ is equal
@@ -1450,9 +1453,8 @@ linear partial ordering over suspended match constraints, reflecting \emph{tempo
 dependency: a match constraint may only be resolved once all of its dependencies
 have been resolved.
 
-% Unicity is only really interesting
 Note that, if $\t$ is not a variable, then $\Cshape \square \t {~\shape \t}$ holds
-trivially. The interesting cases arise when $\t$ is a type variable.
+trivially. Also, if $\C$ is unsatisfiable, then $\Cshape \C \tv \sh$ holds for any $\sh$. The interesting cases arise when $\t$ is a type variable and $\C$ is satisfiable.
 
 \begin{mathparfig}
   {fig:constraint-erasure}
@@ -1888,43 +1890,8 @@ explicitly annotated counterpart (written $\e^x$ or $\el^x$) that is
 $\eproj [n] \e j$, $\epoly [\exi \tvs \ts]
 \e$, $\einst [\exi \tvs \ts] \e$, or $\elab / \T$ for record labels.
 
-
-\Xalistair{We're now duplicating a bit of \cref{sec:constraints}.
-I propose we cut this here. }
-As usual, types are split into monotypes (or just types) and type schemes.
-Types $\t$ include the variables $\tv$, the unit type $1$, function types
-$\tone \to \ttwo$, $n$-ary product types $\Pi \iton \ti$ and nominal
-record types $\tys \T$. Type schemes $\sigma$ extend monotypes allowing the
-universal quantification of zero or more type variables $\all \tvs \t$. We
-also have polytypes \textit{without the annotations} $[\ts]$ as monotypes.
-
 Typing contexts $\Gamma$ are an ordered sequence of expression variable
 typings $x : \sigma$.
-
-\Xalistair{If we do end up cutting the above, where should we put?}
-The structure of principal shapes $\sh$ induced by syntax of types given here
-is a shape $\any \tvcs \t$ where
-\begin{itemize}
-
-\item $\tvcs$ are the linear free variables of $\t$ \ie each type variable
-  $\tvc$ in $\tvcs$ occurs exactly once in $\t$
-
-\item
-  $\t$ is shallow, which means the following:
-\begin{itemize}
-
-\item
-  when $\t$ is not a polytype, all subterms of $\t$ are variables \ie $\tvca
-    \to \tvcb$, $\Pi\iton \tvci$, or $\tvcs \T$
-
-\item
-  when $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, then all subterms of
-  $\tsp$ that do not lead to a polymorphic variable $\tv$ in $\tvs$
-  are a variable in $\tvcs$.
-
-\end{itemize}
-\end{itemize}
-
 
 \subsection{Typing rules}
 \label{sec/language/typing-rules}
@@ -2901,8 +2868,7 @@ interpretation is given by:
 \end{mathpar}
 That is, $\semenv$ satisfies $\ueq$ if all members of $\ueq$ are mapped to a
 single ground type $\gt$ by $\semenv$. We consider multi-equations equal
-modulo permutation of their members. \Xdidier{Then, we could also
-identify $\t = \eset$ with $\t$.}
+modulo permutation of their members.
 
 % The spec
 
@@ -2914,13 +2880,8 @@ $\Up$.
 %
 Our algorithm is largely standard \cite{Pottier-Remy/emlti} but replaces
 type constructors with \emph{canonical principal shapes}, enabling a uniform
-treatment of monotypes and polytypes within unification, \Xdidier[avoiding
-the need for specialised ]{simplifying the} handling of polytypes, as found
+treatment of monotypes and polytypes within unification, simplifying the handling of polytypes, as found
 in \citep{Garrigue-Remy/poly-ml}.
-\Xdidier{Not quite: we still need to turn a type scheme into a polytype,
-and require explicit polymorphism, which \ML does not need. }
-
-\TODO{Example of unifying polytypes?}
 
 % Explaination of rules
 
@@ -2937,11 +2898,13 @@ mistmatches that result in failure.  Rule \Rule{U-Name} introduces
 a fresh variable to expose a subcomponent of a shape, ensuring
 unification over \emph{shallow terms}, making sharing of type
 variables explicit and avoids the need for copying types in rules such
-as \Rule{U-Decomp}.\Xgabriel{I find the syntax $\pshapp \tys[\ti]$
-  hard to read, I would prefer something more discoverable like $\pshapp (\tys, \t_i, \tys')$. Besides, I wonder if we could use the notation $\sh[\tys]$ for shape applications, reminiscent of a standard context-with-holes notation.} Rules \Rule{U-True}, \Rule{U-False} simplify conjunctions.
+as \Rule{U-Decomp}. Rules \Rule{U-True}, \Rule{U-False} simplify conjunctions.
 Rule \Rule{U-Trivial} occurs when a multi-equation $\ueq$ is trivial, that is, when it is either empty
-($\eset$) or contains only a single type ($\cunif \t \eset$).\Xgabriel{I don't see a formal definition of $\trivial \ueq$ in math notation; ideally it should be in a figure somewhere. We could possibly replace $\trivial \ueq$ with $|\ueq| \leq 1$, the notion of size/cardinality of a multi-equation being obvious.}
+($\eset$) or contains only a single type ($\cunif \t \eset$).
 
+\TODO{Replace $\pshapp \tys[\ti]$ by $\pshapp (\tys, \t_i, \tys')$.}
+
+\TODO{Replace $\trivial \ueq$ with $|\ueq| \leq 1$.}
 
 Rule \Rule{U-Cycle} implements the \emph{occurs check}, ensuring that a type
 variable does not occur in the type it is being unified with. This is a
@@ -3002,9 +2965,9 @@ written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
 
 % What we do (introduce / explain the solver)
 
-We now introduce the rules of the constraint solver itself
-(\cref{fig:omni-solver})\Xdidier {The is not such figure: the rules are
-split in several parts}. These rules define a non-deterministic rewriting
+We now gradually introduce the rules of the constraint solver itself
+\TODO{List all individual figures, and also point at the big picture in the appendix}.
+These rules define a non-deterministic rewriting
 system, operating modulo $\alpha$-equivalence and the associativity and
 commutativity of conjunction. Rewriting is performed under an arbitrary
 one-hole constraint context $\C$.
@@ -3141,8 +3104,7 @@ constraints).
 Remaining basic constraint-formers, such as label and polytype instantiation
 constraints, introduced in \cref{sec/TODO}, are handled by rewriting them once
 their left-hand side becomes concrete. For instance, an instantiation
-constraint $s \leq \t$\Xdidier {What is $s$, where are such constaints
-defined?} is handled once $s$ is subsitituted by a match constraint,
+constraint $s \leq \t$ as introduced in \cref{TODO} is handled once $s$ is subsitituted by a match constraint,
 yielding $\ts \leq \t$, which is then solved using the syntactic sugar
 introduced in \cref{sec:constraints}. Similarly, label instantiation
 constraints of the form $\Omega(\elab/t) \leq \t$ are resolved once $t$ is
@@ -3174,10 +3136,6 @@ constraint is unsatisfiable.
      \shape \t = \any \tvcs \tp}
     {\C\where{\cexists \tvcs  \cunif \tv \tp \cand \cmatch \tp \cbrs}}
 \end{mathparfig}
-\Xdidier {Where is ``$\cmatches \cpati {\decomp \t} \theta$'' defined?}
-
-
-
 
 \parcomment {S-Susp-Ctx}
 
@@ -3300,7 +3258,7 @@ the abstraction and propagation additional equations to the application sites.
 
   \rewrite[S-Papp-Unif]
     {\cletr \x \tv \tvs {\c \cand \ueq} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
-     \ren : \tvs \\
+     \dom \ren = \tvs \\
      \ueqs \nvDash \ueq \\
      \x \disjoint \C}
     {\cletr \x \tv \tvs {\c \cand \ueq}
@@ -3309,7 +3267,7 @@ the abstraction and propagation additional equations to the application sites.
 
   \rewrite[S-Papp-Solve]
     {\cletr \x \tv \tvs {\ueqs'} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
-     \ren : \tvs \\
+      \dom \ren = \tvs \\
      \ueqs \vDash \ueqs' \\
      \x \disjoint \C}
     {\cletr \x \tv \tvs {\ueqs'} {\C\where{\ctrue}}}
@@ -3323,14 +3281,23 @@ the abstraction and propagation additional equations to the application sites.
     {\cletr \x \tv {\tvas, \tvbs} \c
      {\C\where{\overline{\cpapp \x \ren \ueqs \tvc}}} \\
      \cdetermines {\cexists {\tv, \tvas} \c} \tvbs \\
-     \tvbs \subseteq \dom \bar \ren
-     \Xdidier[was]{\dom \bar \ren \subseteq \tvbs}\\
+     \tvbs \subseteq \dom \bar \ren \\
      \x, \tvbs \disjoint \C
      }
     {\cexists \tvbs
       \cletr \x \tv \tvas \c
 	{\C\where{{\overline{\cpapp \x {\ren \setminus \tvbs} \ueqs
 			 \cand \cunif {\ren(\tvbs)} \tvbs}}}}}
+
+  \rewrite[S-BackProp]
+    {\C\where
+       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
+                           {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
+     \tvp \in \dom \ren \\
+     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
+     \x \disjoint \Cb}
+    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
+		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
 \end{mathparfig}
 
 
@@ -3372,14 +3339,13 @@ Partial application constraints are solved using the following rules:
   Rule \Rule{S-Papp-Exists} allocates fresh existential variables at the
   call site that are mapped to uninstantiated variables within the
   abstraction.  We write $\ren : \tvs$ for $\dom \ren = \tvs$.
-  \Xdidier {Why not inline it? already too many notations...}
+
+  \TODO{Remove $\ren : \tvs$ and use $\dom \ren = \tvs$ instead.}
 
 \item
   Rule \Rule{S-Papp-Unif} copies multi-equations from the abstraction to the
   call site, provided we have already introduced the renamings by Rule \Rule
   {S-Papp-Exits} and we have not copied them previously.
-  \Xdidier {$\ueqs \nvDash \ueq$ is not formally defined, which is non
-  obvious because of renamings.}
 
 \end{enumerate}
 \parcomment{Cleaning up partial applications and let constraints}
@@ -3396,10 +3362,6 @@ the region of a $\Let$ constraint that are unified with variables from
 outside the region. Such variables are considered monomorphic and thus
 cannot be generalized; they can instead be safely lowered to the outer
 scope.
-\Xdidier{The condition $\x, \tvbs \disjoint \C$ in \Rule {S-exists-Lower}
-prevents the simplicication when there are several occurrences of
-$\x$ in $\C$ as they cannot be eliminated}
-
 
 \parcomment {Determines}
 
@@ -3437,9 +3399,7 @@ To decide when $\cdetermines {\cexists \tvs \c} \tvbs$ holds for $\tvbs
     \tvs, \tvbs$.
 \end{enumerate*}
 For instance, $\cexists \tvba \cunif \tv {\tvba \to \tvbb}$ determines
-$\tvbb$, as $\tvbb$ is free. \TODO{describe how the solver should
-determine determinability}.
-
+$\tvbb$, as $\tvbb$ is free.
 \parcomment{Why we lower?}
 
 Lowering such variables improves solver efficiency. It avoids unnecessary
@@ -3467,12 +3427,7 @@ $\tvbs$.
 \TODO{Forall constraints -- this should be the same from EMLTI}
 
 \paragraph{Backpropagation}
-
-The interaction that forces partial application to be useful\footnote{We
-could in theory re-order instantiations in any way, delaying until the
-abstraction is fully solved} is
-\emph{backpropagation}, the mechanism that allows type information from use sites
-to refine matched variables inside generalised abstractions.
+Finally, Rule \Rule{S-BackProp} expresses \emph{backpropagation}, the mechanism that allows type information from use sites to refine matched variables inside generalised abstractions.
 
 For example, in:
 \begin{program}[input]
@@ -3495,17 +3450,8 @@ suspendede match inside the abstraction by unifying it with the variable
 $\tvb$. This is sound: the unicity predicate $\Cshape \C \tv \sh$ ensures
 that $\tvb$'s shape is \code{three} provided the context $\C$ include the
 application constraint.
-\Xdidier {This rule should be in \cref  {fig:solver-schemes}}
+
 \begin{mathpar}
-  \rewrite[S-BackProp]
-    {\C\where
-       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
-                           {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
-     \tvp \in \dom \ren \\
-     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
-     \x \disjoint \Cb}
-    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
-		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
 \end{mathpar}
 
 
@@ -3657,8 +3603,6 @@ require re-generalization. Only when an instance is taken do we
 force generalization of a region and all of its descendants---the descendants
 must be fully generalized before generalizing the parent region, since
 generalization may update ancestor regions when lowering variables.
-
-
 
 
 \subsection{Static overloading and variational types}
@@ -3862,7 +3806,7 @@ shapes is taken up to equi-recursion, indeed.  While equality of shapes is
 syntactical in the absence of recursive types, this is no longer the
 case---but this does not raise any issue.
 
-\Xdidier{I line notes}
+\Xdidier{There is an inline note here.}
 \begin{version}{}
 I did not see any difficult with equi-recursive types.
 I am not even sure we need to mention~\cite
@@ -3870,12 +3814,10 @@ I am not even sure we need to mention~\cite
 Ths provides a cannonical representation, generalizing de Bruin indicies so
 that second-order equality of terms amount to fisrt-order equality.
 The canonical representation useing shapes is simiular.
-\end{version}
-
-
 \Xdidier {How much more should we say?}
 
 \Xdidier {Should we give the change in unification rules?}
+\end{version}
 
 \section{Related work}
 \label{sec:related-work}
@@ -3883,9 +3825,6 @@ The canonical representation useing shapes is simiular.
 Should we cite \cite{Leijen-Ye/prefix@pldi2025} ?
 
 \subsection{Qualified types}
-
-
-\Xdidier {The following paragaph is just take from the old introduction}
 
 Qualified types~\citep*{TODO} represent additional knowledge on a type. They
 are used in particular in Haskell type-classes, where a constraint
@@ -3903,10 +3842,10 @@ the choice to be shared by all use-sites:
 
 \subsection{Suspended constraints in \textsc{OutsideIn}}
 
-\Xalistair{They first solve simple constraints (existentials,
+DRAFT: They first solve simple constraints (existentials,
 unification). Then they solve ``... constraints'', with implication
 constraints, which corresponds to the case of GADT matches. Crucially, they
-abandon local let generalization.}
+abandon local let generalization.
 
 \subsection{Suspended constraints in dependent-type systems}
 
@@ -3950,9 +3889,6 @@ heuristics to refine it, a two-phase process. It's fine.}
 
 \section{Future work}
 \label{sec:future-work}
-
-\Xdidier{How would we solved example $e_9$ as announce in \cref
-{sec/introduction}?}
 
 % \begin{acks}
 % \end{acks}
