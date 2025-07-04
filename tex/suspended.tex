@@ -30,14 +30,12 @@ contrast with all known implementations that always typecheck the
 bindings before the bodies of let-expressions.
 %
 This relies on two technical devices: \emph{partial type schemes}
-and \emph{suspended match constraints}. Partial here means  the
+and \emph{suspended match constraints}. Partial here means the
 possibility of taking instances of a type scheme that is not yet
-completely solved with a mechanism to tack and update their instances when
+completely solved, with a mechanism to update their instances when
 the type scheme is refined, incrementally.
-\emph{Suspended} match constraints means a mechanism to delay the resolution of
-some constraints which typically require non-local not-yet-available
-contextual information and to  discharge them when we have learned enough
-information from the resolution of other constraints, typically when some type
+\emph{Suspended} match constraints are a mechanism to delay the resolution of
+some constraints, and to discharge them later on when some type
 variables have been instantiated.
 %
 The benefits of omnidirectional type inference are striking for several
@@ -65,20 +63,25 @@ types like $\tint \to \tint$ and $\tbool \to \tbool$.
 \parcomment {Benefits of principality}
 
 This property ensures predictable and efficient inference. Local typing
-decisions are always optimal, yielding most general types, without guessing or
+decisions are always optimal, yielding most general types without guessing or
 backtracking. As a result, inference of subexpressions can proceed in any
 order, and well-typedness is preserved under common program transformations
 such as let-contraction, let-expansion, and argument reordering.
 
 \parcomment {Extensions often break pincipality}
 
-Over the years, many extensions of \ML have been proposed. Some of them
-constructs, such as extensible records with row-polymorphism, higher-kinded
-types, or dimensional types, fit perfectly into the \ML framework. Others such
-as GADTs, higher-rank polymorphism, or static overloading, are
-\emph{fragile}, as they sometimes require explicit type
-annotations.
-%
+Over the years, many extensions of \ML have been proposed. Some of
+them, such as extensible records with row-polymorphism, higher-kinded
+types, or dimensional types, fit perfectly into the \ML
+framework. Others such as GADTs, higher-rank polymorphism, or static
+overloading, are \emph{fragile}, as they sometimes require explicit
+type annotations. The return type of overloaded data constructors can
+be annotated; polymorphic expressions can be annotated with a type
+scheme; for GADTs, the type of the \texttt{match} scrutinee and return
+type can be annotated to a rigid type which will be refined by type
+equalities in each branch. Those type annotations may sometimes but
+not always be omitted.
+
 Consider impredicative higher-rank polymorphism,
 \MLF~\cite{LeBotlan-Remy/recasting-mlf} for instance:
 \begin{program}[input]
@@ -91,11 +94,13 @@ violating principality.
 
 \parcomment {Current approaches are kinda bad}
 
-To fix this, inference algorithms require a minimal amount of \emph{known}
-type information (\ie annotations) to restore principality. Yet specifying
-such requirements declaratively is difficult. As a result, the specifications
-are often twisted with some direct or indirect algorithmic flavor in order to
-preserve principality and completeness.
+To fix this, inference algorithms require a minimal amount of
+\emph{known} type information to restore principality; in this example
+the binding of \code{f} should be annotated with a polymorphic type
+scheme. Yet specifying such requirements declaratively is
+difficult. As a result, the specifications are often twisted with some
+direct or indirect algorithmic flavor in order to preserve
+principality and completeness.
 %
 Moreover, these (more or less) ad-hoc restrictions commonly reject examples
 whose type could easily be guessed. For instance, \MLF~ rejects:
@@ -105,22 +110,21 @@ whose type could easily be guessed. For instance, \MLF~ rejects:
 
 \parcomment {Annotations fixes all the issues (but they're problematic)}
 
-Optional type annotations may sometimes but not always be omitted: the
-return type of overloaded data constructors can be annotated; polymorphic
-expressions can be annotated with a type scheme; for GADTs, the type of the
-\texttt{match} scrutinee and return type can be annotated to a rigid type
-which will be
-refined by type equalities in each branch. To each fragile construct
-corresponds a robust construct where this type annotation is mandatory. The
+
+
+To each fragile construct
+corresponds a robust construct where the type annotation is mandatory. The
 robust constructs fit perfectly into the \ML framework, but are
 significantly more cumbersome to use, as they always require explicit type
-annotations.  Fragile constructs can be defined by elaboration into their
-robust counterpart. The elaboration determines which annotations can be
-omitted and rebuilt from context, a point of view already taken by~\citet
-{Pottier-Regis-Gianas/stratified@popl06} in their work on stratified type
-inference.
+annotations. Fragile constructs can be defined by elaboration into their
+robust counterpart.
 %
-The difficulty of fragile constructs lies in finding a specification
+% The elaboration determines which annotations can be
+% omitted and rebuilt from context, a point of view already taken by~\citet
+% {Pottier-Regis-Gianas/stratified@popl06} in their work on stratified type
+% inference.
+%
+The difficulty lies in finding a specification
 that is sufficiently expressive, principled, intuitive for the user,
 and for which we have a complete and effective elaboration algorithm.
 
@@ -131,149 +135,135 @@ used for disambiguation and enable the omission of some annotations.
 
 \paragraph{Bidirectional type inference}
 
-Bidirectional type inference is a known alternative to unification for
+Bidirectional type inference is a standard alternative to unification for
 propagating type information. It can be presented by adding to the type
 inference algorithm an optional expected type in addition to the expression
-to be typechecked and the context in which it should be typechecked.  Type
+to be typechecked and the context in which it should be typechecked. Type
 inference is said in \emph{checking mode} when the expected type is present,
-and in (the usual) \emph{inference mode} when it is absent. The checking
-mode allows to pass source type annotations but also previously inferred
-types such as the codomain of a function in an application position during
-type inference of the arguments.
-%
-Bidirectional type inference is actually a framework that must be
-instantiated by a particular choice of modes for each of the language
-construct, while there is no optimal combination of modes for the whole set
-of language constructs. Once modes have been fixed, there are usually
-principal solutions to the type inference problem, but with respect to a
-specification that made non-principal choices.
-%
+and in (the usual) \emph{inference mode} when it is absent.
+
+For example the type-system designer can decide to type-check function
+applications $\eapp \ea \eb$ by \emph{inferring} that $\ea$ has some
+function type $\t \tarrow \tp$, and then \emph{checking} $\eb$ against
+$\t$. This is not the only possible choice: bidirectional type
+inference is actually a framework that must be instantiated by
+a particular choice of modes for each of the language construct. There
+usually is no optimal combination of modes for the whole set of
+language constructs. Once modes have been fixed, there are usually
+principal solutions to the type inference problem, but with respect to
+a specification that made non-principal choices.
+
 Bidirectional type inference has been largely used for languages with
 higher-rank polymorphism, dependent types, or subtyping.  Still, both \OCaml
 and \Haskell only use a limited form of bidirectional type checking with an
 underlying first-order-unification based type inference engine, which limits
 the downsides of bidirectional type checking.
 
-
 \paragraph{\Geninst-directional type inference}
 
-\OCaml uses another mechanism for propagation of type information,
-based on polymorphism, which actually enforces an ordering in the
-typechecking of let-bindings, where the (polymorphic part of) a the bound
-expression must be typed before the body of the let-expression.  We call it
-\textbf{\geninst}-directional (to be read \textbf{pi}-directional) type
-inference, to mean that \textbf{p}olymorphic expressions must be typed
-before their \textbf{i}nstances.  Initially introduced with the extension of
-\ML with semi-explicit first-class polymorphism by~\citet
-{Garrigue-Remy/poly-ml}, and later used by~\citet
-{LeBotlan-Remy/recasting-mlf} for empowering \MLF, it has also been utilized
-for the overloading of record fields in \OCaml, which we use for
-illustration here as it is simpler to explain.\footnote {Semi-explicit
-polymorphism will be presented in~\cref{sec/constraints/polytypes}.}
+\ML languages enforce an ordering in the typechecking of let-bindings
+$\elet \x \ea \eb$, where (the polymorphic part of) the definition
+$\ea$ must be typed before the body $\eb$. \OCaml relies on this
+ordering to propagate type information in a principal way: if an
+expression has a polymorphic type, then this type can be used for
+type-directed disambiguation, whereas monomorphic type information may
+depend on inference order in a fragile way. We call this
+\textbf{\geninst}-directional (to be read \textbf{pi}-directional)
+type inference, to mean that \textbf{p}olymorphic expressions must be
+typed before their \textbf{i}nstances.
 
-The user may define a nominal record, with \eg a single field:
+This mechanism was introduced for semi-explicit first-class
+polymorphism by~\citet {Garrigue-Remy/poly-ml}, and later used
+by~\citet {LeBotlan-Remy/recasting-mlf} for empowering \MLF. It has
+also been used for overloading of record fields and variant
+constructors in \OCaml, which we use for illustration here as it is
+simpler to explain.\footnote {Semi-explicit polymorphism will be
+  presented in~\cref{sec/constraints/polytypes}.}
+
+The user may define two nominal record types with overlapping fields:
 \begin{program}[input]
 type 'a one = {x : 'a}
-\end{program}
-Then, accessing field \ocaml{x} of a record is non-ambiguous, since
-\OCaml takes a closed-world view:
-\begin{program}[input]
-let e_0 r = r.x
-\end{program}
-Indeed, there is a unique solution that \ocaml$r$ be of type \ocaml$'a foo$.
-The user may then define another record with overlapping fields:
-\begin{program}[input]
 type two = {x : int; y : int}
 \end{program}
-Now, this can be thought of as having two abstract types \ocaml{'a foo} and
-\ocaml{bar} with two accessor functions \ocaml{(_ : 'a one).x} and
-\ocaml{(_:two).x} of respective types \ocaml{('a one -> 'a)} and
-\ocaml{(two -> int)}, among others.
-%
-In the absence of overloading, the latter definition would hide the former
-and we fall back in \ML.  With overloading enabled, both definitions are
-visible and the compiler must statically choose one of them.
-%
-The question is which one to choose or, equivalently, which type to infer
-in the following three expressions:
+In \OCaml, both definitions are visible and the compiler must
+statically disambiguate field usage. It knows that \lstinline!{x = 1}! can
+only be a \code{one}, and that \code{r.y} can only be a \code{two},
+but field accesses \code{r.x} must be disambiguated. Consider for
+example:
 \begin{program}[input]
 let e_1 r = r.x
 let e_2 = let r = {x = 1} in r.x
 let e_3 = (fun r -> r.x) {x = 1}
 \end{program}
-To be able to resolve the overloading, the type of the projection should be
-\emph{known} to be either (an instance of) \ocaml{'a one} or \ocaml{one}
-when typing the projection.  In the new context, expression
-\ocaml[indices]{e_1} is clearly ambiguous since there is no clue on the type
-of \ocaml{r} and its typechecking fails\footnote {In fact, \OCaml uses a
-default resolution strategy instead of failing when the type is ambiguous,
-which is to use the last definition. Here, this will amount to chose the
-type \ocaml{two} still leading to a failure since the record passed to the
-function is actually of type \ocaml{'a one}. But we shall ignore default
-resolution strategies for the moment.}\footnote {When running examples in
-\OCaml,
-\OCaml should be always be called with option \texttt{-principal}, since by
-default \OCaml does not quite follow the theory for efficiency reasons.}.
-%
-By contrast, the only possible type for \ocaml{r} is \ocaml {'a one} in both
-\ocaml{e_2} and \ocaml {e_3}.  Still, there is a difference.  Indeed, the
-type of~\ocaml{e_2} is considered to be unambiguous, while the type of
+To be able to disambiguate the projection \code{r.x}, the type of the
+\code{r} should be \emph{known} to be either (an instance of)
+\ocaml{'a one} or \ocaml{two}. The definition \ocaml[indices]{e_1} is
+clearly ambiguous since there is no clue on the type of \ocaml{r} and
+its typechecking fails.\footnote {In fact, \OCaml uses a default
+  resolution strategy instead of failing when the type is ambiguous,
+  which is to emit a warning use the last definition in scope. To
+  check these examples, you should use the options \code{-principal -w
+    +41}, which enforce principality checks and enables the warning on
+  default resolution.}
+By contrast, the only possible type for \ocaml{r} is \ocaml {'a one}
+in both \ocaml{e_2} and \ocaml {e_3} -- . Still, there is a difference. Indeed, the type
+of~\ocaml{e_2} is considered to be unambiguous, while the type of
 \ocaml{e_3} is ambiguous.
 %
 To understand why \ocaml{e_3} fails, consider the equivalent versions of
 \ocaml{e_3} where \texttt{@@} and \ocaml{|>} are the application and the
 reverse application functions.
 \begin{program}[input,escapechar={}]
-let e_4 = (fun r -> r.x) @@ {x = 1}
-let e_5 = {x = 1} |> (fun r -> r.x)
+let e_3_2 = (fun r -> r.x) @@ {x = 1}
+let e_3_3 = {x = 1} |> (fun r -> r.x)
 \end{program}
-\OCaml  does not make any difference between
-\ocaml[indices]{e_1}, \ocaml[indices]{e_2}, or \ocaml[indices]{e_3}
-and consider all subexpressions in an application, including the function
-and all arguments as being inferred simultaneously, until they are
-let-bound. More precisely, polymorphic types are considered to be known
-while monomorphic types are consider to be unknown---or, rather,
-not-yet-known.  In \ocaml{fun r -> r.x}, the type of \ocaml{r}
-in the subexpression \ocaml{r.x} is not-yet-known even if equal to
-\ocaml{one} since this is the $\lambda$-bound variable~\ocaml{r}, hence in the
-typing context, and therefore it is monomorphic.\footnote{Technically, all
-type nodes are annotated with a special variable $\av$ called an annotation
-variable, so that we may distinguish between the polymorphic binding $\xa :
-\all \av \t^\av$ that binds $r$ to the known (raw) type $\t$ and the
-monomorphic binding $\xb : \t^\av$ that binds $\xa$ to the unknown (raw)
-type $\t$.}
-
+\OCaml does not make any difference between \ocaml[indices]{e_3},
+\ocaml[indices]{e_3_2}, or \ocaml[indices]{e_3_3} and consider all
+subexpressions in an application, including the function and all
+arguments as being inferred simultaneously, until they are
+let-bound. More precisely, polymorphic types\footnote{\Xgabriel{I
+    propose to remove this footnote which I find too technical and
+    I don't think is necessary or helpful to follow the
+    introduction.} Technically, all type nodes are annotated with
+  a special variable $\av$ called an annotation variable, so that we
+  may distinguish between the polymorphic binding
+  $\xa : \all \av \t^\av$ that binds $r$ to the known (raw) type $\t$
+  and the monomorphic binding $\xb : \t^\av$ that binds $\xa$ to the
+  unknown (raw) type $\t$.} are considered to be known while
+monomorphic types are consider to be unknown---or, rather,
+not-yet-known. This criterion also warns on the following example
+where \code{r} has a monomorphic type.
+\begin{program}[input,escapechar={}]
+let f p r = if p then r.x else (r : two).x
+\end{program}
+Warning here is preferable to working or not depending on
+the order of inference of \code{if} branches.
 
 \paragraph{Limitations of directional type inference}
 
 Directional type inference has been in used in different languages and
-somehow proven to work in practice---to some extend.  As it often remained
-unsatisfactory.  The main critics of \emph{bidirectional} type inference is
-to make a somewhat arbitrary choice in the specification of the flow of
+somehow proven to work in practice. The main downside of \emph{bidirectional} type inference is
+that it requires arbitrary choices in the specification of the flow of
 information, typically in applications: should the function be typed first
 and its codomain be used to improve the typing of its argument or, on the
 opposite, should the argument be typed first and be used as the type of the
 codomain of the function?  There are examples when the former is a better
 choice and others when the latter is preferable---but typing rules have to
 choose one of the two alternative forever.  One may also allow information
-to flow between multiple arguments passed to the same function, or on the
-opposite disallow it entirety. Again, there is no best choice. We eventually
+to flow between multiple arguments passed to the same function, and several orders are possible. We eventually
 have a complete algorithm with respect to a specification that made somewhat
 arbitrary choices.
 
-While \emph{\Geninst-directional} type inference seems a better fit for \ML,
-as it relies on polymorphism which is the essence of \ML, it does not even
+On the other hand, \emph{\Geninst-directional} type inference does not even
 allow to propagate user-provided type annotations from a function to its
-argument!  For example, the following would be rejected as ambiguous with
-\geninst-directinal type inference alone:
+argument! For example, the following would be rejected as ambiguous with
+\geninst-directional type inference alone:
 \begin{program}[input]
 let g : ('a one -> int) -> int = fun f -> f {x = 1} in g (fun r -> r.x)
 \end{program}
-Consequently, \OCaml, which use \geninst-directional type inference as the
-primary mechanism, also uses a weak form of bidirectional propagation: by
-passing the expected type of the argument so that
-\ocaml{(fun r -> r.x)} is typed with the expected type
-\ocaml{('a one -> int)} and may be considered non-ambiguous.
+
+\OCaml uses \geninst-directional type inference as the
+primary mechanism, but it also uses a weak form of bidirectional propagation: in this example the type of the argument of \code{g} is known \Geninst-directionally, but \OCaml then propagates this expected type within the function definition in bi-directional fashion, so that this example may be considered non-ambiguous.
 
 Besides, the implementation of \geninst-directional type inference has an
 algorithmic cost: for technical reasons, variable annotations must un-share
@@ -296,178 +286,97 @@ sometimes look arbitrary.
 
 \locallabelreset
 
-Indeed, they all reject examples as ambiguous when sometimes there would be
-a unique well-typed solution, as seen in the limitation of directional type
-inference.  The first source of incompleteness results from the ordering
-enforced between the resolution of core-language constraints that prevents
-some core information to be taken into account when resolving ambiguities
-\llabel {item/order}.
+Indeed, they all reject examples as ambiguous when sometimes there
+would be a unique well-typed solution. 
 %
-However, the resolution of ambiguities is another source of
-incompleteness, which is actually two-fold:
-\begin{enumerate*}
-%% \item\label {item/order}
-%%   the resolution is not considering type information from all
-%%   terms into account. \Xalistair{I don't see how this is a
-%%   new source of incompleteness? The reader already knows that
-%%     directionality results in incompleteness at this point.}
-\item[\llabel {item/info}]
-  the resolution is not taking all contextual type information from
-  each ambiguous term into account.
-\item[\llabel {item/simultaneous}]
-  each ambiguity is solved independently of other, yet unresolved ones.
-\end{enumerate*}
-
 Let us illustrate these situations with a few more examples:
 \begin{program}[error]
 let e_6 r = (r.x, r.y)
-let e_7 = let getx r = r.x in getx {x = 1}
-let e_8 r = let x = r.x in x + r.y
+let e_7 r = let x = r.x in x + r.y
+let e_8 = let getx r = r.x in getx {x = 1}
 let e_9 r = (r.x : bool)
 let e$_{10}$ r = r.x.x
 \end{program}
-All thse examples are ambiguous for \OCaml\footnote{Its succeeds on \ocaml{e_6},
+All these examples are ambiguous for \OCaml\footnote{Its succeeds on \ocaml{e_6},
 using the default choice, but it fails if we reverse the order of the type
 declarations.}.  However, \ocaml{r} can only be of type
 \ocaml{two} in \ocaml{e_6}. Indeed, considering the second projection first,
 we should learn that \ocaml{r} is of type \ocaml{two} and since it is
 $\lambda$-bound, this should then make the first projection unambiguous.
 The failure is a matter of solving the constraint in the right order, which
-should wishfully be eliminated by omnidirectional type inference.
-This illustrates the first form of incompleteness~\lref {item/order}.
+should be accepted by omnidirectional type inference.
 
-\parcomment{Backpropagation and old-variable cases}
+A similar failure occurs in \ocaml{e_7}, where the type of the
+$\lambda$-bound variable \code{r} is initially ambiguous and
+unknown. It is only upon typing the projection \code{r.y} that
+\code{r} is forced to have the type \ocaml{two}.
 
-\OCaml also fails on \ocaml$e_7$, since it typechecks the let-binding first,
-where it fails as ambiguous, while omnidirectional type inference has a view
-on the whole program and may learn from the body of the let-binding that the
-instance of $getx$ must have type \ocaml"int one -> int" and is therefore
-its let-bound type (scheme) should be \ocaml$'a one -> 'a$ and is thus
-non-ambiguous. This is an example of the second form of
-incompleteness~\lref{item/info}.  A similar
-failure occurs in \ocaml{e_8}\footnote{Ignoring default rules.}, where the
-type of the $\lambda$-bound variable \code{r} is initially ambiguous and
-unknown. It is only upon typing the projection \code{r.y} that \code{r} is
-forced to have the type \ocaml{two}.
+\OCaml also fails on \ocaml$e_8$, and omnidirectional inference
+supports this example, despite the fact that the disambiguation
+information flows from an instance to a polymorphic definition, opposite to the \Geninst-order. We
+call this \emph{back-propagation}.
+
 %
 Our proposal with omnidirectional type inference succeeds
 on \ocaml{e_6}, \ocaml{e_7}, and \ocaml{e_8}.
-\begin{version}{}
-\Xdidier{to be checked}
-\Xalistair{I'm fairly certain your implementation (and our theory) does not
-typecheck \code{e_8}. It is another example of incompleteness (like
-\code{e_9})}\Xdidier {My prototype solves $e_8$ but not $e_9$. See below:}
-\begin{version}{\Draft}
-The example $e_8$ generates the following anti-unifier and variabtional
-type
-\begin{program}
-Types antiunifed: one -> int | 'a two -> 'a
-Variational anti-unifier: {'b ? {#(one | 'a two)}} -> {'c ? {#(int | 'a)}}
-val e8 : bool two -> bool
-\end{program}
-Hence, the return type which is unified with \ocaml{'c} cancels the left
-options (of the binary variation type), which becomes a singleton.  Since,
-this is the same variational type on \ocaml{'b}, this is also solved.
-\end{version}
-\Xalistair{Ok, that is not how I understood your prototype to work. I
-thought anti-unifiers were only used for overloading (and not record
-fields). Regardless, our theory described in this paper does not typecheck
-\code{e_8}.}
-\end{version}
 
-In \ocaml{e_9}, the only possible type is \ocaml{one} if we take into account
-the return type of the projection. This also illustrates the second
-form of incompleteness~\lref {item/info}.
-Our current presentation, in this paper, treats this term as ambiguous,
-since we do not permit the return type to influence resolution until
-the projection itself has been disambiguated. Nonetheless, it is
-entirely possible to typecheck such expressions using the omnidirectional
-framework, as we discuss in \cref{sec:future-work}.
+The example \ocaml{e_9} can be disambiguated from the return type of
+the projection, rather than from its source. The typing rules for
+records that we present on this work restricts disambiguation to the
+source type only and rejects this example. But we believe that other
+typing rules using omni-directional type inference could support this
+example as well.
 
-Omnidirectional still fails on \ocaml{e$_{10}$}, which is an instance of the
-third form of incompleteness~\lref {item/simultaneous}. Here, both projections
-must be considered simultaneously to infer that the type of
-\ocaml{r} must be \ocaml{one}.
+Finally, \ocaml{e$_{10}$} is an example where none of the field
+projections has enough type information to be disambiguated, but the
+constraints they impose can be combined to deduce that the type of
+\ocaml{r} must be \ocaml{one}, as the \code{x} field of \code{two}
+does not have a record type. This lies outside the framework of
+omnidirectional type inference, in which suspended constraints must be
+discharged one by one in some order, independently of other
+still-suspended constraints.
 %
-Requiring an order in which overloarding sites could be solved one after the
-other is actually a reasonable design to keep type inference effective,
-since the complexity of general overloading without such a restriction is
+We believe that this reasonable restriction keep type inference effective,
+since the complexity of general overloading without this restriction is
 NP-hard, even in the absence of let-polymorphism, as shown by an encoding of
-3-SAT problem as shown by~\citet
+3-SAT problem by~\citet*
 {Chargueraud-Bodin-Dunfield-Riboulet/jfla2025}.
 
 \paragraph{Omnidirectional type inference}
 
-The idea of \emph{omnidirectional} type inference is that types can be inferred
-in any order. This requires typing constraint to be solved in disorder.
-%
-This approach eliminates the first source of incompleteness~\lref
-{item/order}.  It leaves room to address the second source~\lref
-{item/info}, but intendedly keeps the third source of incompleteness~\lref
-{ref/simulteanous}---by design.
-%
-With omnidirectional inference, all examples from \ocaml{e_1} through
-\ocaml{e_8} are correctly typed\ignorespaces
-\INFO
-{See \url
-{https://gitlab.inria.fr/remy/semiun/-/blob/main/su/examples/record_fields.ml}}
----without any default strategy mechanism.
+In absence of polymorphism, type inference is solely based on
+unification constraints which can be solved in any order;
+omnidirectional inference is then natural and easy to implement.  The
+difficulty originates from \ML let-polymorphism for which all known
+implementations choose to always infer the type of a let-binding
+first, to then turn it into a type scheme that is assigned to the
+let-bound variable to extend the typing environment in which the body
+is finally typed. The Hindley-Milner algorithm $\mathcal{J}$, one of
+its variant $\mathcal{W}$ or $\mathcal{M}$~\cite
+{Lee_Yi/algoM@toplas1998}, or more flexible constraint-based type
+inference
+implementations~\citep*{Remy/mleth,Remy/thesis,Odersky-Sulzmann-Wehr@tpos,Pottier-Remy/emlti}
+all follow this strategy, to the best of our knowledge. However, this
+state of affairs is not a necessity.
 
-In absence of polymorphism, type inference is solely based on unification
-constraints which can be solved in any order; omnidirectional inference is
-then natural and easy to implement.  The difficulty originates from \ML
-let-polymorphism for which all known implementations choose to always infer
-the type of a let-binding first, to then turn it into a type scheme that is
-assigned to the let-bound variable to extend the typing environment in which
-the body is finally typed. The Hindley-Milner algorithm $\mathcal{J}$, one
-of its variant $\mathcal{W}$ or $\mathcal{M}$~\cite
-{Lee_Yi/algoM@toplas1998}, or more flexible constraint-based type inference
-implementations all follow this strategy, to the best of our knowledge.
-However, this state of affairs is not a necessity.
-
-\paragraph {Constraint-based type inference}
-
-In fact, typing constraints as presented by~\citet {Pottier-Remy/emlti} can
-be instantiated before they are fully solved, although this comes at the
-cost of duplicating some computation.  Still, this shows that the
-let-binding ordering is a convenience, not a requirement.
-
-In the~\textit{constraint-based} approach, type inference
-is split into two stages, mediated by the language of \textit{constraints}
-\citep{TODO}.  In the first stage, a term $\e$ is translated into a constraint
-$\c$ which is satisfiable if and only if the term $e$ is well-typed. In the
-second stage, the generated constraint $\c$ is solved (or shown to be
-unsatisfiable).
-%
-The idea of treating typing judgments as typing constraints, which first
-appeared in~\cite{Remy/mleth,Remy/thesis}, was popularized by ~\citet
-{Odersky-Sulzmann-Wehr@tpos} with the \HMX framework---the Hindley-Milner
-system parameterized by a constraint domain $X$, allowing constraints to
-appear within types, and later extended by \citet{Pottier-Remy/emlti} who
-were the first to fully decoupled constraint generation from constraint
-solving.  The central innovation in their system for the reduction of type
-inference to constraint solving is the inclusion of term variables in the
-language of constraints.
-
-Our insights into directionality builds on this work, which we extend with
-with two technical devices to efficiently achieve omnidirectional type
-inference for fragile \ML extensions:
-\begin{enumerate*}
+To efficiently achieve omnidirectional type inference for fragile \ML
+extensions:
+\begin{enumerate}
 \item
   we introduce \emph{suspended match constraints} as a way to suspend
   ambiguity resolution until sufficient information has been found from
   context so that they can be discharged and hopefully resolved.
 \item
-  we work with partial types schemes, \ie with the ability to instantiate type
+  we work with \emph{partial types schemes}, \ie with the ability to instantiate type
   schemes that are not yet fully determined and consequently revisit their
   instances when they are being refined, incrementally. This allows
   inferring parts of a \texttt{let}-body to disambiguate its definition,
   without duplicating constraint-solving work.
-\end{enumerate*}
+\end{enumerate}
 
 These technical devices are introduced once and for all---in a general
 framework of constraint-based type inference. Each fragile \ML construct can
-then be implemented as suspended constraints that expand to its robust
+then be implemented by suspended constraints that expand to its robust
 counterpart once the annotation has been inferred. This generality comes at
 a cost, which is that everything is hard:
 \begin{itemize}
