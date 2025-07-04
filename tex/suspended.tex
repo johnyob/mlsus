@@ -509,69 +509,64 @@ binders. We write $\TyVars$ the set of type variables.
 
 Building atop the constraint-based type inference framework of
 \citet{Pottier-Remy/emlti}, we adopt a constraint language that includes both
-term and type variables. Its syntax is given in~\Cref{fig:constraint-syntax}.
+term and type variables, described in~\Cref{fig:constraint-syntax}.
 
 %
-The constraint language contains tautologic constraints ($\ctrue$),
-unsatisfiable constraints ($\cfalse$), and logical conjunctions ($\cone \cand
-\ctwo$). The constraint form $\cexists \tv \c$ binds an existentially
-quantified type variable $\tv$ in $\c$, while the constraint $\cfor \tv \c$
-binds $\tv$ universally. The constraint form $\cunif \tone \ttwo$ asserts that
-the types $\tone$ and $\ttwo$ are equal.
+The constraint language contains tautological ($\ctrue$) and
+unsatisfiable ($\cfalse$) constraints, conjunctions
+($\cone \cand \ctwo$). The constraint form $(\cexists \tv \c)$ binds an
+existentially quantified type variable $\tv$ in $\c$, while the
+constraint $(\cfor \tv \c)$ binds $\tv$ universally. The constraint form
+$(\cunif \tone \ttwo)$ asserts that the types $\tone$ and $\ttwo$ are
+equal.
 %
-For convenience, we use the notation $\cleq \ts \t$ as syntactic sugar for the
-constraint $\cexists \tvs \cunif \tp \t$, where $\ts$ is a universally
-quantified type $\tfor \tvs \tp$; its intended meaning is the instantiation of
-the polymorphic type $\ts$.
+When $\ts$ is a polymorphic type scheme $\tfor \tvs \tp$, we use the
+notation $(\cleq \ts \t)$ as syntactic sugar for the instantiation
+constraint $\cexists \tvs \cunif \tp \t$.
 
 \parcomment{Constraint abstractions}
 
-There are two constructs that deal with the introduction and elimination of
-constraint abstractions. As the name suggests, a constraint abstraction
-$\cabs \tv \c$ can simply be seen as a function which when applied to some
-type $\t$ returns $\c \where {\tv := \t}$. Constraint abstractions are
-introduced by a let-construct $\clet \x \tv \cone \ctwo$ which
-binds the constraint abstraction to the term variable $\x$ in
-$\ctwo$---additionally ensuring the abstraction is satisfiable. They are
-eliminated using the application constraint $\capp \x \t$ which applies the
-type $\t$ to the abstraction bound to $x$.
+Two constructs that deal with the introduction and elimination of
+constraint abstractions. A constraint abstraction $\cabs \tv \c$ can
+simply be seen as a function which when applied to some type $\t$
+returns $\c \where {\tv := \t}$. Constraint abstractions are
+introduced by a let-construct $(\clet \x \tv \cone \ctwo)$ which binds
+the constraint abstraction to the term variable $\x$ in
+$\ctwo$---additionally ensuring the abstraction is satisfiable. They
+are eliminated using the application constraint $(\capp \x \t)$ which
+applies the type $\t$ to the abstraction constraint bound to $x$.
 
 \parcomment {Suspended match constraints}
 
-Finally, we introduce \textit{suspended match constraints}\footnote {Previously
-dubbed `frozen constraints' in \citep{TODO}}. These constraints defer resolution
-until the \textit{shape} of a type, such as its top-level
-constructor\footnote{We intentionally leave the notion of shape underspecified
-here; it is formalized in \cref{sec:semantics}.}, is known. Once the shape is
-determined (typically through unification), the constraint selects a matching
-branch from a list of cases. Formally, a suspended constraint is written as
-$\cmatch \t \cbrs$, where:
-%
+Finally, we introduce \textit{suspended match constraints}\footnote
+{Previously dubbed `frozen constraints' in \citep{TODO}}
+$(\cmatch \t \cbrs)$. These constraints are \emph{suspended} until
+until the \textit{shape} of $\t$, such as its top-level constructor,
+is known. Then they are \emph{discharged}: a unique branch is selected
+and its associated constraint has to be solved. A match constraint
+that is never discharged is considered unsatisfiable·s.
+
+More precisely:
 \begin{enumerate}
 \item
   The matchee $\t$ is a type. The constraint remains suspended until the
-  shape of $\t$ is determined.
-\item
-  $\cbrs$ is a list of branches of the form $\cbranch \cpat \c$, where each
-  shape pattern $\cpat$\footnote{Patterns are also left unspecified for now;
-    they are defined in \cref{sec/constraint-gen}.}
-  describes a structural form of the shape.
+  shape of $\t$ is determined, that is, while $\t$ is a type variable.
+\item $\cbrs$ is a list of branches of the form $\cbranch \cpat \c$,
+  where $\cpat$ is a shape pattern. For example, the pattern
+  $\tva \to \tvb$ matches function types, binding the argument and
+  return types to $\tva$ and $\tvb$ respectively. The constraint $\c$
+  is then solved in the extended context.
   %
-  For example, the pattern $\tva \to \tvb$ matches function types, binding the
-  argument and return types to $\tva$ and $\tvb$ respectively. The constraint
-  $\c$ is then solved in the extended context.
-  %
-  To ensure determinism, the set of patterns $\bar \cpat$
-  must be \emph{shape-disjoint}---that is, no shape may be matched by more
+  To ensure determinism, the set of patterns $\bar \cpat$ must be
+  \emph{shape-disjoint}---that is, no shape may be matched by more
   than one pattern in the list.
 \end{enumerate}
-\parcomment {Informal semantics}
-Suspended match constraints thus express case analysis on the structure of
-types in a delayed, declarative form. Once the shape of $\t$ is known, a
-unique branch is selected and its associated constraint is discharged and
-may be solved. If the shape is never determined, the constraint remains
-inaccessible (it cannot be inspected and help solve over constraints)
-and unsatisfiable.
+
+We keep the grammar of shapes and patterns abstract in this section,
+to explain the general framework of suspended constraints. Shapes are
+formalized in \cref{sec:semantics}. We then introduce specific shapes
+and patterns for specific language features in
+\cref{sec/constraint-gen}.
 
 \parcomment {Constraint contexts}
 
@@ -583,7 +578,7 @@ the context $\C$ with the constraint $\c$. Hole filling may capture
 variables.  (Hence, we need explicit side-conditions when we mean to avoid
 capture of a particular variable.)
 
-\parcomment {Applications}
+\paragraph{Suspended constraints in action}
 
 The remainder of this section illustrates the role of suspended constraints
 in supporting \emph{fragile} language features as defined above.
@@ -594,7 +589,7 @@ These include:
   datatypes;
   \item Overloaded tuple projection in the style of \SML.
 \end{enumerate}
-We demonstrate how the typablity of each of these features can be elaborated
+We demonstrate how the typability of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
 form $\cinfer \e \tv$, which, given a term $e$ and expected type $\tv$,
 produces a constraint $\c$ which is satisfiable if and only if $\e$ is
