@@ -1600,7 +1600,7 @@ specified in a modular fashion, they are carefully crafted to work together,
 as we will further show in our next example.
 \end{example}
 
-\begin{example}
+\begin{example}\label{ex:backprop}
 A further subtle---but crucial---feature of our semantics is its support for
 \emph{backpropagation}. We illustrate this with the example \code{e_9}:
 \begin{program}[input]
@@ -2003,6 +2003,16 @@ label instantiations respectively.
     {\G \th \bar \el \uni \t}
 \end{mathparfig}
 
+\TODO{We should consider handling the three features (tuples, records, polytypes) separately, one in each subsection.
+If we later run out of space budget it will be easier to move only some of those subsections to an appendix.
+Concrete proposal:
+\begin{itemize}
+\item one subsection at the beginning that only hints at the standard ML stuff:
+  show the syntax, hint at typing rules, show a short bit of constraint generation
+\item then each advanced feature (from the simplest to the more complex: tuples, polytypes, records)
+  show the typing rules, and examples, and its dedicated patterns, and its constraint generation
+\end{itemize}}
+
 \begin{version}{}
 \begin{bnffig}{fig/types/bnf}{aaa}
 \entry[Types]{\t}{
@@ -2113,6 +2123,7 @@ typing rule for holes is:
     {\G \th \e : \t}
     {\G \th \emagic \e : \tp}
 \end{mathpar}
+\TODO{This rule should go in a figure dedicated to the various magic rules.}
 Typed holes are not allowed on source terms and are just a device for
 the definition of non-ambiguous shapes.  Finally, we define what it means for a
 shape to be determined from the type of a context or an expression:
@@ -2260,6 +2271,7 @@ We then define the uniqueness predicate $\bar \el \uni \T \in \labenv$ as:
 This states that the set of labels $\bar \el$ determines a unique nominal type
 $\T$ in $\labenv$ if no other type $\T'$ can be associated with the same label
 set.
+\TODO{Should the rules above be in a figure as well?}
 
 \subsection {Examples of typings}
 
@@ -2763,6 +2775,7 @@ $\cinfer \e \ts$ is satisfiable.
 $\G \th \e : \ts$ iff\/
 $\centails \csem {\G \th \e : \ts}$.
 \end{theorem}
+\TODO{This result should go in the Metatheory section.}
 
 \subsection{Metatheory}
 \label{sec:constraint-prop}
@@ -3291,12 +3304,11 @@ the abstraction and propagation additional equations to the application sites.
 
   \rewrite[S-BackProp]
     {\C\where
-       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
+       {\cletr \x \tv {\tvs,\tvp} {\Ca\where{\cmatch \tvp \cbrs}}
                            {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
-     \tvp \in \dom \ren \\
      \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
      \x \disjoint \Cb}
-    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
+    {\C\where{\cletr \x \tv {\tvs,\tvp} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
 		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
 \end{mathparfig}
 
@@ -3427,14 +3439,13 @@ $\tvbs$.
 \TODO{Forall constraints -- this should be the same from EMLTI}
 
 \paragraph{Backpropagation}
-Finally, Rule \Rule{S-BackProp} expresses \emph{backpropagation}, the mechanism that allows type information from use sites to refine matched variables inside generalised abstractions.
 
-For example, in:
+Finally, Rule \Rule{S-BackProp} expresses \emph{backpropagation}, which we explained in \cref{ex:backprop}.
+
+Consider:
 \begin{program}[input]
   let e$_{10}$ = let f r = r.y in f {x = 1; y = 1}
 \end{program}
-\OCaml rejects this, as \geninst-directional inference cannot propagate the known
-type \code{three} back to \code{f}'s parameter.
 The (simplified) constraint generated when typing \code{e}$_{10}$ is:
 \begin{align*}
   \cexists \tv
@@ -3446,10 +3457,12 @@ The (simplified) constraint generated when typing \code{e}$_{10}$ is:
 \end{align*}
 At the use site, the abstraction is applied with a type of known shape
 (\code{three}).  Rule \Rule{S-BackProp} propagates this shape back into the
-suspendede match inside the abstraction by unifying it with the variable
+suspended match inside the abstraction by unifying it with the variable
 $\tvb$. This is sound: the unicity predicate $\Cshape \C \tv \sh$ ensures
 that $\tvb$'s shape is \code{three} provided the context $\C$ include the
 application constraint.
+\TODO{Maybe we want to rephrase the explanation of the rule to not refer to the example anymore,
+and get rid of the example. But then the rule is hard to explain abstractly.}
 
 \begin{mathpar}
 \end{mathpar}
