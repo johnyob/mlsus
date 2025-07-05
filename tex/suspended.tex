@@ -739,7 +739,7 @@ $\tys \Tapp$ carry annotation variables $\av$, written $\tys \Tapp^\av$. As disc
 Because static overloading involves more intricate flows of information than
 polytype inference, \OCaml supplements \geninst-directionality with a limited,
 ad-hoc form of bidirectional type inference. This mechanism is folklore; no
-formal account has previously been given.
+formal account has been given.
 
 \parcomment {Closed-world reasoning}
 
@@ -864,66 +864,32 @@ $\tva$.
 \section{Semantics of constraints}
 \label{sec:semantics}
 
-Suspended constraints offer a robust mechanism for dealing with extensions of
-\ML that depend on a notion of \emph{known} type information. What remains
-is to formalize this notion: that is, to give a precise semantics for when
-a type variable is considered \emph{known}, and how suspended constraints
-are discharged accordingly.
+To implement a type-checker using constraint-based type inference it suffices to generate constraints from terms and to solve them. To study the meta-theory of constraint generation and solving, we follow the standard approach of defining \emph{semantics} for our constraints, as declarative as possible. The existence of declarative semantics validates the design of the constraint language.
+
+In our work on suspended constraints, defining a satisfying semantics was the hardest problem: it needs to capture what it means for type information to be \emph{known}. Our semantics is declarative but not syntax-directed, harder to manipulate than standard constraint semantics. On the upside, the semantics directly suggest declarative typing rules for the surface language.
 
 \parcomment {Judgement shape}
 
-The semantics of constraints is given, as is standard, by a satisfiability
-judgment of the form $\semenv \vdash \c$: the constraint $\c$ is satisfied by
-the solution, or valuation, $\semenv$. The semantic environment $\semenv$ is a
-total map from type variables to \emph{ground} types---types with no free
-variables\footnote{Ground types are thus finite trees, assuming the existence
-of a base type such as $\tint$. In \cref{sec/rec-types}, we dissuss the
+The semantics of constraints follows the standard form of a satisfiability
+judgment $\semenv \vdash \c$. The semantic environment $\semenv$ contains a ``guess'' for each free variable of $\c$ (type and term variable), and $\semenv \vdash \c$ states that these guesses indeed satisfy $\c$. Let us write $\Ground$ for the set of \emph{ground} types, types without free variables.\footnote{Ground types are thus finite trees, assuming the existence
+of some base types such as $\tint$. In \cref{sec/rec-types}, we dissuss the
 alternative choice of regular trees for the set of ground types that models
-equirecursive types.}---ranged over by $\gt \in \Ground$, where $\Ground
-\subseteq \Types$ denotes the set of ground types.
+equirecursive types.} $\semenv$ maps each type variable $\tv$ to a ground types $\gt \in \Ground$ (the type guessed for $\tv$), and each term variable $x$ to sets of ground types $\glam \subseteq \Ground$ (the set of ground instances of the type scheme guessed for $\x$).
 %
-Term variables are mapped to sets $\glam \subseteq \Ground$, representing the
-set of ground types for which the application $\capp \x \t$ is satisfiable
-under the closure of $\x$.
-
-We write $\semenv\where{\tv \is \gt}$ to denote the enviroment that agrees with
-$\semenv$ everywhere except at $\tv$, which is mapped to $\gt$; likewise, $\semenv
-\where{\x \is \glam}$ denotes the environment identical to $\semenv$ except that
-$\x$ is mapped to $\glam$. By homomorphism, $\semenv$ determines a total mapping
-from types to ground types, written $\semenv(\t)$.
+We write $\semenv\where{\tv \is \gt}$ and $\semenv\where{\x \is \glam}$ for the extension of $\semenv$ with a new binding. For a type $\t$, we write $\semenv(\t)$ for the ground type obtained by substitution.
 
 \parcomment {Definition exampled}
 
-The judgment is defined, for all constraint-formers except suspended
-constraints, in \cref{fig:constraint-semantics}. $\ctrue$ is satisfied in any
+The judgment is defined in \cref{fig:constraint-semantics} for all constraint-formers except suspended
+constraints; its definition on this fragment is standard and somewhat tautological. $\ctrue$ is satisfied in any
 environment, and $\cfalse$ in none. An environment $\semenv$ satisfies $\cone
-\cand \ctwo$ if it satisfies both $\cone$ and $\ctwo$. The existential rule
-$\semenv \vdash \cexists \tv \c$ requires that $\semenv$ provides a
-``solution'' for $\tv$: it maps $\tv$ to a type $\gt$ that satisfies the expected
-constraints in $\c$. The universal constraint $\cfor \tv \c$ requires $\c$ to
-be satisfiable under any type mapped to $\tv$ in $\semenv$. A unification
-constraint holds if both sides are mapped to the exact same type under the
-environment.
+\cand \ctwo$ if it satisfies both $\cone$ and $\ctwo$. Satisfying $\cexists \tv \c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint $\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv \is \gt}$. A unification constraint $\t_1 = \t_2$ is satisfied when $\semenv(\t_1)$ and $\semenv(t_2)$ are equal.
 
-The rule for let-bindings reflects that the constraint abstraction $\cabs
-\tv \c$ must first be \emph{satisfiable}, checking that $\cone$ holds under
-some instantiation of its bound variable; then binding the abstraction's
-interpretation to $\x$ in $\semenv$ when checking the satisfiability of $\ctwo$.
-Formally, constraint abstractions $\clam \tv \c$ are interpreted semantically as
-the set of ground types $\gt$ that satisfy $\semenv\where{\tv \is \gt} \th \c$:
-\begin{mathpar}
-  \semenv(\clam \tv \c) \uad\eqdef\uad \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
-\end{mathpar}
+The rule for $\clet \tv \cone \ctwo$ states that $\cone$ must satisfied under \emph{some} instantiation of its bound variable, and that $\ctwo$ must be satisfiable when $\x$ is bound $\cabs \tv \cone$, or rather its semantic interpretation as a set of ground types.
 
 Application constraints $\capp \x \t$ are interpreted by checking that $\t$
 belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
-\in \semenv(\x)$. Equivalently, if $\x$ is mapped to the interpretation
-$\semenvp(\clam \tv \c)$ of the abstraction $\clam \tv \c$, then this
-membership holds if and only if the body $\c$ is satisfied under the extended
-environment $\semenvp\where{\tv \is \semenv(\t)}$ --- here, $\semenvp$ is the
-environment at the binding site of $\x$ and thus serves as the closure of
-$\clam \tv \c$.
-
+\in \semenv(\x)$. Note that when $\semenv(\x)$ is of the form $\semenvp(\clam \tv \c)$, where $\semenvp$ is the environment at the binding site of $\x$, then $\semenv(\t) \in \semenv(x)$ holds iff $\semenvp\where{\tv \is \semenv(\t)} \th \c$, which corresponds to the intuition that the application $\capp {(\clam \tv \c)} \t$ should be equivalent to $\c \where {\tv \is \t}$.
 
 \begin{mathparfig}[t]%
   {fig:constraint-semantics}%
@@ -949,6 +915,8 @@ $\clam \tv \c$.
     {\semenv(\tone) = \semenv(\ttwo)}
     {\semenv \th \cunif \tone \ttwo}
 
+  \semenv(\clam \tv \c) \eqdef \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
+
   \infer[Let]
     {\semenv \vdash \exists \tv. \cone \\
      \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
@@ -957,19 +925,14 @@ $\clam \tv \c$.
   \infer[App]
     {\semenv(\t) \in \semenv(\x)}
     {\semenv \th \capp x \t}
+
+  \begin{array}{lll}
+  \cone \centails \ctwo & \eqdef & \forall \semenv,\ \semenv \th \cone \implies \semenv \th \ctwo
+  \\
+  \cone \cequiv \ctwo & \eqdef & \forall \semenv,\ \semenv \th \cone \iff \semenv \th \ctwo
+  \end{array}
 \end{mathparfig}
 
-% Why this semantics is useful
-
-While this semantics feels a bit tautological, the rules above, which omit
-suspended constraints, are straightforward. It is a useful exercise to ensure
-that we can give an explanation of each constraint-former in our
-mathematical meta-language that is reasonably simple and declarative.
-This specification is essential for proving properties of type inference,
-such as the soundness and completeness of the constraint generator---as well
-as for reasoning about the correctness of the solver.
-
-% Example
 
 Closed constraints are either satisfiable in any semantic environment (\ie they are tautologies)
 or unsatisfiable. For example, consider the constraint $\cexists
@@ -1756,8 +1719,8 @@ explicitly annotated counterpart (written $\e^x$ or $\el^x$) that is
 $\eproj [n] \e j$, $\epoly [\exi \tvs \ts]
 \e$, $\einst [\exi \tvs \ts] \e$, or $\elab / \T$ for record labels.
 
-Typing contexts $\Gamma$ are an ordered sequence of expression variable
-typings $x : \sigma$.
+Typing contexts $\G$ are an ordered sequence of expression variable
+typings $x : \ts$.
 
 \subsection{Typing rules}
 \label{sec/language/typing-rules}
