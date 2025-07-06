@@ -871,7 +871,7 @@ In our work on suspended constraints, defining a satisfying semantics was the ha
 \parcomment {Judgement shape}
 
 The semantics of constraints follows the standard form of a satisfiability
-judgment $\semenv \vdash \c$. The semantic environment $\semenv$ contains a ``guess'' for each free variable of $\c$ (type and term variable), and $\semenv \vdash \c$ states that these guesses indeed satisfy $\c$. Let us write $\Ground$ for the set of \emph{ground} types, types without free variables.\footnote{Ground types are thus finite trees, assuming the existence
+judgment $\semenv \th \c$. The semantic environment $\semenv$ contains a ``guess'' for each free variable of $\c$ (type and term variable), and $\semenv \th \c$ states that these guesses indeed satisfy $\c$. Let us write $\Ground$ for the set of \emph{ground} types, types without free variables.\footnote{Ground types are thus finite trees, assuming the existence
 of some base types such as $\tint$. In \cref{sec/rec-types}, we dissuss the
 alternative choice of regular trees for the set of ground types that models
 equirecursive types.} $\semenv$ maps each type variable $\tv$ to a ground types $\gt \in \Ground$ (the type guessed for $\tv$), and each term variable $x$ to sets of ground types $\glam \subseteq \Ground$ (the set of ground instances of the type scheme guessed for $\x$).
@@ -909,11 +909,11 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
     {\semenv \th \cone \cand \ctwo}
 
   \infer[Exists]
-    {\semenv\where{\tv \is \gt} \vdash \c}
+    {\semenv\where{\tv \is \gt} \th \c}
     {\semenv \th \cexists \tv \c}
 
   \infer[Forall]
-    {\forall \gt, ~ \semenv\where{\tv \is \gt} \vdash \c}
+    {\forall \gt, ~ \semenv\where{\tv \is \gt} \th \c}
     {\semenv \th \tfor \tv \c}
 
   \infer[Unif]
@@ -923,7 +923,7 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
   \semenv(\clam \tv \c) \eqdef \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
 
   \infer[Let]
-    {\semenv \vdash \exists \tv. \cone \\
+    {\semenv \th \exists \tv. \cone \\
      \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
     {\semenv \th \clet \x \tv \cone \ctwo}
 
@@ -946,8 +946,8 @@ or unsatisfiable. For example, consider the constraint $\cexists
   \infer*[Right=Exists]
     {\infer*[Right=Unif]
       {\infer*{}{\tint = \tint}}
-      {\semenv\where{\tv \is \tint} \vdash \cunif \tv \tint}}
-  {\semenv \vdash \cexists \tv \cunif \tv \tint}
+      {\semenv\where{\tv \is \tint} \th \cunif \tv \tint}}
+  {\semenv \th \cexists \tv \cunif \tv \tint}
 \end{mathline}
 
 % Equivalence and entailment
@@ -1118,7 +1118,7 @@ semantics, as shown by the derivation:
      \infer*[Left=Unif]
       {\tint = \tint}
       % -------------------------------
-      {\semenvex \vdash \cunif \tv \tint}
+      {\semenvex \th \cunif \tv \tint}
      \\
      \infer*[Right=Susp-Nat]
       {
@@ -1127,16 +1127,16 @@ semantics, as shown by the derivation:
 	\infer*[Right=True]
 	  { }
 	  % ---------------------
-	  {\semenvex \vdash \ctrue}
+	  {\semenvex \th \ctrue}
       }
       % ------------------------
-      {\semenvex \vdash \cmatchex}
+      {\semenvex \th \cmatchex}
     \hspace{-2em}
 }{% ---------------------
     \infer*[Right=Exists]
-      {\semenvex \vdash \cunif \tv \tint \cand \cmatchex}
+      {\semenvex \th \cunif \tv \tint \cand \cmatchex}
     % ------------------------------------------------------------
-      {\semenv \vdash \cexists \tv \cunif \tv \tint \cand \cmatchex}
+      {\semenv \th \cexists \tv \cunif \tv \tint \cand \cmatchex}
 }
 \end{mathline}
 
@@ -1156,12 +1156,12 @@ suggesting that the constraint should be unsatisfiable. Yet it is satisfiable wi
       \infer*[Right=Unif]
         {\tint = \tint}
 	% -------------------------------
-    {\semenvex \vdash \cunif \tv \tint}
+    {\semenvex \th \cunif \tv \tint}
 }{% ---------------------------------
     \infer*[Right=Exists]
-    {\semenvex \vdash \cmatchex}
+    {\semenvex \th \cmatchex}
   % -----------------------------------
-  {\semenv \vdash \cexists \tv \cmatchex}
+  {\semenv \th \cexists \tv \cmatchex}
 }
 \end{mathpar}
 The semantics can \emph{guess} the type of $\tv$ and use it to unlock the match constraint, rather than requiring it to be \emph{known} from the surrounding context. This does not match the intended meaning of suspended match constraints, and raises several problems:
@@ -1184,7 +1184,7 @@ To rule out guessing, we instead adopt a \emph{contextual} semantics in which th
     {\Cshape \C \t \sh \\
       \semenv \th \C \where {\cmatched \t \sh \cbrs}
     }
-    {\semenv \vdash \C \where {\cmatch \t \cbrs}}
+    {\semenv \th \C \where {\cmatch \t \cbrs}}
 \end{mathpar}
 In this rule the shape $\sh$ is not guessed from $\semenv$, it must be determined from the constraint context $\C$. The \emph{unicity} condition $\Cshape \C \t \sh$, defined below, ensures that $\sh$ is known.
 
@@ -1193,14 +1193,14 @@ Given a constraint $\c$, we define its \emph{erasure} $\cerase \c$ as a variant 
 \begin{definition}[Unicity]
   A type $\t$ has a \emph{unique} canonical shape within
   the context $\C\where{\square}$, written $\Cshape \C \t \sh$, iff for all
-  assignments $\semenv$ and ground types $\gt$, then $\semenv \vdash
+  assignments $\semenv$ and ground types $\gt$, then $\semenv \th
   \cerase {\C\where{\cunif \t \gt}}$ implies that the canonical principal shape of $\gt$ is equal
   to $\sh$.
 %
   In other words:
   \begin{mathpar}
     \Cshape \C \t \sh \Wide\eqdef \forall \semenv, \gt. \uad
-      \semenv \vdash \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
+      \semenv \th \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
   \end{mathpar}
 \end{definition}
 
@@ -1352,29 +1352,24 @@ The astute reader may have noticed a subtle compilication resulting
 from our definition of the unicity predicate:
 $\Cshape \C \tv \sh$ includes a negative occurrence of the
 satisfiability judgement. This is essential for expressing that
-$\sh$ is unique among all solutions of the ambient context $\C$.
-%
-However, this negative occurrence means that, \apriori, the rules
-from \cref{fig:constraint-semantic} including \Rule{Susp-Ctx}
-do not form an inductive definition in the usual syntactic sense.
+$\sh$ is unique among all solutions:
+\begin{mathline}
+    \Cshape \C \t \sh \Wide\eqdef \forall \semenv, \gt. \uad
+      \semenv \th \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
+\end{mathline}
+This negative occurrence in a premise of \Rule{Susp-CTX}
+meansthe the rules for the semantic judgment
+$\semenv \th \c$ may not form an inductive definition.
 
-This is not merely a technicality: if left unaddressed, it undermines
-the well-foundedness of the semantics and the interpretation of our
-rules as a proper inference system.
-
-Fortunately, this issue can be cleanly resolved. Although the rules are not
-structurally well-founded, they can be defined in a decreasing way by noting
-that the conclusion of \Rule{Susp-Ctx} $\C\where{\cmatch \t \cbrs}$ is
-structurally larger than the negatively-occurring judgement $\cerase {\C\where{\cunif
-\tv \gt}}$: the former contains at least one suspended match constraint yet to be
-discharged, whereas the latter contains no unresolved match constraints.
-We formalize this decreasing measure in \Cref{appendix:wf}. This ensures that
-the semantics is well-defined, even if not syntactically inductive.
+Fortunately, this issue can be cleanly resolved. The judgment $\semenv \th \cerase {\C\where{\cunif \t \gt}}$ is on an erased constraint, which by definition of $\cerase \cdot$ does not contain any suspended matched constraint. We call a constraint \emph{simple} if does not contain any suspended match constraint. The rule \Rule{Susp-Ctx} cannot help to prove the satisfiability of simple constraints, so the satisfiability of $\semenv \th \cerase {\C\where{\cunif \t \gt}}$ in the full system is equivalent the satisfiability in the subsystem where \Rule{Susp-Ctx} is omitted, which is inductive. Technically we can thus define our semantics by first defining $\semenv \th_\mathsf{simple} \c$ without the \Rule{susp-ctx} rule, and then defining the final system $\semenv \th \c$ with all the current rules (so most rules are duplicated in the simple and the full system), and unicity restricted to simple satisfiability:
+\begin{mathline}
+    \Cshape \C \t \sh \Wide\eqdef \forall \semenv, \gt. \uad
+      \semenv \th_{\mathsf{simple}} \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
+\end{mathline}
 
 \begin{restatable}{theorem}{satwf}
   The relation $\semenv \th \c$ is well-founded.
 \end{restatable}
-
 
 \paragraph{Summary}
 
@@ -2583,7 +2578,7 @@ interpretation is given by:
 \begin{mathpar}
   \infer[Multi-Unif]
     {\all {\t \in \ueq}\, \semenv(\t) = \gt}
-    {\semenv \vdash \ueq}
+    {\semenv \th \ueq}
 \end{mathpar}
 That is, $\semenv$ satisfies $\ueq$ if all members of $\ueq$ are mapped to a
 single ground type $\gt$ by $\semenv$. We consider multi-equations equal
