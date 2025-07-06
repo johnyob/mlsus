@@ -111,12 +111,11 @@
 \newcommand{\T}{\mathpostfix{t}}
 \newcommand{\Fapp}{\mathop{}\mathrel{\F}}
 \newcommand{\Tapp}[1][\T]{\mathrel{#1}\mathclose{}}
-\newcommand{\shapp}[1][\sh]{\mathopen{}\mathrel{\angles{#1}}}
+\newcommand{\shapp}[1][\sh]{#1\,}
 %\newcommand{\pshapp}[1][\sh]{\shapp[!#1]}
 \newcommand{\pshapp}{\shapp}
 
-\newcommand{\deshaped}[3][]
-   {\angles{\ifempty{#1}{}{\any{#1}}{#2}}\ifempty{#3}{}{\;#3}}
+\newcommand{\deshaped}[3]{(\any{#1}{#2}, #3)}
 \newcommand{\deshape}[1]{\mathprefix{deshaped}(#1)}
 
 \renewcommand{\t}{\tau}

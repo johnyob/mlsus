@@ -961,12 +961,14 @@ that is, they have exactly the same set of solutions.
 \subsection{Shapes
 \label{sec/shapes}}
 
+We introduce \emph{canonical shapes} for use in the syntax of suspended constraints. It is a generalization of type constructors that is capable of copying with polytypes -- a polytype $(\forall \tvb. \tvb \to (\tva_1 \to \tva_2))$ can be seen as a constructor-like structure $\any \tvc (\forall \tvb. \tvb \to \tvc)$ applied with the argument $(\tva_1 \to \tva_2)$. Canoical shapes $\sh$ are defined as a subset of shapes $\Sh$ satisying some minimality properties.
+
 \parcomment {Definition of shape}
 
 A shape $\Sh$ is a type with holes, written $\any \tvcs \t$, where $\tvcs$
 denotes the set of type variables representing the holes.
 By construction, we require $\tvcs$ to be exactly the free
-variables of $\t$.  Hence, shaped are closed and considered up
+variables of $\t$.  Hence, shapes are closed and considered up
 to $\alpha$-conversion.  When $\t$ is a ground type, we omit the
 binder and write simply $\t$.
 %
@@ -988,31 +990,16 @@ When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
 actually equal. The trivial shape $\bot$ is the most general shape.
 
-\parcomment {Define decomposition}
-
-Given a shape $\any \tvcs \t$, we write $\deshaped [\tvcs] \t \tys$ for $\t
-\where {\tvcs \is \tys}$. This is uniquely determined, since it is
-independent of the choice of variables $\tvcs$ for representing the
-shape.
-%
-A type $\t$ has a decomposition $\deshaped \Sh \tys$ iff $\t = \shapp \tys$;
-we say that $\sh$ is \emph{a} shape of $\t$.  A decomposition is trivial if
-the shape is trivial.
-
-%% \Xgabriel{It is obvious that $\sh(\tys)$ is uniquely
-%% determined in the paragraph above, but not completely obvious that the
-%% decomposition of $\t$ as $\sh(\tys)$ is uniquely determined by
-%% $\sh$.}\Xdidier {Why not?} \Xalistair{I also think it is fairly
-%% obvious? To find $\tys$, just unify the shape with $\t$ treating
-%% the variables as flexible unification variables.}
+If $\Sh$ is $\any \tvcs \t$, the shape application $\shapp[\Sh] \tys$ is defined as $\t
+\where {\tvcs \is \tys}$. We say that $\Sh$ is a shape of $\t$ when there exists $\tys$ such that $\t = \shapp[\Sh] \tys$; in this case we write that the pair $(\Sh, \tys)$ is a decomposition of $\t$.
 
 \begin{definition}
-A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff:
+A non-trival shape $\Sh \in \Shapesz$ is the principal shape of the type $\t$ iff:
 \begin{enumerate}
   \item
-    $\t = \shapp[\Sh] \tys$
+    $\exists \typs,\ \t = \shapp[\Sh] \typs$
   \item
-    $\forall \Shp \in \Shapesz, \t = \shapp[\Shp] \typs
+    $\forall \Shp \in \Shapesz, \forall \typs,\ \t = \shapp[\Shp] \typs
     \implies \Sh \preceq \Shp$
 \end{enumerate}
 \end{definition}
@@ -1021,73 +1008,48 @@ A non-trival shape $\Sh$ is the principal shape of the type $\t$ iff:
 Any nonvariable type $\t$ has a non-trivial principal shape $\Sh$.
 \end{theorem}
 
-\TODO{Check the text of the paragraph below that was moved from later on.}
-The structure of principal shapes $\sh$ induced by syntax of types given here
-is a shape $\any \tvcs \t$ where
+We can give an equivalent direct description of the set of principal shapes $\sh$: they are the $\any \tvcs \t$
 \begin{itemize}
 
 \item $\tvcs$ are the linear free variables of $\t$ \ie each type variable
   $\tvc$ in $\tvcs$ occurs exactly once in $\t$
 
 \item
-  $\t$ is shallow, which means the following:
+  $\t$ is shallow, which means the following for our particular type formers:
 \begin{itemize}
 
 \item
-  when $\t$ is not a polytype, all subterms of $\t$ are variables \ie $\tvca
-    \to \tvcb$, $\Pi\iton \tvci$, or $\tvcs \T$
+  when $\t$ is not a polytype, all subterms of $\t$ are variables: $\tvca \to \tvcb$, $\Pi\iton \tvci$, or $\tvcs \T$
 
 \item
-  when $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, then all subterms of
-  $\tsp$ that do not lead to a polymorphic variable $\tv$ in $\tvs$
-  are a variable in $\tvcs$.
+  when $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, then the only subterms of
+  $\tsp$ that do not contain one of the $\tvs$
+  are variables in $\tvcs$.
 
+  For example, the polytype  $\tpoly {\all \tva
+    {\parens{\tpoly {\all \tvb {\parens{\tvb \to \tint \tlist}} \tprod \tvb}
+        \to \tva}
+      \to \tva}}$ has principal decomposition
+  $
+  \any
+    {\tvc}
+    {\tpoly {\all \tva
+       {\parens{\tpoly {\all \tvb \parens{\tvb \to \tvc} \tprod \tvb} \to \tva}
+      \to \tva}}}
+  $.
 \end{itemize}
 \end{itemize}
 
 \parcomment {Define canonical shape}
 
-A principal shape $\any \tvcs \t$ is canonical if the sequence of its free
+A principal shape $\any \tvcs \t$ is \emph{canonical} if the sequence of its free
 variables $\tvcs$ appear in the order in which the variables occur in
 $\t$\footnote{This order is well-defned for principal shapes, but not always
 well-defined for all shapes, for instance $\any {\tvca, \tvcb} (\tvca \to
-\tvcb) \to (\tvcb \to \tvca)$.}. We write $\sh$ for canonical principal
+\tvcb) \to (\tvcb \to \tvca)$. \Xgabriel{I don't understand this comment. Here clearly $\tvca$ occurs before $\tvcb$ in the printing of the shape body, so it would be reasonable to say that they are in a well-defined order. And if we refuse to consider the order on deep subnodes, then how do we define canonicity for polytypes such as the following? $\any {\tvca, \tvcb, \tvcc} \tpoly {\all \tva  {(\tvca \to (\tvcb \times \tva)) \to \tvcc}}$}}. We write $\sh$ for canonical principal
 shapes.
-
-We write $\shape \t = \sh$ for the canonical principal shape of $\t$ (if
-defined). Thus $\shape {\tys \Tapp}$ is $\any \tvcs \tvcs \Tapp$.
-Canonical principal shapes can be seen as a generalization of type
-constructors, capable of coping with polytypes.
-For example, the polytype  $\tpoly {\all \tva
-  {\parens{\tpoly {\all \tvb {\parens{\tvb \to \tint \tlist}} \tprod \tvb}
-  \to \tva}
-  \to \tva}}$  can be decomposed as:
-\begin{mathpar}
-\deshaped
-  [\tvc]
-  {\tpoly {\all \tva
-     {\parens{\tpoly {\all \tvb \parens{\tvb \to \tvc} \tprod \tvb} \to \tva}
-    \to \tva}}}
-  {\parens{\tint \tlist}}
-\end{mathpar}
-The canonical principal shape of a type governs its decomposition. We write
-$\decomp \t$ for the decomposition of $\t$ induced by its canonical
-principal shape.
-
-%\parcomment{Patterns and matching}
 %
-%Shapes and decompositions are used in suspended match constraints for describing the
-%structure of types. We write $\cmatches \cpat {\shapp \tys} \theta$ to denote that the
-%pattern $\cpat$ matches the principal decomposition $\shapp \tys$ of a type,
-%producing a substitution $\theta$ for variables bound by the pattern.
-%The matcing function $- \Matches \mathop{=}$ is partial: it is undefined when
-%the pattern $\cpat$ does not match the given shape $\sh$. We introduce this
-%function abstractly and defer its formal definition to \cref{sec:constraint-gen}
-%along with the syntax of patterns, as it depends on the concrete grammar of types,
-%given in \cref{sec:language}.
-%
-
-\TODO{Change the $\shapp[\sh] \tys$ notation to just $\sh ~\tys$.}
+Each non-variable type $\t$ has a unique canonical principal shape, which we write $\shape \t$. We write $\decomp \t$ for the decomposition of $\t$ induced by its canonical principal shape. For example, $\shape {\tys \Tapp}$ is $(\any \tvcs \tvcs \Tapp)$ and $\decomp {\tint \to \tbool}$ is the pair $((\any {\tvca, \tvcb} {\tvca \to \tvcb}), (\tint, \tbool))$.
 
 \TODO{Consistently use prefix notation for type constructors, except in OCaml examples.}
 
