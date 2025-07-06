@@ -529,7 +529,7 @@ constraint $\cexists \tvs \cunif \tp \t$.
 Two constructs that deal with the introduction and elimination of
 constraint abstractions. A constraint abstraction $\cabs \tv \c$ can
 simply be seen as a function which when applied to some type $\t$
-returns $\c \where {\tv := \t}$. Constraint abstractions are
+returns $\c \where {\tv \is \t}$. Constraint abstractions are
 introduced by a let-construct $(\clet \x \tv \cone \ctwo)$ which binds
 the constraint abstraction to the term variable $\x$ in
 $\ctwo$---additionally ensuring the abstraction is satisfiable. They
@@ -1183,26 +1183,35 @@ To rule out guessing, we instead adopt a \emph{contextual} semantics in which th
 \end{mathpar}
 In this rule the shape $\sh$ is not guessed from $\semenv$, it must be determined from the constraint context $\C$. The \emph{unicity} condition $\Cshape \C \t \sh$, defined below, ensures that $\sh$ is known.
 
-Given a constraint $\c$, we define its \emph{erasure} $\cerase \c$ as a variant of $\c$ where all suspended match constraints have been replaced by $\ctrue$; we define it in full in \cref{fig:constraint-erasure} (appendix).
+\begin{definition}[Erasure]
+  We define the erasure $\cerase \c$ as the constraint
+  where all suspended match constraints in $\c$  have been replaced by
+  $\ctrue$; we define it in full in \cref{fig:constraint-erasure}
+  (appendix).
+\end{definition}
+
+\begin{definition}[Simple constraints]
+  We say that $\c$ is \emph{simple} if it does not contain any suspended match constraint. We write $\semenv \thsimple \c$ for a derivation of $\semenv \th \c$ that only uses the rules listed in \cref{fig:constraint-semantics}, without using \Rule{Susp-Ctx}. This judgment coincides with $\semenv \th \C$ on simple constraints.
+\end{definition}
 
 \begin{definition}[Unicity]
-  A type $\t$ has a \emph{unique} canonical shape within
-  the context $\C\where{\square}$, written $\Cshape \C \t \sh$, iff for all
-  assignments $\semenv$ and ground types $\gt$, then $\semenv \th
-  \cerase {\C\where{\cunif \t \gt}}$ implies that the canonical principal shape of $\gt$ is equal
-  to $\sh$.
-%
-  In other words:
+  We define the unicity condition $\Cshape \C t \sh$, which expresses that $\t$ has a unique canonical shape within the context $\C$, which is $\sh$.
   \begin{mathpar}
     \Cshape \C \t \sh \Wide\eqdef \forall \semenv, \gt. \uad
-      \semenv \th \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
+      \semenv \thsimple \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
   \end{mathpar}
 \end{definition}
 
 The use of erasure $\cerase {\C\where{\cunif \t \gt}}$ in the definition of $\Cshape \C t \sh$ ensures that the unicity of $\sh$ is determined only by the constraints that have already been discharged in $\C$, and cannot be justified from suspended constraints that will be discharged in the future. Implicitly, this induces a linear partial order between the suspended match constraints of a constraint, reflecting \emph{temporal} dependency: a match constraint may only be discharged once all of its dependencies have been discharged.
 
-Note that, if $\t$ is not a variable, then $\Cshape \square \t \sh$ holds
-trivially for $\sh = \shape \t$. Also, if $\C$ is unsatisfiable, then $\Cshape \C \tv \sh$ holds for any $\sh$. The interesting cases arise when $\t$ is a type variable and $\C$ is satisfiable.
+The erasure is a simple constraint so we use the
+$(\thsimple)$ judgment, to avoid well-foundedness issues that would come from
+a negative use of $(\th)$ in a premise of \Rule{Susp-Ctx}.
+%
+Note that, if $\t$ is not a variable, then $\Cshape \square \t \sh$
+holds trivially for $\sh = \shape \t$. Also, if $\C$ is unsatisfiable,
+then $\Cshape \C \tv \sh$ holds for any $\sh$. The interesting cases
+arise when $\t$ is a type variable and $\C$ is satisfiable.
 
 \parcomment {Examples}
 
@@ -1276,7 +1285,7 @@ our solver fails to solve it, as does our contextual semantics.
 
 By symmetry we can try to apply \Rule{Susp-Ctx} on $\tva$ first: we
 must show $\Cshape \C \tva \tint$ for the context
-$\C := (\square \cand \cmatch \tvb {\cbranch \cwild {\cunif \tva \tint}})$. But
+$\C \eqdef (\square \cand \cmatch \tvb {\cbranch \cwild {\cunif \tva \tint}})$. But
 this unicity condition does not hold as the erasure
 $\cerase \C = \square \cand \ctrue$ does not constrain $\tva$, so we cannot
 apply the \Rule{Susp-Ctx} rule.
@@ -1340,31 +1349,6 @@ $\clet {getx}
 \tvd {\cexists {\tvb, \tvc} \cunif \tvd {\tvb \to \tvc} \cand \cunif \tvb \gt}
 {\capp {getx} {(\tint \ \mathsf{one} \to \tv)}}$. $getx$ is bound to the constraint abstraction $\cabs \tvd \exists \tvc.\uad \cunif \delta {(\gt \to \gamma)}$, so the instantiation $getx (\tint \ \mathsf{one} \to \tv)$ can only be satisfied when $\gt = \tint\ \mathsf{one}$. This proves unicity, so \code{e_7} is accepted by our semantics.
 \end{example}
-
-\paragraph{Well-foundedness}
-
-The astute reader may have noticed a subtle compilication resulting
-from our definition of the unicity predicate:
-$\Cshape \C \tv \sh$ includes a negative occurrence of the
-satisfiability judgement. This is essential for expressing that
-$\sh$ is unique among all solutions:
-\begin{mathline}
-    \Cshape \C \t \sh \Wide\eqdef \forall \semenv, \gt. \uad
-      \semenv \th \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
-\end{mathline}
-This negative occurrence in a premise of \Rule{Susp-CTX}
-meansthe the rules for the semantic judgment
-$\semenv \th \c$ may not form an inductive definition.
-
-Fortunately, this issue can be cleanly resolved. The judgment $\semenv \th \cerase {\C\where{\cunif \t \gt}}$ is on an erased constraint, which by definition of $\cerase \cdot$ does not contain any suspended matched constraint. We call a constraint \emph{simple} if does not contain any suspended match constraint. The rule \Rule{Susp-Ctx} cannot help to prove the satisfiability of simple constraints, so the satisfiability of $\semenv \th \cerase {\C\where{\cunif \t \gt}}$ in the full system is equivalent the satisfiability in the subsystem where \Rule{Susp-Ctx} is omitted, which is inductive. Technically we can thus define our semantics by first defining $\semenv \th_\mathsf{simple} \c$ without the \Rule{susp-ctx} rule, and then defining the final system $\semenv \th \c$ with all the current rules (so most rules are duplicated in the simple and the full system), and unicity restricted to simple satisfiability:
-\begin{mathline}
-    \Cshape \C \t \sh \Wide\eqdef \forall \semenv, \gt. \uad
-      \semenv \th_{\mathsf{simple}} \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
-\end{mathline}
-
-\begin{restatable}{theorem}{satwf}
-  The relation $\semenv \th \c$ is well-founded.
-\end{restatable}
 
 \paragraph{Summary}
 
@@ -3987,187 +3971,6 @@ By Rule \Rule {Inst-Shape}, we have
 which, given~\lref E, is exactly~\lref C.
 
 
-
-\subsection{Well-foundedness of satisfiability}
-\label{appendix:sat-wf}
-
-In this appendix, we give the full details of the well-foundedness of the
-semantics of constraints, that is the satisfiability judgement $\semenv \th
-\c$.
-
-%\satwf
-\newcommand{\cnmatches}[1]{\#\Match #1}
-\newcommand{\csize}[1]{|#1|}
-\newcommand{\cmeasure}[1]{{\| #1 \|}}
-
-\begin{proof}
-  For the relation $\semenv \th \c$, the following measure on such judgements is
-  adequate to prove well-foundedness:
-  \begin{mathpar}
-    \cmeasure \c \uad\eqdef\uad \angles{\cnmatches \c, \csize \c}
-  \end{mathpar}
-  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
-  \begin{enumerate}
-
-    \item $\cnmatches \c$ is the number of $\cmatch \t \cbrs$ constraints in
-      $\c$.
-
-    \item the last component $\csize \c$ is a structural measure of constraints \ie a
-      conjunction $\cone \cand \ctwo$ is larger than the two conjuncts $\cone,
-      \ctwo$.
-
-  \end{enumerate}
-We will now show that every rule uses a premise whose measure is smaller than
-the conclusion.
-\begin{itemize}
-  \proofcasederivation
-      {True}
-      {}
-      {\semenv \th \ctrue}
-
-      \begin{llproof}
-	No premises.
-      \end{llproof}
-
-  \proofcasederivation
-      {Conj}
-      {\semenv \th \cone \\ \semenv \th \ctwo}
-      {\semenv \th \cone \cand \ctwo}
-
-      \begin{llproof}
-	\gtPf{\csize {\cone \cand \ctwo}}{\csize \cone, \csize \ctwo}{By definition}
-	\eqPf{\cnmatches {\cone \cand \ctwo}}{\cnmatches \cone + \cnmatches \ctwo}{By definition}
-	\eqPf{\cmeasure \cone}{\angles{\cnmatches \cone, \csize \cone}}{By defintion}
-\Hand 	\continueltPf{\cmeasure {\cone \cand \ctwo}}{Above}
-	\eqPf{\cmeasure \ctwo}{\angles{\cnmatches \ctwo, \csize \ctwo}}{By defintion}
-\Hand   \continueltPf{\cmeasure {\cone \cand \ctwo}}{\ditto}
-      \end{llproof}
-
-  \proofcasederivation
-      {Exists}
-      {\semenv\where{\tv \is \gt} \th \c}
-      {\semenv \th \cexists \tv \c}
-
-      \begin{llproof}
-	\gtPf{\csize {\cexists \tv \c}}{\csize \c}{By definition}
-	\eqPf{\cnmatches {\cexists \tv \c}}{\cnmatches \c}{By definition}
-	\eqPf{\cmeasure \c}{\angles {\cnmatches \c, \csize \c}}{By definition}
-\Hand 	\continueltPf{\cmeasure {\cexists \tv \c}}{Above}
-      \end{llproof}
-
-  \proofcasederivation
-      {Forall}
-      {\forall \gt,\, \semenv\where{\tv \is \gt} \th \c}
-      {\semenv \th \cfor \tv \c}
-
-      \begin{llproof}
-	Similar to the \Rule{Exists} case.
-      \end{llproof}
-
-  \proofcasederivation
-      {Unif}
-      {\semenv(\tone) = \semenv(\ttwo)}
-      {\semenv \th \cunif \tone \ttwo}
-
-      \begin{llproof}
-	No non-trivial premises.
-      \end{llproof}
-
-  \proofcasederivation
-      {Let}
-      {\semenv \th \cexists \tv \cone \\ \semenv\where{\x \is \semenv(\cabs \tv \c)} \th \ctwo}
-      {\semenv \th \clet \x \tv \cone \ctwo}
-
-      \begin{llproof}
-	\gtPf{\csize {\clet \x \tv \cone \ctwo}}{\csize{\cexists \tv \cone}, \csize{\ctwo}}{By definition}
-	\eqPf{\cnmatches {\clet \x \tv \cone \ctwo}}{\cnmatches \cone + \cnmatches \ctwo}{By definition}
-	\eqPf{\cmeasure {\cexists \tv \cone}}{\angles {\cnmatches {\cexists \tv \cone}, \csize {\cexists \tv \cone}}}{By definition}
-\Hand   \continueltPf{\cmeasure {\clet \x \tv \cone \ctwo}}{Above}
-	\eqPf{\cmeasure \ctwo}{\angles {\cnmatches \ctwo, \csize \ctwo}}{By definition}
-\Hand   \continueltPf{\cmeasure {\clet \x \tv \cone \ctwo}}{\ditto}
-	\eqPf{\semenv(\cabs \tv \cone)}{\set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \cone}}{By definition}
-	\gtPf{\csize {\cexists \tv \cone}}{\csize \cone}{By definition}
-	\eqPf{\cnmatches {\cexists \tv \cone}}{\cnmatches \cone}{By definition}
-	\eqPf{\cmeasure \cone}{\angles {\cnmatches \cone, \csize \cone}}{By definition}
-	\continueltPf{\cmeasure {\cexists \tv \cone}}{Above}
-\Hand   \continueltPf{\cmeasure {\clet \x \tv \cone \ctwo}}{Transitivity}
-      \end{llproof}
-
-  \proofcasederivation
-      {App}
-      {\semenv(\t) \in \semenv(\x)}
-      {\semenv \th \capp \x \t}
-
-      \begin{llproof}
-	No non-trivial premises.
-      \end{llproof}
-
-  \proofcasederivation
-      {Susp-Ctx}
-      {\Cshape \C \t \sh \\ \semenv \th \C\where{\cmatched \t \sh \cbrs}}
-      {\semenv \th \C\where{\cmatch \t \cbrs}}
-
-      \begin{llproof}
-	&$\Cshape \C \t \sh$ $=$\, &$\forall \semenvp, \gt.\, \semenvp \th \cerase {\C\where{\cunif \t \gt}}$ & By definition \\
-	&&\qquad\qquad $\implies \shape \gt = \sh$ \\
-	\eqPf{\cnmatches {\cerase {\C\where{\cunif \t \gt}}}}{0}{Erasure removes all matches}
-	\continueltPf{1}{}
-	\continueleqPf{\cnmatches {\C\where{\cmatch \t \cbrs}}}{}
-	\eqPf{\cmeasure {\cerase {\C\where{\cunif \t \gt}}}}{\angles {0, \csize {\cerase {\C\where{\cunif \t \gt}}}}}{}
-\Hand 	\continueltPf{\cmeasure {\C\where{\cmatch \t \cbrs}}}{Above}
-	\decolumnizePf
-	\eqPf{\cnmatches {\C\where{\cmatched \t \sh \cbrs}}}{\cnmatches \C}{By definition}
-	\continueltPf{1 + \cnmatches \C}{}
-	\continueeqPf{\cnmatches {\C\where{\cmatch \t \cbrs}}}{By definition}
-	\eqPf{\cmeasure {\C\where{\cmatched \t \sh \cbrs}}}
-	  {\angles {\cnmatches \C, \csize {\C\where{\cmatched \t \sh \cbrs}}}}
-	  {}
-\Hand 	\continueltPf{\cmeasure {\C\where{\cmatch \t \cbrs}}}{Above}
-    \end{llproof}
-
-  \proofcasederivation
-      {Multi-Unif}
-      {\all {\t \in \ueq} \semenv(\t) = \gt}
-      {\semenv \th \ueq}
-
-      \begin{llproof}
-	No non-trivial premises.
-      \end{llproof}
-
-  \proofcasederivation
-      {LetR}
-      {\semenv \th \cexists {\tv, \tvs} \cone \\ \semenv\where{\x \is \semenv(\cabsr \tv \tvs \ctwo)} \th \ctwo}
-      {\semenv \th \cletr \x \tv \tvs \cone \ctwo}
-
-      \begin{llproof}
-	Similar to the \Rule{Let} case.
-      \end{llproof}
-
-  \proofcasederivation
-      {AppR}
-      {\semenv(\x) = \gabsr \tv \tvs \\ \semenv(\t) \in \glam}
-      {\semenv \th \capp \x \t}
-
-      \begin{llproof}
-	No non-trivial premises.
-      \end{llproof}
-
-
-  \proofcasederivation
-      {Papp}
-      {\semenv(\x) = \gabsr \tv \tvs \\ \dom \ren \subseteq \tvs \\ \semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \glam}
-      {\semenv \th \cpapp \x \ren \ueqs \t}
-
-      \begin{llproof}
-	\eqPf{\csize {\ueqs\where\ren}}{\csize \ueqs}{Renaming preserves size}
-	\eqPf{\cnmatches {\cpapp \x \ren \ueqs \t}}{0}{By definition}
-	\continueeqPf{\cnmatches {\ueqs\where\ren}}{Multi-equations do not contain matches}
-	\ltPf{\csize \ueqs}{\csize {\cpapp \x \ren \ueqs \t}}{By definition}
-	\eqPf{\cmeasure {\ueqs\where\ren}}{\angles {0, \csize {\ueqs\where\ren}}}{By definition}
-	\continueltPf{\cmeasure {\cpapp \x \ren \ueqs \t}}{}
-      \end{llproof}
-\end{itemize}
-\end{proof}
 
 \subsection{Canonicalization of satisfiability}
 
