@@ -614,14 +614,14 @@ $\tfor \av {\tapoly \ts \av}$.
 \parcomment {Boxing}
 
 The introduction form for polytypes is a boxing operator $\expoly
-\e {\exi \tvs \ts}$ with an explicit polytype annotation $\exi \tvs \ts$
+\e \tvs \ts$ with an explicit polytype annotation $\exi \tvs \ts$
 where the $\tvs$ are type variables that are free in $\ts$.\Xgabriel{Do you mean that $\tvs$ are \emph{all} the free variables in $\ts$, so that $\exi \tvs \ts$ is closed, or is it okay if they are only a subset of the type variables bound in $\ts$?}
 %
 The resulting expression has type $\tapoly {\ts \where {\tvs \is \tys}} \av$
 where $\av$ is an arbitrary (typically fresh) annotation variable and $\tys$
 are arbritraty types that replace the free variables $\tvs$.
 The annotation variable $\av$ can thus be generalized.  That is $\expoly \e
-{\exi \tvs \ts}$ can also be assigned the type scheme $\all \av {\tapoly {\ts
+\tvs \ts$ can also be assigned the type scheme $\all \av {\tapoly {\ts
 \where {\tvs \is \tys}} \av}$.
 
 \parcomment {Unboxing (principality restriction)}
@@ -1375,69 +1375,37 @@ $\clet {getx}
 
 \parcomment {We need a spec, but this itself is hard}
 
-In order to show our approach is sound and complete with respect to our
-constraint generation translation, we must first define a formal
-specification in the form of a calculus and accompanying type
-system. Surprisngly, identifying an appropriate declarative type system to
-use as a specification is itself an interesting problem!
+To show that the type-inference constraints we generate are correct,
+we must first define a surface language and its type
+system. Surprisngly, identifying an appropriate declarative type
+system to use as a specification is itself an interesting problem!
 
 \parcomment {Why do naive approaches not guarantee principal types.}
 
 Na\"ive specifications, though accessible, often lack principal types. Take
-overloaded tuple projects \ala \SML: an expression $\efield e j$
-governed by the rule:
-\begin{mathpar}
-  \infer
-    {\G \th \e : \Pi\iton \ti \and 1 \leq j \leq n}
-    {\G \th \efield \e j : \tj}
-\end{mathpar}
-admits many typings, as any tuple of at least size $j$ satisfies the
-premise. This multiplicity undermines principality.
-
-\parcomment {Partial annotations (shapes) to the rescue!}
-
-Our first insight is that partial type annotations often suffices to
-recover principality. For
-example, explicitly annotating the tuple projection with its arity, as in
-$\exfield \e n j$, disambiguates the expression:
+overloaded tuple projections \ala \SML. We can ask the user to provide the length of the tuple explicitly, via an annotated syntax $\exfield \e n j$, which has a simple typing rule:
 \begin{mathpar}
    \inferrule*
       {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n }
       {\G \th \exfield \e n j : \tj}
 \end{mathpar}
-Yet, requiring users to write such annotations manually is impractical.
 
-\parcomment {Inference of shapes}
+On the other hand, the natural typing rule for the fragile construct $\efield e j$, where size is implicit, breaks principality.
+\begin{mathpar}
+  \infer
+    {\G \th \e : \Pi\iton \ti \and 1 \leq j \leq n}
+    {\G \th \efield \e j : \tj}
+\end{mathpar}
+The term $\efield e \j$ admits many typings, as any tuple of at least size $j$ satisfies the premise.
 
-Our solution is to permit \textit{inference} of such information, provided
-that the inferred annotation is \textit{uniquely determined by context}.  This
-approach ensures principality by construction and yields a clear specification
-with predictable annotability requirements for the everyday programmer.
-
-\parcomment {How do we specify our intuition?}
-
-Specifying the notion of unique inferrability from context is
-tricky. Luckily, we can leverage many of the formal methods developed in the
-previous section---in particular, the manipulation of contexts within the
-derivation---to prove uniqueness of these partial annotations. Allowing us to
-systematically replace the ambiguous constructs with their disambiguated
-counterparts:
+This is the exact same issue we had with the naive semantics of suspended constraints, and in fact we solve it in the same way, with a unicity condition and a contextual rule that transforms the fragile, implicit construct into the robust, explicit construct:
 \begin{mathpar}
   \inferrule*
     {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\ \G \th E[\exfield \e n j] : \t}
     {\G \th \E[\efield \e j] : \t}
 \end{mathpar}
-The intuition here is that the context $\E$ is sufficiently large to
-constrain the shape of $\e$'s type as a tuple of size $n$.
 
-\parcomment {Limitations}
-
-The chief limitation of our approach is that disambiguation can still
-require explicit annotations in inherently ambiguous scenarios.  This is
-fine. Another option would be the use of sensible ``defaults'', such as
-resolving $\efield e j$ by assuming the tuple has arity $j$. While
-appealing, such defaults compromise principality. We return to this
-pragmatic tradeoff in \cref{sec:discussion}.
+We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton \tvcs}$, which is the counterpart of our unicity condition $\Cshape \C \t \sh$ in the type system. We formally introduce it in the rest of this section; in fact the different fragile features need slightly different formulations of the unicity condition.
 
 \subsection{Syntax}
 
@@ -1455,7 +1423,7 @@ pragmatic tradeoff in \cref{sec:discussion}.
    \efield e j \and
    \exfield e n j \andcr
    \epoly e \and
-   \epoly[\exi \tvs \ts] e  \and
+   \expoly e \tvs \ts \and
    \einst e \and
    \exinst e \tvs \ts
 }\\
@@ -1490,25 +1458,17 @@ Our extensions include:
 \item
   Constructor and record label disambiguation, modelled using record
   literals $\erecord { \ela = \eone; \ldots; \el_n = \en }$ and field
-  projections $\efield e l$.
+  projections $\efield \e l$.
 
 \item
-  Tuples $(\eone, \ldots, \en)$ with overloaded tuple projections
-  $\efield e j$.
+  Tuples $(\eone, \ldots, \en)$ with implicit projections
+  $\efield \e j$ and explicit projections $\exfield \e j n$.
 
 \item
-  For semi-explicit first-class polymorphism, we have the explicit and
-    implicit boxing constructs
-    $\expoly \e {\exi \tvs \ts}$, $\epoly \e$  and the unboxing construct $\einst e$.
+  For semi-explicit first-class polymorphism, we have implicit and explicit boxing $\epoly \e$ and $\expoly \e \tvs \ts$, and implicit and explicit unboxing $\einst \e$ and $\exinst \e \tvs \ts$.
 
 \end{enumerate}
-Each construct that endangers principality (written $\e^i$ or $\el^i$) has an
-explicitly annotated counterpart (written $\e^x$ or $\el^x$) that is
-$\eproj [n] \e j$, $\epoly [\exi \tvs \ts]
-\e$, $\einst [\exi \tvs \ts] \e$, or $\elab / \T$ for record labels.
-
-Typing contexts $\G$ are an ordered sequence of expression variable
-typings $x : \ts$.
+We use the metavariables $\e^i$ or $\el^i$ to range over the fragile/implicit constructions, and $\e^x$ or $\el^x$ to range over their explicit counterpart.
 
 \subsection{Typing rules}
 \label{sec/language/typing-rules}
@@ -2237,7 +2197,7 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     \cand \cmatch \tv {\cbranch {\cpatprod \tvb j} {\cunif \t \tvb}}}
 \\
 \Crule
-  {\cinfer {\expoly \e {\exi \tvs \ts}} \t}
+  {\cinfer {\expoly \e \tvs \ts} \t}
   {\cexists {\tvs}
     \cinfer \e \ts
     \cand \cunif \t {\tpoly \ts}}
@@ -4918,7 +4878,7 @@ entailment in our system.
 %%\begin{align*}
 %%  x(\eproj \e j, \any \tvcs \Pi\iton \tvcs) &= \eproj[n] \e j \\
 %%  x(\einst \e, \any \tvcs \tpoly \ts) &= \exinst \e \tvcs \ts \\
-%%  x(\epoly \e, \any \tvcs \tpoly \ts) &= \expoly \e {\exi \tvcs \ts}
+%%  x(\epoly \e, \any \tvcs \tpoly \ts) &= \expoly \e \tvcs \ts
 %%\end{align*}
 %%
 %%\begin{theorem}
