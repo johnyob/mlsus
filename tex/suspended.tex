@@ -882,10 +882,10 @@ We write $\semenv\where{\tv \is \gt}$ and $\semenv\where{\x \is \glam}$ for the 
 
 The judgment is defined in \cref{fig:constraint-semantics} for all constraint-formers except suspended
 constraints; its definition on this fragment is standard and somewhat tautological. $\ctrue$ is satisfied in any
-environment, and $\cfalse$ in none. An environment $\semenv$ satisfies $\cone
-\cand \ctwo$ if it satisfies both $\cone$ and $\ctwo$. Satisfying $\cexists \tv \c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint $\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv \is \gt}$. A unification constraint $\t_1 = \t_2$ is satisfied when $\semenv(\t_1)$ and $\semenv(t_2)$ are equal.
+environment, and $\cfalse$ in none. Satisfying $\cone
+\cand \ctwo$ requires satisfying both $\cone$ and $\ctwo$. Satisfying $\cexists \tv \c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint $\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv \is \gt}$. Unification $\t_1 = \t_2$ is satisfied when $\semenv(\t_1)$ and $\semenv(t_2)$ are equal ground types.
 
-The rule for $\clet \tv \cone \ctwo$ states that $\cone$ must satisfied under \emph{some} instantiation of its bound variable, and that $\ctwo$ must be satisfiable when $\x$ is bound $\cabs \tv \cone$, or rather its semantic interpretation as a set of ground types.
+The rule for $(\clet \tv \cone \ctwo)$ states that $\cone$ must satisfied under \emph{some} instantiation of its bound variable (otherwise $\cone$ could be unsatisfiable when $\x$ is not used in $\ctwo$), and that $\ctwo$ must be satisfiable when $\x$ is bound to (the interpretation of) $\cabs \tv \cone$.
 
 Application constraints $\capp \x \t$ are interpreted by checking that $\t$
 belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
@@ -894,6 +894,11 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
 \begin{mathparfig}[t]%
   {fig:constraint-semantics}%
   {Semantics of constraints (without suspended constraints)}
+  \begin{bnfgrammar}
+    \entry[Semantic environments]{\semenv}{\emptyset \and \semenv\where{\tv \is \gt} \and \semenv\where{\x \is \glam}
+    }
+  \end{bnfgrammar}
+
   \infer[True]
     {}
     {\semenv \th \ctrue}
