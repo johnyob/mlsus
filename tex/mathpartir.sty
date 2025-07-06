@@ -492,6 +492,41 @@
   \fi \@do}
 
 
+%% Version for Hoare triples
+
+\def \mpr@hlinebox{\noalign{\setbox0\hbox {}\dp0 0.1ex\ht0 0.1ex\box0}}
+\def \mpr@@hline {\mpr@hlinebox\hline\mpr@hlinebox}
+\let \mpr@vbox \vbox
+%% \def \mpr@@hrewrite {\mpr@hlinebox\hrulefill\ensuremath{\rightarrow}}
+\def\mpr@hline{\omit\hrule\hfill\cr}
+\def \mpr@@hdots
+  {\omit \leaders\hbox{$\cdot$}\hfill\cr}
+\def \mpr@@hrewrite
+  {\omit \leaders\hbox{$-\!$}\hfill $\!\smash\rightarrow$\cr}
+
+\newcommand{\vrewrite}[4][]
+  {\bgroup
+     \ifnum \linewidth<\hsize \hsize \linewidth\fi
+     \mpr@rulelineskip
+     \let \and \qquad
+     \let \hva \mpr@hva
+     \def \mpr@cr {\cr}%
+       \setbox0 \hbox {\begin{array}[b]{@{}c@{}}
+       \ifempty{#2}{}{\mpr@hovbox{T}{#2}\mpr@cr\mpr@@hdots}%
+     \mpr@hovbox{T}{#3}\cr \mpr@@hrewrite
+     \let \mpr@vbox \vtop \ht0 0em
+     \setbox0 \strut \@tempdima \ht0
+     \setbox0 \mpr@hovbox{B}{#4}\advance \@tempdima by -\ht0
+     \setbox0 \hbox{\raise \@tempdima \box0}\box0
+     \end{array}}%
+   \def \@test {#1}\ifx \@test\empty \box0
+   \else \vbox
+      %%% Suggestion de Francois pour les etiquettes longues
+      %%%   {\hbox to \wd0 {\RefTirName {#1}\hfil}\box0}\fi
+      {\hbox {\DefTirName {#1}}\box0}\fi
+   \egroup}
+
+
 %%% Exports
 
 % Envirnonment mathpar

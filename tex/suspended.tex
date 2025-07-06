@@ -287,7 +287,7 @@ sometimes look arbitrary.
 \locallabelreset
 
 Indeed, they all reject examples as ambiguous when sometimes there
-would be a unique well-typed solution. 
+would be a unique well-typed solution.
 %
 Let us illustrate these situations with a few more examples:
 \begin{program}[error]
@@ -493,7 +493,9 @@ Our contributions are
   \and \clet \x \tv \C \c
   \and \clet \x \tv \c \C
 } \\
-\entryset[Shapes] {\Sh, \sh} {\Shapes} {}
+\entry[Shapes] {\Sh} {} {}
+\\
+\entry[Canonical shapes] {\sh} {} {}
 \end{bnffig}
 
 \parcomment{Syntax!}
@@ -966,8 +968,8 @@ to $\alpha$-conversion.  When $\t$ is a ground type, we omit the
 binder and write simply $\t$.
 %
 We write $\bot$ for the shape $\any \tvc \tvc$, which we call the
-\emph{trivial} shape. We write $\Shapes$ the set of shapes and $\Shapesz$ the
-subset of non trivial shapes.
+\emph{trivial} shape. We write $\Shapesz$ the
+set of non trivial shapes.
 %% and use letter $\Sh$ to range
 %% over non trivial shapes.
 

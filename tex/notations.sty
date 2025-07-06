@@ -52,8 +52,9 @@
 \newcommand{\Ground}{\mathcal {G}}
 \newcommand{\Types}{\mathcal {T}}
 \newcommand{\TyVars}{\mathcal{V}}
-\newcommand{\Shapes}{\mathcal {S}}
-\newcommand{\Shapesz}{\Shapes^\ast}
+\newcommand{\Shapesz}{\mathcal {S}}
+%% \newcommand{\Shapesz}{\Shapes^\ast}
+
 \newcommand{\cmatches}[4][=]{#2 \Matches #3 #1 #4}
 \newcommand{\cwild}{\wild}
 \newcommand{\csolve}{\longrightarrow}
@@ -63,6 +64,8 @@
 \newcommand{\cdetermines}[2]{#1 \Determines #2}
 \newcommand{\cerase}[1]{\floor {#1}}
 \newcommand{\simple}{\mathpostfix{simple}}
+
+\newcommand{\discriminates}[2]{#1 \mathinfix{discrimitates} #2}
 
 \newcommand{\cmatchesz}[3]{\cmatch {#1 \is #2} {#3}}
 \newcommand{\cmatched}[3]{\cmatch {#1 \is #2} {#3}}

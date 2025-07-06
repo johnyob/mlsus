@@ -4,6 +4,15 @@
 \RequirePackage[utf8]{inputenc}
 \RequirePackage{locallabel}
 
+%% Enumerations
+
+\RequirePackage[inline,shortlabels]{enumitem}
+\newlist{Enumerate}{enumerate}{1}
+\setlist[Enumerate]{label*=\textbf{(\arabic*)}}
+
+\newlist{Itemize}{itemize}{1}
+\setlist[Itemize]{leftmargin=0em,label={}}
+
 
 %% \RequirePackage{mylistings}
 \RequirePackage{myprogram}
@@ -20,13 +29,6 @@
 \RequirePackage{thm-restate}
 \RequirePackage{placeins} % for \FloatBarrier
 
-%% Enumerations
-
-\RequirePackage[inline,shortlabels]{enumitem}
-\newlist{Enumerate}{enumerate}{1}
-\setlist[Enumerate]{label*=\textbf{(\arabic*)}}
-
-%% \setlist{leftmargin=2em,noitemsep}
 
 %% Clever refs.
 

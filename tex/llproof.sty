@@ -129,8 +129,15 @@
 
 
 % Line-by-line proofs
-\newcommand{\BeginProof}{\smallskip \renewcommand{\arraystretch}{1.1} \begin{tabular}[b]{r@{}r @{} l  l}}
-\newcommand{\EndProof}{\end{tabular} \renewcommand{\arraystretch}{\mydefaultarraystretch} \smallskip}
+\newcommand{\BeginProof}
+   {\smallskip
+    \renewcommand{\arraystretch}{1.1}
+    \begin{tabular}[b]{.r@{}r@{}ll.}}
+\newcommand{\EndProof}
+   {\end{tabular}
+    %% The following will be reset by the \endgroup of env
+    %% \renewcommand{\arraystretch}{\mydefaultarraystretch}
+    \smallskip}
 \newenvironment{llproof}{\BeginProof}{\EndProof}
 
 \newcommand{\Pf}[4] {&$#1$ $#2$\, & $#3$ & #4 \\}
@@ -190,5 +197,5 @@
           \Pf{}{}{#1} {By contradiction}%
        }
 
-\newcommand{\casesPf}[1] {\Pf{\text{Cases on}\,~{#1}\text{.}}{}{}{}}
+\newcommand{\casesPf}[1] {\Pf{\text{By cases on}\,~{#1}\text{.}}{}{}{}}
 \newcommand{\commentPf}[2]{\multicolumn{3}{l}{#1} & #2\\}
