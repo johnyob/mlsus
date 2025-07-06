@@ -122,8 +122,6 @@
 
 %% Useing itemize
 
-\True%\False
-{
 \newcommand{\proofcase}[2][Case]{\item \emph{#1 #2}.}
 \newcommand{\proofcasemath}[2][Case]{\proofcase[#1]{\ensuremath{#2}}}
 
@@ -153,9 +151,9 @@
     \nopagebreak \\[0.2ex]
   }
 
-\newlist{proofcases}{itemize}{3}
-
-}{
+\newenvironment{proofcases}
+   {\begin{itemize}}
+   {\end{itemize}}
 
 %% Case and Subcases
 
@@ -170,24 +168,25 @@
       \else #2\fi}}}
 \newcommand {\proofcasestyle}[1]{\textbf{#1}}
 
-\newlist{proofcases}{description}{3}
-\setlist[proofcases]
+\newlist{Proofcases}{description}{3}
+\setlist[Proofcases]
    {before={\def \makelabel{\prooflabel@3}},
     style=sameline,leftmargin=1em}
-\setlist[proofcases,2]
+\setlist[Proofcases,2]
    {before={\def \makelabel{\prooflabel@2}},
     style=sameline,leftmargin=1em}
-\setlist[proofcases,1]
+\setlist[Proofcases,1]
    {before={\def \makelabel{\prooflabel@1}},
     style=sameline,leftmargin=1em}
 
 
 \newcommand{\proofitem}[1][]
   {\ifempty{#1}{\item}{\item[\proofcasestyle{#1}]}}
-\newcommand{\proofcase}[2][]
+
+\newcommand{\Proofcase}[2][]
   {\proofitem[#1] \emph{#2}.}
-\newcommand{\proofcasemath}[2][Case]{\proofcase[#1]{\ensuremath{#2}}}
-\newcommand{\proofcasederivation}[4][]{%
+\newcommand{\Proofcasemath}[2][Case]{\proofcase[#1]{\ensuremath{#2}}}
+\newcommand{\Proofcasederivation}[4][]{%
   \proofitem[#1]
     \indent \par\nopagebreak \vskip 1.2ex\nopagebreak
     \indent \hbox to 100ex {%
@@ -198,7 +197,7 @@
   }
 
 
-\newcommand{\proofcasederivationdouble}[7][]{%
+\newcommand{\Proofcasederivationdouble}[7][]{%
   \proofitem[#1]
       \indent \par\nopagebreak \vskip .4ex\nopagebreak \indent
       \begin{tabular*}{100ex}[t]{.L.}
@@ -209,6 +208,15 @@
     \nopagebreak \vskip 0.2ex
   }
 
-}
+%% Renew
+\True%\False
+{\renewenvironment{proofcases}
+   {\begin{Proofcases}
+    \let \proofcase  \Proofcase
+    \let \proofcasemath \Proofcasemath
+    \let \proofcasederivation \Proofcasederivation
+    \let \proofcasederivationdouble  \Proofcasederivationdouble}
+   {\end{Proofcases}}
+}{}
 
 \newcommand{\Hand}{\text{\Pointinghand~~~~}}

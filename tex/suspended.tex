@@ -1954,7 +1954,7 @@ optional, sequentially.  Therefore, the final step, which will eliminate the
 last annotation has a single point of focus of the form $\E\where{e^i}$,
 where $\e^i$ can be any of the three positions with a missing annotation.  We
 consider each case independently, and show that it is actually not typable.
-  \begin{itemize}
+\begin{proofcases}
 \proofcase
 {$\E$ is $\elet \x \ehole (\eapp {\einst \x} 1, \eapp {\einst \x}\eunit)$}
 %
@@ -1993,7 +1993,7 @@ previous case).
 \proofcase {$\E$ is  $\elet \x \epid {(\eapp {\einst \x} 1, \eapp
   {\einst \ehole} \eunit)}$} This is symmetric to the previous case, which cannot
 hold either.
-  \end{itemize}
+  \end{proofcases}
 \end{example}
 
 \begin{example}
@@ -3911,7 +3911,7 @@ entailment in our system.
     \begin{enumerate}[(\roman*)]
       \item Case analysis on the given derivation $\semenv \th \cunif \tone \ttwo$.
 	There is a unique case for the atomic constraint $\cunif \tone \ttwo$:
-	\begin{itemize}
+	\begin{proofcases}
 	    \proofcasederivation
 	      {Unif}
 	      {\semenv(\tone) = \semenv(\ttwo)}
@@ -3920,14 +3920,14 @@ entailment in our system.
 	    \begin{llproof}
 \Hand 		\eqPf{\semenv(\tone)}{\semenv(\ttwo)}  {Premise}
 	    \end{llproof}
-	\end{itemize}
+	\end{proofcases}
 
       \item Similar to \Rule{Unif} case.
       \item Similar to \Rule{Unif} case.
       \item Similar to \Rule{Unif} case.
 
       \item Case analysis on the given derivation $\semenv \th \cone \cand \ctwo$.
-      \begin{itemize}
+      \begin{proofcases}
 	\proofcasederivation
 	  {Conj}
 	  {\semenv \th \cone \\ \semenv \th \ctwo}
@@ -3949,7 +3949,7 @@ entailment in our system.
 \Hand 	  \contraPf{\semenv \th \cone, \semenv \th \ctwo}
 	\end{llproof}
 
-      \end{itemize}
+      \end{proofcases}
 
       \item Similar to \Rule{Conj} case.
       \item Similar to \Rule{Conj} case.
@@ -3992,7 +3992,7 @@ entailment in our system.
   If $\Cshape \Ca \t \sh$, then $\Cshape {\Cb\where\Ca} \t \sh$.
   \begin{proof}
     Induction on the structure of $\Cb$.
-    \begin{itemize}
+    \begin{proofcases}
       \proofcase{$\square$}
 
 	\begin{llproof}
@@ -4078,7 +4078,7 @@ entailment in our system.
 	\end{llproof}
 
 
-    \end{itemize}
+    \end{proofcases}
   \end{proof}
 \end{lemma}
 
@@ -4131,7 +4131,7 @@ entailment in our system.
   If $\semenv \th \c$, then $\semenv \Th \c$.
   \begin{proof}
   We proceed by induction on $\semenv \th \c$ with the measure $\cmeasure \c$.
-  \begin{itemize}
+  \begin{proofcases}
     \proofcasederivation
       {True}
       {}
@@ -4163,7 +4163,7 @@ entailment in our system.
 	\casesPf{\semenv \Th \cone, \semenv \Th \ctwo}
       \end{llproof}
 
-      \begin{itemize}
+      \begin{proofcases}
 	\proofcasederivationdouble
 	  {Can-Base}
 	  {\semenv \th \cone \\ \cone \simple}
@@ -4210,7 +4210,7 @@ entailment in our system.
 	  \begin{llproof}
 	    \Pf{}{}{}{Symmetric to the above case.}
 	  \end{llproof}
-      \end{itemize}
+      \end{proofcases}
 
       \proofcasederivation
 	{Exists}
@@ -4223,7 +4223,7 @@ entailment in our system.
 	  \casesPf{\semenv\where{\tv \is \gt} \Th \c}
 	\end{llproof}
 
-	\begin{itemize}
+	\begin{proofcases}
 
 	    \proofcasederivation
 	      {Can-Base}
@@ -4251,7 +4251,7 @@ entailment in our system.
 		  \Pf{}{}{\Cshape {\parens {\cexists \tv \C}} \t \sh}{\cref{lem:compose-unicity}}
 \Hand             \VdashPf{\semenv}{\cexists \tv \C\where{\cmatch \t \cbrs}}{By \Rule{Can-Susp-Ctx}}
 		\end{llproof}
-	\end{itemize}
+	\end{proofcases}
 
 	\proofcasederivation
 	  {Forall}
@@ -4276,7 +4276,7 @@ entailment in our system.
 	    \casesPf{\semenv \Th \cexists \tv \cone, \semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \ctwo}
 	  \end{llproof}
 
-	  \begin{itemize}
+	  \begin{proofcases}
 	    \proofcasederivationdouble
 	      {Can-Base}
 	      {\semenv \th \cexists \tv \cone \\ \cexists \tv \cone \simple}
@@ -4332,7 +4332,7 @@ entailment in our system.
 		  \VdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatched \t \sh \cbrs}}}{By \ih}
 \Hand 		  \VdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatch \t \sh}}}{By \Rule{Can-Susp-Ctx}}
 		\end{llproof}
-	  \end{itemize}
+	  \end{proofcases}
 
       \proofcasederivation
 	{App}
@@ -4384,7 +4384,7 @@ entailment in our system.
       \end{llproof}
 
 
-  \end{itemize}
+  \end{proofcases}
   \end{proof}
 \end{theorem}
 
@@ -4407,7 +4407,7 @@ entailment in our system.
     \cref{corollary:matched-abstractions}) within the proof of
     \cref{thm:canonicalization} is restricted to strictly smaller constriaints.
 
-    \begin{itemize}
+    \begin{proofcases}
       \proofcasederivation
 	{Can-Base}
 	{\semenv \th \C\where{\cmatch \t \cbrs} \\ \C\where{\cmatch \t \cbrs} \simple}
@@ -4427,7 +4427,7 @@ entailment in our system.
 	\begin{llproof}
 	  \casesPf{\C = \Cp}
 	\end{llproof}
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\C = \Cp$}
 
 	    \begin{llproof}
@@ -4473,8 +4473,8 @@ entailment in our system.
 	      \shapePf{\Ctwo\where{\cmatched \t \sh \cbrs, \square}}{\tp}{\shp}{Above}
 \Hand 	      \VdashPf{\semenv}{\Ctwo\where{\cmatched \t \sh \cbrs, \cmatch \tp \cbrs'}}{By \Rule{Con-Susp-Ctx}}
 	    \end{llproof}
-	\end{itemize}
-    \end{itemize}
+	\end{proofcases}
+    \end{proofcases}
   \end{proof}
 \end{lemma}
 
@@ -4486,7 +4486,7 @@ entailment in our system.
     It is sufficient to show that $\semenv\where{\tv \is \gt} \th \C\where{\cmatch \t \cbrs}$ if and only if
     $\semenv \th \C\where{\cmatched \t \sh \cbrs}$.
 
-    \begin{itemize}
+    \begin{proofcases}
       \proofcase{$\implies$}
 
 	\begin{llproof}
@@ -4501,7 +4501,7 @@ entailment in our system.
 	  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
 \Hand 	  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatch \t \cbrs}}{By \Rule{Susp-Ctx}}
 	\end{llproof}
-    \end{itemize}
+    \end{proofcases}
 
     For $\semenv(\cabsr \tv \tvs \C\where{\cmatch \t \cbrs}) = \semenv(\cabsr \tv \tvs \C\where{\cmatched \t \sh \cbrs})$, the proof is identical.
   \end{proof}
@@ -4775,7 +4775,7 @@ entailment in our system.
 %      \end{mathpar}
 %      We have $\C\where{\cmatch \tv \cbrs} = \cone \cand \ctwo$. Consider
 %      cases on $\C$:
-%      \begin{itemize}
+%      \begin{proofcases}
 %	\item \proofcase{$\C = \Cp \cand \ctwo$}
 %	  So we have $\semenv \th \Cp\where{\cmatch \tv \cbrs}$.
 %	  By induction, we have $\Cshape \Cp \tv {\any \tvcs \t}$ and
@@ -4790,7 +4790,7 @@ entailment in our system.
 %	  \end{mathpar}
 %	\item \proofcase{$\C = \cone \cand \Cp$}
 %	  Symmetric.
-%      \end{itemize}
+%      \end{proofcases}
 %
 %    \proofcase{\Rule{Let}}
 %      \begin{mathpar}
@@ -4801,7 +4801,7 @@ entailment in our system.
 %      \end{mathpar}
 %      We have $\C\where{\cmatch \tv \cbrs} = \clet \x \tv \cone \ctwo$.
 %      Consider cases on $\C$:
-%      \begin{itemize}
+%      \begin{proofcases}
 %	\item \proofcase{$\C = \clet \x \tvb \Cp \ctwo$}
 %	  So we have $\semenv \th \cexists \tvb \Cp\where{\cmatch \tv \cbrs}$ (1)
 %	  and $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) \th \ctwo$ (2).
@@ -4829,7 +4829,7 @@ entailment in our system.
 %	\item \proofcase{$\C = \clet \x \tvb \cone \Cp$}
 %	  Similiar to the \Rule{Conj} case.
 %
-%      \end{itemize}
+%      \end{proofcases}
 %
 %
 %    \proofcase{\Rule{Exists}}
@@ -4865,11 +4865,11 @@ entailment in our system.
 %      \end{mathpar}
 %
 %      Consider whether $\C = \Cp$:
-%      \begin{itemize}
+%      \begin{proofcases}
 %	\item \proofcase{$\C = \Cp$} Trivial
 %	\item \proofcase{$\C \neq \Cp$}
 %	  Bayes' theorem + induction
-%      \end{itemize}
+%      \end{proofcases}
 %  \end{proof}
 %\end{theorem}
 %
