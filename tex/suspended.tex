@@ -1362,7 +1362,7 @@ With the context $\C$ equal to $\clet {getx}
   \all {\semenv, \gt} \uad
     \semenv \th \cerase {\C\where{\cunif \tvb \gt}} \implies \shape \gt = \sh
 \end{mathpar}
-For any $\semenv, \gt$, the erasure $\Cerase {\C \where {\cunif \tvb \gt}}$ is
+For any $\semenv, \gt$, the erasure $\cerase {\C \where {\cunif \tvb \gt}}$ is
 $\clet {getx}
 \tvd {\cexists {\tvb, \tvc} \cunif \tvd {\tvb \to \tvc} \cand \cunif \tvb \gt}
 {\capp {getx} {(\tint \ \mathsf{one} \to \tv)}}$. $getx$ is bound to the constraint abstraction $\cabs \tvd \exists \tvc.\uad \cunif \delta {(\gt \to \gamma)}$, so the instantiation $getx (\tint \ \mathsf{one} \to \tv)$ can only be satisfied when $\gt = \tint\ \mathsf{one}$. This proves unicity, so \code{e_7} is accepted by our semantics.
@@ -4139,6 +4139,29 @@ entailment in our system.
   \end{proof}
 \end{lemma}
 
+\Xgabriel{Note: I put the 'Measure' back here after removing the well-foundedness section, it may not be the right place to have it.}
+\newcommand{\cnmatches}[1]{\#\Match #1}
+\newcommand{\csize}[1]{|#1|}
+\newcommand{\cmeasure}[1]{{\| #1 \|}}
+
+\begin{definition}[Measure]
+  For the relation $\semenv \th \c$, the following measure enables a useful
+  induction principle:
+    \begin{mathpar}
+    \cmeasure \c \uad\eqdef\uad \angles{\cnmatches \c, \csize \c}
+  \end{mathpar}
+  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
+  \begin{enumerate}
+
+    \item $\cnmatches \c$ is the number of $\cmatch \t \cbrs$ constraints in
+      $\c$.
+
+    \item the last component $\csize \c$ is a structural measure of constraints \ie a
+      conjunction $\cone \cand \ctwo$ is larger than the two conjuncts $\cone,
+      \ctwo$.
+
+  \end{enumerate}
+\end{definition}
 
 \newcommand{\VdashPf}[3]{\Pf{#1}{\Vdash}{#2}{#3}}
 \begin{theorem}[Canonicalization]
