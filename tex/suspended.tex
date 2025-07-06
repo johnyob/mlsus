@@ -1213,6 +1213,24 @@ holds trivially for $\sh = \shape \t$. Also, if $\C$ is unsatisfiable,
 then $\Cshape \C \tv \sh$ holds for any $\sh$. The interesting cases
 arise when $\t$ is a type variable and $\C$ is satisfiable.
 
+We summarize the definition of the unicity condition and the \Rule{Susp-Ctx} rule in \cref{fig:contextual-semantics}; together with \cref{fig:constraint-semantics} this forms the complete semantics of our consstraint language.
+
+\begin{mathparfig}[t]
+  {fig:contextual-semantics}
+  {Semantics of suspended constraints}
+\begin{array}{l}
+\Cshape \C \t \sh \eqdef \forall \semenv, \gt. \\
+\qquad
+      \semenv \thsimple \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
+\end{array}
+
+  \infer[Susp-Ctx]
+    {\Cshape \C \t \sh \\
+      \semenv \th \C\where{\cmatched \t \sh \cbrs}
+    }
+    {\semenv \th \C\where{\cmatch \t \cbrs}}
+\end{mathparfig}
+
 \parcomment {Examples}
 
 \begin{example}
@@ -1349,87 +1367,6 @@ $\clet {getx}
 \tvd {\cexists {\tvb, \tvc} \cunif \tvd {\tvb \to \tvc} \cand \cunif \tvb \gt}
 {\capp {getx} {(\tint \ \mathsf{one} \to \tv)}}$. $getx$ is bound to the constraint abstraction $\cabs \tvd \exists \tvc.\uad \cunif \delta {(\gt \to \gamma)}$, so the instantiation $getx (\tint \ \mathsf{one} \to \tv)$ can only be satisfied when $\gt = \tint\ \mathsf{one}$. This proves unicity, so \code{e_7} is accepted by our semantics.
 \end{example}
-
-\paragraph{Summary}
-
-To recap, suspended constraints provide a principled mechanism
-for deferring constraint resolution until the structure of a type
-is known---at which point a matching branch is selected, if one exists.
-%
-We formalize the notion of structure using \emph{shapes}, eqiupped with a
-notion of principality that captures the most general decomposition of a
-type.
-
-Suspended constraints prove particularly useful in typing several
-fragile \ML extensions:
-\begin{enumerate*}
-  \item semi-explicit first-class polymorphism,
-  \item static overloading of record fields and datatype constructors, and
-  \item structural tuple projections from \SML.
-\end{enumerate*}
-
-Their semantics are govered by three rules:
-\begin{enumerate*}
-  \item If the shape of the matchee is statically known, we use it
-    directly via \Rule{Susp-Use};
-  \item If not, we may guess the shape--but only when the context ensures
-    the shape is unique, via the $\Cshape \C \tv \sh$ condition and apply
-    \Rule{Susp-Ctx};
-  \item If the shape cannot be uniquely inferred from the context, the constraint
-    is unsatisfiable.
-\end{enumerate*}
-
-These rules, together with the base rules from
-\cref{fig:constraint-semantics}, define the full semantics. For convenience,
-we collect all the rules pertaining to the satisfiability judgement in
-\cref{fig:contextual-semantics}.
-
-\begin{mathparfig}[t]
-  {fig:contextual-semantics}
-  {Semantics of constraints including suspended constraints}
-  \infer[True]
-    { }
-    {\semenv \th \ctrue}
-
-  \infer[Conj]
-    {\semenv \th \cone \\
-     \semenv \th \ctwo}
-    {\semenv \th \cone \cand \ctwo}
-
-  \infer[Exists]
-    {\semenv\where{\tv \is \gt} \th \c}
-    {\semenv \th \cexists \tv \c}
-
-  \infer[Forall]
-    {\forall \gt, ~ \semenv\where{\tv \is \gt} \th \c}
-    {\semenv \th \tfor \tv \c}
-
-  \infer[Unif]
-    {\semenv(\tone) = \semenv(\ttwo)}
-    {\semenv \th \cunif \tone \ttwo}
-
-  \infer[Let]
-    {\semenv \th \exists \tv. \cone \\
-     \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
-    {\semenv \th \clet \x \tv \cone \ctwo}
-
-  \infer[App]
-    {\semenv(\t) \in \semenv(\x)}
-    {\semenv \th \capp \x \t}
-
-  \infer[Susp-Ctx]
-    {\Cshape \C \t \sh \\
-      \semenv \th \C\where{\cmatched \t \sh \cbrs}
-    }
-    {\semenv \th \C\where{\cmatch \t \cbrs}}
-\\
-\semenv(\cabs \tv \c) \Wide\eqdef \
-  \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
-\\
-\Cshape \C \t \sh \Wide\eqdef \
-  \forall \semenv, \gt. \uad
-      \semenv \th \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
-\end{mathparfig}
 
 \section{The \OML calculus}
 \label{sec:language}
