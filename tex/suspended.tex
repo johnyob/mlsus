@@ -1105,47 +1105,42 @@ is to propose the following rule---henceforth referred to as the
 \end{mathpar}
 This rule states that a suspended constraint is satisfied by $\semenv$ whenever the corresponding discharged constraint holds for the canonical shape $\sh$ of $\t$ in the semantic environment $\semenv$. If $\sh$ matches no branch in $\cbrs$, then the discharged constraint is not defined, so this rule cannot be applied and the suspended constraint is unsatisfiable.
 
-\parcomment {Wildcard patterns}
-
-Consider the constraint $\cexists \tv \cunif \tv \tint \cand \cmatch \tv
-{\cbranch \cwild \ctrue}$. This is satisfiable, as intended, under the current
-semantics, as shown by the derivation:
-\begin{mathline}
-\def \cmatchex {\cmatch \tv {\cbranch \cwild \ctrue}}
-\def \semenvex {\semenv\where{\tv \is \tint}}
-    \infer*[Right=Conj]
-    {
-     \infer*[Left=Unif]
-      {\tint = \tint}
-      % -------------------------------
-      {\semenvex \th \cunif \tv \tint}
-     \\
-     \infer*[Right=Susp-Nat]
-      {
-	\cmatches \cwild {\pshapp[\tint]\cdot} \eset
-	\\
-	\infer*[Right=True]
-	  { }
-	  % ---------------------
-	  {\semenvex \th \ctrue}
-      }
-      % ------------------------
-      {\semenvex \th \cmatchex}
-    \hspace{-2em}
-}{% ---------------------
-    \infer*[Right=Exists]
-      {\semenvex \th \cunif \tv \tint \cand \cmatchex}
-    % ------------------------------------------------------------
-      {\semenv \th \cexists \tv \cunif \tv \tint \cand \cmatchex}
-}
-\end{mathline}
+% Consider the constraint $\cexists \tv \cunif \tv \tint \cand \cmatch \tv
+% {\cbranch \cwild \ctrue}$. This is satisfiable, as intended, under the current
+% semantics, as shown by the derivation:
+% \begin{mathline}
+% \def \cmatchex {\cmatch \tv {\cbranch \cwild \ctrue}}
+% \def \semenvex {\semenv\where{\tv \is \tint}}
+%     \infer*[Right=Conj]
+%     {
+%      \infer*[Left=Unif]
+%       {\tint = \tint}
+%       % -------------------------------
+%       {\semenvex \th \cunif \tv \tint}
+%      \\
+%      \infer*[Right=Susp-Nat]
+%       {
+% 	\cmatches \cwild {\pshapp[\tint]\cdot} \eset
+% 	\\
+% 	\infer*[Right=True]
+% 	  { }
+% 	  % ---------------------
+% 	  {\semenvex \th \ctrue}
+%       }
+%       % ------------------------
+%       {\semenvex \th \cmatchex}
+%     \hspace{-2em}
+% }{% ---------------------
+%     \infer*[Right=Exists]
+%       {\semenvex \th \cunif \tv \tint \cand \cmatchex}
+%     % ------------------------------------------------------------
+%       {\semenv \th \cexists \tv \cunif \tv \tint \cand \cmatchex}
+% }
+% \end{mathline}
 
 \parcomment {The problem}
 
-However, the semantics also permits less desirable behaviour. Consider the
-constraint: $\cexists \tv \cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}$.
-Here, the shape of $\tv$ is unconstrained prior to solving the match branch,
-suggesting that the constraint should be unsatisfiable. Yet it is satisfiable with this natural semantics:
+This semantics rule is nicely declarative, but unfortunately it accepts to omany constraints. Consider for example: $\cexists \tv \cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}$. It is satisfiable with this natural semantics:
 \begin{mathpar}
 \def \cmatchex {\cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}}
 \def \semenvex {\semenv\where{\tv \is \tint}}
@@ -1164,7 +1159,7 @@ suggesting that the constraint should be unsatisfiable. Yet it is satisfiable wi
   {\semenv \th \cexists \tv \cmatchex}
 }
 \end{mathpar}
-The semantics can \emph{guess} the type of $\tv$ and use it to unlock the match constraint, rather than requiring it to be \emph{known} from the surrounding context. This does not match the intended meaning of suspended match constraints, and raises several problems:
+The semantics can \emph{guess} the type of $\tv$ and use it to unlock the match constraint, rather than requiring it to be \emph{known} from the surrounding context. One could call the guess of $\cunif \tva \tint$ an ``out of thin air'' behavior. This does not match the intended meaning of suspended match constraints, and raises several problems:
 \begin{enumerate*}
 
   \item A reasonable solver---one that avoids guessing or backtracking---cannot
@@ -1172,7 +1167,7 @@ The semantics can \emph{guess} the type of $\tv$ and use it to unlock the match 
 
   \item This breaks the existence of principal solutions.
     Consider the function $\efun \x (\efield \x 2)$, which projects the second
-    component of a tuple. Under the current semantics, the generated constraint
+    component of a tuple. Under the natural semantics, the generated constraint
     permits us to guess for $\x$ any tuple type of arity at least $2$; so there is no principal type for $\x$.
 \end{enumerate*}
 
