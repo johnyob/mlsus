@@ -882,13 +882,27 @@ In our work on suspended constraints, defining a satisfying semantics was the ha
 
 \parcomment {Judgement shape}
 
+%% Missing, to be removed when fixed.
+\newcommand{\glam}{\textbf{\textcolor{blue}{GLAM}}}
+
 The semantics of constraints follows the standard form of a satisfiability
-judgment $\semenv \th \c$. The semantic environment $\semenv$ contains a ``guess'' for each free variable of $\c$ (type and term variable), and $\semenv \th \c$ states that these guesses indeed satisfy $\c$. Let us write $\Ground$ for the set of \emph{ground} types, types without free variables.\footnote{Ground types are thus finite trees, assuming the existence
+judgment $\semenv \th \c$. The semantic environment $\semenv$ contains a
+``guess'' for each free variable of $\c$ (type and term variable), and
+$\semenv \th \c$ states that these guesses indeed satisfy $\c$. Let us write
+$\Ground$ for the set of \emph{ground} types, types without free
+variables.\footnote{Ground types are thus finite trees, assuming the
+existence
+%
 of some base types such as $\tint$. In \cref{sec/rec-types}, we dissuss the
 alternative choice of regular trees for the set of ground types that models
-equirecursive types.} $\semenv$ maps each type variable $\tv$ to a ground types $\gt \in \Ground$ (the type guessed for $\tv$), and each term variable $x$ to sets of ground types $\glam \subseteq \Ground$ (the set of ground instances of the type scheme guessed for $\x$).
+equirecursive types.} $\semenv$ maps each type variable $\tv$ to a ground
+types $\gt \in \Ground$ (the type guessed for $\tv$), and each term variable
+$x$ to sets of ground types $\glam \subseteq \Ground$ (the set of ground
+instances of the type scheme guessed for $\x$).
 %
-We write $\semenv\where{\tv \is \gt}$ and $\semenv\where{\x \is \glam}$ for the extension of $\semenv$ with a new binding. For a type $\t$, we write $\semenv(\t)$ for the ground type obtained by substitution.
+We write $\semenv\where{\tv \is \gt}$ and $\semenv\where{\x \is \glam}$ for
+the extension of $\semenv$ with a new binding. For a type $\t$, we write
+$\semenv(\t)$ for the ground type obtained by substitution.
 
 \parcomment {Definition exampled}
 
