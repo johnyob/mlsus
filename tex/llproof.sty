@@ -145,6 +145,7 @@
 \newcommand{\notinPf}[3]  {\Pf{#1}{\notin}{#2}{#3}}
 \newcommand{\stepPf}[3] {\Pf{#1}{\,\step\,}{#2}{#3}}
 \newcommand{\vDashPf}[3] {\Pf{#1}{\vDash}{#2}{#3}}
+\newcommand{\nvDashPf}[3]{\Pf{#1}{\nvDash}{#2}{#3}}
 \newcommand{\LetPf}[2] {\Pf{\text{Let}\,~{#1}}{=\,}{#2\text{.}}}
 \newcommand{\ForallPf}[3] {\Pf{\text{For all}\,~{#1}}{}{#2}{#3}}
 \newcommand{\vdashPf}[3] {\Pf{#1}{\th\,}{#2}{#3}}
@@ -163,7 +164,8 @@
 \newcommand{\decolumnizePf}{\end{llproof} ~\\ \begin{llproof}}
 
 \newcommand{\mkpf}[4] {\Pf{#2}{#1\,}{#3}{#4}}
-\newcommand{\supposePf}[1] {\Pf{\text{Suppose}\,~{#1}\text{.}}{}{}{}}
+\newcommand{\supposePf}[2] {\Pf{\text{Suppose}\,~{#1}\text{.}}{}{}{#2}}
+\newcommand{\sufficientPf}[3] {\multicolumn{3}{l}{\text{Sufficient to show #1}\ifempty{#2}{}{~${#2}$}\text{.}} & #3\\}
 
 
 \newcommand{\eqPfParen}[3] {\eqPf{(#1)}{(#2)}{#3}}
@@ -180,6 +182,7 @@
 \newcommand{\continueequivPf}[2] {\equivPf{~}{#1}{#2}}
 \newcommand{\continueequivPfParen}[2] {\equivPf{~}{#1}{#2}}
 
+\newcommand{\impliesPf}[3]{\mkpf{\implies}{#1}{#2}{#3}}
 \newcommand{\continueltPf}[2] {\ltPf{~}{#1}{#2}}
 \newcommand{\continueleqPf}[2] {\leqPf{~}{#1}{#2}}
 \newcommand{\continuegtPf}[2] {\gtPf{~}{#1}{#2}}

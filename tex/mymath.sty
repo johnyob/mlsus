@@ -136,6 +136,18 @@
     }%
     \nopagebreak \\[0.2ex]
   }
+\newcommand{\proofcaserewrite}[4][Case]{%
+  \item %
+    \parbox[t]{100ex}{%
+      \emph{#1 } \\
+      $~$\hspace*{5ex}
+      \ensuremath{%
+	{\inferrule*[fraction={{}{-}\to},Right=#2]{#3}{#4}}%
+      }%
+    }%
+    \nopagebreak \\[0.2ex]
+  }
+
 
 \newcommand{\proofcasederivationdouble}[7][Case]{%
   \item
