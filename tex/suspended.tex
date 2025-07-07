@@ -3493,6 +3493,281 @@ heuristics to refine it, a two-phase process. It's fine.}
 \newpage
 \appendix
 
+\section{The \OML calculus, feature by feature}
+
+\Xgabriel{This section contains work-in-progress content that I intended to use to rewrite Section 4, ``The \OML calculus''. I still believe that there will not be enough space to keep Section 4 anyway, so I decided to stop this rewrite effort and dump the current content here.}
+
+\subsection{The core fragment}
+\label{sec:language:core}
+\label{sec/language/typing-rules}
+
+\begin{mathparfig}{fig/typing-core}{Typing and inference: Core \ML}
+  \inferrule[Var]
+    {x : \sigma \in \G}
+    {\G \th x : \sigma}
+
+  \inferrule[Fun]
+    {\G, x : \tone \th e : \ttwo }
+    {\G \th \efun x e : \tone \to \ttwo}
+
+  \inferrule[App]
+    {\G \th \eone : \tone \to \ttwo \\
+     \G \th \etwo : \tone}
+    {\G \th \eapp \eone \etwo : \ttwo}
+
+  \inferrule[Annot]
+    {\G \th e : \t\where {\tvs \is \tys}}
+    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
+
+  \inferrule[Gen]
+    {\G \th e : \sigma \\ \tv \disjoint \G}
+    {\G \th e : \tfor \tv \sigma}
+
+  \inferrule[Inst]
+    {\G \th e : \tfor \tv \ts}
+    {\G \th e : \ts \where{\tv \is \t}}
+
+  \inferrule[Let]
+    {\G \th \eone : \sigma \\
+     \G, x : \sigma \th \etwo : \t}
+    {\G \th \elet x \eone \etwo : \t}
+\\
+\newcommand {\Crule}[2]{#1 & \eqdef & #2}
+\begin{array}{l@{\uad} c@{\uad} l}
+\Crule
+  {\cinfer {\efun \x \e} \t}
+  {\cexists {\tva, \tvb}
+    \cunif \t {\tva \to \tvb}
+    {}}
+\\ & & \quad\uad {} \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}
+  }
+\\
+\Crule
+  {\cinfer {\eapp \eone \etwo} \t}
+  {\cexists {\tva} \cinfer \eone {\tva \to \t} \cand \cinfer \etwo \tva}
+\end{array}
+\quad
+\begin{array}{l@{\uad} c@{\uad} l}
+\Crule
+   {\cinfer x \t}
+   {\cinst x \t}
+\\
+\Crule
+  {\cinfer {\elet \x \eone \etwo} \t}
+  {\clet \x \tva {\cinfer \eone \tva} {\cinfer \etwo \t}}
+\\
+\Crule
+  {\cinfer {\eannot \e \tvs \tp} \t}
+  {\cexists \tvs \cunif \t \tp \cand \cinfer \e \tp}
+\end{array}
+\end{mathparfig}
+
+As usual, the main typing judgment $\G \th \e : \ts$ states that in
+context $\G$, expression $\e$ has type scheme $\ts$. We give the
+typing rules for the core \ML fragment in \cref{fig/typing-core}. It
+also defines constraint generation for this fragment: given a term
+$\e$ and its expected type $\t$, which may contain some free type
+variables, we define a constraint $\cinfer e \t$ that is satisfiable
+if and only if the term is well-typed for some instantiation of those
+free type variables. Both typing rules and constraint generations are
+standard on this fragment, and we will not comment them further due to
+space restrictions.
+
+\subsection{Unicity via magic rules}
+
+TODO: a figure with the magic rule and the two unicity criterion (not for labels).
+
+\subsection{Overloaded tuples}
+
+\begin{mathparfig}{fig/typing-tuples}{Typing and inference: tuples}
+  \inferrule[Tuple]
+    {\parens{\G \th \ei : \ti}\iton}
+    {\G \th (\eone, \ldots, \en) : \Pi\iton \ti}
+
+  \inferrule[Proj-X]
+    {\G \th \e : \Pi\iton \ti \\
+     1 \leq j \leq n}
+    {\G \th \exfield \e n j : \tj}
+
+  \inferrule[Proj-I]
+    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
+     \G \th \E\where{\exfield \e n j} : \t}
+    {\G \th \E\where{\efield \e j} : \t}
+\\
+  \newcommand{\Mrule}[4][]{({#2} \Matches {#3}) &\eqdef& {#4} & #1}
+ \begin{array}{rcl@{\qquad}l@{\qquad\qquad} r}
+   \cpat & ::= & \dots \mid \cpatprod \tv j & & \text{tuple patterns} \\
+    \Mrule[\text{if } n \geq j]
+      {\cpatprod \tv j}
+      {\shapp[(\any \tvcs \Pi\iton \tvcs)] \tys}
+      {[\tv \is \ty_j]}
+   & \text{matching relation}
+ \end{array}
+\\
+\newcommand {\Crule}[2]{#1 & \eqdef & #2}
+\begin{array}{l@{\uad} c@{\uad} l}
+\Crule
+  {\cinfer {\etuple {\eone, \ldots, \en}} \t}
+  {\cexists \tvs \cunif \t {\Pi\iton \tvs}
+    \cand \cAnd \iton \cinfer \ei {\tv_i}}
+\\
+\Crule
+  {\cinfer {\exfield \e j n} \t}
+  {\cexists {\tvbs}
+    \cinfer \e {\Pi\iton \tvbs}
+    \cand \cunif \t {\tvb_j}}
+\\
+\Crule
+  {\cinfer {\efield \e j} \t}
+  {\cexists \tv \cinfer \e \tv
+    \cand \cmatch \tv {\cbranch {\cpatprod \tvb j} {\cunif \t \tvb}}}
+\end{array}
+\end{mathparfig}
+
+\subsection{Polytypes}
+
+\begin{mathparfig}{fig/typing-polytypes}{Typing and inference: polytypes}
+  \inferrule [Poly-X]
+    {\G \th \e : \ts\where {\tvs \is \tys}}
+    {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
+
+  \inferrule [Poly-I]
+    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
+     \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
+    {\G \th \E \where{\epoly \e} : \t}
+
+  \inferrule [Use-X]
+    {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
+    {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
+
+  \inferrule [Use-I]
+    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
+     \G \th \E\where{\exinst \e \tvcs \ts} : \t}
+    {\G \th \E\where{\einst \e} : \t}
+\\
+  \newcommand{\Mrule}[4][]{({#2} \Matches {#3}) &\eqdef& {#4} & #1}
+ \begin{array}{rcl@{\qquad}l@{\qquad\qquad} r}
+   \cpat & ::= & \dots \mid \cpatpoly \cscm
+               & & \text{polytype patterns} \\
+   \c & ::= & \dots \mid \cscm \leq \t \mid \ts \leq \t \mid \x \leq \cscm \mid \x \leq \ts
+            & & \text{polytype constraints} \\
+    \Mrule
+      {\cpatpoly \cscm}
+      {\shapp[\any \tvcs \tpoly \ts] \tys}
+      {[\cscm \is \ts \where{\tvcs \is \tys}]}
+   & \text{matching relation}
+ \end{array}
+\\
+\newcommand {\Crule}[2]{#1 & \eqdef & #2}
+\begin{array}{l@{\uad} c@{\uad} l}
+\\
+\Crule
+  {\cinfer {\expoly \e \tvs \ts} \t}
+  {\cexists {\tvs}
+    \cinfer \e \ts
+    \cand \cunif \t {\tpoly \ts}}
+\\
+\Crule
+  {\cinfer {\exinst \e \tvs \ts} \t}
+  {\cexists {\tvs}
+    \cinfer \e {\tpoly \ts}
+    \cand \ts \leq \t}
+\\
+\Crule
+  {\cinfer {\einst \e} \t}
+  {\cexists \tva
+    \cinfer \e \tva
+    \cand \cmatch \tva {\cbranch {\cpatpoly \cscm} \cscm \leq \t}}
+\\
+\Crule
+  {\cinfer {\epoly \e} \t}
+  {\clet \x \tv {\cinfer \e \tv}
+    {\cmatch \t {\cbranch {\cpatpoly \cscm} {\x \leq \cscm}}}}
+\end{array}
+\end{mathparfig}
+
+\subsection{Nominal records}
+
+Todo: extend the magic rule and the disambiguation rule, and also provide the unicity-in-env criterion definition. I propose to add those to the figure below.
+
+\begin{mathparfig}{fig/typing-records}{Typing and inference: nominal records}
+  \inferrule[Rcd-Assn]
+    {\G \th \e : \t \\
+     \G \th \el : \t \to \tp}
+    {\G \th \el = \e : \tp}
+
+  \inferrule[Rcd]
+    {\parens{\G \th \eli = \ei : \t}\iton \\
+     \G \th \bar \el \uni \t}
+    {\G \th \erecord {\ela = \eone; \ldots; \el_n = \en} : \t}
+
+  \inferrule[Rcd-Proj]
+    {\G \th \e : \tp \\
+     \G \th \el : \t \to \tp \\
+     \G \th \el \uni \t }
+    {\G \th \efield \e \el : \t}
+
+  \inferrule[Lab-X]
+    {\Omega(\elab / \T) = \tfor \tvs \t \to \tvs \T }
+    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \tys \T}
+
+  \inferrule[Lab-I]
+    {\Lshape \Lab \elab \T \\
+      \G \th \Lab[\elab / \T] : \t}
+    {\G \th \Lab[\elab] : \t}
+
+  \inferrule[Lab-!]
+    {\bar \el \uni \T \in \labenv}
+    {\G \th \bar \el \uni \tys \T}
+
+  \inferrule[Lab-?]
+    {\G \th \t}
+    {\G \th \bar \el \uni \t}
+\\
+  \newcommand{\Mrule}[4][]{({#2} \Matches {#3}) &\eqdef& {#4} & #1}
+ \begin{array}{rcl@{}l@{\qquad} r}
+   \cpat & ::= & \dots \mid \cpatrcd \ct & & \text{record patterns} \\
+   \c & ::= & \dots
+              \mid \labenv(\elab/\ct) \leq \tone \to \ttwo
+              \mid \labenv(\elab/\T) \leq \tone \to \ttwo
+            & & \text{record constraints} \\
+    \Mrule
+      {\cpatrcd \ct}
+      {\shapp[\any \tvcs \tvcs \Tapp] \tys}
+      {[\ct \is ~ \T]}
+   & \text{matching relation}
+ \end{array}
+\\
+\newcommand {\Crule}[2]{#1 & \eqdef & #2}
+\begin{array}{l@{\uad} c@{\uad} l}
+\Crule
+  {\cinferassn \el \e \t}
+  {\cexists \tv \cinfer \e \tv
+    \cand \cinferlab \el \tv \t}
+\\
+\Crule
+  {\cinferlab \elab \tone \ttwo}
+  {\cmatch \ttwo {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \tone \to \ttwo}}}
+\\
+\Crule
+  {\cinferlab {\elab/\T} \tone \ttwo}
+  {\labenv(\elab/\T) \leq \tone \to \ttwo}
+\\
+\Crule
+  {\cinferlab {\elcast \elab \t} \tone \ttwo}
+  {\cunif \t \ttwo}
+\\
+\Crule
+  {\cinferlabuni {\bar \el} \t}
+  {\begin{cases}
+    \cexists \tvs \cunif \t {\tvs \Tapp} &\text{if } \bar \el \uni \T \in \labenv \\
+    \ctrue &\text{otherwise}
+   \end{cases}}
+\end{array}
+\end{mathparfig}
+
+\clearpage % avoid mixing figures from above and from the Figures section below.
+
 \section{Figures}
 
 This section contains supplementary material to the main paper, including a
