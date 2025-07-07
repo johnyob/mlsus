@@ -461,7 +461,7 @@ Our contributions are
     \tunit \and
     \tone \to \ttwo \color{gray} \and
     \Pi\iton \ti \and
-    \tys \T \and
+    \T \tys \and
     \tpoly \ts
 }\\
 \entry[Type schemes]{\ts}{
@@ -504,7 +504,7 @@ The syntax of types and constraints is given
 in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are as
 usual including: type variables $\tv$, the unit type $\tunit$, arrow
 types as usual---and also structural tuples $\Pi\iton \ti$, nominal
-types $\tys \T$, and polytypes $\tpoly \ts$, in gray, as they which
+types $\T \tys$, and polytypes $\tpoly \ts$, in gray, as they which
 will be introduced in the following subsections.  Type schemes $\ts$
 are of the form $\all \tvs \t$, they are equal up to the reordering of
 binders. We write $\TyVars$ the set of type variables.
@@ -731,10 +731,12 @@ optimized away by monomorphization and aggressive inlining.
 
 As noted in the introduction, \OCaml supports a limited yet useful form of
 static overloading for record labels and data type constructors. When
-encountering overloaded labels or constructors, \OCaml resolves ambiguity using
-local type information, guided by \geninst-directional inference. Nominal types
-$\tys \Tapp$ carry annotation variables $\av$, written $\tys \Tapp^\av$. As discussed in
-\cref{sec/constraints/polytypes}, this mechanism allows one to deduce that types polymorphic over their annotation variable $\tfor \av {\tys \Tapp^\av}$ are \emph{known}.
+encountering overloaded labels or constructors, \OCaml resolves ambiguity
+using local type information, guided by \geninst-directional
+inference. Nominal types $\Tapp \tys$ carry annotation variables $\av$,
+written $\tys \Tapp^\av$. As discussed in \cref{sec/constraints/polytypes},
+this mechanism allows one to deduce that types polymorphic over their
+annotation variable $\tfor \av {\Tapp^\av \tys}$ are \emph{known}.
 
 \parcomment {A note on bidirectional expected type propagation}
 
@@ -794,9 +796,11 @@ definitons of \code{one} and \code{two}:
 
 \parcomment {Record field disambiguation in suspended constraints}
 
-We assume a global typing environment $\labenv$ mapping labels to type schemes,
-written $\elab : \tfor \tvs \t \to \tys \Tapp \in \labenv$. A given label $\elab$ may be defined several times in $\labenv$, but at most once at a given record type $\T$. We write
-$\labenv(\elab / \T)$ for the type scheme of $\elab$ in $\T$ when it exists.
+We assume a global typing environment $\labenv$ mapping labels to type
+schemes, written $\elab : \tfor \tvs \t \to \Tapp \tys \in \labenv$. A given
+label $\elab$ may be defined several times in $\labenv$, but at most once at
+a given record type $\T$. We write $\labenv(\elab / \T)$ for the type scheme
+of $\elab$ in $\T$ when it exists.
 
 We propose an alternative account of static overloading using suspended
 match constraints.  For example, in the case of an ambiguous record
@@ -807,8 +811,8 @@ projection $\efield \e \elab$, we generate the typing constraint:
   \cand
   \cmatch \tvb
     \parens
-      {\cbranch {(\wild \Tapp[t])}
-	{\labenv(\elab / t) \leq \tva \to \tvb}
+      {\cbranch {(\Tapp \wild)}
+	{\labenv(\elab / \T) \leq \tva \to \tvb}
       }
 \end{mathpar}
 This constraint suspends resolution of the return type $\alpha$ until the record type $\tvb$ of $\e$ is known. Its branch matches against the nominal type pattern $\cpatrcd t$,
@@ -941,9 +945,10 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
 \end{mathparfig}
 
 
-Closed constraints are either satisfiable in any semantic environment (\ie they are tautologies)
-or unsatisfiable. For example, consider the constraint $\cexists
-\tv {\cunif \tv \tint}$, its satisfiability is established by the following derivation:
+Closed constraints are either satisfiable in any semantic environment (\ie
+they are tautologies) or unsatisfiable. For example, consider the constraint
+$\cexists \tv {\cunif \tv \tint}$, its satisfiability is established by the
+following derivation:
 \begin{mathline}
   \infer*[Right=Exists]
     {\infer*[Right=Unif]
@@ -967,20 +972,19 @@ We introduce \emph{canonical shapes} for use in the syntax of suspended constrai
 \parcomment {Definition of shape}
 
 A shape $\Sh$ is a type with holes, written $\any \tvcs \t$, where $\tvcs$
-denotes the set of type variables representing the holes.
-By construction, we require $\tvcs$ to be exactly the free
-variables of $\t$.  Hence, shapes are closed and considered up
-to $\alpha$-conversion.  When $\t$ is a ground type, we omit the
-binder and write simply $\t$.
+denotes the set of type variables representing the holes.  By construction,
+we require $\tvcs$ to be \emph{exactly} the free variables of $\t$.  Hence,
+shapes are closed and do not contain useless binders.  We consider shapes up
+to $\alpha$-conversion.  When $\t$ is a ground type, we omit the binder and
+write simply $\t$.
 %
-We write $\bot$ for the shape $\any \tvc \tvc$, which we call the
+tWe write $\bot$ for the shape $\any \tvc \tvc$, which we call the
 \emph{trivial} shape. We write $\Shapesz$ the
 set of non trivial shapes.
 %% and use letter $\Sh$ to range
 %% over non trivial shapes.
 
-Shapes are equipped with an ordering---that of the standard
-instantiation ordering, defined by:
+Shapes are equipped with the standard instantiation ordering, defined by:
 \begin{mathpar}
   \infer[Inst-Shape]
     {\bar \tvcs_2 \disjoint \any {\tvcs_1} \t}
@@ -991,11 +995,14 @@ When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
 actually equal. The trivial shape $\bot$ is the most general shape.
 
-If $\Sh$ is $\any \tvcs \t$, the shape application $\shapp[\Sh] \tys$ is defined as $\t
-\where {\tvcs \is \tys}$. We say that $\Sh$ is a shape of $\t$ when there exists $\tys$ such that $\t = \shapp[\Sh] \tys$; in this case we write that the pair $(\Sh, \tys)$ is a decomposition of $\t$.
+If $\Sh$ is $\any \tvcs \t$, the shape application $\shapp[\Sh] \tys$ is
+defined as $\t \where {\tvcs \is \tys}$. We say that $\Sh$ is a shape of
+$\t$ when there exists $\tys$ such that $\t = \shapp[\Sh] \tys$; in this
+case we write that the pair $(\Sh, \tys)$ is a decomposition of $\t$.
 
 \begin{definition}
-A non-trival shape $\Sh \in \Shapesz$ is the principal shape of the type $\t$ iff:
+A non-trival shape $\Sh \in \Shapesz$ is the principal shape of the type
+$\t$ iff:
 \begin{enumerate}
   \item
     $\exists \typs,\ \t = \shapp[\Sh] \typs$
@@ -1009,10 +1016,12 @@ A non-trival shape $\Sh \in \Shapesz$ is the principal shape of the type $\t$ if
 Any nonvariable type $\t$ has a non-trivial principal shape $\Sh$.
 \end{theorem}
 
-We can give an equivalent direct description of the set of principal shapes $\sh$: they are the $\any \tvcs \t$
+We can give an equivalent direct description of the set of principal shapes
+$\sh$: they are the $\any \tvcs \t$:
 \begin{itemize}
 
-\item $\tvcs$ are the linear free variables of $\t$ \ie each type variable
+\item
+  $\tvcs$ are the linear free variables of $\t$ \ie each type variable
   $\tvc$ in $\tvcs$ occurs exactly once in $\t$
 
 \item
@@ -1020,44 +1029,45 @@ We can give an equivalent direct description of the set of principal shapes $\sh
 \begin{itemize}
 
 \item
-  when $\t$ is not a polytype, all subterms of $\t$ are variables: $\tvca \to \tvcb$, $\Pi\iton \tvci$, or $\tvcs \T$
+  When $\t$ is not a polytype, all subterms of $\t$ are variables.
+
+  Shapes of this form are $\tvca \to \tvcb$, $\Pi\iton \tvci$, or $\T
+  \tvcs$.
 
 \item
-  when $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, then the only subterms of
+  When $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, then the only subterms of
   $\tsp$ that do not contain one of the $\tvs$
   are variables in $\tvcs$.
 
-  For example, the polytype  $\tpoly {\all \tva
-    {\parens{\tpoly {\all \tvb {\parens{\tvb \to \tint \tlist}} \tprod \tvb}
-        \to \tva}
-      \to \tva}}$ has principal decomposition
-  $
-  \any
-    {\tvc}
-    {\tpoly {\all \tva
-       {\parens{\tpoly {\all \tvb \parens{\tvb \to \tvc} \tprod \tvb} \to \tva}
-      \to \tva}}}
-  $.
+  \newcommand {\tsh}[1]
+    {\def \tsi {\all \tvb {\parens{\tvb \to #1}} \tprod \tvb}
+     \tpoly {\all \tva {\parens {\tpoly \tsi} \to \tva} \to \tva}}
+
+  For example, the polytype $\tsh {\tint \tlist}$ has principal
+  decomposition $\any \tvc {\tsh \tvc}$.
 \end{itemize}
 \end{itemize}
 
 \parcomment {Define canonical shape}
 
-A principal shape $\any \tvcs \t$ is \emph{canonical} if the sequence of its free
-variables $\tvcs$ appear in the order in which the variables occur in
-$\t$\footnote{This order is well-defned for principal shapes, but not always
-well-defined for all shapes, for instance $\any {\tvca, \tvcb} (\tvca \to
-\tvcb) \to (\tvcb \to \tvca)$.\\\Xgabriel{I don't understand this comment. Here clearly $\tvca$ occurs before $\tvcb$ in the printing of the shape body, so it would be reasonable to say that they are in a well-defined order. And if we refuse to consider the order on deep subnodes, then how do we define canonicity for polytypes such as the following? $\any {\tvca, \tvcb, \tvcc} \tpoly {\all \tva  {(\tvca \to (\tvcb \times \tva)) \to \tvcc}}$}}. We write $\sh$ for canonical principal
-shapes.
+A principal shape $\any \tvcs \t$ is \emph{canonical} if the sequence of its
+free variables $\tvcs$ appear in the order in which the variables occur in
+$\t$. We write $\sh$ for canonical principal shapes.
 %
-Each non-variable type $\t$ has a unique canonical principal shape, which we write $\shape \t$. We write $\decomp \t$ for the decomposition of $\t$ induced by its canonical principal shape. For example, $\shape {\tys \Tapp}$ is $(\any \tvcs \tvcs \Tapp)$ and $\decomp {\tint \to \tbool}$ is the pair $((\any {\tvca, \tvcb} {\tvca \to \tvcb}), (\tint, \tbool))$.
+Each non-variable type $\t$ has a unique canonical principal shape, which we
+write $\shape \t$. We write $\decomp \t$ for the decomposition of $\t$
+induced by its canonical principal shape. For example, $\shape {\Tapp \tys}$
+is $(\any \tvcs \Tapp \tvcs)$ and $\decomp {\tint \to \tbool}$ is the pair
+$((\any {\tvca, \tvcb} {\tvca \to \tvcb}), (\tint, \tbool))$.
 
-\TODO{Consistently use prefix notation for type constructors, except in OCaml examples.}
+\TODO{Consistently use prefix notation for type constructors, except in
+OCaml examples.}
 
 
 \subsection{Suspended constraints}
 
-We have left the syntax of shape patterns deliberately abstract. We also assume a matching relation
+We have left the syntax of shape patterns deliberately abstract. We also
+assume a matching relation
 \begin{mathline}
   \cmatches \cpat {(\sh, \tys)} \theta
 \end{mathline}
@@ -1436,7 +1446,7 @@ We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton \tvcs}$, wh
    \tv \and
    1 \and
    \tya \to \tyb \and
-   \tys \T \and
+   \T \tys \and
    \Pi \iton \ti \and
    \tpoly \ts
 }\\
@@ -1565,8 +1575,8 @@ label instantiations respectively.
     {\G \th \efield \e \el : \t}
 
   \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \tvs \T }
-    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \tys \T}
+    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
+    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
 
   \inferrule[Lab-I]
     {\Lshape \Lab \elab \T \\
@@ -1574,8 +1584,8 @@ label instantiations respectively.
     {\G \th \Lab[\elab] : \t}
 
   \inferrule[Lab-!]
-    {\bar \el \uni \T \in \labenv}
-    {\G \th \bar \el \uni \tys \T}
+    {\bar \el \uni {\T} \in \labenv}
+    {\G \th \bar \el \uni \T \tys}
 
   \inferrule[Lab-?]
     {\G \th \t}
@@ -1599,7 +1609,7 @@ Concrete proposal:
     \tunit \and
     \t \to \t \and
     \Pi \parens \t\iton \and
-    \tys \T \and
+    \T \tys \and
     \tpoly \ts
 }
 \end{bnffig}
@@ -1625,8 +1635,8 @@ Concrete proposal:
 
   \inferrule[Rcd-Wf]
     {(\G \th \ti)\iton \\
-     \T \in \dom \Omega}
-    {\G \th \tys \T}
+     {\T} \in \dom \Omega}
+    {\G \th \T \tys}
 
   \inferrule[Poly-Wf]
     {\G \th \ts}
@@ -1765,7 +1775,7 @@ surrounding context in which a label $\elab$ may appear:
 
 As with our contextual rules for expressions, we define two rules for labels.
 \Rule{Lab-X} handles explicitly annotated labels $\elab / \T$ by instantiating
-the type scheme $\tfor \tvs \t \to \tvs \T$ associated with $\elab$ in label
+the type scheme $\tfor \tvs \t \to \T \tvs$ associated with $\elab$ in label
 environment $\labenv$. \Rule{Lab-I} handles unannotated labels by elaborating
 $\elab$ to $\elab / \T$ if the context $\Lab$ uniquely infers the record type
 $\T$ for $\elab$ and the resulting elaboration is well-typed.
@@ -1784,7 +1794,7 @@ $\tp$.
 \Eshape \Lab \elab \T \Wide\eqdef
    \forall \G, \t, \gt , \uad
      \G \th \eerase {\Lab[\elcast \elab \gt]} : \t
-	\implies \shape \gt= \any \tvcs \tvcs \T
+	\implies \shape \gt= \any \tvcs {\tvcs \T}
 \end{mathpar}
 
 % Rules
@@ -1818,33 +1828,33 @@ $\labenv$ to resolve overloaded labels:
 We formalize this with the judgement $\G \th \bar \el \uni \t$, which
 either:
 \begin{enumerate*}
-  \item enforces $\t$ to be of the form $\tys \T$ if the labels $\bar \el$
+  \item enforces $\t$ to be of the form $\T \tys$ if the labels $\bar \el$
     uniquely identify a nominal record type $\T$ in $\labenv$ (\Rule{Lab-!}),
     or
   \item imposes no constraint on $\t$ in the ambiguous case
     (\Rule{Lab-?}).
 \end{enumerate*}
 
-Label declarations in $\labenv$ have the form $\elab : \tfor \tvs \tp \to \tvs
-\T$, assigning labels to field types and record types\footnote{For a given
+Label declarations in $\labenv$ have the form $\elab : \tfor \tvs \tp \to \T
+\tvs$, assigning labels to field types and record types\footnote{For a given
 record type $\T$, we assume each label associated with it is unique.}. We
-write $\elab / \T \in \labenv$ if such a declaration of $\elab$ exists for the
+write $\elab / {\T} \in \labenv$ if such a declaration of $\elab$ exists for the
 record type $\T$. This membership relation extends to explicitly annotated and
 casted labels:
 \begin{mathpar}
   \infer[Lab-$\in$X]
-    {\elab / \T \in \labenv}
-    {(\elab / \T) / \T \in \labenv}
+    {\elab / {\T} \in \labenv}
+    {(\elab / \T) / {\T} \in \labenv}
 
   \infer[Lab-$\in$Cast]
-    {\elab / \T \in \labenv}
-    {\elcast \elab \t / \T \in \labenv}
+    {\elab / {\T} \in \labenv}
+    {\elcast \elab \t / {\T} \in \labenv}
 \end{mathpar}
-We then define the uniqueness predicate $\bar \el \uni \T \in \labenv$ as:
+We then define the uniqueness predicate $\bar \el \uni {\T} \in \labenv$ as:
 \begin{mathpar}
   \infer[Lab-U]
-    {\bar \el / \T \in \labenv \\
-     \all {\T'} \uad\bar \el / \T' \in \labenv \implies \T = ~\T'}
+    {\bar \el / {\T} \in \labenv \\
+     \all {\T'} \uad\bar \el / \T' \in \labenv \implies {\T} = \T'}
     {\bar \el \uni \T \in \labenv}
 \end{mathpar}
 This states that the set of labels $\bar \el$ determines a unique nominal type
@@ -2064,7 +2074,7 @@ Patterns include:
     \tys$ of arity $n \geq j$, and binding the $j$-th component to $\tv$.
 
   \item Nominal patterns $\cpatrcd \ct$, binding the name of a nominal type
-    $\tys \Tapp$ to the nominal variable $\ct$.
+    $\Tapp \tys$ to the nominal variable $\ct$.
 
   \item Polytype patterns $\cpatpoly \cscm$ matching a polytype $\tpoly \ts$ and
     binding the resulting scheme to the variable $\cscm$.
@@ -2107,8 +2117,8 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     \\[1ex]
     \Mrule
       {\cpatrcd \ct}
-      {\shapp[\any \tvcs \tvcs \Tapp] \tys}
-      {[\ct \is ~ \T]}
+      {\shapp[\any \tvcs \Tapp \tvcs] \tys}
+      {[\ct \is \T]}
     \\[1ex]
     \Mrule
       {\cpatpoly \cscm}
@@ -2130,9 +2140,9 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
   \\
   \newcommand{\Srule}[3][]{{#2} &\eqdef& {#3} & {#1}}
   \begin{tabular}{RCLL}
-    \Srule[\text{if } \labenv(\elab/\T) = \tfor \tvs \t \to \tvs \Tapp]
+    \Srule[\text{if } \labenv(\elab/\T) = \tfor \tvs \t \to \Tapp \tvs]
       {\labenv(\elab/\T) \leq \tone \to \ttwo}
-      {\cexists \tvs \cunif \tone \t \cand \cunif \ttwo {\tvs \Tapp}}
+      {\cexists \tvs \cunif \tone \t \cand \cunif \ttwo {\Tapp \tvs}}
     \\[1ex]
     \Srule
       {(\tfor \tvs \tp) \leq \t}
@@ -2260,7 +2270,7 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
 \Crule
   {\cinferlabuni {\bar \el} \t}
   {\begin{cases}
-    \cexists \tvs \cunif \t {\tvs \Tapp} &\text{if } \bar \el \uni \T \in \labenv \\
+    \cexists \tvs \cunif \t {\Tapp \tvs} &\text{if } \bar \el \uni \T \in \labenv \\
     \ctrue &\text{otherwise}
    \end{cases}}
 \\ \\
@@ -2325,7 +2335,7 @@ Record projections generate a fresh variable for the nominal record type,
 constraining $\e$ to this type, and use the auxiliary function $\cinferlab \el
 \tone \ttwo$ to instantiate the label. The function $\cinferlabuni {\bar \el}
 \t$ checks whether a label sequence $\bar \el$ uniquely determines a record
-type, unifying $\t$ with $\tvs \Tapp$ if so, or leaving it unconstrained if
+type, unifying $\t$ with $\Tapp \tvs$ if so, or leaving it unconstrained if
 ambiguous. This function enables closed-world reasoning for both projections
 and constructions, and corresponds to the judgement $\G \th \bar \el \uni \t$
 judgement defined in \cref{sec/language/typing-rules}.
@@ -2791,7 +2801,7 @@ form:
   \cexists \tv
     \clet y \tvb
       %% {\cmatchdots \tva}
-      {\cmatch \tvb {\cbranch {(\wild \Tapp[t])} {\C\where {t, \tva,\tvb}}}}
+      {\cmatch \tvb {\cbranch {(\Tapp \wild)} {\C\where {t, \tva,\tvb}}}}
       {\cinst y \tint \cand \cunif \tv {\mathsf{three}}}
 \end{mathpar}
 \begin{version}{}
@@ -2914,8 +2924,7 @@ the regional variables $\tvs$ of $\x$---a cruicial property for treating these
 variables modulo $\alpha$-equivalence. As mentioned above, $\tvs$ are bound not
 only in the body of the abstraction $\ca$, but also in the
 constraint $\cb$, where they may appear in partial applications of $\x$ via
-renamings---and only there. Hence, when they cannot appear in $\ca$ when
-(the corresponding variable) $\x$ does not itself appear in $\ca$.
+renamings---and only there. Hence, when they cannot appear in $\ca$ when $\x$ does not itself appear in $\ca$.
 
 \begin{remark}
   The satisfiability judgement in \Rule{Papp} occurs in a negative position.
@@ -3031,7 +3040,7 @@ The (simplified) constraint generated when typing \code{e}$_{10}$ is:
   &\clet f \tvd {\cexists {\tvb, \tvc}
     \cunif \tvd {\tvb \to \tvc} \cand
     \cmatch \tvb
-       {(\cbranch {\wild \Tapp[t]} {\Omega(y / t) \leq \gamma \to \beta})}} \\
+       {(\cbranch {\Tapp[t] \wild} {\Omega(y / t) \leq \gamma \to \beta})}} \\
   &\capp f {(\mathsf{three} \to \tv)}
 \end{align*}
 At the use site, the abstraction is applied with a type of known shape
@@ -3042,9 +3051,6 @@ that $\tvb$'s shape is \code{three} provided the context $\C$ include the
 application constraint.
 \TODO{Maybe we want to rephrase the explanation of the rule to not refer to the example anymore,
 and get rid of the example. But then the rule is hard to explain abstractly.}
-
-\begin{mathpar}
-\end{mathpar}
 
 
 \subsection{Metatheory}
@@ -4587,7 +4593,7 @@ entailment in our system.
 %  \inferrule[S-Rcd-Wf]
 %    {(\sub \th \ti)\iton \\
 %     \T \in \dom \Omega}
-%    {\sub \th \tys \T}
+%    {\sub \th \T \tys}
 %
 %  \inferrule[S-Poly-Wf]
 %    {\sub \th \ts}
@@ -4611,7 +4617,7 @@ entailment in our system.
 %    \sub(\tunit) &\eqdef& \tunit \\
 %    \sub(\t \to \tp) &\eqdef& \sub(\t) \to \sub(\tp) \\
 %    \sub(\Pi\iton \ti) &\eqdef& \Pi\iton \sub(\ti) \\
-%    \sub(\tys \Tapp) &\eqdef& \sub(\tys) \Tapp \\
+%    \sub(\Tapp \tys) &\eqdef&  \Tapp {\sub(\tys)} \\
 %    \sub(\tpoly \ts) &\eqdef& \tpoly {\sub(\ts)} \\
 %    \sub(\tfor \tv \ts) &\eqdef& \tfor \tv \sub(\ts) &\text{if } \tv \disjoint
 %    \sub

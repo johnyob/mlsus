@@ -43,13 +43,14 @@
 \def \mprparset #1{\setkeys{mprpar}{#1}}
 \define@key {mprpar}{nodisplayskip}[]
         {\abovedisplayskip=\z@\belowdisplayskip=\z@}
-\define@key {mprpar}{mprset}[1]{\l@addto@macro \mprpar@cmd{\mprset{#1}}}
-\define@key {mprpar}{cmd}[1]{\l@addto@macro \mprpar@cmd{#1}}
+\define@key {mprpar}{mprset}[]{\l@addto@macro \mprpar@cmd{\mprset{#1}}}
+\define@key {mprpar}{cmd}[]{\l@addto@macro \mprpar@cmd{#1}}
 \let \mprpar@cmd \empty
 \newif \ifmpr@inlined
 \define@key {mprpar}{inline}[]{\mpr@inlinedtrue}
-
-
+\define@key {mprpar}{pack}[]
+   {\abovedisplayskip=.4ex\relax\belowdisplayskip\abovedisplayskip}
+\def \KV@mathpar@pack{.4ex}
 
 %% \newdimen \mpr@tmpdim
 %% Dimens are a precious ressource. Uses seems to be local.
@@ -97,12 +98,15 @@
 
 \mpr@inlinedfalse
 \newenvironment{mathpar}[1][]
-  {\mprparset{#1}\ifmpr@inlined
-      \let \@do \@firstoftwo
-   \else \let \@do \@secondoftwo \fi
+  {\mprparset{#1}%
+   %% \ifmpr@inlined
+   %%   \let \endmathpar $\relax $\else
+   %%   \mpr@mathpar \fi%
+   \ifmpr@inlined \let \@do \@firstoftwo \else \let \@do \@secondoftwo \fi
    \@do
      {\let \endmathpar $\relax $}
-     {\mpr@mathpar}}
+     {\mpr@mathpar}%
+   }
   {\unskip \ifmmode $\fi
    \egroup $$\ignorespacesafterend}
 \def \mpr@mathpar
@@ -397,9 +401,11 @@
 %% Keys for mathpar env
 \def \mprparset #1{\setkeys{mprpar}{#1}}
 \define@key {mprpar}{nodisplayskip}[]
-        {\abovedisplayskip=\@z\belowdisplayskip=\@z}
-\define@key {mprpar}{mprset}[1]{\mprsep{#1}}
-\define@key {mprpar}{cmd}[1]{\def \mprpar@cmd{#1}}
+    {\abovedisplayskip=\@z\belowdisplayskip=\@z}
+\define@key {mprpar}{mprset}[1]{\mprset{#1}}
+\define@key {mprpar}{cmd}[]{\def \mprpar@cmd{#1}}
+\define@key {mprpar}{pack}[]
+    {\abovedisplayskip=.4ex\belowdisplayskip=\abovedisplayskip}
 \let \mprpar@cmd \empty
 
 %% Keys that make sence in all kinds of rules

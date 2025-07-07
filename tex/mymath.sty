@@ -5,7 +5,7 @@
 
 \usepackage{mathpartir}
 
-\newcommand{\mathparinit}{
+\newcommand{\mathparinit}{%
 % spacing below and above mathpar blocks
 \abovedisplayskip .5em
 \belowdisplayskip .5em
@@ -45,10 +45,10 @@
      \end{figure}}
 
 \newenvironment{mathline}
-   {\abovedisplayskip 0.1em
-    \belowdisplayskip 0.1em
+   {\abovedisplayskip 0.4ex
+    \belowdisplayskip 0.4ex
     \begin{mathpar}}
-   {\end{mathpar}}
+   {\end{mathpar}\ignorespacesafterend}
 
 %% Arrays and tabular
 \usepackage{array}
