@@ -328,7 +328,7 @@ typing rules using omni-directional type inference could support this
 example as well.
 
 Finally, \ocaml{e$_{10}$} is an example where none of the field
-projections has enough type information to be disambiguated, but the
+projections has enough type information to be disambiguated on its own, but the
 constraints they impose can be combined to deduce that the type of
 \ocaml{r} must be \ocaml{one}, as the \code{x} field of \code{two}
 does not have a record type. This lies outside the framework of
@@ -336,7 +336,7 @@ omnidirectional type inference, in which suspended constraints must be
 discharged one by one in some order, independently of other
 still-suspended constraints.
 %
-We believe that this reasonable restriction keep type inference effective,
+We believe that this restriction is necessary for effective type inference,
 since the complexity of general overloading without this restriction is
 NP-hard, even in the absence of let-polymorphism, as shown by an encoding of
 3-SAT problem by~\citet*
