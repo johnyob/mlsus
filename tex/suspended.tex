@@ -1481,7 +1481,6 @@ We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton \tvcs}$, wh
 }\\
 \end{bnffig}
 
-
 In \cref {fig/syntax}, we give the grammar for our calculus. Terms include
 all of the \ML calculus: variables $x$, the unit literal $\eunit$,
 lambda-abstractions $\efun x e$, applications $\eapp \eone \etwo$,
@@ -1503,226 +1502,10 @@ Our extensions include:
 \end{enumerate}
 We use the metavariables $\e^i$ or $\el^i$ to range over the fragile/implicit constructions, and $\e^x$ or $\el^x$ to range over their explicit counterpart.
 
-\subsection{Typing rules}
-\label{sec/language/typing-rules}
 
-As usual, the main typing judgment $\G \th \e : \ts$ states that in context
-$\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
-{fig/typing}.  They use auxiliary typing judgemnents $\G \th \elab = \e : \t$
-and $\G \th \el : \t \to \tp$ for the typing of record assignments and
-label instantiations respectively.
+\subsection{Unicity conditions in typing rules}
 
-\begin{mathparfig}{fig/typing}{Typing rules of \OML}
-  \inferrule[Var]
-    {x : \sigma \in \G}
-    {\G \th x : \sigma}
-
-  \inferrule[Fun]
-    {\G, x : \tone \th e : \ttwo }
-    {\G \th \efun x e : \tone \to \ttwo}
-
-  \inferrule[App]
-    {\G \th \eone : \tone \to \ttwo \\
-     \G \th \etwo : \tone}
-    {\G \th \eapp \eone \etwo : \ttwo}
-
-  \inferrule[Unit]
-    {}
-    {\G \th () : 1}
-
-  \inferrule[Annot]
-    {\G \th e : \t\where {\tvs \is \tys}}
-    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
-
-  \inferrule[Gen]
-    {\G \th e : \sigma \\ \tv \disjoint \G}
-    {\G \th e : \tfor \tv \sigma}
-
-  \inferrule[Inst]
-    {\G \th e : \tfor \tv \ts}
-    {\G \th e : \ts \where{\tv \is \t}}
-
-  \inferrule[Let]
-    {\G \th \eone : \sigma \\
-     \G, x : \sigma \th \etwo : \t}
-    {\G \th \elet x \eone \etwo : \t}
-
-  \inferrule[Tuple]
-    {\parens{\G \th \ei : \ti}\iton}
-    {\G \th (\eone, \ldots, \en) : \Pi\iton \ti}
-
-  \inferrule[Proj-X]
-    {\G \th \e : \Pi\iton \ti \\
-     1 \leq j \leq n}
-    {\G \th \exfield \e n j : \tj}
-
-  \inferrule[Proj-I]
-    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
-     \G \th \E\where{\exfield \e n j} : \t}
-    {\G \th \E\where{\efield \e j} : \t}
-
-  \inferrule [Poly-X]
-    {\G \th \e : \ts\where {\tvs \is \tys}}
-    {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
-
-  \inferrule [Poly-I]
-    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
-     \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
-    {\G \th \E \where{\epoly \e} : \t}
-
-  \inferrule [Use-X]
-    {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
-    {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
-
-  \inferrule [Use-I]
-    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
-     \G \th \E\where{\exinst \e \tvcs \ts} : \t}
-    {\G \th \E\where{\einst \e} : \t}
-
-  \inferrule[Rcd-Assn]
-    {\G \th \e : \t \\
-     \G \th \el : \t \to \tp}
-    {\G \th \el = \e : \tp}
-
-  \inferrule[Rcd]
-    {\parens{\G \th \eli = \ei : \t}\iton \\
-     \G \th \bar \el \uni \t}
-    {\G \th \erecord {\ela = \eone; \ldots; \el_n = \en} : \t}
-
-  \inferrule[Rcd-Proj]
-    {\G \th \e : \tp \\
-     \G \th \el : \t \to \tp \\
-     \G \th \el \uni \t }
-    {\G \th \efield \e \el : \t}
-
-  \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
-    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
-
-  \inferrule[Lab-I]
-    {\Lshape \Lab \elab \T \\
-      \G \th \Lab[\elab / \T] : \t}
-    {\G \th \Lab[\elab] : \t}
-
-  \inferrule[Lab-!]
-    {\bar \el \uni {\T} \in \labenv}
-    {\G \th \bar \el \uni \T \tys}
-
-  \inferrule[Lab-?]
-    {\G \th \t}
-    {\G \th \bar \el \uni \t}
-\end{mathparfig}
-
-\TODO{We should consider handling the three features (tuples, records, polytypes) separately, one in each subsection.
-If we later run out of space budget it will be easier to move only some of those subsections to an appendix.
-Concrete proposal:
-\begin{itemize}
-\item one subsection at the beginning that only hints at the standard ML stuff:
-  show the syntax, hint at typing rules, show a short bit of constraint generation
-\item then each advanced feature (from the simplest to the more complex: tuples, polytypes, records)
-  show the typing rules, and examples, and its dedicated patterns, and its constraint generation
-\end{itemize}}
-
-\begin{version}{}
-\begin{bnffig}{fig/types/bnf}{aaa}
-\entry[Types]{\t}{
-    \tv \and
-    \tunit \and
-    \t \to \t \and
-    \Pi \parens \t\iton \and
-    \T \tys \and
-    \tpoly \ts
-}
-\end{bnffig}
-
-\begin{mathparfig}
-  {fig/types/wf}
-  {Well-formedness of types}
-  \inferrule[Var-Wf]
-    {\tv \in \G}
-    {\G \th \tv}
-
-  \inferrule[Unit-Wf]
-    {}
-    {\G \th \tunit}
-
-  \inferrule[Arr-Wf]
-    {\G \th \t \\ \G \th \tp}
-    {\G \th \t \to \tp}
-
-  \inferrule[Prod-Wf]
-    {(\G \th \ti)\iton}
-    {\G \th \Pi\iton \ti}
-
-  \inferrule[Rcd-Wf]
-    {(\G \th \ti)\iton \\
-     {\T} \in \dom \Omega}
-    {\G \th \T \tys}
-
-  \inferrule[Poly-Wf]
-    {\G \th \ts}
-    {\G \th \tpoly \ts}
-
-  \inferrule[Forall-Wf]
-    {\G, \tv \th \ts}
-    {\G \th \tfor \tv \ts}
-\end{mathparfig}
-\end{version}
-
-
-\parcomment {Simple typing rules explained}
-
-Rule \Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
-Function types are introduced via lambda abstractions: in Rule \Rule{Fun}, the
-system guesses a well-formed type $\tone$ for the type of $x$, typechecks the
-body $e$ is under the extended context $\G, \x : \tya$ producing the return
-type $\tyb$, and assigns the abstraction the function type $\tya \to \tyb$.
-Conversely, function types are eliminated by applications; in Rule \Rule{App},
-the type of the argument must match the function's parameter type $\tya$ and
-application returns the type $\tyb$. Rule \Rule{Unit} asserts that $\eunit$ has
-the unit type $\tunit$.
-
-\parcomment {Gen/Inst explained}
-
-Rules \Rule{Gen} and \Rule{Inst} correspond to implicit
-\textit{generalization} and \textit{instantiation} respectively.
-Generalization universally quantifies a type variable $\tv$, introducing it
-as a fresh polymorphic variable in the typing context. In \Rule{Inst}, we
-specialize a type scheme $\tfor \tv \ts$ to $\ts \where{\tv \is \t}$,
-substituting $\tv$ for an arbitrary monotype $\t$.
-
-\parcomment {Let rule}
-
-Let-polymorphism is handled by the \Rule{Let} rule, where a
-\textit{polymorphic} term can be bound. This allows a single definition to be
-instantiated differently at each use site---an essential feature of \ML. In
-this rule, the term $\eone$ has a polymorphic type scheme $\ts$, adds $\x :
-\ts$ into the context $\G$ to typecheck $\etwo$.
-
-\parcomment {Annotations}
-
-Annotations $(e : \exi \tvs \t)$ ensures that the type of $e$ is (an instance
-of) the type $\t$. The type variables $\tvs$ are \emph{flexibly} (or
-existentially) bound in $\t$, meaning that $\tvs$ may be unified with some
-types $\tys$ to produce a well-typed term. For instance, the term $(\efun x x
-+ 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv := \tint$ in
-\Rule{Annot}.
-
-\parcomment {Contextual rules (Poly-*, Use-*, Proj-*)}
-
-\paragraph{Polytypes and overloaded tuples}
-The typing rules for fully annotated terms ($\e^x$) are unsurprising.
-However, typing rules for terms with omitted type annotations are
-non-compositional as they depend on a surrounding one-hole context
-$\E$. Hence, they assert that the typability of the expression $\G \th \E
-\where {\e^i}: \t$ where $\e^i$ is an expression with an implicit type
-annotation.
-%
-We first request a typing for the expression with an explicit annotation $\G
-\th \E \where {\e^x}: \t$ where $\e^x$ is a fully annotated variant of $\e^i$.
-We then request that (the shape of) the annotation is fully determined from
-context, either from the type of the expression, which we write $\eshape \E
-\e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
+Our typing rules for implicit constructs follow the shape we described previously, of a contextual rule with a unicity condition and an elaboration into an explicit rule. Our unicity conditions in typing rules request that the shape $\sh$ the annotation is fully determined from the context, either from the type of the expression, which we write $\eshape \E \e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
 
 In order to describe the judgments $\eshape \E \e \sh$ and $\Eshape \E \e \sh$,
 we introduce a \emph{typed hole} construct $\emagic \e$ that allows any
@@ -1733,9 +1516,17 @@ typing rule for holes is:
     {\G \th \e : \t}
     {\G \th \emagic \e : \tp}
 \end{mathpar}
-\TODO{This rule should go in a figure dedicated to the various magic rules.}
-Typed holes are not allowed on source terms and are just a device for
-the definition of non-ambiguous shapes.  Finally, we define what it means for a
+Typed holes are not allowed in source terms and are just a device for
+the definition of non-ambiguous shapes. We also introduce an erasure
+function $\eerase \e$, the term counterpart of constraint erasure
+$\cerase \c$, which erases all not-yet-elaborated implicit constructs
+$\e^i$ in $\e$. They are replaced by their subterms placed into magic
+casts, so that they must remain typeable but do not influence the output
+type. For example $\eerase {\efield \e j}$ is $\emagic {\cerase \e}$;
+the full definition is given in \cref{fig:defn-term-erasure}
+(appendix).
+
+Finally, we define what it means for a
 shape to be determined from the type of a context or an expression:
 \begin{mathpar}
 \def \Eqdef {&\eqdef&}
@@ -1753,632 +1544,44 @@ shape to be determined from the type of a context or an expression:
 \end{mathpar}
 These states that the shape $\sh$ of expression $\e$ in context $\E$ is
 determined by the expression $\e$, in the former case, or by the context
-$\E$ in the latter case. Just like constraints, we must erase implicit constructs
-in the term that have not yet been elaborated, written $\eerase \e$ (defined in
-??).
+$\E$ in the latter case.
 
-%% Shapes are equal modulo alpha equivalence and the removal of useless
-%% polymorphic type variables. They do not have useless existential variables.
+\subsection{Typing rules and constraint generation}
 
-% Expression-based implicit rules
+We have detailed typing rules and a definition of constraint
+generation for the full \OML calculus, but unfortunately they do not
+fit in the margins of the 25 pages of this document. We moved them
+all, along with detailed examples, in appendix
+\cref{app:oml-calculus}.
 
-The implicit rule \Rule{Proj-I} types the projection $\eproj \e j$ provided the
-context $\E$ \emph{infers} that the shape of $\e$ must be a tuple with arity $n$.
-Similarly, \Rule{Use-I} permits instantiating a polytype in $\einst e$ if
-the context $\E$ infers that the type of $\e$ must be a polytype with shape
-$\any \tvcs \tpoly \ts$. The rule \Rule{Poly-I} types the implicit boxing
-construct $\epoly \e$ by \emph{checking} the expected type of $\epoly \e$ in the
-context $\E$ is a polytype with the shape $\any \tvcs \tpoly \ts$. This rule
-differs from the previous two as the shape is determined by the expected type
-within the context as opposed to the inferred type of $\e$.
+Our typing judgment $\G \th \e : \t$ are mostly standard, except for
+the typing rules for implicit/fragile constructs which use unicyt
+conditions as explained above. We use the unicity condition
+$\eshape E \e \sh$ for constructs that we disambiguate using the type
+of their subterms, such as overloaded tuple and record projections or
+polytype unboxing, and $\Eshape E \e \sh$ for constructs that we
+disambiguate using the type of the context, such as polytype boxing,
+or overloaded variant constructors if we described them.
 
+Our constraint generation is defined as follows. Given a term $\e$ and
+its expected type $\t$, which may contain some free type variables, we
+define a constraint $\cinfer e \t$ that is satisfiable if and only if
+the term is well-typed for some instantiation of those free type
+variables. The constraint generation for implicit constructs used
+suspended match constraints, with a language of patterns that is
+specific to each feature. The generated constraints are very simple,
+as suspended match constraints are doing all the work.
 
-% Labels
+Note that there could be other choices to type some of these features;
+as we discussed earlier, it would be possible to also use the return
+type of a record projection to help disambiguate it. We believe that
+such more complex strategies could be translated into suspended match
+constraints as well, it is the choice of the type system designer.
 
-\paragraph{Overloaded record labels}
-% Contextual rules
-We adopt a similar non-compositional approach for elaborating overloaded
-labels, whether in record projection ($\efield e \elab$) or record
-construction ($\erecord {\overline{\elab = \e}}$), although the definitions
-are slighly more involved.  Here, a one-hole label context $\Lab$ provides the
-surrounding context in which a label $\elab$ may appear:
-\begin{mathpar}
-\begin{bnfgrammar}
-\entry [Label contexts]{\Lab}{
-    \E \where {\e.\square} \and
-    \E \where
-         {\erecord
-            {\ela = \eone; \ldots; \square = \ei ; \ldots; \el_n = \en}
-         }
-}
-\end{bnfgrammar}
-\end{mathpar}
+\subsection{Metatheory}
+\label{sec:constraint-prop}
 
-As with our contextual rules for expressions, we define two rules for labels.
-\Rule{Lab-X} handles explicitly annotated labels $\elab / \T$ by instantiating
-the type scheme $\tfor \tvs \t \to \T \tvs$ associated with $\elab$ in label
-environment $\labenv$. \Rule{Lab-I} handles unannotated labels by elaborating
-$\elab$ to $\elab / \T$ if the context $\Lab$ uniquely infers the record type
-$\T$ for $\elab$ and the resulting elaboration is well-typed.
-
-The unicity of the inferred record type is captured by the judgement $\Lshape
-\Lab \elab \T$. The definition fits into the framework we established for
-expressions above by introducing a label cast operator $\elcast \elab \t$,
-analogous to the combination of typed holes and annotations in expressions,
-which asserts that the label is instantiated to the type $\tp \to \t$ for any
-$\tp$.
-\begin{mathpar}
-  \infer[Lab-Magic]
-    {}
-    {\G \th \elcast \elab \t : \tp \to \t}
-\\
-\Eshape \Lab \elab \T \Wide\eqdef
-   \forall \G, \t, \gt , \uad
-     \G \th \eerase {\Lab[\elcast \elab \gt]} : \t
-	\implies \shape \gt= \any \tvcs {\tvcs \T}
-\end{mathpar}
-
-% Rules
-\Rule{Rcd} types a record $\erecord {\overline{\el = \e}}$ as a record type
-$\t$ provided that each field assignment $\el = \e$ can be assigned the record
-type $\t$.
-\Rule{Rcd-Assn} checks that $\e$ has the appropriate field type in $\el = \e$
-and returns the instantiated record type $\tp$ for the label $\el$.
-\Rule{Rcd-Proj} types the projection $\efield \e \el$ by checking that the
-type of $\e$ matches the record type associated with label $\el$, returning
-the field type $\t$.
-
-% Closed world reasoning
-Both \Rule{Rcd} and \Rule{Rcd-Proj} impose additional constraints on their
-record types to support \emph{closed-world} reasoning. These constraints
-exploit the uniqueness of type definitions in the global label environment
-$\labenv$ to resolve overloaded labels:
-\begin{enumerate*}
-\item
-  in a record projection $\efield \e \elab$, if the label $\elab$ is not
-  overloaded, then the global record typing context $\labenv$ assigns a
-  unqiue record type $\T$ to $\elab$;
-
-\item
-  in a record expression $\erecord {\ela = \eone; \ldots; \el_n =
-  \en}$, if the set of labels ${ \ela, \ldots, \el_n }$ uniquely
-  identifies a record type $\T$ in the typing context $\labenv$, then
-  we can assign this type to the record expression.
-\end{enumerate*}
-
-We formalize this with the judgement $\G \th \bar \el \uni \t$, which
-either:
-\begin{enumerate*}
-  \item enforces $\t$ to be of the form $\T \tys$ if the labels $\bar \el$
-    uniquely identify a nominal record type $\T$ in $\labenv$ (\Rule{Lab-!}),
-    or
-  \item imposes no constraint on $\t$ in the ambiguous case
-    (\Rule{Lab-?}).
-\end{enumerate*}
-
-Label declarations in $\labenv$ have the form $\elab : \tfor \tvs \tp \to \T
-\tvs$, assigning labels to field types and record types\footnote{For a given
-record type $\T$, we assume each label associated with it is unique.}. We
-write $\elab / {\T} \in \labenv$ if such a declaration of $\elab$ exists for the
-record type $\T$. This membership relation extends to explicitly annotated and
-casted labels:
-\begin{mathpar}
-  \infer[Lab-$\in$X]
-    {\elab / {\T} \in \labenv}
-    {(\elab / \T) / {\T} \in \labenv}
-
-  \infer[Lab-$\in$Cast]
-    {\elab / {\T} \in \labenv}
-    {\elcast \elab \t / {\T} \in \labenv}
-\end{mathpar}
-We then define the uniqueness predicate $\bar \el \uni {\T} \in \labenv$ as:
-\begin{mathpar}
-  \infer[Lab-U]
-    {\bar \el / {\T} \in \labenv \\
-     \all {\T'} \uad\bar \el / \T' \in \labenv \implies {\T} = \T'}
-    {\bar \el \uni \T \in \labenv}
-\end{mathpar}
-This states that the set of labels $\bar \el$ determines a unique nominal type
-$\T$ in $\labenv$ if no other type $\T'$ can be associated with the same label
-set.
-\TODO{Should the rules above be in a figure as well?}
-
-\subsection {Examples of typings}
-
-The following lemma shows that we can always take a larger context
-$\E$ or $\Lab$ for implicit rules \Rule {Proj-I}, \Rule {Use-I}, \Rule {Poly-I}
-and \Rule{Lab-I}.
-That is, there is always a derivation using only toplevel contexts.
-\begin{lemma}
-\label{lem/context/largest}
-\newcommand {\Eab}{\parens{\Ea\where \Eb}}
-If $\eshape \Eb \e \sh$, then $\eshape \Eab \e \sh$. Similarly, for label
-contexts, if $\Lshape \Lab \elab \T$, then \\$\Lshape {(\E[\Lab])} \elab \T$.
-\end{lemma}
-
-% Examples
-We now illustrate the typing of implicit constructs with a few examples.
-\begin{example}
-To illustrate a simple case of non-typability, we show that the expression $e$
-equal to $\efun \x {\eproj \x k}$ is ambiguous, \ie that it does not
-typecheck.
-%
-%% Let $e_n$ be the explicitly annotated version $\efun r
-%% {\eproj[n] \x i}$. for $n \le k$.
-If there is a derivation of $\efun \x
-{\eproj \x k}$ then there must be one of the form:
-\begin{mathpar}
-\infer*[Right=Proj-I]{
-                  \eshape \E \x {\any \tvcs \Pi\iton \tvcs} \\
-                \eset \th \E \where {\eproj[n] \x k} : \t
-}{%             -------------------------------------------
-                  \eset \th \E \where {\eproj \x k} : \t
-}
-\end{mathpar}
-where $E$ is the term $\efun \x \ehole$, which is the largest possible
-context, thanks to~\cref {lem/context/largest}.
-%
-Let $\t$ be $\Pi\iton \ti \to \t_k$ for some $n \geq k$.  We have the
-following derivation:
-\begin{mathpar}
-\infer* [Right=Fun]{
-          \infer*[Right=Proj-X]
-                {\x : \Pi\iton \ti \th \x : \Pi\iton \ti}
-                {\x : \Pi\iton \ti \th \eproj[n] \x k : \t_k}
-}{%      ----------------------------------------------------------
-         \eset \th \E \where{\eproj[n] \x k} : \t
-}
-\end{mathpar}
-Unfortunately, $\eshape \E  \x {\any \tvcs \Pi\iton \tvcs}$ does not hold.
-  Indeed, we have $\eset \th \E \where {\emagic {\eannot \x {} {\gt}}} : \t$
-for any $\gt$ assuming $\t$ is of the form $\gt \to \tp$.
-Hence, $\any \tvcs \Pi\iton[n] \tvcs$ and $\any \tvcs \Pi\iton[n+1] \tvcs$
-are two possible shapes for the type of $\x$.
-\end{example}
-
-\begin{example}
-\locallabelreset
-We now illustrate a non-ambiguous example, showing that the
-expression $e$ equal to $\th \eapp {(\efun \x {\eproj
-\x  1})} {(1, 2)} : \tint$.
-%
-%
-Let $\E$ be the context $\eapp {(\efun \x \ehole)} {(1, 2)}$.  We
-have the derivation:
-\begin{mathpar}
-\infer* [Right=Proj-I]{
-		\eshape \E \x {\any {\tvca, \tvcb} \tvca \tprod \tvcb} \\
-                \eset \th \E \where {\eproj[2] \x 1} : \tint
-}{%             -------------------------------------------
-                  \eset \th \E \where {\eproj \x 1} : \tint
-}
-\end{mathpar}
-We have $\eset \th \E \where {\eproj[2] \x 1} : \tint$, indeed. Therefore, it
-just remains to show $\eshape \E \x {\any {\tvca, \tvcb} \tvca \tprod \tvcb}$~\llabel C.
-Assume $\eset \th \E \where{\emagic {\eannot \x {} \gt}} : \t$. Since $\x : \tint \tprod \tint$
-is bound in the context at the hole in $\E$,
-there is no other choice but take $\gt$ equal to $\tint \tprod \tint$,
-hence $\shape \gt = \any {\tvca, \tvcb} \tvca \tprod \tvcb$, which proves~\lref C.
-\end{example}
-
-The following example of non-typability illustrates how the typing rules
-still forces to reject typing of some expressions whose elaboration would be
-unambiguous. This is intended, to prevent us from having to focus at several
-terms simultaneously. Our typing rules enforce the resolution of
-shape inference, locally, one at a time.
-
-\begin{example}
-\newcommand{\tyid}{\ty_{\kwd{id}}}
-  \newcommand{\eid}{\efun z z}
-\newcommand {\epid}[1][]{\epoly[#1]{\eid}}
-Let $\tyid$ be $\tpoly{\all \tv \tv \to \tv}$.
-%
-We show that the expression $e$ equal to $\elet \x {\epoly {\efun z z}}
-{(\eapp {\einst \x} 1, \eapp {\einst \x} \eunit)}$ is rejected as ambiguous.
-Let $\tyid$ be $\tpoly {\all \tv \tv \to \tv}$.  Clearly, we have $\elet \x
-{\epoly [\tyid] {\efun z z}} {(\eapp {\einst[\tyid] \x} 1, \eapp
-{\einst[\tyid] \x} \eunit)}$.  This is actually the only possible fully
-annotated derivation.
-%
-To show that $e$ is typable, we must be able to make all annotations
-optional, sequentially.  Therefore, the final step, which will eliminate the
-last annotation has a single point of focus of the form $\E\where{e^i}$,
-where $\e^i$ can be any of the three positions with a missing annotation.  We
-consider each case independently, and show that it is actually not typable.
-\begin{proofcases}
-\proofcase
-{$\E$ is $\elet \x \ehole (\eapp {\einst \x} 1, \eapp {\einst \x}\eunit)$}
-%
-If this holds, we should have a derivation that ends with
-\begin{mathpar}
-\infer*[Right=Poly-I]{
-		  \Eshape \E \eid {\tpoly \tyid} \\
-                  \eset \th \E \where {\epid [\tyid]}: \t
-}{%               ---------------------------------------
-                       \eset \th \E \where \epid : \t
-}
-\end{mathpar}
-However, $\Eshape \E \eid {{\tpoly \tyid}}$ does not hold.
-Indeed, the following judgment
-$\eset \th \E \where {\eannot {\emagic \eid} {} {\tpoly \ts}} : \t$ holds, where
-$\ts$ is either $\tfor \tv \tv \to \tv$ or $\tfor \tv \tv \to
-\tv\to\tv$. Hence, the shape of the type of $\eid$ is not uniquely
-determined and this case cannot occur.
-
-\proofcase
-{$\E$ is
-    $\elet \x {\epid} {\eapp {\einst \ehole} 1, \eapp {\einst \x} \eunit}$}
-%
-The derivation must end with:
-\begin{mathpar}
-\infer*[Right=Proj-X]{
-		  \eshape \E \x {\tpoly \tyid} \\
-                \eset \th \E \where {\einst[\tyid] \x} : \t
-}{%             -------------------------------------------
-                    \eset \th \E \where {\einst \x} : \t
-}
-\end{mathpar}
-However, $\eshape \E \x \tyid$ does not hold (the proof is similar to the
-previous case).
-
-\proofcase {$\E$ is  $\elet \x \epid {(\eapp {\einst \x} 1, \eapp
-  {\einst \ehole} \eunit)}$} This is symmetric to the previous case, which cannot
-hold either.
-  \end{proofcases}
-\end{example}
-
-\begin{example}
-Let $\e$ be $\elet f {\efun \x {\eproj \x 1}} {\eapp f (1, 2)}$.
-$\e$ is well-typed using \emph{backpropagation}.
-$\e$ is of the form $\E \where {\x}$ where  $\E$ is the context $\elet f
-{\efun \x \ehole} {\eapp f (1, 2)}$.
-We have $\eset \th \E \where {\eproj[2] \x 1} : \tint$.
-Let us show that $\eshape \E \x {\any {\tvca, \tvcb} \tvca \tprod \tvcb}$.
-%
-Assume $\eset \th \E \where {\emagic {\eannot \x {} \gt} } : \t$. As $\gt$ is a ground
-type, the type $\gt$ of $\x$ is not a variable.  Then, $\gt$ cannot be that
-of an arbitrary sized tuple, since there is no such type for a tuple of
-arbitrary size. Hence, $\gt$ must be a tuple $\Pi\iton \tys$ for some size
-$n$. Since the codomain of $f$ must be a tuple of size~$2$ (for $\eapp f (1,
-2)$ to be well-typed), then $n$ must also be $2$. This shows that $\eshape \E
-\x {\any {\tvca, \tvcb} \tvca \tprod \tvcb}$.
-%% \begin{mathpar}
-%%   \infer
-%%     {
-%%     \infer
-%%       {
-%% 	\infer
-%% 	  {
-%% 	    \infer
-%% 	      {
-%% 		\infer
-%% 		  {}
-%% 		  {\tva, \tvb, x : \tva \th x : \tva}}
-%% 	      {\tva, \tvb, x : \tva \th \ecast x \tva \tvb : \tvb}}
-%% 	  {\tva, \tvb \th \efun x {\ecast x \tva \tvb : \tva \to \tvb}}}
-%%       {\emptyset \th \efun \x \ecast \x \tva \tvb : \tfor {\tva, \tvb} \tva \to \tvb} \\
-%%     \infer
-%%       {\ldots}
-%%       {f : \tfor {\tva, \tvb} \tva \to \tvb \th \eapp f (1, 2) : \tunit}}
-%%     {\emptyset \th \elet f {\efun \x {\ecast \x \tva \tvb}} {\eapp f (1, 2)} : \tunit}
-%% \end{mathpar}
-\end{example}
-
-
-\subsection{Constraint generation}
-\label{sec:constraint-gen}
-
-% Intro
-We now present the formal translation from terms $\e$ to constraints $\c$,
-such that the resulting constraint is satisfiable if and only if the term is
-well typed. The translation is defined as a function $\cinfer \e \t$, where $\e$
-is the term to be translated and $\t$ is the expected type of $\e$.
-
-% Explanation of expected type
-The expected type $\t$ is permitted to contain type variables, which can be
-existentially bound in order to perform type inference. The models of constraint
-$\cinfer \e \t$ interpret the free variables of $\t$ such that
-$\t$ becomes a valid type of $\e$. For example, to infer the entire type of $\e$
-we may pick a fresh type variable $\tv$ for $\t$.
-\paragraph{Pattern constraints}
-
-Thus far, our formal presentation of constraint patterns has remained
-abstract, deliberately leaving the syntax and semantics of patterns unspecified to
-accommodate a range of language features. We now concretize this by specifying
-the patterns used in \OML (See \cref{fig:patterns-oml}), and introducing the
-corresponding constraints for the variables they bind.
-%
-Patterns include:
-\begin{enumerate*}
-
-  \item Tuple patterns $\cpatprod \tv j$, matching a tuple type $\Pi\iton
-    \tys$ of arity $n \geq j$, and binding the $j$-th component to $\tv$.
-
-  \item Nominal patterns $\cpatrcd \ct$, binding the name of a nominal type
-    $\Tapp \tys$ to the nominal variable $\ct$.
-
-  \item Polytype patterns $\cpatpoly \cscm$ matching a polytype $\tpoly \ts$ and
-    binding the resulting scheme to the variable $\cscm$.
-
-\end{enumerate*}
-
-Each new constraint has an unsubstituted form ($\cscm \leq \t, \x \leq \cscm$
-\etc), whose semantics is defined via substitution into a sugared form ($\ts
-\leq \t, \x \leq \ts,$ \etc). Semantic environments $\semenv$ are extended to
-interpret nominal variables $\ct$ as names $\T$ and scheme variables $\cscm$ as
-ground type schemes $\gscm$, that is type schemes with no unbound variables
-(\ie $\tfor {\fvs \t} \t$).
-
-\begin{mathparfig}
-  {fig:patterns-oml}
-  {Patterns for \OML}
-  \begin{bnfgrammar}
-   \entry[Patterns]{\cpat}{
-      \cpatprod \tv j
-      \and \cpatrcd \ct
-      \and \cpatpoly \cscm
-    } \\
-    \entry[Constraints]{\c}{
-      \dots
-      \and \labenv(\elab/\ct) \leq \tone \to \ttwo
-      \and \labenv(\elab/\T) \leq \tone \to \ttwo
-      \andcr \cscm \leq \t
-      \and \ts \leq \t
-      \andcr \x \leq \cscm
-      \and \x \leq \ts
-    }
- \end{bnfgrammar}
-  \\
-  \newcommand{\Mrule}[4][]{{#2} \Matches {#3} &\eqdef& {#4} & #1}
-  \begin{tabular}{RCLL}
-    \Mrule[\text{if } n \geq j]
-      {\cpatprod \tv j}
-      {\shapp[\any \tvcs \Pi\iton \tvcs] \tys}
-      {[\tv \is \ty_j]}
-    \\[1ex]
-    \Mrule
-      {\cpatrcd \ct}
-      {\shapp[\any \tvcs \Tapp \tvcs] \tys}
-      {[\ct \is \T]}
-    \\[1ex]
-    \Mrule
-      {\cpatpoly \cscm}
-      {\shapp[\any \tvcs \tpoly \ts] \tys}
-      {[\cscm \is \ts \where{\tvcs \is \tys}]}
-  \end{tabular}
-  \\
-  \inferrule[Lab-Inst]
-    {\semenv \th \labenv(\elab/\semenv(\ct)) \leq \tone \to \ttwo}
-    {\semenv \th \labenv(\elab/\ct) \leq \tone \to \ttwo}
-
-  \inferrule[Scm-Inst]
-    {\semenv \th \semenv(\cscm) \leq \t}
-    {\semenv \th \cscm \leq \t}
-
-  \inferrule[Abs-Inst]
-    {\semenv \th \x \leq \semenv(\cscm)}
-    {\semenv \th \x \leq \cscm}
-  \\
-  \newcommand{\Srule}[3][]{{#2} &\eqdef& {#3} & {#1}}
-  \begin{tabular}{RCLL}
-    \Srule[\text{if } \labenv(\elab/\T) = \tfor \tvs \t \to \Tapp \tvs]
-      {\labenv(\elab/\T) \leq \tone \to \ttwo}
-      {\cexists \tvs \cunif \tone \t \cand \cunif \ttwo {\Tapp \tvs}}
-    \\[1ex]
-    \Srule
-      {(\tfor \tvs \tp) \leq \t}
-      {\cexists \tvs \cunif \tp \t}
-    \\[1ex]
-    \Srule
-      {\x \leq (\tfor \tvs \t)}
-      {\cfor \tvs \capp \x \t}
-  \end{tabular}
-
-\end{mathparfig}
-
-
-% Explanation of constraint gen cases
-% Simple constraint gen
-
-\paragraph{Constraint generation}
-
-\begin{mathparfig}
-  {fig:constraint-gen}
-  {The constraint generation translation for \OML}
-\newcommand {\Crule}[2]{#1 &\eqdef& #2}
-\def \arraystretch{1.2}%4
-\begin{tabular}{LCL}
-\Crule
-   {\cinfer x \t}
-   {\cinst x \t}
-\\
-\Crule
-  {\cinfer {()} \t}
-  {\cunif \t \tunit}
-\\
-\Crule
-  {\cinfer {\efun \x \e} \t}
-  {\cexists {\tva, \tvb} \cunif \t {\tva \to \tvb}
-    \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}}
-\\
-\Crule
-  {\cinfer {\eapp \eone \etwo} \t}
-  {\cexists {\tva} \cinfer \eone {\tva \to \t} \cand \cinfer \etwo \tva}
-\\
-\Crule
-  {\cinfer {\elet \x \eone \etwo} \t}
-  {\clet \x \tva {\cinfer \eone \tva} {\cinfer \etwo \t}}
-\\
-\Crule
-  {\cinfer {\eannot \e \tvs \tp} \t}
-  {\cexists \tvs \cunif \t \tp \cand \cinfer \e \tp}
-\\
-\Crule
-  {\cinfer {\etuple {\eone, \ldots, \en}} \t}
-  {\cexists \tvs \cunif \t {\Pi\iton \tvs}
-    \cand \cAnd \iton \cinfer \ei {\tv_i}}
-\\
-\Crule
-  {\cinfer {\exfield \e j n} \t}
-  {\cexists {\tvbs}
-    \cinfer \e {\Pi\iton \tvbs}
-    \cand \cunif \t {\tvb_j}}
-\\
-\Crule
-  {\cinfer {\efield \e j} \t}
-  {\cexists \tv \cinfer \e \tv
-    \cand \cmatch \tv {\cbranch {\cpatprod \tvb j} {\cunif \t \tvb}}}
-\\
-\Crule
-  {\cinfer {\expoly \e \tvs \ts} \t}
-  {\cexists {\tvs}
-    \cinfer \e \ts
-    \cand \cunif \t {\tpoly \ts}}
-\\
-\Crule
-  {\cinfer {\exinst \e \tvs \ts} \t}
-  {\cexists {\tvs}
-    \cinfer \e {\tpoly \ts}
-    \cand \ts \leq \t}
-\\
-\Crule
-  {\cinfer {\einst \e} \t}
-  {\cexists \tva
-    \cinfer \e \tva
-    \cand \cmatch \tva {\cbranch {\cpatpoly \cscm} \cscm \leq \t}}
-\\
-\Crule
-  {\cinfer {\epoly \e} \t}
-  {\clet \x \tv {\cinfer \e \tv}
-    {\cmatch \t {\cbranch {\cpatpoly \cscm} {\x \leq \cscm}}}}
-\\
-\Crule
-  {\cinfer {\efield \e \el} \t}
-  {\cexists \tv \cinfer \e \tv
-    \cand \cinferlabuni \el \tv
-    \cand \cinferlab \elab \t \tv}
-\\
-\Crule
-  {\cinfer {\erecord {\overline{\el = \e}}} \t}
-  {\cinferlabuni {\bar \el} \t
-    \cand \cAnd \iton \cinferassn \eli \ei \t}
-\\
-\Crule
-  {\cinfer {\emagic \e} \t}
-  {\cexists \tv \cinfer \e \tv}
-\\
-\Crule
-  {\cinfer \e {\tfor \tvs \t}}
-  {\cfor \tvs \cinfer \e \t}
-\\ \\
-\Crule
-  {\cinferassn \el \e \t}
-  {\cexists \tv \cinfer \e \tv
-    \cand \cinferlab \el \tv \t}
-\\
-\Crule
-  {\cinferlab \elab \tone \ttwo}
-  {\cmatch \ttwo {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \tone \to \ttwo}}}
-\\
-\Crule
-  {\cinferlab {\elab/\T} \tone \ttwo}
-  {\labenv(\elab/\T) \leq \tone \to \ttwo}
-\\
-\Crule
-  {\cinferlab {\elcast \elab \t} \tone \ttwo}
-  {\cunif \t \ttwo}
-\\
-\Crule
-  {\cinferlabuni {\bar \el} \t}
-  {\begin{cases}
-    \cexists \tvs \cunif \t {\Tapp \tvs} &\text{if } \bar \el \uni \T \in \labenv \\
-    \ctrue &\text{otherwise}
-   \end{cases}}
-\\ \\
-\Crule
-  {\csem {\enil \th \e : \t}}
-  {\cinfer \e \t}
-\\
-\Crule
-  {\csem {\tv, \G \th \e : \t}}
-  {\call \tv {\csem {\G \th \e : \t}}}
-\\
-\Crule
-  {\csem {x : \ts, \G \th \e : \t}}
-  {\clet \x \tv {\ts \le \tv} {\csem {\G \th \e : \t}}}
-\\
-\end{tabular}
-\end{mathparfig}
-\TODO{Change the constraint generator to take a variable as a expected type}
-
-
-The function $\cinfer - {\mathop{=}}$ is defined in \cref{fig:constraint-gen}.
-All generated type variables are fresh with respect to the expected type $\t$,
-ensuring capture-avoidance.
-%
-Unsurprisingly, variables generate an instantiation constraint. Unit $()$
-requires the type $\t$ to be $\tunit$. A function generates a constraint that
-binds two fresh flexible type variables for the argument and return types.  We
-use a $\Let$ constraint to bind the argument in the constraint generated for
-the body of the function. The $\Let$ constraint is monomorphic since $\tvc$ is
-fully constrained by type variables defined outside the abstraction's scope
-and therefore cannot be generalized. Applications introduce a fresh flexible
-type variable for the argument type and ensures $\t$ is the return type of the
-function. Let-bindings generates a polymorphic let constraint; $\cabs \tv
-{\cinfer \e \tv}$ is a principal constraint abstraction for $\e$: its intended
-interpretation is the set of all types that $\e$ admits.
-
-% New constraint gen cases
-% Annotations, tuples
-Annotations bind their flexible variables and enforce the equility of
-the annotated type $\tp$ and the expected type $\t$. Tuples introduce
-fresh variables for each component and unify their product with $\t$.
-Explicit projections ensure $\e$ has a tuple type $\Pi\iton \tvbs$
-and extract the $j$-th component $\tvb_j$, unifying it with $\t$.
-Implicit projections defer this via a suspended match constraint, until
-the shape of $\e$'s expected type is known to be a tuple, extracting the
-$j$-th component with the pattern $\cpatprod \tvb j$,
-
-% Polytypes
-For polytypes, boxing asserts that $\e$ has the polymorphic type $\ts$ (using
-universal quantification) and that the expected type is the polytype $\tpoly
-\ts$. Unboxing suspends until the inferred type of $\e$ is known to be a
-polytype, captured by the pattern $\cpatpoly \cscm$, at which point we require
-$\t$ to be an instance of $\cscm$. Explicit unboxing is analogous, but uses an
-explicit scheme $\ts$ and therefore does not require a suspended match
-constraint. Implicit boxing infers the principal type for $\e$ using a $\Let$
-constraint and suspends until the expected type of the entire term is known to
-be a polytype, bound to $\cscm$. We then assert that the principal type of $\e$
-is at least as general as $\cscm$, via the constraint $\x \leq \cscm$.
-
-
-% Records
-Record projections generate a fresh variable for the nominal record type,
-constraining $\e$ to this type, and use the auxiliary function $\cinferlab \el
-\tone \ttwo$ to instantiate the label. The function $\cinferlabuni {\bar \el}
-\t$ checks whether a label sequence $\bar \el$ uniquely determines a record
-type, unifying $\t$ with $\Tapp \tvs$ if so, or leaving it unconstrained if
-ambiguous. This function enables closed-world reasoning for both projections
-and constructions, and corresponds to the judgement $\G \th \bar \el \uni \t$
-judgement defined in \cref{sec/language/typing-rules}.
-
-Record construction checks label uniqueness and generates a per-field
-constraint $\eli = \ei$, introducing a fresh variable $\tv$ for each
-field's type and ensuring that $\e$ has this type and the label $\el$
-instantiates to $\tv \to \t$.
-
-Label instantiation constraints $\cinferlab \elab \tone \ttwo$ suspend
-until $\ttwo$ is known to be a record type; once resolved, the label type is
-looked up in $\labenv$ and instantiated. Explicit instantiations bypass
-suspension and directly instantiate the label's type.
-
-% Other cases
-The remaining (greyed) cases \TODO{Make the cases grey} correspond to internal
-constructs used in \OML's typing rules and are included for completeness.
-
-% Soundness/completeness of constraint gen
-
-The translation is sound and complete with respect to the typing judgment.
+Constraint generation is sound and complete with respect to the typing judgment.
 That is to say, the term $\e$ is typable with $\t$ if and only if
 $\cinfer \e \tv$ is satisfiable when $\tv$ is $\t$.
 %
@@ -2386,11 +1589,8 @@ $\cinfer \e \tv$ is satisfiable when $\tv$ is $\t$.
 $\th \e : \t$ iff\/
 $\cunif \tv \t \centails \csem {\e : \tv}$.
 \end{theorem}
-\TODO{This result should go in the Metatheory section.}
 
-\subsection{Metatheory}
-\label{sec:constraint-prop}
-
+The type system itself has good stability properties, discussed below.
 
 \paragraph{Stability by program transformations}
 
@@ -2417,8 +1617,8 @@ However, core \ML has several other key properties:
   The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
   equitypable where $\eswap$ is $\efun f {\efun \xa {\efun \xb {\eappp f \xb
   \ea}}}$.  Thanks to a few other properties, this implies in turn that
-  $\eapp f \ea$ and $\eApp f \ea$ and $\eb \ePipe \ea$ are themselves
-  equitypable where $\eApp$ and $\ePipe$ are the application function $\efun f \efun \x \eapp f
+  $\eapp f \e$ and $\eappp {\mathsf{app}} f \e$ and $\eappp {\mathsf{rev\_app}} \e f$ are themselves
+  equitypable where $\mathsf{app}$ and $\mathsf{rev\_app}$ are the application function $\efun f \efun \x \eapp f
   \x$ and the reverse application function $\efun \x \efun f \eapp f \x$,
   respectively.
 
@@ -3493,6 +2693,885 @@ heuristics to refine it, a two-phase process. It's fine.}
 \newpage
 \appendix
 
+\section{The \OML calculus: typing rules and constraint generation}
+\label{app:oml-calculus}
+
+\subsection{Typing rules}
+\label{sec/language/typing-rules}
+
+As usual, the main typing judgment $\G \th \e : \ts$ states that in context
+$\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
+{fig/typing}.  They use auxiliary typing judgemnents $\G \th \elab = \e : \t$
+and $\G \th \el : \t \to \tp$ for the typing of record assignments and
+label instantiations respectively.
+
+\begin{mathparfig}{fig/typing}{Typing rules of \OML}
+  \inferrule[Var]
+    {x : \sigma \in \G}
+    {\G \th x : \sigma}
+
+  \inferrule[Fun]
+    {\G, x : \tone \th e : \ttwo }
+    {\G \th \efun x e : \tone \to \ttwo}
+
+  \inferrule[App]
+    {\G \th \eone : \tone \to \ttwo \\
+     \G \th \etwo : \tone}
+    {\G \th \eapp \eone \etwo : \ttwo}
+
+  \inferrule[Unit]
+    {}
+    {\G \th () : 1}
+
+  \inferrule[Annot]
+    {\G \th e : \t\where {\tvs \is \tys}}
+    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
+
+  \inferrule[Gen]
+    {\G \th e : \sigma \\ \tv \disjoint \G}
+    {\G \th e : \tfor \tv \sigma}
+
+  \inferrule[Inst]
+    {\G \th e : \tfor \tv \ts}
+    {\G \th e : \ts \where{\tv \is \t}}
+
+  \inferrule[Let]
+    {\G \th \eone : \sigma \\
+     \G, x : \sigma \th \etwo : \t}
+    {\G \th \elet x \eone \etwo : \t}
+
+  \inferrule[Tuple]
+    {\parens{\G \th \ei : \ti}\iton}
+    {\G \th (\eone, \ldots, \en) : \Pi\iton \ti}
+
+  \inferrule[Proj-X]
+    {\G \th \e : \Pi\iton \ti \\
+     1 \leq j \leq n}
+    {\G \th \exfield \e n j : \tj}
+
+  \inferrule[Proj-I]
+    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
+     \G \th \E\where{\exfield \e n j} : \t}
+    {\G \th \E\where{\efield \e j} : \t}
+
+  \inferrule [Poly-X]
+    {\G \th \e : \ts\where {\tvs \is \tys}}
+    {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
+
+  \inferrule [Poly-I]
+    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
+     \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
+    {\G \th \E \where{\epoly \e} : \t}
+
+  \inferrule [Use-X]
+    {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
+    {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
+
+  \inferrule [Use-I]
+    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
+     \G \th \E\where{\exinst \e \tvcs \ts} : \t}
+    {\G \th \E\where{\einst \e} : \t}
+
+  \inferrule[Rcd-Assn]
+    {\G \th \e : \t \\
+     \G \th \el : \t \to \tp}
+    {\G \th \el = \e : \tp}
+
+  \inferrule[Rcd]
+    {\parens{\G \th \eli = \ei : \t}\iton \\
+     \G \th \bar \el \uni \t}
+    {\G \th \erecord {\ela = \eone; \ldots; \el_n = \en} : \t}
+
+  \inferrule[Rcd-Proj]
+    {\G \th \e : \tp \\
+     \G \th \el : \t \to \tp \\
+     \G \th \el \uni \t }
+    {\G \th \efield \e \el : \t}
+
+  \inferrule[Lab-X]
+    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
+    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
+
+  \inferrule[Lab-I]
+    {\Lshape \Lab \elab \T \\
+      \G \th \Lab[\elab / \T] : \t}
+    {\G \th \Lab[\elab] : \t}
+
+  \inferrule[Lab-!]
+    {\bar \el \uni {\T} \in \labenv}
+    {\G \th \bar \el \uni \T \tys}
+
+  \inferrule[Lab-?]
+    {\G \th \t}
+    {\G \th \bar \el \uni \t}
+\end{mathparfig}
+
+\TODO{We should consider handling the three features (tuples, records, polytypes) separately, one in each subsection.
+If we later run out of space budget it will be easier to move only some of those subsections to an appendix.
+Concrete proposal:
+\begin{itemize}
+\item one subsection at the beginning that only hints at the standard ML stuff:
+  show the syntax, hint at typing rules, show a short bit of constraint generation
+\item then each advanced feature (from the simplest to the more complex: tuples, polytypes, records)
+  show the typing rules, and examples, and its dedicated patterns, and its constraint generation
+\end{itemize}}
+
+\begin{version}{}
+\begin{bnffig}{fig/types/bnf}{aaa}
+\entry[Types]{\t}{
+    \tv \and
+    \tunit \and
+    \t \to \t \and
+    \Pi \parens \t\iton \and
+    \T \tys \and
+    \tpoly \ts
+}
+\end{bnffig}
+
+\begin{mathparfig}
+  {fig/types/wf}
+  {Well-formedness of types}
+  \inferrule[Var-Wf]
+    {\tv \in \G}
+    {\G \th \tv}
+
+  \inferrule[Unit-Wf]
+    {}
+    {\G \th \tunit}
+
+  \inferrule[Arr-Wf]
+    {\G \th \t \\ \G \th \tp}
+    {\G \th \t \to \tp}
+
+  \inferrule[Prod-Wf]
+    {(\G \th \ti)\iton}
+    {\G \th \Pi\iton \ti}
+
+  \inferrule[Rcd-Wf]
+    {(\G \th \ti)\iton \\
+     {\T} \in \dom \Omega}
+    {\G \th \T \tys}
+
+  \inferrule[Poly-Wf]
+    {\G \th \ts}
+    {\G \th \tpoly \ts}
+
+  \inferrule[Forall-Wf]
+    {\G, \tv \th \ts}
+    {\G \th \tfor \tv \ts}
+\end{mathparfig}
+\end{version}
+
+
+\parcomment {Simple typing rules explained}
+
+Rule \Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
+Function types are introduced via lambda abstractions: in Rule \Rule{Fun}, the
+system guesses a well-formed type $\tone$ for the type of $x$, typechecks the
+body $e$ is under the extended context $\G, \x : \tya$ producing the return
+type $\tyb$, and assigns the abstraction the function type $\tya \to \tyb$.
+Conversely, function types are eliminated by applications; in Rule \Rule{App},
+the type of the argument must match the function's parameter type $\tya$ and
+application returns the type $\tyb$. Rule \Rule{Unit} asserts that $\eunit$ has
+the unit type $\tunit$.
+
+\parcomment {Gen/Inst explained}
+
+Rules \Rule{Gen} and \Rule{Inst} correspond to implicit
+\textit{generalization} and \textit{instantiation} respectively.
+Generalization universally quantifies a type variable $\tv$, introducing it
+as a fresh polymorphic variable in the typing context. In \Rule{Inst}, we
+specialize a type scheme $\tfor \tv \ts$ to $\ts \where{\tv \is \t}$,
+substituting $\tv$ for an arbitrary monotype $\t$.
+
+\parcomment {Let rule}
+
+Let-polymorphism is handled by the \Rule{Let} rule, where a
+\textit{polymorphic} term can be bound. This allows a single definition to be
+instantiated differently at each use site---an essential feature of \ML. In
+this rule, the term $\eone$ has a polymorphic type scheme $\ts$, adds $\x :
+\ts$ into the context $\G$ to typecheck $\etwo$.
+
+\parcomment {Annotations}
+
+Annotations $(e : \exi \tvs \t)$ ensures that the type of $e$ is (an instance
+of) the type $\t$. The type variables $\tvs$ are \emph{flexibly} (or
+existentially) bound in $\t$, meaning that $\tvs$ may be unified with some
+types $\tys$ to produce a well-typed term. For instance, the term $(\efun x x
++ 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv := \tint$ in
+\Rule{Annot}.
+
+\parcomment {Contextual rules (Poly-*, Use-*, Proj-*)}
+
+\paragraph{Polytypes and overloaded tuples}
+The typing rules for fully annotated terms ($\e^x$) are unsurprising.
+However, typing rules for terms with omitted type annotations are
+non-compositional as they depend on a surrounding one-hole context
+$\E$. Hence, they assert that the typability of the expression $\G \th \E
+\where {\e^i}: \t$ where $\e^i$ is an expression with an implicit type
+annotation.
+%
+We first request a typing for the expression with an explicit annotation $\G
+\th \E \where {\e^x}: \t$ where $\e^x$ is a fully annotated variant of $\e^i$.
+We then request that (the shape of) the annotation is fully determined from
+context, either from the type of the expression, which we write $\eshape \E
+\e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
+
+In order to describe the judgments $\eshape \E \e \sh$ and $\Eshape \E \e \sh$,
+we introduce a \emph{typed hole} construct $\emagic \e$ that allows any
+well-typed expression $\e$ to be treated as if it had any type. That is the
+typing rule for holes is:
+\begin{mathpar}
+  \inferrule[Magic]
+    {\G \th \e : \t}
+    {\G \th \emagic \e : \tp}
+\end{mathpar}
+\TODO{This rule should go in a figure dedicated to the various magic rules.}
+Typed holes are not allowed on source terms and are just a device for
+the definition of non-ambiguous shapes.  Finally, we define what it means for a
+shape to be determined from the type of a context or an expression:
+\begin{mathpar}
+\def \Eqdef {&\eqdef&}
+{\begin{tabular}{RCL}
+\eshape E \e \sh \Eqdef
+  \forall \G, \t, \gt, \uad
+  \G \th \eerase {\E \where {\emagic {\eannot \e {} \gt }}} : \t
+      \wide\implies \shape \gt = \sh
+\\[1ex]
+\Eshape E \e \sh \Eqdef
+  \forall \G, \t, \gt, \uad
+      \G \th \eerase {\E\where{\eannot {\emagic \e} {} \gt}} : \t
+      \wide\implies \shape \gt = \sh
+\end{tabular}}
+\end{mathpar}
+These states that the shape $\sh$ of expression $\e$ in context $\E$ is
+determined by the expression $\e$, in the former case, or by the context
+$\E$ in the latter case. Just like constraints, we must erase implicit constructs
+in the term that have not yet been elaborated, written $\eerase \e$ (defined in
+??).
+
+%% Shapes are equal modulo alpha equivalence and the removal of useless
+%% polymorphic type variables. They do not have useless existential variables.
+
+% Expression-based implicit rules
+
+The implicit rule \Rule{Proj-I} types the projection $\eproj \e j$ provided the
+context $\E$ \emph{infers} that the shape of $\e$ must be a tuple with arity $n$.
+Similarly, \Rule{Use-I} permits instantiating a polytype in $\einst e$ if
+the context $\E$ infers that the type of $\e$ must be a polytype with shape
+$\any \tvcs \tpoly \ts$. The rule \Rule{Poly-I} types the implicit boxing
+construct $\epoly \e$ by \emph{checking} the expected type of $\epoly \e$ in the
+context $\E$ is a polytype with the shape $\any \tvcs \tpoly \ts$. This rule
+differs from the previous two as the shape is determined by the expected type
+within the context as opposed to the inferred type of $\e$.
+
+
+% Labels
+
+\paragraph{Overloaded record labels}
+% Contextual rules
+We adopt a similar non-compositional approach for elaborating overloaded
+labels, whether in record projection ($\efield e \elab$) or record
+construction ($\erecord {\overline{\elab = \e}}$), although the definitions
+are slighly more involved.  Here, a one-hole label context $\Lab$ provides the
+surrounding context in which a label $\elab$ may appear:
+\begin{mathpar}
+\begin{bnfgrammar}
+\entry [Label contexts]{\Lab}{
+    \E \where {\e.\square} \and
+    \E \where
+         {\erecord
+            {\ela = \eone; \ldots; \square = \ei ; \ldots; \el_n = \en}
+         }
+}
+\end{bnfgrammar}
+\end{mathpar}
+
+As with our contextual rules for expressions, we define two rules for labels.
+\Rule{Lab-X} handles explicitly annotated labels $\elab / \T$ by instantiating
+the type scheme $\tfor \tvs \t \to \T \tvs$ associated with $\elab$ in label
+environment $\labenv$. \Rule{Lab-I} handles unannotated labels by elaborating
+$\elab$ to $\elab / \T$ if the context $\Lab$ uniquely infers the record type
+$\T$ for $\elab$ and the resulting elaboration is well-typed.
+
+The unicity of the inferred record type is captured by the judgement $\Lshape
+\Lab \elab \T$. The definition fits into the framework we established for
+expressions above by introducing a label cast operator $\elcast \elab \t$,
+analogous to the combination of typed holes and annotations in expressions,
+which asserts that the label is instantiated to the type $\tp \to \t$ for any
+$\tp$.
+\begin{mathpar}
+  \infer[Lab-Magic]
+    {}
+    {\G \th \elcast \elab \t : \tp \to \t}
+\\
+\Eshape \Lab \elab \T \Wide\eqdef
+   \forall \G, \t, \gt , \uad
+     \G \th \eerase {\Lab[\elcast \elab \gt]} : \t
+	\implies \shape \gt= \any \tvcs {\tvcs \T}
+\end{mathpar}
+
+% Rules
+\Rule{Rcd} types a record $\erecord {\overline{\el = \e}}$ as a record type
+$\t$ provided that each field assignment $\el = \e$ can be assigned the record
+type $\t$.
+\Rule{Rcd-Assn} checks that $\e$ has the appropriate field type in $\el = \e$
+and returns the instantiated record type $\tp$ for the label $\el$.
+\Rule{Rcd-Proj} types the projection $\efield \e \el$ by checking that the
+type of $\e$ matches the record type associated with label $\el$, returning
+the field type $\t$.
+
+% Closed world reasoning
+Both \Rule{Rcd} and \Rule{Rcd-Proj} impose additional constraints on their
+record types to support \emph{closed-world} reasoning. These constraints
+exploit the uniqueness of type definitions in the global label environment
+$\labenv$ to resolve overloaded labels:
+\begin{enumerate*}
+\item
+  in a record projection $\efield \e \elab$, if the label $\elab$ is not
+  overloaded, then the global record typing context $\labenv$ assigns a
+  unqiue record type $\T$ to $\elab$;
+
+\item
+  in a record expression $\erecord {\ela = \eone; \ldots; \el_n =
+  \en}$, if the set of labels ${ \ela, \ldots, \el_n }$ uniquely
+  identifies a record type $\T$ in the typing context $\labenv$, then
+  we can assign this type to the record expression.
+\end{enumerate*}
+
+We formalize this with the judgement $\G \th \bar \el \uni \t$, which
+either:
+\begin{enumerate*}
+  \item enforces $\t$ to be of the form $\T \tys$ if the labels $\bar \el$
+    uniquely identify a nominal record type $\T$ in $\labenv$ (\Rule{Lab-!}),
+    or
+  \item imposes no constraint on $\t$ in the ambiguous case
+    (\Rule{Lab-?}).
+\end{enumerate*}
+
+Label declarations in $\labenv$ have the form $\elab : \tfor \tvs \tp \to \T
+\tvs$, assigning labels to field types and record types\footnote{For a given
+record type $\T$, we assume each label associated with it is unique.}. We
+write $\elab / {\T} \in \labenv$ if such a declaration of $\elab$ exists for the
+record type $\T$. This membership relation extends to explicitly annotated and
+casted labels:
+\begin{mathpar}
+  \infer[Lab-$\in$X]
+    {\elab / {\T} \in \labenv}
+    {(\elab / \T) / {\T} \in \labenv}
+
+  \infer[Lab-$\in$Cast]
+    {\elab / {\T} \in \labenv}
+    {\elcast \elab \t / {\T} \in \labenv}
+\end{mathpar}
+We then define the uniqueness predicate $\bar \el \uni {\T} \in \labenv$ as:
+\begin{mathpar}
+  \infer[Lab-U]
+    {\bar \el / {\T} \in \labenv \\
+     \all {\T'} \uad\bar \el / \T' \in \labenv \implies {\T} = \T'}
+    {\bar \el \uni \T \in \labenv}
+\end{mathpar}
+This states that the set of labels $\bar \el$ determines a unique nominal type
+$\T$ in $\labenv$ if no other type $\T'$ can be associated with the same label
+set.
+\TODO{Should the rules above be in a figure as well?}
+
+\subsection {Examples of typings}
+
+The following lemma shows that we can always take a larger context
+$\E$ or $\Lab$ for implicit rules \Rule {Proj-I}, \Rule {Use-I}, \Rule {Poly-I}
+and \Rule{Lab-I}.
+That is, there is always a derivation using only toplevel contexts.
+\begin{lemma}
+\label{lem/context/largest}
+\newcommand {\Eab}{\parens{\Ea\where \Eb}}
+If $\eshape \Eb \e \sh$, then $\eshape \Eab \e \sh$. Similarly, for label
+contexts, if $\Lshape \Lab \elab \T$, then \\$\Lshape {(\E[\Lab])} \elab \T$.
+\end{lemma}
+
+% Examples
+We now illustrate the typing of implicit constructs with a few examples.
+\begin{example}
+To illustrate a simple case of non-typability, we show that the expression $e$
+equal to $\efun \x {\eproj \x k}$ is ambiguous, \ie that it does not
+typecheck.
+%
+%% Let $e_n$ be the explicitly annotated version $\efun r
+%% {\eproj[n] \x i}$. for $n \le k$.
+If there is a derivation of $\efun \x
+{\eproj \x k}$ then there must be one of the form:
+\begin{mathpar}
+\infer*[Right=Proj-I]{
+                  \eshape \E \x {\any \tvcs \Pi\iton \tvcs} \\
+                \eset \th \E \where {\eproj[n] \x k} : \t
+}{%             -------------------------------------------
+                  \eset \th \E \where {\eproj \x k} : \t
+}
+\end{mathpar}
+where $E$ is the term $\efun \x \ehole$, which is the largest possible
+context, thanks to~\cref {lem/context/largest}.
+%
+Let $\t$ be $\Pi\iton \ti \to \t_k$ for some $n \geq k$.  We have the
+following derivation:
+\begin{mathpar}
+\infer* [Right=Fun]{
+          \infer*[Right=Proj-X]
+                {\x : \Pi\iton \ti \th \x : \Pi\iton \ti}
+                {\x : \Pi\iton \ti \th \eproj[n] \x k : \t_k}
+}{%      ----------------------------------------------------------
+         \eset \th \E \where{\eproj[n] \x k} : \t
+}
+\end{mathpar}
+Unfortunately, $\eshape \E  \x {\any \tvcs \Pi\iton \tvcs}$ does not hold.
+  Indeed, we have $\eset \th \E \where {\emagic {\eannot \x {} {\gt}}} : \t$
+for any $\gt$ assuming $\t$ is of the form $\gt \to \tp$.
+Hence, $\any \tvcs \Pi\iton[n] \tvcs$ and $\any \tvcs \Pi\iton[n+1] \tvcs$
+are two possible shapes for the type of $\x$.
+\end{example}
+
+\begin{example}
+\locallabelreset
+We now illustrate a non-ambiguous example, showing that the
+expression $e$ equal to $\th \eapp {(\efun \x {\eproj
+\x  1})} {(1, 2)} : \tint$.
+%
+%
+Let $\E$ be the context $\eapp {(\efun \x \ehole)} {(1, 2)}$.  We
+have the derivation:
+\begin{mathpar}
+\infer* [Right=Proj-I]{
+		\eshape \E \x {\any {\tvca, \tvcb} \tvca \tprod \tvcb} \\
+                \eset \th \E \where {\eproj[2] \x 1} : \tint
+}{%             -------------------------------------------
+                  \eset \th \E \where {\eproj \x 1} : \tint
+}
+\end{mathpar}
+We have $\eset \th \E \where {\eproj[2] \x 1} : \tint$, indeed. Therefore, it
+just remains to show $\eshape \E \x {\any {\tvca, \tvcb} \tvca \tprod \tvcb}$~\llabel C.
+Assume $\eset \th \E \where{\emagic {\eannot \x {} \gt}} : \t$. Since $\x : \tint \tprod \tint$
+is bound in the context at the hole in $\E$,
+there is no other choice but take $\gt$ equal to $\tint \tprod \tint$,
+hence $\shape \gt = \any {\tvca, \tvcb} \tvca \tprod \tvcb$, which proves~\lref C.
+\end{example}
+
+The following example of non-typability illustrates how the typing rules
+still forces to reject typing of some expressions whose elaboration would be
+unambiguous. This is intended, to prevent us from having to focus at several
+terms simultaneously. Our typing rules enforce the resolution of
+shape inference, locally, one at a time.
+
+\begin{example}
+\newcommand{\tyid}{\ty_{\kwd{id}}}
+  \newcommand{\eid}{\efun z z}
+\newcommand {\epid}[1][]{\epoly[#1]{\eid}}
+Let $\tyid$ be $\tpoly{\all \tv \tv \to \tv}$.
+%
+We show that the expression $e$ equal to $\elet \x {\epoly {\efun z z}}
+{(\eapp {\einst \x} 1, \eapp {\einst \x} \eunit)}$ is rejected as ambiguous.
+Let $\tyid$ be $\tpoly {\all \tv \tv \to \tv}$.  Clearly, we have $\elet \x
+{\epoly [\tyid] {\efun z z}} {(\eapp {\einst[\tyid] \x} 1, \eapp
+{\einst[\tyid] \x} \eunit)}$.  This is actually the only possible fully
+annotated derivation.
+%
+To show that $e$ is typable, we must be able to make all annotations
+optional, sequentially.  Therefore, the final step, which will eliminate the
+last annotation has a single point of focus of the form $\E\where{e^i}$,
+where $\e^i$ can be any of the three positions with a missing annotation.  We
+consider each case independently, and show that it is actually not typable.
+\begin{proofcases}
+\proofcase
+{$\E$ is $\elet \x \ehole (\eapp {\einst \x} 1, \eapp {\einst \x}\eunit)$}
+%
+If this holds, we should have a derivation that ends with
+\begin{mathpar}
+\infer*[Right=Poly-I]{
+		  \Eshape \E \eid {\tpoly \tyid} \\
+                  \eset \th \E \where {\epid [\tyid]}: \t
+}{%               ---------------------------------------
+                       \eset \th \E \where \epid : \t
+}
+\end{mathpar}
+However, $\Eshape \E \eid {{\tpoly \tyid}}$ does not hold.
+Indeed, the following judgment
+$\eset \th \E \where {\eannot {\emagic \eid} {} {\tpoly \ts}} : \t$ holds, where
+$\ts$ is either $\tfor \tv \tv \to \tv$ or $\tfor \tv \tv \to
+\tv\to\tv$. Hence, the shape of the type of $\eid$ is not uniquely
+determined and this case cannot occur.
+
+\proofcase
+{$\E$ is
+    $\elet \x {\epid} {\eapp {\einst \ehole} 1, \eapp {\einst \x} \eunit}$}
+%
+The derivation must end with:
+\begin{mathpar}
+\infer*[Right=Proj-X]{
+		  \eshape \E \x {\tpoly \tyid} \\
+                \eset \th \E \where {\einst[\tyid] \x} : \t
+}{%             -------------------------------------------
+                    \eset \th \E \where {\einst \x} : \t
+}
+\end{mathpar}
+However, $\eshape \E \x \tyid$ does not hold (the proof is similar to the
+previous case).
+
+\proofcase {$\E$ is  $\elet \x \epid {(\eapp {\einst \x} 1, \eapp
+  {\einst \ehole} \eunit)}$} This is symmetric to the previous case, which cannot
+hold either.
+  \end{proofcases}
+\end{example}
+
+\begin{example}
+Let $\e$ be $\elet f {\efun \x {\eproj \x 1}} {\eapp f (1, 2)}$.
+$\e$ is well-typed using \emph{backpropagation}.
+$\e$ is of the form $\E \where {\x}$ where  $\E$ is the context $\elet f
+{\efun \x \ehole} {\eapp f (1, 2)}$.
+We have $\eset \th \E \where {\eproj[2] \x 1} : \tint$.
+Let us show that $\eshape \E \x {\any {\tvca, \tvcb} \tvca \tprod \tvcb}$.
+%
+Assume $\eset \th \E \where {\emagic {\eannot \x {} \gt} } : \t$. As $\gt$ is a ground
+type, the type $\gt$ of $\x$ is not a variable.  Then, $\gt$ cannot be that
+of an arbitrary sized tuple, since there is no such type for a tuple of
+arbitrary size. Hence, $\gt$ must be a tuple $\Pi\iton \tys$ for some size
+$n$. Since the codomain of $f$ must be a tuple of size~$2$ (for $\eapp f (1,
+2)$ to be well-typed), then $n$ must also be $2$. This shows that $\eshape \E
+\x {\any {\tvca, \tvcb} \tvca \tprod \tvcb}$.
+%% \begin{mathpar}
+%%   \infer
+%%     {
+%%     \infer
+%%       {
+%% 	\infer
+%% 	  {
+%% 	    \infer
+%% 	      {
+%% 		\infer
+%% 		  {}
+%% 		  {\tva, \tvb, x : \tva \th x : \tva}}
+%% 	      {\tva, \tvb, x : \tva \th \ecast x \tva \tvb : \tvb}}
+%% 	  {\tva, \tvb \th \efun x {\ecast x \tva \tvb : \tva \to \tvb}}}
+%%       {\emptyset \th \efun \x \ecast \x \tva \tvb : \tfor {\tva, \tvb} \tva \to \tvb} \\
+%%     \infer
+%%       {\ldots}
+%%       {f : \tfor {\tva, \tvb} \tva \to \tvb \th \eapp f (1, 2) : \tunit}}
+%%     {\emptyset \th \elet f {\efun \x {\ecast \x \tva \tvb}} {\eapp f (1, 2)} : \tunit}
+%% \end{mathpar}
+\end{example}
+
+
+\subsection{Constraint generation}
+\label{sec:constraint-gen}
+
+% Intro
+We now present the formal translation from terms $\e$ to constraints $\c$,
+such that the resulting constraint is satisfiable if and only if the term is
+well typed. The translation is defined as a function $\cinfer \e \t$, where $\e$
+is the term to be translated and $\t$ is the expected type of $\e$.
+
+% Explanation of expected type
+The expected type $\t$ is permitted to contain type variables, which can be
+existentially bound in order to perform type inference. The models of constraint
+$\cinfer \e \t$ interpret the free variables of $\t$ such that
+$\t$ becomes a valid type of $\e$. For example, to infer the entire type of $\e$
+we may pick a fresh type variable $\tv$ for $\t$.
+\paragraph{Pattern constraints}
+
+Thus far, our formal presentation of constraint patterns has remained
+abstract, deliberately leaving the syntax and semantics of patterns unspecified to
+accommodate a range of language features. We now concretize this by specifying
+the patterns used in \OML (See \cref{fig:patterns-oml}), and introducing the
+corresponding constraints for the variables they bind.
+%
+Patterns include:
+\begin{enumerate*}
+
+  \item Tuple patterns $\cpatprod \tv j$, matching a tuple type $\Pi\iton
+    \tys$ of arity $n \geq j$, and binding the $j$-th component to $\tv$.
+
+  \item Nominal patterns $\cpatrcd \ct$, binding the name of a nominal type
+    $\Tapp \tys$ to the nominal variable $\ct$.
+
+  \item Polytype patterns $\cpatpoly \cscm$ matching a polytype $\tpoly \ts$ and
+    binding the resulting scheme to the variable $\cscm$.
+
+\end{enumerate*}
+
+Each new constraint has an unsubstituted form ($\cscm \leq \t, \x \leq \cscm$
+\etc), whose semantics is defined via substitution into a sugared form ($\ts
+\leq \t, \x \leq \ts,$ \etc). Semantic environments $\semenv$ are extended to
+interpret nominal variables $\ct$ as names $\T$ and scheme variables $\cscm$ as
+ground type schemes $\gscm$, that is type schemes with no unbound variables
+(\ie $\tfor {\fvs \t} \t$).
+
+\begin{mathparfig}
+  {fig:patterns-oml}
+  {Patterns for \OML}
+  \begin{bnfgrammar}
+   \entry[Patterns]{\cpat}{
+      \cpatprod \tv j
+      \and \cpatrcd \ct
+      \and \cpatpoly \cscm
+    } \\
+    \entry[Constraints]{\c}{
+      \dots
+      \and \labenv(\elab/\ct) \leq \tone \to \ttwo
+      \and \labenv(\elab/\T) \leq \tone \to \ttwo
+      \andcr \cscm \leq \t
+      \and \ts \leq \t
+      \andcr \x \leq \cscm
+      \and \x \leq \ts
+    }
+ \end{bnfgrammar}
+  \\
+  \newcommand{\Mrule}[4][]{{#2} \Matches {#3} &\eqdef& {#4} & #1}
+  \begin{tabular}{RCLL}
+    \Mrule[\text{if } n \geq j]
+      {\cpatprod \tv j}
+      {\shapp[\any \tvcs \Pi\iton \tvcs] \tys}
+      {[\tv \is \ty_j]}
+    \\[1ex]
+    \Mrule
+      {\cpatrcd \ct}
+      {\shapp[\any \tvcs \Tapp \tvcs] \tys}
+      {[\ct \is \T]}
+    \\[1ex]
+    \Mrule
+      {\cpatpoly \cscm}
+      {\shapp[\any \tvcs \tpoly \ts] \tys}
+      {[\cscm \is \ts \where{\tvcs \is \tys}]}
+  \end{tabular}
+  \\
+  \inferrule[Lab-Inst]
+    {\semenv \th \labenv(\elab/\semenv(\ct)) \leq \tone \to \ttwo}
+    {\semenv \th \labenv(\elab/\ct) \leq \tone \to \ttwo}
+
+  \inferrule[Scm-Inst]
+    {\semenv \th \semenv(\cscm) \leq \t}
+    {\semenv \th \cscm \leq \t}
+
+  \inferrule[Abs-Inst]
+    {\semenv \th \x \leq \semenv(\cscm)}
+    {\semenv \th \x \leq \cscm}
+  \\
+  \newcommand{\Srule}[3][]{{#2} &\eqdef& {#3} & {#1}}
+  \begin{tabular}{RCLL}
+    \Srule[\text{if } \labenv(\elab/\T) = \tfor \tvs \t \to \Tapp \tvs]
+      {\labenv(\elab/\T) \leq \tone \to \ttwo}
+      {\cexists \tvs \cunif \tone \t \cand \cunif \ttwo {\Tapp \tvs}}
+    \\[1ex]
+    \Srule
+      {(\tfor \tvs \tp) \leq \t}
+      {\cexists \tvs \cunif \tp \t}
+    \\[1ex]
+    \Srule
+      {\x \leq (\tfor \tvs \t)}
+      {\cfor \tvs \capp \x \t}
+  \end{tabular}
+
+\end{mathparfig}
+
+
+% Explanation of constraint gen cases
+% Simple constraint gen
+
+\paragraph{Constraint generation}
+
+\begin{mathparfig}
+  {fig:constraint-gen}
+  {The constraint generation translation for \OML}
+\newcommand {\Crule}[2]{#1 &\eqdef& #2}
+\def \arraystretch{1.2}%4
+\begin{tabular}{LCL}
+\Crule
+   {\cinfer x \t}
+   {\cinst x \t}
+\\
+\Crule
+  {\cinfer {()} \t}
+  {\cunif \t \tunit}
+\\
+\Crule
+  {\cinfer {\efun \x \e} \t}
+  {\cexists {\tva, \tvb} \cunif \t {\tva \to \tvb}
+    \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}}
+\\
+\Crule
+  {\cinfer {\eapp \eone \etwo} \t}
+  {\cexists {\tva} \cinfer \eone {\tva \to \t} \cand \cinfer \etwo \tva}\
+\\
+\Crule
+  {\cinfer {\elet \x \eone \etwo} \t}
+  {\clet \x \tva {\cinfer \eone \tva} {\cinfer \etwo \t}}
+\\
+\Crule
+  {\cinfer {\eannot \e \tvs \tp} \t}
+  {\cexists \tvs \cunif \t \tp \cand \cinfer \e \tp}
+\\
+\Crule
+  {\cinfer {\etuple {\eone, \ldots, \en}} \t}
+  {\cexists \tvs \cunif \t {\Pi\iton \tvs}
+    \cand \cAnd \iton \cinfer \ei {\tv_i}}
+\\
+\Crule
+  {\cinfer {\exfield \e j n} \t}
+  {\cexists {\tvbs}
+    \cinfer \e {\Pi\iton \tvbs}
+    \cand \cunif \t {\tvb_j}}
+\\
+\Crule
+  {\cinfer {\efield \e j} \t}
+  {\cexists \tv \cinfer \e \tv
+    \cand \cmatch \tv {\cbranch {\cpatprod \tvb j} {\cunif \t \tvb}}}
+\\
+\Crule
+  {\cinfer {\expoly \e \tvs \ts} \t}
+  {\cexists {\tvs}
+    \cinfer \e \ts
+    \cand \cunif \t {\tpoly \ts}}
+\\
+\Crule
+  {\cinfer {\exinst \e \tvs \ts} \t}
+  {\cexists {\tvs}
+    \cinfer \e {\tpoly \ts}
+    \cand \ts \leq \t}
+\\
+\Crule
+  {\cinfer {\einst \e} \t}
+  {\cexists \tva
+    \cinfer \e \tva
+    \cand \cmatch \tva {\cbranch {\cpatpoly \cscm} \cscm \leq \t}}
+\\
+\Crule
+  {\cinfer {\epoly \e} \t}
+  {\clet \x \tv {\cinfer \e \tv}
+    {\cmatch \t {\cbranch {\cpatpoly \cscm} {\x \leq \cscm}}}}
+\\
+\Crule
+  {\cinfer {\efield \e \el} \t}
+  {\cexists \tv \cinfer \e \tv
+    \cand \cinferlabuni \el \tv
+    \cand \cinferlab \elab \t \tv}
+\\
+\Crule
+  {\cinfer {\erecord {\overline{\el = \e}}} \t}
+  {\cinferlabuni {\bar \el} \t
+    \cand \cAnd \iton \cinferassn \eli \ei \t}
+\\
+\Crule
+  {\cinfer {\emagic \e} \t}
+  {\cexists \tv \cinfer \e \tv}
+\\
+\Crule
+  {\cinfer \e {\tfor \tvs \t}}
+  {\cfor \tvs \cinfer \e \t}
+\\ \\
+\Crule
+  {\cinferassn \el \e \t}
+  {\cexists \tv \cinfer \e \tv
+    \cand \cinferlab \el \tv \t}
+\\
+\Crule
+  {\cinferlab \elab \tone \ttwo}
+  {\cmatch \ttwo {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \tone \to \ttwo}}}
+\\
+\Crule
+  {\cinferlab {\elab/\T} \tone \ttwo}
+  {\labenv(\elab/\T) \leq \tone \to \ttwo}
+\\
+\Crule
+  {\cinferlab {\elcast \elab \t} \tone \ttwo}
+  {\cunif \t \ttwo}
+\\
+\Crule
+  {\cinferlabuni {\bar \el} \t}
+  {\begin{cases}
+    \cexists \tvs \cunif \t {\Tapp \tvs} &\text{if } \bar \el \uni \T \in \labenv \\
+    \ctrue &\text{otherwise}
+   \end{cases}}
+\\ \\
+\Crule
+  {\csem {\enil \th \e : \t}}
+  {\cinfer \e \t}
+\\
+\Crule
+  {\csem {\tv, \G \th \e : \t}}
+  {\call \tv {\csem {\G \th \e : \t}}}
+\\
+\Crule
+  {\csem {x : \ts, \G \th \e : \t}}
+  {\clet \x \tv {\ts \le \tv} {\csem {\G \th \e : \t}}}
+\\
+\end{tabular}
+\end{mathparfig}
+\TODO{Change the constraint generator to take a variable as a expected type}
+
+
+The function $\cinfer - {\mathop{=}}$ is defined in \cref{fig:constraint-gen}.
+All generated type variables are fresh with respect to the expected type $\t$,
+ensuring capture-avoidance.
+%
+Unsurprisingly, variables generate an instantiation constraint. Unit $()$
+requires the type $\t$ to be $\tunit$. A function generates a constraint that
+binds two fresh flexible type variables for the argument and return types.  We
+use a $\Let$ constraint to bind the argument in the constraint generated for
+the body of the function. The $\Let$ constraint is monomorphic since $\tvc$ is
+fully constrained by type variables defined outside the abstraction's scope
+and therefore cannot be generalized. Applications introduce a fresh flexible
+type variable for the argument type and ensures $\t$ is the return type of the
+function. Let-bindings generates a polymorphic let constraint; $\cabs \tv
+{\cinfer \e \tv}$ is a principal constraint abstraction for $\e$: its intended
+interpretation is the set of all types that $\e$ admits.
+
+% New constraint gen cases
+% Annotations, tuples
+Annotations bind their flexible variables and enforce the equility of
+the annotated type $\tp$ and the expected type $\t$. Tuples introduce
+fresh variables for each component and unify their product with $\t$.
+Explicit projections ensure $\e$ has a tuple type $\Pi\iton \tvbs$
+and extract the $j$-th component $\tvb_j$, unifying it with $\t$.
+Implicit projections defer this via a suspended match constraint, until
+the shape of $\e$'s expected type is known to be a tuple, extracting the
+$j$-th component with the pattern $\cpatprod \tvb j$,
+
+% Polytypes
+For polytypes, boxing asserts that $\e$ has the polymorphic type $\ts$ (using
+universal quantification) and that the expected type is the polytype $\tpoly
+\ts$. Unboxing suspends until the inferred type of $\e$ is known to be a
+polytype, captured by the pattern $\cpatpoly \cscm$, at which point we require
+$\t$ to be an instance of $\cscm$. Explicit unboxing is analogous, but uses an
+explicit scheme $\ts$ and therefore does not require a suspended match
+constraint. Implicit boxing infers the principal type for $\e$ using a $\Let$
+constraint and suspends until the expected type of the entire term is known to
+be a polytype, bound to $\cscm$. We then assert that the principal type of $\e$
+is at least as general as $\cscm$, via the constraint $\x \leq \cscm$.
+
+
+% Records
+Record projections generate a fresh variable for the nominal record type,
+constraining $\e$ to this type, and use the auxiliary function $\cinferlab \el
+\tone \ttwo$ to instantiate the label. The function $\cinferlabuni {\bar \el}
+\t$ checks whether a label sequence $\bar \el$ uniquely determines a record
+type, unifying $\t$ with $\Tapp \tvs$ if so, or leaving it unconstrained if
+ambiguous. This function enables closed-world reasoning for both projections
+and constructions, and corresponds to the judgement $\G \th \bar \el \uni \t$
+judgement defined in \cref{sec/language/typing-rules}.
+
+Record construction checks label uniqueness and generates a per-field
+constraint $\eli = \ei$, introducing a fresh variable $\tv$ for each
+field's type and ensuring that $\e$ has this type and the label $\el$
+instantiates to $\tv \to \t$.
+
+Label instantiation constraints $\cinferlab \elab \tone \ttwo$ suspend
+until $\ttwo$ is known to be a record type; once resolved, the label type is
+looked up in $\labenv$ and instantiated. Explicit instantiations bypass
+suspension and directly instantiate the label's type.
+
+% Other cases
+The remaining (greyed) cases \TODO{Make the cases grey} correspond to internal
+constructs used in \OML's typing rules and are included for completeness.
+
+% Soundness/completeness of constraint gen
+
+
 \section{The \OML calculus, feature by feature}
 
 \Xgabriel{This section contains work-in-progress content that I intended to use to rewrite Section 4, ``The \OML calculus''. I still believe that there will not be enough space to keep Section 4 anyway, so I decided to stop this rewrite effort and dump the current content here.}
@@ -3540,7 +3619,6 @@ heuristics to refine it, a two-phase process. It's fine.}
     \cunif \t {\tva \to \tvb}
     {}}
 \\ & & \quad\uad {} \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}
-  }
 \\
 \Crule
   {\cinfer {\eapp \eone \etwo} \t}
