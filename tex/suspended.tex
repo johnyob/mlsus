@@ -617,7 +617,13 @@ $\tfor \av {\tapoly \ts \av}$.
 
 The introduction form for polytypes is a boxing operator $\expoly
 \e \tvs \ts$ with an explicit polytype annotation $\exi \tvs \ts$
-where the $\tvs$ are type variables that are free in $\ts$.\Xgabriel{Do you mean that $\tvs$ are \emph{all} the free variables in $\ts$, so that $\exi \tvs \ts$ is closed, or is it okay if they are only a subset of the type variables bound in $\ts$?}
+where the $\tvs$ are \emph{all} type variables that are free in
+$\ts$.\Xgabriel{Do you mean that $\tvs$ are \emph{all} the free variables in
+$\ts$, so that $\exi \tvs \ts$ is closed, or is it okay if they are only a
+subset of the type variables bound in $\ts$?}\Xdidier {Since, we do not have
+binders for type variables in terms. It should be closed and these will be
+inferred. Otherwise, the semantics would be ill-defined:  we would need to
+explain where they are bound, enclosing let or toplevel.}
 %
 The resulting expression has type $\tapoly {\ts \where {\tvs \is \tys}} \av$
 where $\av$ is an arbitrary (typically fresh) annotation variable and $\tys$
@@ -1080,7 +1086,8 @@ for any variables bound in the pattern.\footnote{\Xgabriel{I find it
     to the semantic environment. That would ensure uniformity by
     construction, whereas for the current approach we need to check
     each partial definition of $\cmatches \rho {(\sh, \tys)} \theta$
-    for uniformity. Can I make the change?}}
+    for uniformity. Can I make the change?}}\Xdidier {I don't understand
+    what you are proposing. Can you explain---without implementing it?}
 %
 For our examples we define the trivial pattern $\cwild$ which matches
 any shape and binds nothing:
@@ -2385,38 +2392,51 @@ However, core \ML has several other key properties:
   then $\G \th \E \where \ep : \t$.
 
 \item [Factorization]
-  If $\G \th \e \where {\x \is \ez} : \t$ and $\G \th \ez : \ts$ then
-  $\G \th \elet \x \ez \e : \t$.
+  If $\G \th \e \where {\x \is \e} : \t$ and
+  $\G \th \ez : \ts$ then $\G \th \elet \x \ez \e : \t$.
 
-%% \item [Inlining]
-%%   If $\G \th \elet \x \ez \e : \t$ then $\G \th \e \where {\x \is \ez} : \t$
+\item [Inlining]
+  If $\G \th \elet \x \ez \e : \t$ then $\G \th \e \where {\x \is \ez} : \t$
 
 \item [Application equitypability]
   The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
   equitypable where $\eswap$ is $\efun f {\efun \xa {\efun \xb {\eappp f \xb
   \ea}}}$.  Thanks to a few other properties, this implies in turn that
   $\eapp f \ea$ and $\eApp f \ea$ and $\eb \ePipe \ea$ are themselves
-  equi-typable where are the application function $\efun f \efun \x \eapp f
+  equitypable where $\eApp$ and $\ePipe$ are the application function $\efun f \efun \x \eapp f
   \x$ and the reverse application function $\efun \x \efun f \eapp f \x$,
   respectively.
 
 \end{description}
 It is well-known that bidirectional types inference breaks application
-equi-typability. However, both \Geninst-directional and omnidirectional type
+equitypability. However, both \Geninst-directional and omnidirectional type
 inference preserve it.
 
-In core \ML, Factorization is a consequence of principal types and
-compositionality.  It is definitely broken by overloading, since the inlined
-version may has several overloading sites that may be resolved differently.
-However, we may wonder about linear factorization, \ie when $\x$ occurs
-exactly once in~$\e$.  This is again broken by bidirectional type inference,
-but preserved by both \Geninst-directional and omnidirectional type inference,
+In core \ML, factorization is a consequence of principal types and
+compositionality.
+
+Composiionality does not hold, since the context $\E$ may be used to ensure
+unicity of the type of some overloaded subexpression of $\e$. This is
+inherent to using contextual information.
+
+Factorization is definitely broken by overloading, since the inlined version
+may has several overloading sites may be dupplicated and thus resolved
+differently.  Inlining does not hold either, for the very same reason: being
+resolved differently, they share less contextual information, and unicity
+may fail after inlining.
+
+We may wonder about linear factorization, \ie when $\x$ occurs exactly once
+in~$\e$.  This is again broken by bidirectional type inference, but
+preserved by both \Geninst-directional and omnidirectional type inference,
 although for different reasons: for \Geninst-directional type inference, it
 follows from the limited use of contextual type information; for
-omnidirectional type inference, it follows by backpropagation\Xdidier{I
-think this is not the right term}.
+omnidirectional type inference, it follows by backpropagation.  Linear
+inlining is preserved by the three directional approaches.
 
-\Xdidier {How formal should we be? Should we justify these claims?}
+Subject-reduction, which is more genral than inlining, is thus also broken
+by omnidirectional type inference. As many language features that require
+elaboration, subject-reduction only hold on the elaborated form.
+
 
 \section{Solving constraints}
 \label{sec:solving}
