@@ -2414,13 +2414,13 @@ inference preserve it.
 
 In core \ML, factorization is a consequence of principal types and
 compositionality.
-
-Composiionality does not hold, since the context $\E$ may be used to ensure
+%
+Compositionality does not hold, since the context $\E$ may be used to ensure
 unicity of the type of some overloaded subexpression of $\e$. This is
 inherent to using contextual information.
 
 Factorization is definitely broken by overloading, since the inlined version
-may has several overloading sites may be dupplicated and thus resolved
+may has several overloading sites may be duplicated and thus resolved
 differently.  Inlining does not hold either, for the very same reason: being
 resolved differently, they share less contextual information, and unicity
 may fail after inlining.
@@ -2433,7 +2433,7 @@ follows from the limited use of contextual type information; for
 omnidirectional type inference, it follows by backpropagation.  Linear
 inlining is preserved by the three directional approaches.
 
-Subject-reduction, which is more genral than inlining, is thus also broken
+Subject-reduction, which is more general than inlining, is thus also broken
 by omnidirectional type inference. As many language features that require
 elaboration, subject-reduction only hold on the elaborated form.
 
@@ -4951,4 +4951,5 @@ Problems to solve or leave unsolved:
 % LocalWords:  impredicative polytypes minimality RCL ary Proj toplevel
 % LocalWords:  typability backpropagation arity Compositionality equi
 % LocalWords:  equitypable compositionality inlined equitypability nullary
-% LocalWords:  metatheoretical finiteness nonvariable
+% LocalWords:  metatheoretical finiteness nonvariable mydesc Inlining
+% LocalWords:  unicity inlining
