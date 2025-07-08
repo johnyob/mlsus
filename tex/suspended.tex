@@ -2650,6 +2650,15 @@ The canonical representation useing shapes is simiular.
 \section{Related work}
 \label{sec:related-work}
 
+
+\paragraph{Principality tracking in \OCaml}
+\citet*{Garrigue-Remy/poly-ml} introduced an approach to principality
+tracking for polytypes, that has since be extended to other features
+of the \OCaml language: whenever the type-checker wants to know if
+a type is known in a robust way, it checks whether the type is
+generalizable. We compare this approach to ours in
+\cref{sec/constraints/polytypes}.
+
 \paragraph{Qualified types} Qualified
 types~\citep*{jones-qualified-types}, most well-known via their usage
 in Haskell type-classes, are related to our suspended match
@@ -2721,11 +2730,6 @@ have solved the troubling interactions between let-generalization and
 suspended constraints in this work, and would be interested in
 studying applications to GADT typing, which was also one of our
 original motivations.
-
-
-\subsection{Principality tracking in \OCaml}
-\Xgabriel{This is for me.}
-\TODO{We discussion this in the introduction, let's point to that section again here.}
 
 \section{Future work}
 \label{sec:future-work}
