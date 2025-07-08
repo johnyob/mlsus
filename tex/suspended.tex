@@ -2624,13 +2624,13 @@ constraints as they represent constraints on types or type
 variables. At generalization time, the constraints on generalizable
 variables are kept as part of the generalized type scheme, and they
 get copied during instantiation. This is much simpler to implement
-that our partial generalization and partial instantiations, but it
-provides a different semantics where each instance can choose
+than our partial generalization and partial instantiations, but it
+provides a different behavior where each instance can choose
 independently how to resolve the constraint. Qualified types are an
 excellent choice when this is the desired behavior, typically for
-dynamic overloading. We had to introduce the more complex suspended
-match constraints to express features that require a unique resolution
-of the constraint, typically for static overloading.
+dynamic overloading. We had to introduce the more complex partial
+generalization to express features that require a unique resolution of
+the constraint, typically for static overloading.
 
 \paragraph{Suspended constraints in dependent-type systems}
 Suspending the constraints that cannot be solved yet is not a novel
@@ -2646,9 +2646,14 @@ design of declarative semantics to establish principality.
 terms or \ML, we believe that omni-directional inference works better
 than bidirectional type inference: it can type more programs than
 a given fixed bidirectional system, and has a more declarative
-specification -- we would say that it is ``more principal''. On the
-other hand, bidirectional typing is known to scale to powerful
-type-systems such as fully-implicit predicative
+specification -- we would say that it is ``more principal''. In fact
+a direct inspiration for the present work was a user complaint in
+\citet*{rossberg-wasm} on the type-based disambiguation of \OCaml: its
+bidirectional logic propagates type information from patterns to
+definitions in \code{let}-bindings, when the WebAssembly reference
+implementation would sometimes prefer the other direction. On
+the other hand, bidirectional typing is known to scale to powerful
+systems such as fully-implicit predicative
 polymorphism~\citep*{dunfield-krishnaswami-bidirectional-poly} and we
 have not considered scaling our approach to those systems.
 
