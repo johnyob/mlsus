@@ -2337,9 +2337,8 @@ generalizable. Conversely, if a partially generalized variable is lowered (\eg b
 
 \paragraph{Lazy generalization} Repeatedly generalzing a region after every update is expensive.  Instead we generalize on demand. We mark regions as ``stale'' when they may require re-generalization. When an instance is taken, we generalize the region of the partial type scheme, if stale, and all its stale descendants in the region tree before it.
 
-\section{Discussion}
+\section{Discussion and Future Work}
 \label{sec:discussion}
-
 
 \subsection{Other uses of suspended constraints}
 
@@ -2370,54 +2369,36 @@ discriminate on minimal (shallow) shapes, but it can be extended to support patt
 
 \subsection{Default rules}
 
-\Xgabriel{I'm planning to re-read this.}
+Some type systems use type information to disambiguate fragile
+construct, but also have a fallback mechanism to make a default,
+non-principal choice when no type information is available. \OCaml
+uses such a fallback when a field name cannot be disambiguated, it
+selects the last declaration of a record type with this field in the
+lexical scope.
 
-Type inference may failed either because of a typing error (the constraint
-if of the form $\C \where \cfalse$), or because some choice point cannot be
-resolved---a stuck constraint contains a suspended match constraint.
+To implement a type-system matching this specification, we considered
+adding \emph{default rules} for suspended match constraints, that
+would be selected instead of failing when a suspended constraint is
+never discharged. This extension is however difficult to design, as it
+would likely break principality.
+
+If two suspended constraints could unlock each other, then defaulting
+the first or the second one may result in different branches being
+selected for one of them. A more robust strategy is to fire all
+default rules of all suspended constraints that remain after the
+solver terminates. A more permissive one is to fire defaults in the
+minimal connected component for the dependency ordering between
+suspended constraints.
+
+\paragraph{Behavior of default rules} Giving priority to most recent
+definitions is a possible default behavior for field and constructor
+disambiguation. For structural tuples there is no reasonable default
+rule.
 %
-In the later case, we may point the user to at least one choice point that
-could not be solved and invite him to provide additional type annotations.
-
-In fact \OCaml uses default rules in case an overloaded constructor or a record
-field could not be solved, then selecting the most recently defined type.
-
-While, we could also introduce similar default rules in our proposal, they
-would likely break the properties of the type system.
-
-One option is not to integrate default rules in omnidirectional type
-inference, and instead combine omnidirectional type inference with another
-external external algorithm that can suggest extra type annotations and
-calls back type inference, or rather, resume type inference from its
-previous state.  In this view, we preserve the properties in
-in the absence of uses of default rules, but give up any property
-as default rule have been used.
-
-Hence, it is also appealing to attend to formalize default rules.  In order
-to avoid choices, one option may be to fire all default rules at once and
-independently of one another.  This however may loose opportunities to learn
-useful information after firing one default rule so as to not have to used
-other default rules.
-
-Another track is to computer dependencies between unsolved constraints---and
-solve them in inverse order of dependencies.
-
-One the strategy of when firing default rules, the behavior of default rules
-is quite dependent on the feature.  While, the reasonable default for
-overloading of record fields and data constructors is to giving priority to
-the most recent definition, as in \OCaml, there is not obvious choice for
-structural tuples, for which the default should probably remain a failure.
-
-For polytypes, there are actually to opposite meaningful choices, but
-opposite of one another. One is to fallback to a monomorphic polytype.  The
+For polytypes, one option is to fallback to a monomorphic polytype. The
 other one is to pick the principal type scheme of the expression with an
-unresolved polytype.  Of course, there are examples that favor one choice
+unresolved polytype. Of course, there are examples that favor one choice
 and other examples that favor the other.
-
-While default rules may be convenient in practice, they remain unprincipled
-and may break properties of omnidirectional type infernce.  The strategy of
-when firing them should be precautionary to limit what may look like
-arbitrary or unpredictable choices.
 
 \subsection{Equi-recursive types}
 \label {sec/rec-types}
