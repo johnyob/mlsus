@@ -3911,7 +3911,140 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
 This section contains supplementary material to the main paper, including a
 list of figures and definitions. Some of them are repeated from the main paper.
 
-\TODO{Add a single figure for syntax + also add all definition blocks}
+\TODO{also add all definition blocks}
+
+\begin{bnffig}[htpb!]%
+  {fig:all--syntax}%
+  {All syntax definitions.}
+\entryset[Type variables]{\tva, \tvb, \tvc}{\TyVars}{}
+\\
+%% \entryset[Types]{\t}{\Types}\\
+\entry[Types]{\t}{
+    \tv \and
+    \tunit \and
+    \ta \to \tb \and
+    \Pi\iton \ti \and
+    \T \tys \and
+    \tpoly \ts
+}\\
+\entry[Type schemes]{\ts}{
+    \t \and
+    \all \tv \ts
+}\\[1ex]
+\entry[Ground types]{\gt}{}{}\\
+\entry[Ground type schemes]{\gscm}{}{}\\
+\entry[Constraints]{\c}{
+        \ctrue
+  \and  \cfalse
+  \and  \ca \cand \cb
+  \and  \cexists \tv \c
+  \and 	\cfor \tv \c
+  \and  \cunif \ta \tb
+  \nextline
+  \and  \clet \x \tv \ca \cb
+  \and  \capp \x \t
+  \nextline
+  \and  \cmatch \t \cbrs
+  \nextline
+  \and \ueqs
+  \and \cletr \x \tv \tvs \ca \cb
+  \and \cexistsi \inst \x \c
+  \and \cpinst \inst \tv \t
+  \nextline
+  \and \labenv(\elab/\ct) \leq \ta \to \tb
+  \and \labenv(\elab/\T) \leq \ta \to \tb
+  \nextline
+  \and \cscm \leq \t \mid \ts \leq \t \mid \x \leq \cscm \mid \x \leq \ts
+}\\[1ex]
+\entry[Branches]{\cbr}{\cbranch \cpat \c} \\
+\entry[Patterns]{\cpat}{
+  \cpatwild \and \cpatprod \tv j \and \cpatrcd \ct \and \cpatpoly \cscm
+} \\[1ex]
+\entry[Semantic environment]{\semenv}{
+  \eset \and \semenv\where{\tv := \gt}
+  \and \semenv\where{\x := \gabs}
+  \and \semenv\where{\x := \gabsr}
+  \and \semenv\where{\inst := \semenvp}
+}\\
+\entry[Unification problems]{\up}{
+  \ctrue \and \cfalse \and \upa \cand \upb \and \cexists \tv \up \and \ueq
+} \\
+\entry[Multi-equations]{\ueq}{
+  \eset \mid \cunif \t \ueq
+} \\[1ex]
+\entry[Constraint contexts]{\C}{
+  \square
+  \and \C \cand \c
+  \and \c \cand \C
+  \and \cexists \tv \C
+  \and \cfor \tv \C
+  \nextline
+  \and \clet \x \tv \C \c
+  \and \clet \x \tv \c \C
+  \nextline
+  \and \cletr \x \tv \tvs \C \c
+  \and \cletr \x \tv \tvs \c \C
+  \and \cexistsi \inst \x \C
+} \\
+\entry[Shapes] {\Sh} {
+  \any \tvcs \t
+}
+\\
+\entry[Canonical shapes] {\sh} {} {}\\
+\entry[Terms]{\e}{
+  x \and
+  () \and
+  \efun x e \and
+  \eapp \ea \eb \and
+  \elet x \ea \eb \and
+  \eannot \e \tvs \t \andcr
+  \erecord {\overline{\el = \e} } \and
+  \efield e \el \andcr
+   (\ea, \ldots, \en) \and
+   \efield e j \and
+   \exfield e n j \andcr
+   \epoly e \and
+   \expoly e \tvs \ts \and
+   \einst e \and
+   \exinst e \tvs \ts
+   \nextline
+   \and \emagic \e
+}\\
+\entry[Labels]{l}{
+  \elab \and \elab / \T ~ \and \elmagic \elab \and \elannot \el \tvs \t
+}\\[1ex]
+\entry[Term contexts]{\E}{
+  \square
+  \and \eapp \E \e
+  \and \eapp \e \E
+  \and \elet \x \E \e
+  \and \elet \x \e \E
+  \and \eannot \E \tvs \t
+  \andcr \erecord {\ela = \ea\; \ldots\; \eli = \E\; \ldots\; \el_n = \en}
+  \and \efield \E \el
+  \andcr (\ea, \ldots, \E, \ldots, \en)
+  \and \eproj \E j
+  \and \exproj \E j n
+  \andcr \epoly \E
+  \and \expoly \E \tvs \ts
+  \and \einst \E
+  \and \exinst \E \tvs \ts
+  \andcr
+  \emagic \E
+}\\
+\entry[Label contexts]{\Lab}{
+    \E \where {\e.\square} \and
+    \E \where
+         {\erecord
+            {\ela = \ea; \ldots; \square = \ei ; \ldots; \el_n = \en}
+         }
+  }\\[1ex]
+\entry[Typing contexts]{\G}{
+   \eset \and
+   \G, x : \ts
+}\\
+\end{bnffig}
+
 
 
 \begin{judgboxmathpar}
@@ -4484,7 +4617,6 @@ list of figures and definitions. Some of them are repeated from the main paper.
      \x \neq \xp}
     {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
 
-
   \rewrite[S-Let-ConjLeft]
     {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
      \ca \disjoint \tv, \tvs}
@@ -4571,6 +4703,10 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
 		      {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
 
+  \rewrite[S-Exists-Inst-Solve]
+    {\cexistsi \inst \x \c \\ \inst \disjoint \c}
+    {\c}
+
   \rewrite[S-All-Exists-Inst]
     {\cfor \tvs {\cexists \tvbs {\cexistsi \inst \x \c}}}
     {\cexistsi \inst \x {\cfor \tvs {\cexists \tvbs \c}}}
@@ -4595,6 +4731,30 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\cfor \tvs \cexists \tvbs \ueqs \\ \cexists \tvbs \ueqs \cequiv \ctrue}
     {\ctrue}
 \end{judgboxmathpar}
+
+\newcommand{\cnmatches}[1]{\#\Match #1}
+\newcommand{\csize}[1]{|#1|}
+\newcommand{\cmeasure}[1]{{\| #1 \|}}
+
+\begin{definition}[Measure]
+  For the relation $\semenv \th \c$, the following measure enables a useful
+  induction principle:
+    \begin{mathpar}
+    \cmeasure \c \uad\eqdef\uad \angles{\cnmatches \c, \csize \c}
+  \end{mathpar}
+  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
+  \begin{enumerate}
+
+    \item $\cnmatches \c$ is the number of $\cmatch \t \cbrs$ constraints in
+      $\c$.
+
+    \item the last component $\csize \c$ is a structural measure of constraints \ie a
+      conjunction $\ca \cand \cb$ is larger than the two conjuncts $\ca,
+      \cb$.
+
+  \end{enumerate}
+\end{definition}
+
 
 \section{Properties of the constraint language}
 
@@ -4928,28 +5088,6 @@ entailment in our system.
 \end{lemma}
 
 \Xgabriel{Note: I put the 'Measure' back here after removing the well-foundedness section, it may not be the right place to have it.}
-\newcommand{\cnmatches}[1]{\#\Match #1}
-\newcommand{\csize}[1]{|#1|}
-\newcommand{\cmeasure}[1]{{\| #1 \|}}
-
-\begin{definition}[Measure]
-  For the relation $\semenv \th \c$, the following measure enables a useful
-  induction principle:
-    \begin{mathpar}
-    \cmeasure \c \uad\eqdef\uad \angles{\cnmatches \c, \csize \c}
-  \end{mathpar}
-  where $\angles \ldots$ denotes a pair with lexicographic ordering, and:
-  \begin{enumerate}
-
-    \item $\cnmatches \c$ is the number of $\cmatch \t \cbrs$ constraints in
-      $\c$.
-
-    \item the last component $\csize \c$ is a structural measure of constraints \ie a
-      conjunction $\ca \cand \cb$ is larger than the two conjuncts $\ca,
-      \cb$.
-
-  \end{enumerate}
-\end{definition}
 
 \newcommand{\VdashPf}[3]{\Pf{#1}{\Vdash}{#2}{#3}}
 \begin{theorem}[Canonicalization]
