@@ -1575,13 +1575,7 @@ the term is well-typed for some instantiation of those free type
 variables. The constraint generation for implicit constructs used
 suspended match constraints, with a language of patterns that is
 specific to each feature. The generated constraints are very simple,
-as suspended match constraints are doing all the work.
-
-Note that there could be other choices to type some of these features;
-as we discussed earlier, it would be possible to also use the return
-type of a record projection to help disambiguate it. We believe that
-such more complex strategies could be translated into suspended match
-constraints as well, it is the choice of the type system designer.
+as suspended match constraints are doing all the work..
 
 \subsection{Metatheory}
 \label{sec:constraint-prop}
@@ -1595,70 +1589,24 @@ $\th \e : \t$ iff\/
 $\cunif \tv \t \centails \csem {\e : \tv}$.
 \end{theorem}
 
-\TODO{We are wondering about moving the rest of this section to an appendix.}
+It is also interesting to discuss the stability of typing by common program transformations.
 
-The type system itself has good stability properties, discussed below.
+\paragraph{Application equi-typability does hold}
+The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
+equitypable where $\eswap$ is
+$\efun f {\efun \xa {\efun \xb {\eappp f \xb \ea}}}$. We also have
+that $\eapp f \e$ and $\eappp {\mathsf{app}} f \e$ and
+$\eappp {\mathsf{rev\_app}} \e f$ are themselves equitypable where
+$\mathsf{app}$ and $\mathsf{rev\_app}$ are the application function
+$\efun f \efun \x \eapp f \x$ and the reverse application function
+$\efun \x \efun f \eapp f \x$, respectively. It is well-known that
+bidirectional types inference breaks application
+equitypability. Both \Geninst-directional and omnidirectional
+type inference preserve it.
 
-\paragraph{Stability by program transformations}
+\paragraph{Factorization does not hold} If $\G \th \e \where {\x \is {\e_0}} : \t$ and $\G \th \ez : \ts$, we do not necessarily have $\G \th \elet \x \ez \e : \t$. This is not a defect of our system, but a general property of all systems that support static overloading: the expanded term $\e \where {x \is \e_0}$ can pick a different overloading choice for each occurrence of $\e_0$, and if they are incompatible the factored form may not type-check.
 
-A well-known property of \ML is to admit principal types---and the design of
-fragile \ML extensions is all about the preservation of principal types.
-However, core \ML has several other key properties:
-\SetLabelAlign{mydesc}{#1:\hfill}
-\begin{description}[font=\it,align=mydesc,topsep=1ex,itemsep=1ex,leftmargin=0ex]
-\newcommand {\eswap}{\mathprefix  {swap}}
-
-\item [Compositionality]
-  If $\G \th \E \where \e : \t$ then there exists $\Gp$ and $\tp$ such that
-  $\Gp \th \e : \tp$ and for all term $\ep$ such that $\Gp \th \ep : \tp$,
-  then $\G \th \E \where \ep : \t$.
-
-\item [Factorization]
-  If $\G \th \e \where {\x \is \e} : \t$ and
-  $\G \th \ez : \ts$ then $\G \th \elet \x \ez \e : \t$.
-
-\item [Inlining]
-  If $\G \th \elet \x \ez \e : \t$ then $\G \th \e \where {\x \is \ez} : \t$
-
-\item [Application equitypability]
-  The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
-  equitypable where $\eswap$ is $\efun f {\efun \xa {\efun \xb {\eappp f \xb
-  \ea}}}$.  Thanks to a few other properties, this implies in turn that
-  $\eapp f \e$ and $\eappp {\mathsf{app}} f \e$ and $\eappp {\mathsf{rev\_app}} \e f$ are themselves
-  equitypable where $\mathsf{app}$ and $\mathsf{rev\_app}$ are the application function $\efun f \efun \x \eapp f
-  \x$ and the reverse application function $\efun \x \efun f \eapp f \x$,
-  respectively.
-
-\end{description}
-It is well-known that bidirectional types inference breaks application
-equitypability. However, both \Geninst-directional and omnidirectional type
-inference preserve it.
-
-In core \ML, factorization is a consequence of principal types and
-compositionality.
-%
-Compositionality does not hold, since the context $\E$ may be used to ensure
-unicity of the type of some overloaded subexpression of $\e$. This is
-inherent to using contextual information.
-
-Factorization is definitely broken by overloading, since the inlined version
-may has several overloading sites may be duplicated and thus resolved
-differently.  Inlining does not hold either, for the very same reason: being
-resolved differently, they share less contextual information, and unicity
-may fail after inlining.
-
-We may wonder about linear factorization, \ie when $\x$ occurs exactly once
-in~$\e$.  This is again broken by bidirectional type inference, but
-preserved by both \Geninst-directional and omnidirectional type inference,
-although for different reasons: for \Geninst-directional type inference, it
-follows from the limited use of contextual type information; for
-omnidirectional type inference, it follows by backpropagation.  Linear
-inlining is preserved by the three directional approaches.
-
-Subject-reduction, which is more general than inlining, is thus also broken
-by omnidirectional type inference. As many language features that require
-elaboration, subject-reduction only hold on the elaborated form.
-
+\paragraph{Inlining does not hold} If $\G \th \elet \x \ez \e : \t$, we do not necessarily have $\G \th \e \where {\x \is {\e_0}} : \t$. This is specific to our support for \emph{back-propagation}: the $\Let$-form will use information from all occurences of $\x$ in $\e$ to resolve fragile constructs in $e_0$, but in the inlined form each copy of $\e$ must resolve its implicit constructs independently, it has access to less information to establish unicity.
 
 \section{Solving constraints}
 \label{sec:solving}
