@@ -2706,18 +2706,21 @@ steps; solving simple constraints first and then solving delayed implications.
 The deferall ensures that inference for GADT match branches occurs when more is
 known about the scrutinee and expected return type from the context.
 %
-To ensure principality, \OutsideIn enforces an algorithmic restriction: the
-variables $\tvs$ must already be instantiated to concrete type constructors
-before they may be unified by the implication's conclusion $\cb$. This ensures
-information only flows from the outside into the implication's conclusion. They
-do not give a declarative semantics for delayed implication that their solver
+To ensure principality, \OutsideIn enforces an algorithmic
+restriction: the variables $\tvs$ must already be instantiated to
+concrete type constructors before they may be unified by the
+implication's conclusion $\cb$. This ensures information only flows
+from the outside into the implication's conclusion. They do not give
+a declarative semantics for delayed implication that their solver
 preserves. Moreover, later work on \OutsideIn argues
-\citep{Vytiniotis-Peyton-Jones-Schrijvers-Sulzmann/outsidein@jfp2011} -- rather
-controversially -- that delayed implication constraints make local
-let-generalization all but unmanagable, both in theory and implementation.
-Their proposed fix is to abondon local let-generalization altogether. We
-disagree, having solved the troubling interactions between let-generalization
-and suspended constraints in this work.
+\citep{Vytiniotis-Peyton-Jones-Schrijvers-Sulzmann/outsidein@jfp2011}
+that delayed implication constraints make local let-generalization all
+but unmanagable, both in theory and implementation. Their proposed fix
+is to abondon local let-generalization altogether. We believe that we
+have solved the troubling interactions between let-generalization and
+suspended constraints in this work, and would be interested in
+studying applications to GADT typing, which was also one of our
+original motivations.
 
 
 \subsection{Principality tracking in \OCaml}
