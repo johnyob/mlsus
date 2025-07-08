@@ -2617,21 +2617,40 @@ The canonical representation useing shapes is simiular.
 
 Should we cite \cite{Leijen-Ye/prefix@pldi2025} ?
 
-\subsection{Qualified types}
+\paragraph{Qualified types} Qualified
+types~\citep*{jones-qualified-types}, most well-known via their usage
+in Haskell type-classes, are related to our suspended match
+constraints as they represent constraints on types or type
+variables. At generalization time, the constraints on generalizable
+variables are kept as part of the generalized type scheme, and they
+get copied during instantiation. This is much simpler to implement
+that our partial generalization and partial instantiations, but it
+provides a different semantics where each instance can choose
+independently how to resolve the constraint. Qualified types are an
+excellent choice when this is the desired behavior, typically for
+dynamic overloading. We had to introduce the more complex suspended
+match constraints to express features that require a unique resolution
+of the constraint, typically for static overloading.
 
-Qualified types~\citep*{TODO} represent additional knowledge on a type. They
-are used in particular in Haskell type-classes, where a constraint
-$\mathsf{Show}~\alpha$ represents the fact that a part of the inferred term
-needs to print values of type $\alpha$. A constraint on a ground type such
-as $\mathsf{Show}~\mathsf{Int}$ can be resolved to a known printer. But if
-the undetermined variable $\alpha$ becomes generalizable in a type $\tau$,
-we get a type-scheme $\tfor{(\alpha \mid \mathsf{Show}~\alpha)}{\tau}$ that
-also includes the type-class constraint.
+\paragraph{Suspended constraints in dependent-type systems}
+Suspending the constraints that cannot be solved yet is not a novel
+idea, it is a standard approach to implement unification
+dependently-typed systems. This goes back to Huet's algorithm for
+higher-order unification~\citep*{huet-unif}, where flexible-flexible
+pairs are delayed until at least one side becomes rigid. The
+contributions of our work are the combination with implicit
+generalization, which is typically absent from those systems, and the
+design of declarative semantics to establish principality.
 
-DRAFT: Type-classes let each use-site choose a different typeclass instance
--- but this implies dictionary-passing or specialization. Sometimes we want
-the choice to be shared by all use-sites:
-
+\paragraph{Bidirectional type inference} At the level of simply-typed
+terms or \ML, we believe that omni-directional inference works better
+than bidirectional type inference: it can type more programs than
+a given fixed bidirectional system, and has a more declarative
+specification -- we would say that it is ``more principal''. On the
+other hand, bidirectional typing is known to scale to powerful
+type-systems such as fully-implicit predicative
+polymorphism~\citep*{dunfield-krishnaswami-bidirectional-poly} and we
+have not considered scaling our approach to those systems.
 
 \subsection{Suspended constraints in \textsc{OutsideIn}}
 
@@ -2639,26 +2658,6 @@ DRAFT: They first solve simple constraints (existentials,
 unification). Then they solve ``... constraints'', with implication
 constraints, which corresponds to the case of GADT matches. Crucially, they
 abandon local let generalization.
-
-\subsection{Suspended constraints in dependent-type systems}
-
-
-\subsection{Bi-directional type inference}
-
-\Xgabriel{Our approach should have better properties for disambiguation, but
-which ones?}
-
-In the simply-typed case our system works better. But with generalization
-you can have more issues.
-
-\Xdidier{Should we try to extend what we did to predicative polymorphism?}
-
-\Xalistair{Not ready yet and would probably need too much space.}
-
-\Xgabriel{CoreML + bidirectional disambiguation of constructors?}
-
-\TODO
-{do we understand what to say precisely about bidirectional type inference?}
 
 \subsection{Principality tracking in \OCaml}
 
