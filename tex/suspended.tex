@@ -617,13 +617,8 @@ $\tfor \av {\tapoly \ts \av}$.
 
 The introduction form for polytypes is a boxing operator $\expoly
 \e \tvs \ts$ with an explicit polytype annotation $\exi \tvs \ts$
-where the $\tvs$ are \emph{all} type variables that are free in
-$\ts$.\Xgabriel{Do you mean that $\tvs$ are \emph{all} the free variables in
-$\ts$, so that $\exi \tvs \ts$ is closed, or is it okay if they are only a
-subset of the type variables bound in $\ts$?}\Xdidier {Since, we do not have
-binders for type variables in terms. It should be closed and these will be
-inferred. Otherwise, the semantics would be ill-defined:  we would need to
-explain where they are bound, enclosing let or toplevel.}
+where the $\tvs$ are all the type variables that are free in
+$\ts$.
 %
 The resulting expression has type $\tapoly {\ts \where {\tvs \is \tys}} \av$
 where $\av$ is an arbitrary (typically fresh) annotation variable and $\tys$
@@ -893,14 +888,12 @@ $\Ground$ for the set of \emph{ground} types, types without free
 variables.\footnote{Ground types are thus finite trees, assuming the
 existence
 %
-of some base types such as $\tint$. In \cref{sec/rec-types}, we dissuss the
-alternative choice of regular trees for the set of ground types that models
-equirecursive types.} $\semenv$ maps each type variable $\tv$ to a ground
-types $\gt \in \Ground$\Xdidier[ (the type guessed for $\tv$)]{Not really,
-this is the semantics, we do not guess anything in the semantics, which is
-math, but take ground types to test/check validity of assertions. We should
-cut.}, and each term variable $x$ to sets of ground types $\gabs \subseteq
-\Ground$ (the set of ground instances of the type scheme guessed for $\x$).
+of some base types such as $\tint$. In \cref{sec/rec-types}, we
+discuss the alternative choice of regular trees for the set of ground
+types that models equirecursive types.} $\semenv$ maps each type
+variable $\tv$ to a ground types $\gt \in \Ground$, and each term
+variable $x$ to sets of ground types $\gabs \subseteq \Ground$
+(the set of ground instances of a type scheme for $\x$).
 %
 We write $\semenv\where{\tv \is \gt}$ and $\semenv\where{\x \is \gabs}$ for
 the extension of $\semenv$ with a new binding. For a type $\t$, we write
@@ -1098,7 +1091,7 @@ induced by its canonical principal shape. For example, $\shape {\Tapp \tys}$
 is $(\any \tvcs \Tapp \tvcs)$ and $\decomp {\tint \to \tbool}$ is the pair
 $((\any {\tvca, \tvcb} {\tvca \to \tvcb}), (\tint, \tbool))$.
 
-\TODO{Consistently use prefix notation for type constructors, except in
+\TODO{We should explicitly point out that we use prefix notation for type constructors, except in
 OCaml examples.}
 
 
@@ -1107,24 +1100,18 @@ OCaml examples.}
 We have left the syntax of shape patterns deliberately abstract. We also
 assume a matching relation
 \begin{mathline}
-  \cmatches \cpat {(\sh, \tys)} \theta
+  \cmatches \cpat \sh \tvcs \theta
 \end{mathline}
 This partial function matches a pattern $\cpat$ against a principal
-shape $\sh$ with components $\tys$, yielding a substitution $\theta$
-for any variables bound in the pattern.\footnote{\Xgabriel{I find it
-    mildly irritating that we match patterns $\cpat$ against
-    decompositions $(\sh, \tys)$, instead of matching them against
-    shapes $\any \tvcs \t$ and adding $\theta\where{\tvcs \is \tys}$
-    to the semantic environment. That would ensure uniformity by
-    construction, whereas for the current approach we need to check
-    each partial definition of $\cmatches \rho {(\sh, \tys)} \theta$
-    for uniformity. Can I make the change?}\Xdidier {I don't understand
-    what you are proposing. Can you explain---without implementing it?}}
+shape $\sh$ opened with shape names $\tvcs$ (which must have the same
+arity as $\sh$), yielding a substitution $\theta$. The substitution
+binds the pattern variables to shape components, that may contain
+occurrences of the shape variables $\tvcs$.
 %
 For our examples we define the trivial pattern $\cpatwild$ which matches
 any shape and binds nothing:
 \begin{mathline}
-  \cmatches[\eqdef] \cpatwild {\pshapp \tys} \eset
+  \cmatches[\eqdef] \cpatwild \sh \tvcs \eset
 \end{mathline}
 
 
@@ -1133,7 +1120,7 @@ any shape and binds nothing:
 \begin{mathpar}
   \cmatched \t \sh {\cbranch \cpats \cs} \uad\eqdef\uad
     \cexists \tvs \cunif \t \shapp \tvs \cand \theta(\ci) \qquad \text{if }
-    \cmatches \cpati {(\sh, \tvs)} \theta
+    \cmatches \cpati \sh \tvs \theta
 \end{mathpar}
 The first conjunct ($\tau = \shapp \tvs$) ensures that $\sh$ is indeed
 the canonical shape of $\t$, and the second conjunct is $\ci$ under
@@ -1171,7 +1158,7 @@ This rule states that a suspended constraint is satisfied by $\semenv$ whenever 
 %      \\
 %      \infer*[Right=Susp-Nat]
 %       {
-% 	\cmatches \cpatwild {\pshapp[\tint]\cdot} \eset
+% 	\cmatches \cpatwild \tint \eset \eset
 % 	\\
 % 	\infer*[Right=True]
 % 	  { }
@@ -1197,7 +1184,7 @@ This semantics rule is nicely declarative, but unfortunately it accepts to omany
 \def \semenvex {\semenv\where{\tv \is \tint}}
     \infer*[Right=Susp-Nat]
     {
-      \cmatches \cpatwild {\pshapp[\tint]\cdot} \eset
+      \cmatches \cpatwild \tint \eset \eset
       \\
       \infer*[Right=Unif]
         {\tint = \tint}
@@ -2491,7 +2478,7 @@ $\discriminates \Sh \cpats$, which in our setting held by construction: That is:
   \cmatched \t \Sh {\parens{\cbranch \cpati \ci}}\iton \Wide\eqdef
     \cexists \tvs \cunif \t {\Sh \tvs} \cand \theta(\ci)
     \eqno {\text{if}\quad \bigg\{\begin{tabular}[c]{L.}
-      \cmatches \cpati {\shapp [\Sh] \tvs} \theta \\
+      \cmatches \cpati \Sh \tvs \theta \\
       \discriminates {\Sh} {\parens\cpati\iton}
     \end{tabular}}
 \end{mathpar}
@@ -3370,22 +3357,22 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     }
  \end{bnfgrammar}
   \\
-  \newcommand{\Mrule}[4][]{{#2} \Matches {#3} &\eqdef& {#4} & #1}
+  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
   \begin{tabular}{RCLL}
     \Mrule[\text{if } n \geq j]
       {\cpatprod \tv j}
-      {\shapp[\any \tvcs \Pi\iton \tvcs] \tys}
-      {[\tv \is \ty_j]}
+      {\any \tvcs \Pi\iton \tvcs} \tvbs
+      {[\tv \is \tvb_j]}
     \\[1ex]
     \Mrule
       {\cpatrcd \ct}
-      {\shapp[\any \tvcs \Tapp \tvcs] \tys}
+      {\any \tvcs \Tapp} \tvbs
       {[\ct \is \T]}
     \\[1ex]
     \Mrule
       {\cpatpoly \cscm}
-      {\shapp[\any \tvcs \tpoly \ts] \tys}
-      {[\cscm \is \ts \where{\tvcs \is \tys}]}
+      {\any \tvcs \tpoly \ts} \tvbs
+      {[\cscm \is \ts \where{\tvcs \is \tvbs}]}
   \end{tabular}
   \\
   \inferrule[Lab-Inst]
@@ -3724,13 +3711,13 @@ TODO: a figure with the magic rule and the two unicity criterion (not for labels
      \G \th \E\where{\exfield \e n j} : \t}
     {\G \th \E\where{\efield \e j} : \t}
 \\
-  \newcommand{\Mrule}[4][]{({#2} \Matches {#3}) &\eqdef& {#4} & #1}
+  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
  \begin{array}{rcl@{\qquad}l@{\qquad\qquad} r}
    \cpat & ::= & \dots \mid \cpatprod \tv j & & \text{tuple patterns} \\
     \Mrule[\text{if } n \geq j]
       {\cpatprod \tv j}
-      {\shapp[(\any \tvcs \Pi\iton \tvcs)] \tys}
-      {[\tv \is \ty_j]}
+      {\any \tvcs \Pi\iton \tvcs} \tvbs
+      {[\tv \is \tvb_j]}
    & \text{matching relation}
  \end{array}
 \\
@@ -3775,7 +3762,7 @@ TODO: a figure with the magic rule and the two unicity criterion (not for labels
      \G \th \E\where{\exinst \e \tvcs \ts} : \t}
     {\G \th \E\where{\einst \e} : \t}
 \\
-  \newcommand{\Mrule}[4][]{({#2} \Matches {#3}) &\eqdef& {#4} & #1}
+  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
  \begin{array}{rcl@{\qquad}l@{\qquad\qquad} r}
    \cpat & ::= & \dots \mid \cpatpoly \cscm
                & & \text{polytype patterns} \\
@@ -3783,8 +3770,8 @@ TODO: a figure with the magic rule and the two unicity criterion (not for labels
             & & \text{polytype constraints} \\
     \Mrule
       {\cpatpoly \cscm}
-      {\shapp[\any \tvcs \tpoly \ts] \tys}
-      {[\cscm \is \ts \where{\tvcs \is \tys}]}
+      {\any \tvcs \tpoly \ts} \tvbs
+      {[\cscm \is \ts \where{\tvcs \is \tvbs}]}
    & \text{matching relation}
  \end{array}
 \\
@@ -3854,7 +3841,7 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
     {\G \th \t}
     {\G \th \bar \el \uni \t}
 \\
-  \newcommand{\Mrule}[4][]{({#2} \Matches {#3}) &\eqdef& {#4} & #1}
+  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
  \begin{array}{rcl@{}l@{\qquad} r}
    \cpat & ::= & \dots \mid \cpatrcd \ct & & \text{record patterns} \\
    \c & ::= & \dots
@@ -3863,7 +3850,7 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
             & & \text{record constraints} \\
     \Mrule
       {\cpatrcd \ct}
-      {\shapp[\any \tvcs \tvcs \Tapp] \tys}
+      {\any \tvcs \tvcs \Tapp} \tvbs
       {[\ct \is ~ \T]}
    & \text{matching relation}
  \end{array}
