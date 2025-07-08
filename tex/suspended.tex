@@ -2697,12 +2697,28 @@ have not considered scaling our approach to those systems.
 Should we cite \cite{Leijen-Ye/prefix@pldi2025}?
 \Xdidier{I'm volunteering to write this, but we are not sure we have to}.
 
-\paragraph{\textsc{OutsideIn}} \Xalistair{volunteered to write this.}
+\paragraph{\OutsideIn}
 
-DRAFT: They first solve simple constraints (existentials,
-unification). Then they solve ``... constraints'', with implication
-constraints, which corresponds to the case of GADT matches. Crucially, they
-abandon local let generalization.
+\OutsideIn \citep{conf/icfp/SchrijversJSV09} is a type system for GADTs that
+introduces \emph{delayed implications} of the form $\where{\tvs}(\all \tvbs \ca
+\Rightarrow \cb)$. Constraint solving for delayed implications proceeds in two
+steps; solving simple constraints first and then solving delayed implications.
+The deferall ensures that inference for GADT match branches occurs when more is
+known about the scrutinee and expected return type from the context.
+%
+To ensure principality, \OutsideIn enforces an algorithmic restriction: the
+variables $\tvs$ must already be instantiated to concrete type constructors
+before they may be unified by the implication's conclusion $\cb$. This ensures
+information only flows from the outside into the implication's conclusion. They
+do not give a declarative semantics for delayed implication that their solver
+preserves. Moreover, later work on \OutsideIn argues
+\citep{Vytiniotis-Peyton-Jones-Schrijvers-Sulzmann/outsidein@jfp2011} -- rather
+controversially -- that delayed implication constraints make local
+let-generalization all but unmanagable, both in theory and implementation.
+Their proposed fix is to abondon local let-generalization altogether. We
+disagree, having solved the troubling interactions between let-generalization
+and suspended constraints in this work.
+
 
 \subsection{Principality tracking in \OCaml}
 \Xgabriel{This is for me.}
