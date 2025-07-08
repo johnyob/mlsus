@@ -26,21 +26,14 @@
 \begin{abstract}
 We propose a new concept of \emph{omnidirectional} type inference, which is
 the ability to resolve \ML-style typing constraints in disorder, by
-contrast with all known implementations that always typecheck the
+contrast with all known implementations that typecheck the
 bindings before the bodies of let-expressions.
 %
-This relies on two technical devices: \emph{partial type schemes}
-and \emph{suspended match constraints}. Partial here means the
-possibility of taking instances of a type scheme that is not yet
-completely solved, with a mechanism to update their instances when
-the type scheme is refined, incrementally.
-\emph{Suspended} match constraints are a mechanism to delay the resolution of
-some constraints, and to discharge them later on when some type
-variables have been instantiated.
-%
+This relies on two technical devices. \emph{Suspended match constraints} suspend the resolution of some constraints until the context has more information on a type variable. \emph{Partial type schemes} allow taking instances of a type scheme that is not completely solved as it contains suspended constraints, with a mechanism to update their instances when their type scheme is refined, incrementally.
+
 The benefits of omnidirectional type inference are striking for several
 advanced \ML extensions, typically those that rely on optional type
-annotations for which the principal type property is often fragile.  We
+annotations for which the principal type property is often fragile. We
 illustrate them with \OCaml's static overloading of record labels and
 constructors, semi-explicit first-class polymorphism, and tuple projections
 \ala \SML.
