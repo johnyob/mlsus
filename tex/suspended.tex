@@ -4451,6 +4451,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
       \c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
       \tvp \in \reg \tv \tvs \\
       \neg \cyclic {\c} \\
+     \tvbs' \disjoint \tvp, \tvc, \tvbs \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv \tvs {\c}
       \C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
@@ -4885,8 +4886,6 @@ entailment in our system.
     Induction on the given derivation $\semenv \Th \c$
   \end{proof}
 \end{lemma}
-
-\Xgabriel{Note: I put the 'Measure' back here after removing the well-foundedness section, it may not be the right place to have it.}
 
 \newcommand{\VdashPf}[3]{\Pf{#1}{\Vdash}{#2}{#3}}
 \begin{theorem}[Canonicalization]
@@ -5577,6 +5576,7 @@ deal with simple equivalences.
 \end{definition}
 
 
+\TODO{This lemma needs to be proven for susp-ctx closed guards. }
 \begin{lemma}[Simple context equivalence]
   For any two simple contexts $\Ca, \Cb$ and guard $P$. If
   the two contexts $\Ca$ and $\Cb$ are equivalent under any simple constraints satisfying $P$,
@@ -5593,7 +5593,7 @@ deal with simple equivalences.
     \C\where{\Ca\where\cs} \equiv \C\where\Cb\where\cs$.
 
 
-    \begin{itemize}
+    \begin{proofcases}
       \proofcase{$n$ is 0}
 
 	\begin{llproof}
@@ -5603,7 +5603,7 @@ deal with simple equivalences.
 
       \proofcase{$n$ is $k + 1$}
 
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\implies$}
 
 	  \begin{llproof}
@@ -5616,7 +5616,7 @@ deal with simple equivalences.
 	    \commentPf{Cases on $\C, \cs$.}{}
 	  \end{llproof}
 
-	  \begin{itemize}
+	  \begin{proofcases}
 	    \proofcase{$\C$ contains $\Cp$'s hole}
 
 	      \newcommand{\Ctwo}{\Cc}
@@ -5638,7 +5638,7 @@ deal with simple equivalences.
 	      \begin{llproof}
 		Similar argument to the above case.
 	      \end{llproof}
-	  \end{itemize}
+	  \end{proofcases}
 
 
 	  \proofcase{$\impliedby$}
@@ -5646,8 +5646,8 @@ deal with simple equivalences.
 	  \begin{llproof}
 	    Symmetric argument.
 	  \end{llproof}
-	\end{itemize}
-    \end{itemize}
+	\end{proofcases}
+    \end{proofcases}
   \end{proof}
 \end{lemma}
 
@@ -5680,20 +5680,18 @@ we need something more powerful.
     $\Cpp, \Cp, \cs$ with the statement $P(n) \is \all {\C, \Cpp, \Cp, \cs} \cnmatches {\Cpp, \Cp, \cs} = n \implies \Cpp\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where{\ca}}}
     \cequiv \C\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where\cb}}$.
 
-    \begin{itemize}
+    \begin{proofcases}
       \proofcase{$n$ is 0}
 
-	\begin{itemize}
+	\begin{proofcases}
 	    \proofcase{$\implies$}
-
-	      \TODO{This inversion is not entirely correct, requires another lemma}
 
 	    \begin{llproof}
 	      \simplePf{\Cpp, \Cp, \cs}{Premise ($n$ is 0)}
 	      \vdashPf{\semenv}{\Cpp\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where\ca}}}{Premise}
-	      \vdashPf{\semenvp'}{\ca}{\cref{lem:simple-inversion}}
-	      \eqPf{\semenvp'(\x)}{\semenvp(\cabsr \tv \tvs {\C\where\cs})}{\ditto}
-	      \vdashPf{\semenvp'}{\cb}{$\dagger$}
+	      \vdashPf{\semenvp}{\ca}{\cref{lem:simple-inversion}}
+	      \eqPf{\semenvp(\x)}{\semenvp(\cabsr \tv \tvs {\C\where\cs})}{\ditto}
+	      \vdashPf{\semenvp}{\cb}{$\dagger$}
 \Hand	      \vdashPf{\semenv}{\Cpp\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where\cb}}}{Simple reversion}
 	    \end{llproof}
 
@@ -5702,13 +5700,13 @@ we need something more powerful.
 	    \begin{llproof}
 	      Symmetric argument.
 	    \end{llproof}
-	\end{itemize}
+	\end{proofcases}
       \proofcase{$n$ is $k + 1$}
 
       \begin{llproof}
 	Analogous to the inductive step in Lemma XXX.
       \end{llproof}
-    \end{itemize}
+    \end{proofcases}
   \end{proof}
 \end{lemma}
 
@@ -5731,7 +5729,7 @@ we need something more powerful.
   It sufficies to show that for each individual rule $R$ ($\ca \csolve_R \cb$),
   that $\ca \cequivctx \cb$.
 
-  \begin{itemize}
+  \begin{proofcases}
     \proofcaserewrite
       {S-Unif}
       {\upa \\ \upa \unif \upb}
@@ -5755,7 +5753,7 @@ we need something more powerful.
 	  \sufficientPf{equivalence for simple constraints}{}{Lemma XXX}
 	  \supposePf{\ca, \cb \simple} {Premise}
 	\end{llproof}
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\implies$}
 
 	  \begin{llproof}
@@ -5772,13 +5770,18 @@ we need something more powerful.
 	    \begin{llproof}
 	    Symmetric argument.
 	    \end{llproof}
-	\end{itemize}
+	\end{proofcases}
 
 
-    \proofcase{\Rule{S-Let}, \Rule{S-Let-ExistsLeft}, \Rule{S-Let-ExistsRight}, \Rule{S-Let-ConjLet}, \Rule{S-Let-ConjRight}}
+      \proofcase{\Rule{S-Let}, \Rule{S-Exists-Exists-Inst},
+      \Rule{S-Exists-Inst-Conj}, \Rule{S-Let-ExistsLeft},
+      \Rule{S-Let-Exists-InstLeft}, \Rule{S-Let-ExistsRight},
+      \Rule{S-Let-Exists-InstRIght}, \Rule{S-Let-ConjLet},
+      \Rule{S-Let-ConjRight}, \Rule{S-Inst-Name}, \Rule{S-Exists-Inst-Solve},
+      \Rule{S-All-Exists-Inst}, \Rule{S-All-Conj}}
 
       \begin{llproof}
-	Similar to the \Rule{S-Exists-Conj} case.
+	Similar argument to the \Rule{S-Exists-Conj} case.
       \end{llproof}
 
     \proofcaserewrite
@@ -5790,7 +5793,7 @@ we need something more powerful.
 	    \notinPf{\t}{\TyVars}{Premise}
 	    \shapePf{\square}{\t}{~\shape \t}{By definition}
 	\end{llproof}
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\implies$}
 
 	  \begin{llproof}
@@ -5806,7 +5809,7 @@ we need something more powerful.
 	    \vdashPf{\semenv}{\cmatched \t {\shape \t} \cbrs}{Premise}
 \Hand 	    \vdashPf{\semenv}{\cmatch \t \cbrs}{By \Rule{Susp-Ctx}}
 	  \end{llproof}
-	\end{itemize}
+	\end{proofcases}
 
     \proofcaserewrite
       {S-Susp-Ctx}
@@ -5818,7 +5821,7 @@ we need something more powerful.
 	  \shapePf{\C}{\tv}{~ \shape \t}{Lemma XXX}
 	\end{llproof}
 
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\implies$}
 
 	  \begin{llproof}
@@ -5834,33 +5837,32 @@ we need something more powerful.
 	    \vdashPf{\semenv}{\C\where{\cmatched \tv {\shape \t} \cbrs}}{Premise}
 \Hand 	    \vdashPf{\semenv}{\C\where{\cmatch \tv \cbrs}}{By \Rule{Susp-Ctx}}
 	  \end{llproof}
-	\end{itemize}
+	\end{proofcases}
 
 
     \proofcaserewrite
-      {S-Let-App}
-      {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tvc \disjoint \t \\ \x \disjoint \C}
-      {\cletr \x \tv \tvs \ca {\C\where{\cexists \tvc \cunif \tvc \t \cand \cpapp \x \eset \eset \tvc}}}
+      {S-Let-AppR}
+      {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tvc \disjoint \t \\ \x \disjoint \bvs \C}
+      {\cletr \x \tv \tvs \ca {\C\where{\cexistsi {\tvc, \inst} \x \cunif \tvc \t \cand \cpinst \inst \tv \tvc }}}
 
 
 	\begin{llproof}
 	  \disjointPf{\tvc}{\t}{Premise}
-	  \disjointPf{\x}{\C}{Premise}
+	  \disjointPf{\x}{\bvs \C}{Premise}
 	  \decolumnizePf
-	  \sufficientPf{equivalence between}{\capp \x \t \text{ and } \cexists \tvc \cunif \tvc \t \cand \cpapp \x \eset \eset \tvc}{Lemma XXX}
+	  \sufficientPf{equivalence between}{\capp \x \t \text{ and } \cexistsi {\tvc, \inst} \x \cunif \tvc \t \cand \cpinst \inst \tv \tvc}{Lemma XXX}
 	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv \tvs \ca)}{Premise}
 	\end{llproof}
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\implies$}
 
 	    \begin{llproof}
 	      \vdashPf{\semenvp}{\capp \x \t}{Premise}
-	      \inPf{\greg \tv {\semenvp(\t)} \tvs \gts}{\semenv(\x)}{Lemma XXX}
-	      \vdashPf{\semenvp}{\ctrue\where\eset}{By \Rule{True}}
-	      \eqPf{\semenv \compose \eset}{\eset}{}
-	      \vdashPf{\semenv\where{\tvc \is \semenvp(\t)}}{\cpapp \x \eset \eset \t}{By \Rule{Papp}}
-	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t)}}{\cunif \tvc \t}{By \Rule{Unif}}
-\Hand	      \vdashPf{\semenvp}{\cexists \tvc {\cunif \tvc \t \cand \cpapp \x \eset \t}}{By \Rule{Exists} and \Rule{Conj}}
+	      \inPf{\greg \tv {\semenva}}{\semenv(\x)}{Lemma XXX}
+	      \eqPf{\semenva(\tv)}{\semenvp(\t)}{\ditto}
+	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cpinst \inst \tv \tvc}{By \Rule{Partial-Inst}}
+	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cunif \tvc \t}{By \Rule{Unif}}
+\Hand	      \vdashPf{\semenvp}{\cexistsi {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}{By \Rule{Exists}, \Rule{Exists-Inst} and \Rule{Conj}}
 	    \end{llproof}
 
 	  \proofcase{$\impliedby$}
@@ -5868,36 +5870,44 @@ we need something more powerful.
 	    \begin{llproof}
 	      Symmetric argument.
 	    \end{llproof}
-	\end{itemize}
+	\end{proofcases}
 
     \proofcaserewrite
-      {S-Papp-Exists}
-      {\cletr \x \tv {\tvs, \tvb} \c {\C\where{\cpapp \x \ren \ueqs \tvc}} \\ \tvb \notin \dom \ren \\ \tvb, \tvbp \disjoint \ren, \ueqs, \tvc \\ \x \disjoint \C}
-      {\cletr \x \tv {\tvc, \tvb} \c {\C\where{\cexists \tvb \cpapp \x {\ren\where{\tvb \is \tvbp}} \ueqs \tvc}}}
+      {S-Inst-Copy}
+      {\cletr \x \tv \tvs {\c}
+	\C\where{\cpapp \x \tvp \tvc \inst}\\
+	\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
+	\tvp \in \reg \tv \tvs \\
+	\neg \cyclic {\c} \\
+	\tvbs' \disjoint \tvp, \tvc, \tvbs \\
+       \x \disjoint \bvs \C}
+      {\cletr \x \tv \tvs {\c}
+	\C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
+
 
 	\begin{llproof}
-	  \notinPf{\tvb}{\dom \ren}{Premise}
-	  \disjointPf{\tvb, \tvbp}{\ren, \ueqs, \tvc}{Premise}
-	  \disjointPf{\x}{\C}{Premise}
+	  \disjointPf{\x}{\bvs \C}{Premise}
+	  \disjointPf{\tvbs'}{\tvp, \tvc, \tvbs}{Premise}
 	  \decolumnizePf
-	  \sufficientPf{equivalence between}{\cpapp \x \ren \ueqs \tvc \text{ and } \cexists \tvbp \cpapp \x {\ren\where{\tvb \is \tvbp}} \ueqs \tvc}{Lemma XXX}
-	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs, \tvb} \c)}{Premise}
+	  \sufficientPf{equivalence between}{\cpapp \x \tvp \tvc \inst \text{ and } \cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}{Lemma XXX}
+	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c)}{Premise}
 	\end{llproof}
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\implies$}
 
 	    \begin{llproof}
-	      \vdashPf{\semenvp}{\cpapp \x \ren \ueqs \tvc}{Premise}
-	      \vdashPf{\semenvp\where{\tv \is \semenvp(\tvc)}}{\ueqs\where\ren}{Lemma XXX}
-	      \inPf{\greg[\semenvp \compose \ren] \tv {\semenvp(\tvc)} {\tvb, \tvbs} {\gt, \gts}}{\semenvp(\x)}{\ditto}
-	      \eqPf{\dom \ren, \tvb, \tvbs}{\tvs}{$\semenvp(\x) = \semenv(\cabsr \tv {\tvs, \tvb} \c)$}
-	      \eqPf{\ueqs\where{\ren\where{\tvb \is \tvbp}}}{\ueqs\where\ren}{$\tvb, \tvbp \disjoint \ueqs$}
-	      \vdashPf{\semenvp\where{\tvbp \is \gt, \tv \is \semenvp(\tvc)}}{\ueqs\where{\ren\where{\tvb \is \tvbp}}}{Above}
-	      \decolumnizePf
-	      \inPf{\greg[\semenvp\where{\tvbp \is \gt} \compose \ren\where{\tvb \is \tvbp}] \tv {\semenvp(\tvc)} \tvbs \gts}{\semenvp(\x)}{Above}
-	      \decolumnizePf
-	      \vdashPf{\semenvp\where{\tvbp \is \gt}}{\cpapp \x {\ren\where{\tvb \is \tvbp}} \ueqs \tvc}{By \Rule{Papp}}
-\Hand	      \vdashPf{\semenvp}{\cexists \tvbp \cpapp \x {\ren\where{\tvb \is \tvbp}} \ueqs \tvc}{By \Rule{Exists}}
+	      \vdashPf{\semenvp} {\cpapp \x \tvp \tvc \inst}{Premise}
+	      \inPf{\greg \tv \semenva}{\semenv(\x)}{$\cexistsi \inst \x \in \C$}
+	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
+	      \eqPf{\semenvp(\tvc)}{\semenv(\inst)(\tvp)}{Lemma XXX}
+	      \continueeqPf{\semenva(\tvp)}{Above}
+	      \vdashPf{\semenva}{\cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Above}
+	      \vdashPf{\semenva}{\cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Lemma XXX}
+	      \eqPf{\semenva(\tvp)}{\shapp {\semenva(\tvbs)}}{\ditto}
+	      \eqPf{\semenvp(\tvc)}{\shapp {\semenva(\tvbs)}}{Above}
+	      \vdashPf{\semenvp\where{\tvbs' \is \semenva(\tvbs)}}{\cunif \tvc {\shapp {\tvbs'}}}{By \Rule{Unif}}
+	      \vdashPf{\semenvp\where{\tvbs' \is \semenva(\tvbs)}}{\cpapp \x \tvbs {\tvbs'} \inst}{By \Rule{Partial-Inst}}
+\Hand 	      \vdashPf{\semenvp}{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}{By \Rule{Exists} and \Rule{Conj}}
 	    \end{llproof}
 
 	  \proofcase{$\impliedby$}
@@ -5905,72 +5915,144 @@ we need something more powerful.
 	    \begin{llproof}
 	      Symmetric argument.
 	    \end{llproof}
-	\end{itemize}
+	\end{proofcases}
 
     \proofcaserewrite
-      {S-Papp-Unif}
-      {\cletr \x \tv \tvs {\c \cand \ueq} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
-       \ren : \tvs \\
-       \ueqs \nvDash \ueq \\
-       \x \disjoint \C}
-      {\cletr \x \tv \tvs {\c \cand \ueq}
-	\C\where{\cpapp \x \ren {\ueqs, \ueq} \tvc
-	   \cand \ueq[\ren\where{\tv \is \tvc}}]}
+      {S-Inst-Unif}
+      {\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}
+      {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
+
+      \begin{llproof}
+
+	\sufficientPf{equivalence between}{{\cpinst \inst \tv \tvca \cand
+	\cpinst \inst \tv \tvcb} \text{ and } {\cpinst \inst \tv \tvca \cand
+	\cunif \tvca \tvcb} }{Lemma XXX}
+
+      \end{llproof}
+
+      \begin{proofcases}
+	\proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}{Premise}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca}{Lemma XXX}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvcb}{Lemma XXX}
+	    \eqPf{\semenv(\tvca)}{\semenv(\inst)(\tv)}{Lemma XXX}
+	    \eqPf{\semenv(\tvcb)}{\semenv(\inst)(\tv)}{\ditto}
+	    \eqPf{\semenv(\tvca)}{\semenv(\tvcb)}{Above}
+	    \vdashPf{\semenv}{\cunif \tvca \tvcb}{By \Rule{Unif}}
+\Hand	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}{By \Rule{Conj}}
+	  \end{llproof}
+
+	\proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    Symmetric argument.
+	  \end{llproof}
+      \end{proofcases}
+
+    \proofcaserewrite
+      {S-Inst-Poly}
+      {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+       \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+       \tvp \disjoint \c, \insts \C \inst \\
+       \x \disjoint \bvs \C}
+      {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
+
 
 	\begin{llproof}
-	  \eqPf{\dom \ren}{\tvs}{Premise}
-	  \nvDashPf{\ueqs}{\ueq}{Premise}
-	  \disjointPf{\x}{\C}{Premise}
+	  \equivPf{\cfor \tvp \cexists {\tv, \tvs \setminus \tvp} \ueqs}{\ctrue}{Premise}
+	  \disjointPf{\tvp}{\c, \insts \C \inst}{Premise}
+	  \disjointPf{\x}{\bvs \C}{Premise}
 	  \decolumnizePf
 	  \sufficientPf{equivalence between}
-	    {\cpapp \x \ren \ueqs \tvc \text{ and } \cpapp \x \ren {\ueqs, \ueq} \tvc \cand \ueq\where{\ren{\where{\tv \is \tvc}}}}
+	    {\cpapp \x \tvp \tvc \inst \text{ and } \ctrue}
 	    {Lemma XXX}
-	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c \cand \ueq)}{Premise}
+	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \ueqs \cand \c)}{Premise}
 	\end{llproof}
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\implies$}
 
 	    \begin{llproof}
-	      \vdashPf{\semenvp}{\cpapp \x \ren \ueqs \tvc}{Premise}
-	      \vdashPf{\semenvp\where{\tv \is \semenvp(\tvc)}}{\ueqs\where\ren}{Lemma XXX}
-	      \inPf{\greg[\semenvp \compose \ren] \tv {\semenv(\tvc)} {} {}}{\semenvp(\x)}{\ditto}
-	      \vdashPf{\semenv\where{\tv \is \semenv(\tvc), \semenvp \compose \ren}}{\c \cand \ueq}{Definition of $\semenv(\cabsr \tv \tvs {\c \cand \ueq})$}
-	      \vdashPf{\semenv\where{\tv \is \semenv(\tvc), \semenvp \compose \ren}}{\ueq}{Lemma XXX}
-	      \vdashPf{\semenvp\where{\tv \is \semenv(\tvc), \semenvp \compose \ren}}{\ueq}{$\semenvp$ is an extension of $\semenv$}
-	      \vdashPf{\semenvp\where{\tv \is \semenvp(\tvc)}}{\ueq\where{\ren}}{Lemma XXX}
-	      \vdashPf{\semenvp}{\cpapp \x \ren {\ueqs, \ueq} \tvc}{By \Rule{Papp}}
-	      \vdashPf{\semenvp}{\ueq\where{\ren\where{\tv \is \tvc}}}{Lemma XXX}
-\Hand	      \vdashPf{\semenvp}{\cpapp \x \ren {\ueqs, \ueq} \tvc \cand \ueq\where{\ren\where{\tv \is \tvc}}}{By \Rule{Conj}}
+	      \vdashPf{\semenvp}{\cpapp \x \tvp \tvc \inst}{Premise}
+\Hand	      \vdashPf{\semenvp}{\ctrue}{By \Rule{True}}
 	    \end{llproof}
 
 	  \proofcase{$\impliedby$}
 
 	    \begin{llproof}
-	      Symmetric argument.
+	      \vdashPf{\semenvp}{\ctrue}{Premise}
+	      \inPf{\greg \tv {\semenva}}{\semenvp(\x)}{$\C = \Ca\where{\cexistsi \inst \x \Cb}$}
+	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
+	      \eqPf{\semenvp(\tvc)}{\semenva(\tvp)}{Lemma XXX}
+	      \casesPf{\semenva(\tvp)}
 	    \end{llproof}
-	\end{itemize}
+	    \begin{proofcases}
+	      \proofcase{$\semenva(\tvp) = \semenvp(\tvc)$}
+
+		\begin{llproof}
+		  \eqPf{\semenva(\tvp)}{\semenvp(\tvc)}{Premise}
+\Hand		  \vdashPf{\semenvp}{\cpapp \x \tvp \tvc \inst}{By \Rule{Partial-Inst}}
+		\end{llproof}
+
+
+	      \proofcase{$\semenva(\tvp) \neq \semenvp(\tvc)$}
+
+		\begin{llproof}
+		  \LetPf{\semenvb}{\semenva\where{\tvp \is \semenvp(\tvc)}}{}
+		  \vdashPf{\semenva}{\ueqs \cand \c}{By definition}
+		  \vdashPf{\semenva}{\ueqs}{Lemma XXX}
+		  \vdashPf{\semenvb}{\ueqs}{$\tvp$ is polymorphic}
+		  \vdashPf{\semenvb}{\c}{$\tvp \disjoint \c$}
+		  \vdashPf{\semenvb}{\ueqs \cand \c}{By \Rule{Conj}}
+		  \inPf{\greg \tv \semenvb}{\semenv(\x)}{By definition}
+		  \supposePf{\semenvc \th \Cb\where\ctrue}{Considering entailment on $\cexistsi \inst \x$}
+		  \eqPf{\semenvc(\inst)}{\semenva}{\ditto}
+		  \vdashPf{\semenvc\where{\inst \is \semenvb}}{\Cb\where\ctrue}{$\inst.\tvp \disjoint \Cb$}
+		  \vdashPf{\deriv :: \semenvc}{\Cb\where\ctrue}{By \Rule{Exists-Inst}}
+		  \commentPf{$\deriv$ is a derivation that satisfies $\semenva(\tvp) = \semenvp(\tvc)$.}{}
+\Hand		  \commentPf{So this case degenerates to the former case.}{}
+		\end{llproof}
+	    \end{proofcases}
+	\end{proofcases}
 
     \proofcaserewrite
-      {S-Papp}
-      {\cletr \x \tv \tvs {\ueqs'} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
-       \dom \ren = \tvs \\
-       \ueqs \vDash \ueqs' \\
-       \x \disjoint \C}
-      {\cletr \x \tv \tvs {\ueqs'} {\C\where{\ctrue}}}
-
+      {S-Inst-Mono}
+      {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
+       \tvb \disjoint \tv, \tvs \\
+       \x, \tvb \disjoint \bvs \C}
+      {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
 	\begin{llproof}
-	  \eqPf{\dom \ren}{\tvs}{Premise}
-	  \vDashPf{\ueqs}{\ueqs'}{Premise}
-	  \disjointPf{\x}{\C}{Premise}
+	  \disjointPf{\tvb}{\tv, \tvs}{Premise}
+	  \disjointPf{\x, \tvb}{\bvs \C}{Premise}
 	  \decolumnizePf
 	  \sufficientPf{equivalence between}
-	    {\cpapp \x \ren \ueqs \tvc \text{ and } \ctrue}
+	    {\cpapp \x \tvb \tvc \inst \text{ and } \cunif \tvb \tvc}
 	    {Lemma XXX}
-	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \ueqs')}{Premise}
+	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c)}{Premise}
 	\end{llproof}
-	\TODO{There are some issues with the semantics of partial applications that
-	need fixing before we can complete this proof}
+
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \vdashPf{\semenvp}{\cpapp \x \tvb \tvc \inst}{Premise}
+	    \inPf{\greg \tv \semenva}{\semenv(\c)}{$\cexistsi \inst \x \in \C$}
+	    \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
+	    \eqPf{\semenvp(\tvc)}{\semenva(\tvb)}{Lemma XXX}
+	    \eqPf{\semenva(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \tv, \tvs$}
+	    \eqPf{\semenvp(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \bvs \C$}
+	    \eqPf{\semenvp(\tvc)}{\semenvp(\tvb)}{Above}
+	    \vdashPf{\semenvp}{\cunif \tvc \tvb}{By \Rule{Unif}}
+	  \end{llproof}
+
+	  \proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    Symmetric argument.
+	  \end{llproof}
+	\end{proofcases}
 
 
     \proofcaserewrite
@@ -5985,7 +6067,7 @@ we need something more powerful.
 	  \sufficientPf{equivalence for simple constraints}{}{Lemma XXX}
 	  \supposePf{\c \simple} {Premise}
 	\end{llproof}
-	\begin{itemize}
+	\begin{proofcases}
 	  \proofcase{$\implies$}
 
 	  \begin{llproof}
@@ -6004,7 +6086,7 @@ we need something more powerful.
 	    \vdashPf{\semenv}{\cexists {\tv, \tvs} \ueqs}{}
 \Hand	    \vdashPf{\semenv}{\cletr \x \tv \tvs \ueqs \c}{By \Rule{LetR}}
 	    \end{llproof}
-	\end{itemize}
+	\end{proofcases}
 
   \proofcaserewrite
     {S-BackProp}
@@ -6020,7 +6102,12 @@ we need something more powerful.
     \TODO{Lemma for this that determines unicity}
 
 
-  \end{itemize}
+  \proofcase{\Rule{S-Compress}, \Rule{S-Gc}, \Rule{S-Exists-All}, \Rule{S-All-Escape}, \Rule{S-All-Rigid}, \Rule{S-All-Solve}}
+
+  \begin{llproof}
+    Equivalences are standard, see \citep{Pottier-Remy/emlti}.
+  \end{llproof}
+  \end{proofcases}
 \end{proof}
 
 

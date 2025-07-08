@@ -228,6 +228,18 @@
     \nopagebreak \vskip 0.2ex
   }
 
+\newcommand{\Proofcaserewrite}[4][]{%
+  \proofitem[#1] %
+    \indent \par\nopagebreak \vskip 1.2ex\nopagebreak
+    \indent \hbox to 100ex {%
+      \ensuremath{%
+	{\inferrule*[fraction={{}{-}\to},Right=#2]{#3}{#4}}%
+      }%
+    }%
+    \nopagebreak \vskip 0.2ex
+  }
+
+
 %% Renew
 \True%\False
 {\renewenvironment{proofcases}
@@ -235,7 +247,8 @@
     \let \proofcase  \Proofcase
     \let \proofcasemath \Proofcasemath
     \let \proofcasederivation \Proofcasederivation
-    \let \proofcasederivationdouble  \Proofcasederivationdouble}
+    \let \proofcasederivationdouble  \Proofcasederivationdouble
+     \let \proofcaserewrite \Proofcaserewrite}
    {\end{Proofcases}}
 }{}
 

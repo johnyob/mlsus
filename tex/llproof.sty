@@ -165,7 +165,7 @@
 
 \newcommand{\mkpf}[4] {\Pf{#2}{#1\,}{#3}{#4}}
 \newcommand{\supposePf}[2] {\Pf{\text{Suppose}\,~{#1}\text{.}}{}{}{#2}}
-\newcommand{\sufficientPf}[3] {\multicolumn{3}{l}{\text{Sufficient to show #1}\ifempty{#2}{}{~${#2}$}\text{.}} & #3\\}
+\newcommand{\sufficientPf}[3] {&\multicolumn{2}{l}{\text{Sufficient to show #1}\ifempty{#2}{}{~${#2}$}\text{.}} & #3\\}
 
 
 \newcommand{\eqPfParen}[3] {\eqPf{(#1)}{(#2)}{#3}}
@@ -202,4 +202,4 @@
        }
 
 \newcommand{\casesPf}[1] {\Pf{\text{By cases on}\,~{#1}\text{.}}{}{}{}}
-\newcommand{\commentPf}[2]{\multicolumn{3}{l}{#1} & #2\\}
+\newcommand{\commentPf}[2]{&\multicolumn{2}{l}{#1} & #2\\}
