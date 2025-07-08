@@ -2048,7 +2048,6 @@ in future as suspended constraints are discharged.
   {\semenv \th \cexistsi \inst \x \c}
 
 \infer[Partial-Inst]
-% Forgive my sins @Didier
   {\semenv(\inst)(\tv) = \semenv(\t) }
   {\semenv \th \cpinst \inst \tv \t}
 \end{mathparfig}
@@ -2338,7 +2337,7 @@ whose rank remains equal to that of the region.
 
 Many standard \ML implementations, for example Inferno, represent the
 solver state as a linear \emph{stack} of inference regions, from the
-outermost variable scope to the current region being inferred. 
+outermost variable scope to the current region being inferred.
 %
 This choice does not work for \emph{partial generalization}. If
 generalization at some region is suspended by a match constraint, the
@@ -3912,13 +3911,13 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
 This section contains supplementary material to the main paper, including a
 list of figures and definitions. Some of them are repeated from the main paper.
 
-\TODO{Write these here}
+\TODO{Add a single figure for syntax + also add all definition blocks}
 
-\judgbox{\semenv \th \c}
+
+\begin{judgboxmathpar}
+  {\semenv \th \c}
   {Under the environment $\semenv$, the constraint $\c$ is satisfiable.}
-\begin{mathparfig}[htpb!]
-  {fig:defn-constraint-semantics}
-  {Semantics of constraints.}
+
   \infer[True]
     { }
     {\semenv \th \ctrue}
@@ -3955,25 +3954,32 @@ list of figures and definitions. Some of them are repeated from the main paper.
     }
     {\semenv \th \C\where{\cmatch \t \cbrs}}
 
+  \infer[Multi-Unif]
+    {\forall \t \in \ueq,~ \semenv(\t) = \gt}
+    {\semenv \th \ueq}
+
   \infer[LetR]
     {\semenv \th \cexists {\tv, \tvs} \ca \\
      \semenv, \x \is \semenv(\cabsr \tv \tvs \ca) \th \cb}
     {\semenv \th \cletr \x \tv \tvs \ca \cb}
 
   \infer[AppR]
-    {
-      \greg \tv {\semenv(\t)} \tvs \gts \in \semenv(\x)}
+    {\greg \tv \semenvp \in \semenv(\x) \\
+     \semenv(\t) = \semenvp(\tv) }
     {\semenv \th \capp \x \t}
 
-  \infer[Papp]{
-   \semenv \compose \ren \th \ueqs \\
-   \gregren {\semenv \compose \ren} \tvbs \gts \in \semenv(\x)
-   \\
-  }{
-   \semenv \th \cpapp \x \ren \ueqs
-  }
+  \infer[Exists-Inst]
+    {\greg \tv\semenvp \in \semenv(\x) \\
+     \semenv\where{\inst \is \semenvp} \th \c}
+    {\semenv \th \cexistsi \inst \x \c}
+
+  \infer[Partial-Inst]
+    {\semenv(\inst)(\tv) = \semenv(\t) }
+    {\semenv \th \cpinst \inst \tv \t}
+
 \\
-\semenv(\cabsr \tv \tvs \c) \uad\eqdef\uad \set{\greg \tv \gt \tvs \gts \in \GroundRegion : \semenv\where{\tv \is \gt, \tvs \is \gts} \th \c}
+  \semenv(\cabsr \tv \tvs \c) \uad\eqdef\uad \set{\greg \tv {\semenv\where{\tv \is \gt, \tvs \is \gts}} \in \GroundRegion :
+    \semenv\where{\tv \is \gt, \tvs \is \gts} \th \c}
 \\
 \semenv(\cabs \tv \c) \Wide\eqdef \
   \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
@@ -3981,13 +3987,11 @@ list of figures and definitions. Some of them are repeated from the main paper.
 \Cshape \C \t \sh \Wide\eqdef \
   \forall \semenv, \gt. \uad
       \semenv \th \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\c \simple}{The constraint $\c$ is simple.}
-\begin{mathparfig}[htpb!]
-  {fig:defn-simple}
-  {Simple constraints.}
+\begin{judgboxmathpar}
+  {\c \simple}
+  {The constraint $\c$ is simple.}
 
   \inferrule[Simple-True]
     {}
@@ -4025,15 +4029,19 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\ca \simple \\ \cb \simple}
     {\cletr \x \tv \tvs \ca \cb \simple}
 
-  \inferrule[Simple-Papp]
-    {}
-    {\cpapp \x \ren \ueqs \simple}
-\end{mathparfig}
+  \inferrule[Simple-Exists-Inst]
+    {\c \simple}
+    {\cexistsi \inst \x \c \simple}
 
-\judgbox{\C \simple}{The constraint context $\C$ is simple.}
-\begin{mathparfig}[htpb!]
-  {fig:defn-ctx-simple}
-  {Simple constraint contexts.}
+  \inferrule[Simple-Partial-Inst]
+    {}
+    {\cpinst \inst \tv \t \simple}
+\end{judgboxmathpar}
+
+\begin{judgboxmathpar}
+  {\C \simple}
+  {The constraint context $\C$ is simple.}
+
   \inferrule[Simple-Ctx-Hole]
     {}
     {\square \simple}
@@ -4061,16 +4069,13 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \inferrule[Simple-Ctx-Let-In]
     {\c \simple \\ \C \simple}
     {\clet \x \tv \c \C \simple}
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\cerase \c}
-  {The erasure of $\c$. }
-\begin{mathparfig}
-  {fig:constraint-erasure}
-  {The erasure of suspended match constraints.}
+\begin{judgboxmathpar}
+  {\cerase \c}
+  {The erasure of $\c$.}
 \newcommand{\Erule}[2]{\cerase {#1} &\eqdef& {#2}}
-  \begin{tabular}{RCL}
+\begin{tabular}{RCL}
   \Erule{\ctrue}{\ctrue} \\
   \Erule{\cfalse}{\cfalse} \\
   \Erule{\ca \cand \cb}{\cerase \ca \cand \cerase \cb} \\
@@ -4080,18 +4085,16 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \Erule{\clet \x \tv \ca \cb}{\clet \x \tv {\cerase \ca} {\cerase \cb}} \\
   \Erule{\capp \x \t}{\capp \x \t} \\
     \Erule{\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}{\ctrue} \\
-  \Erule{\cletr \x \tv \tvs \ca \cb}{\cletr \x \tv \tvs {\cerase \ca} {\cerase \cb}}
+  \Erule{\cletr \x \tv \tvs \ca \cb}{\cletr \x \tv \tvs {\cerase \ca} {\cerase \cb}} \\
+  \Erule{\cexistsi \inst \x \c}{\cexistsi \inst \x \cerase \c}\\
+  \Erule{\cpinst \inst \tv \t}{\cpinst \inst \tv \t}
 \end{tabular}
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\semenv \Th \c}
+\begin{judgboxmathpar}
+  {\semenv \Th \c}
   {Under the semantic environment $\semenv$,
    the constraint $\c$ is canonically satisfiable.}
-\begin{mathparfig}
-  {fig:defn-canonical-sat-deriv}
-  {Canonical satisfiability derivations.}
-
   \inferrule[Can-Simple]
     {\semenv \thsimple \c}
     {\semenv \Th \c}
@@ -4099,15 +4102,12 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \inferrule[Can-Susp-Ctx]
     {\Cshape \C \t \sh \\ \semenv \Th \C\where{\cmatched \t \sh \cbrs}}
     {\semenv \Th \C\where{\cmatch \t \cbrs}}
-\end{mathparfig}
+\end{judgboxmathpar}
 
-\judgbox{\semenv \Th \c}
+\begin{judgboxmathpar}
+  {\semenv \Th \c}
   {Under the semantic environment $\semenv$,
    the constraint $\c$ is canonically satisfiable.}
-\begin{mathparfig}
-  {fig:defn-canonical-sat-deriv}
-  {Canonical satisfiability derivations.}
-
   \inferrule[Can-Simple]
     {\semenv \thsimple \c}
     {\semenv \Th \c}
@@ -4115,14 +4115,11 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \inferrule[Can-Susp-Ctx]
     {\Cshape \C \t \sh \\ \semenv \Th \C\where{\cmatched \t \sh \cbrs}}
     {\semenv \Th \C\where{\cmatch \t \cbrs}}
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\G \th \e : \ts}
+\begin{judgboxmathpar}
+  {\G \th \e : \ts}
   {Under the typing context $\G$, the term $\e$ is assigned the type $\ts$.}
-\begin{mathparfig}
-  {fig:defn-typing}
-  {Typing rules of \OML.}
   \inferrule[Var]
     {x : \sigma \in \G}
     {\G \th x : \sigma}
@@ -4168,26 +4165,26 @@ list of figures and definitions. Some of them are repeated from the main paper.
 
   \inferrule[Proj-I]
     {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
-     \G \th \E\where{\exfield \e n j} : \ts}
-    {\G \th \E\where{\efield \e j} : \ts}
+     \G \th \E\where{\exfield \e n j} : \t}
+    {\G \th \E\where{\efield \e j} : \t}
 
   \inferrule [Poly-X]
     {\G \th \e : \ts\where {\tvs \is \tys}}
     {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
 
   \inferrule [Poly-I]
-    {\Eshape \E \e {{\any \tvcs \tpoly \tsp}} \\
-     \G \th \E \where{\epoly[\exi \tvcs \tsp] \e} : \ts}
-    {\G \th \E \where{\epoly \e} : \ts}
+    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
+     \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
+    {\G \th \E \where{\epoly \e} : \t}
 
   \inferrule [Use-X]
     {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
     {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
 
   \inferrule [Use-I]
-    {\eshape \E  \e {\any \tvcs \tpoly \tsp} \\
-     \G \th \E\where{\exinst \e \tvcs \tsp} : \ts}
-    {\G \th \E\where{\einst \e} : \ts}
+    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
+     \G \th \E\where{\exinst \e \tvcs \ts} : \t}
+    {\G \th \E\where{\einst \e} : \t}
 
   \inferrule[Rcd-Assn]
     {\G \th \e : \t \\
@@ -4251,14 +4248,11 @@ list of figures and definitions. Some of them are repeated from the main paper.
    \forall \G, \ts, \gt , \uad
      \G \th \eerase {\Lab[\elannot {\elmagic \elab} {} \gt]} : \ts
 	\implies \shape \gt= \any \tvcs {\tvcs \T}
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\e \simple}
+\begin{judgboxmathpar}
+  {\e \simple}
   {The term $\e$ is simple.}
-\begin{mathparfig}[htpb!]
-  {}
-  {}
   \inferrule[Simple-Var]
     {}
     {\x \simple}
@@ -4326,14 +4320,11 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \inferrule[Simple-Lab-Annot]
     {\el \simple}
     {\elannot \el \tvs \t \simple}
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\eerase \e}
+\begin{judgboxmathpar}
+  {\eerase \e}
   {The erasure of $\e$.}
-\begin{mathparfig}
-  {fig:defn-term-erasure}
-  {The erasure of implicit terms.}
 \newcommand{\Erule}[2]{\eerase {#1} &\eqdef& {#2}}
   \begin{tabular}{RCL}
   \Erule{\x}{\x} \\
@@ -4356,32 +4347,26 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \Erule{\elannot \el \tvs \t}{\elannot {\eerase \el} \tvs \t}\\
   \Erule{\elmagic \elab}{\elmagic \elab}
 \end{tabular}
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\G \thsimplesd \e : \t}
+\begin{judgboxmathpar}
+  {\G \thsimplesd \e : \t}
   {Under the typing context $\G$, the simple term $\e$ has the type $\t$.}
-\begin{mathparfig}
-  {fig:defn-simple-sd-typing}
-  {Syntax-directed typing rules for \OML simple terms.}
+\\
   \inferrule[Var-SD]
     {x : \tfor \tvs \t \in \G}
     {\G \thsimplesd x : \t\where{\tvs \is \tys}}
 
   \inferrule[Let-SD]
-    {\G \th \ea : \ta\\
+    {\G \thsimplesd \ea : \ta\\
      \tvs \disjoint \G \\
-     \G, x : \tfor \tvs \ta \th \eb : \tb}
+     \G, x : \tfor \tvs \ta \thsimplesd \eb : \tb}
     {\G \thsimplesd \elet x \ea \eb : \tb}
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\Th \e : \t}
+\begin{judgboxmathpar}
+  {\Th \e : \t}
   {The term $\e$ canonically has the type $\t$.}
-
-\begin{mathparfig}
-  {fig:defn-canonical-typing}
-
   \inferrule[Can-Base]
     {\eset \thsimplesd \e : \t}
     {\Th \e : \t}
@@ -4405,13 +4390,14 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\Lshape \Lab \elab \T \\
       \Th \Lab[\elab / \T] : \t}
     {\Th \Lab[\elab] : \t}
-\end{mathparfig}
+\end{judgboxmathpar}
 
-\judgbox{\up \unif \upp}
+\TODO{@Didier are you able to fix the odd spacing going on here? I'm at a loss of
+      why mathpar is adding this space}
+
+\begin{judgboxmathpar}
+  {\up \unif \upp}
   {The unifier rewrites $\up$ to $\upp$.}
-\begin{mathparfig}[htpb!]
-  {fig:defn-unification-algorithm}
-  {Unification algorithm.}
    \rewrite[U-Exists]
       {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
       {\cexists \tv {\upa \cand \upb}}
@@ -4425,7 +4411,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
       {\up}
 
     \rewrite[U-False]
-      {\up \cand \cfalse}
+      {\Up\where{\cfalse} \\ \Up \neq \square}
       {\cfalse}
 
     \rewrite[U-Merge]
@@ -4450,16 +4436,14 @@ list of figures and definitions. Some of them are repeated from the main paper.
       {\cfalse}
 
     \rewrite[U-Trivial]
-      {\trivial \ueq}
+      {\ueq \\ |\ueq| \leq 1}
       {\ctrue}
-\end{mathparfig}
-\FloatBarrier
+\end{judgboxmathpar}
 
-\judgbox{\c \csolve \cp}
+\begin{judgboxmathpar}
+  {\c \csolve \cp}
   {The constraint solver rewrites $\c$ to $\cp$.}
-\begin{mathparfig}[htpb!]
-  {fig:defn-solver-basic}
-  {}
+
   \rewrite[S-Unif]
     {\upa \\ \upa \unif \upb}
     {\upb}
@@ -4468,20 +4452,38 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\clet \x \tv \ca \cb}
     {\cletr \x \tv \eset \ca \cb}
 
+  \rewrite[S-Exists-Exists-Inst]
+    {\cexistsi \inst \x \cexists \tv \c}
+    {\cexists \tv \cexistsi \inst \x \c}
+
   \rewrite[S-Exists-Conj]
     {(\cexists \alpha \ca) \cand \cb \\
      \tv \disjoint \cb}
     {\cexists \tv {\ca \cand \cb}}
+
+  \rewrite[S-Exists-Inst-Conj]
+    {(\cexistsi \inst \x \ca) \cand \cb}
+    {\cexistsi \inst \x \ca \cand \cb}
 
   \rewrite[S-Let-ExistsLeft]
     {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
      \tvb \disjoint \tv, \tvs}
     {\cletr \x \tv {\tvs, \tvb} \ca \cb}
 
+  \rewrite[S-Let-Exists-InstLeft]
+    {\cletr \x \tv \tvs {\cexistsi \inst \xp \ca} \cb}
+    {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
+
   \rewrite[S-Let-ExistsRight]
     {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
      \tvb \disjoint \tv, \tvs, \cb}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
+
+  \rewrite[S-Let-Exists-InstRight]
+    {\cletr \x \tv \tvs \ca {\cexistsi \inst \xp \cb} \\
+     \x \neq \xp}
+    {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
+
 
   \rewrite[S-Let-ConjLeft]
     {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
@@ -4502,69 +4504,97 @@ list of figures and definitions. Some of them are repeated from the main paper.
      \cunif \tv {\cunif \t \ueq} \in \C}
     {\C\where{\cmatched \tv {\shape \t} \cbrs}}
 
-  \rewrite[S-Let-App]
-    {\cletr \x \tv \tvs \ca \C\where{\capp \x \t} \\
+   \rewrite[S-Inst-Name]
+    {\cpinst \inst \tv \t}
+    {\cexists \tvc \cunif \tvc \t \cand \cpinst \inst \tv \tvc}
+
+  \rewrite[S-Let-AppR]
+    {\cletr \x \tv \tvs \c {\C\where{\capp \x \t}} \\
      \tvc \disjoint \t \\
-     \x \disjoint \C}
-    {\cletr \x \tv \tvs \ca \C\where{\cexists \tvc \cunif \tvc \t
-                               \cand \cpapp \x \eset \eset \tvc }}
+     \x \disjoint \bvs \C}
+    {\cletr \x \tv \tvs \c {\C\where{\cexistsi {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}}}
 
-  \rewrite[S-Papp-Type]
-    {\cpapp \x \ren \ueqs \t}
-    {\cexists \tvc \cunif \tvc \t \cand \cpapp \x \ren \ueqs \tvc}
+  \rewrite[S-Inst-Copy]
+    {\cletr \x \tv \tvs {\c}
+      \C\where{\cpapp \x \tvp \tvc \inst}\\
+      \c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
+      \tvp \in \reg \tv \tvs \\
+      \neg \cyclic {\c} \\
+     \x \disjoint \bvs \C}
+    {\cletr \x \tv \tvs {\c}
+      \C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
 
-  \rewrite[S-Papp-Exists]
-    {\cletr \x \tv {\tvs, \tvb} \c \C\where{\cpapp \x \ren \ueqs \tvc} \\
-     \tvb \notin \dom \ren \\
-     \tvb, \tvbp \disjoint \ren, \ueqs, \tvc \\
-     \x \disjoint \C}
-    {\cletr \x \tv {\tvs, \tvb} \c
-      \C\where{\cexists \tvbp \cpapp \x {\ren \where {\tvb \is \tvbp}} \ueqs \tvc}}
+  \rewrite[S-Inst-Unify]
+    {\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}
+    {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
-  \rewrite[S-Papp-Unif]
-    {\cletr \x \tv \tvs {\c \cand \ueq} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
-     \ren : \tvs \\
-     \ueqs \nvDash \ueq \\
-     \x \disjoint \C}
-    {\cletr \x \tv \tvs {\c \cand \ueq}
-      \C\where{\cpapp \x \ren {\ueqs, \ueq} \tvc
-	 \cand \ueq[\ren\where{\tv \is \tvc}}]}
+  \rewrite[S-Inst-Poly]
+    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+     \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+     \tvp \disjoint \c, \insts \C \inst \\
+     \x \disjoint \bvs \C}
+    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
 
-  \rewrite[S-Papp-Solve]
-    {\cletr \x \tv \tvs {\ueqs'} {\C\where{\cpapp \x \ren \ueqs \tvc}} \\
-     \ren : \tvs \\
-     \ueqs \vDash \ueqs' \\
-     \x \disjoint \C}
-    {\cletr \x \tv \tvs {\ueqs'} {\C\where{\ueqs\where{\ren\where{\tv \is \tvc}}}}}
+  \rewrite[S-Inst-Mono]
+    {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
+     \tvb \disjoint \tv, \tvs \\
+     \x, \tvb \disjoint \bvs \C}
+    {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
   \rewrite[S-Let-Solve]
-    {\cletr \x \tv \tvs \ueqs \c \\ \x \disjoint \c \\
-     \cexists {\tv, \tvs} \ueqs \cequiv \ctrue}
+    {\cletr \x \tv \tvs \ueqs \c \\
+     \cexists {\tv, \tvs} \ueqs \cequiv \ctrue \\
+     \x \disjoint \c}
     {\c}
 
+  \rewrite[S-Compress]
+    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} \\ \tvb \neq \tvc}
+    {\cletr \x \tv {\tvs, \tvb} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvb \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
+
+  \rewrite[S-Gc]
+    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb \ueq} \cb \\ \tvb \disjoint \ca, \ueq, \cb}
+    {\cletr \x \tv {\tvs} {\ca \cand \ueq} \cb}
+
   \rewrite[S-Exists-Lower]
-    {\cletr \x \tv {\tvas, \tvbs} \c
-     {\C\where{\overline{\cpapp \x \ren \ueqs \tvc}}} \\
-     \cdetermines {\cexists {\tv, \tvas} \c} \tvbs \\
-     \tvbs \subseteq \dom \bar \ren \\
-     \x, \tvbs \disjoint \C
+    {\cletr \x \tv {\tvas, \tvbs} \ca \cb \\
+     \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
      }
-    {\cexists \tvbs
-      \cletr \x \tv \tvas \c
-	{\C\where{{\overline{\cpapp \x {\ren \setminus \tvbs} \ueqs
-			 \cand \cunif {\ren(\tvbs)} \tvbs}}}}}
+    {\cexists \tvbs \cletr \x \tv \tvas \ca \cb}
 
   \rewrite[S-BackProp]
     {\C\where
-       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
-                           {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
-     \tvp \in \dom \ren \\
-     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
-     \x \disjoint \Cb}
-    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
-		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
-\end{mathparfig}
-\FloatBarrier
+       {\cletr \x \tv {\tvs} {\Ca\where{\cmatch \tvp \cbrs}}
+                           {\Cb\where{\cpapp \x \tvp \tvc \inst}}} \\
+    \tvp \in \reg \tv \tvs \\
+     \cunif {\tvp} {\cunif \t \ueq} \in \C\where\Cb \\
+     \x \disjoint \bvs \Cb}
+    {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
+		      {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
+
+  \rewrite[S-All-Exists-Inst]
+    {\cfor \tvs {\cexists \tvbs {\cexistsi \inst \x \c}}}
+    {\cexistsi \inst \x {\cfor \tvs {\cexists \tvbs \c}}}
+
+  \rewrite[S-All-Conj]
+    {\cfor \tvs {\cexists \tvbs {\ca \cand \cb}} \\ \tvs, \tvbs \disjoint \ca}
+    {\ca \cand \cfor \tvs {\cexists \tvbs \cb}}
+
+  \rewrite[S-Exists-All]
+    {\cfor \tvs {\cexists {\tvbs, \tvcs} \c} \\ \cdetermines {\cexists {\tvs, \tvbs} \c} \tvcs}
+    {\cexists \tvcs \cfor \tvs {\cexists \tvbs \c}}
+
+  \rewrite[S-All-Escape]
+    {\cfor {\tvs, \tv} {\cexists \tvbs {\c \cand \ueqs}} \\ \tv \prec_{\ueqs}^* \tvc \\ \tvc \disjoint \tv, \tvbs \\  \tv \disjoint \tvbs}
+    {\cfalse}
+
+  \rewrite[S-All-Rigid]
+    {\cfor {\tvs, \tv} {\cexists \tvbs \C \cand \cunif \tv {\cunif \t \ueq}} \\ \t \notin \TyVars \\ \tv \disjoint \tvbs}
+    {\cfalse}
+
+  \rewrite[S-All-Solve]
+    {\cfor \tvs \cexists \tvbs \ueqs \\ \cexists \tvbs \ueqs \cequiv \ctrue}
+    {\ctrue}
+\end{judgboxmathpar}
 
 \section{Properties of the constraint language}
 
