@@ -66,7 +66,11 @@
 
 % Partial applications
 
-\newcommand{\cpapp}[3]{{#1} \where{{#2} \th {#3}}}
+\defmetavar{\inst}{i}
+\newcommand{\insts}[2]{\mathprefix{insts} (#1, #2)}
+\newcommand{\cexistsi}[3]{\cexists {#1^{#2}} #3}
+\newcommand{\cpinst}[3]{{#1} \where{{#2} := {#3}}}
+\newcommand{\cpapp}[4]{{#1} \where{{#2} := {#3}} #4}
 \defmetavar{\ren}{\rho}
 \newcommand{\renroot}[1]{\mathprefix{root}(#1)}
 \newcommand{\renreg}[1]{\mathprefix{reg}(#1)}
@@ -90,7 +94,7 @@
 
 % Solving
 
-\newcommand{\bvs}[1]{\mathsf{bs}({#1})}
+\newcommand{\bvs}[1]{\mathsf{bv}({#1})}
 \newcommand{\csolve}{\longrightarrow}
 \newcommand{\cnsolve}{\longarrownot\longrightarrow}
 \newcommand{\unif}{\longrightarrow}
@@ -137,7 +141,7 @@
 \defmetavar{\gabs}{\mathfrak{G}}
 \defmetavar{\gabsr}{\mathfrak{R}}
 \newcommand{\GroundRegion}{\mathcal{R}}
-\newcommand{\greg}[5][]{{#2 \is #3} \where{\ifempty{#1}{}{#1,}\ifempty{#4}{}{#4 \is #5}}}
+\newcommand{\greg}[2]{#1 \where{#2}}
 \newcommand{\gregren}[3]{{#1}\where{#2 \is #3}}
 \defmetavar{\gscm}{\mathfrak{s}}
 

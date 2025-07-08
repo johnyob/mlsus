@@ -1837,10 +1837,11 @@ equational theory of types implemented by the unifier.
     {\semenv \th \cletr \x \tv \tvs \ca \cb}
 
   \infer[AppR]
-    {\greg \tv {\semenv(\t)} \tvs \gts \in \semenv(\x)}
+    {\greg \tv \semenvp \in \semenv(\x) \\
+     \semenv(\t) = \semenvp(\tv) }
     {\semenv \th \capp \x \t}
 \\
-  \semenv(\cabsr \tv \tvs \c) \uad\eqdef\uad \set{\greg \tv \gt \tvs \gts \in \GroundRegion :
+  \semenv(\cabsr \tv \tvs \c) \uad\eqdef\uad \set{\greg \tv {\semenv\where{\tv \is \gt, \tvs \is \gts}} \in \GroundRegion :
     \semenv\where{\tv \is \gt, \tvs \is \gts} \th \c}
 \end{mathparfig}
 
@@ -1857,12 +1858,13 @@ to permutation of these variables.
 Satisfiability of regional $\Let$-constraints is defined in
 \cref{fig:constraint-let-regions}. The semantic interpretation of an
 abstraction with a region, written $\semenv(\cabsr \tv \tvs \c)$, is a set of
-\emph{ground regions} $\greg \tv \gt \tvs \gts$ that satisfy $\c$. Regional
-$\Let$-constraints strictly generalize ordinary constraint abstractions, as
-captured by the equivalence:
-\begin{mathpar}
+\emph{ground regions} that satisfy $\c$. A ground region is a satisfying
+interpretation for the region $\semenvp$ with a designated \emph{root} variable
+$\tv$, written $\greg \tv \semenvp$. Regional $\Let$-constraints strictly
+generalize ordinary constraint abstractions, as captured by the equivalence:
+\begin{mathline}
   \clet \x \tv \ca \cb \cequiv \cletr \x \tv \eset \ca \cb
-\end{mathpar}
+\end{mathline}
 
 \parcomment{Explaination of rules}
 
@@ -1902,7 +1904,7 @@ constraint---typically an application, let-binding, or suspended constraint.
 
   \rewrite[S-Let-ExistsLeft]
     {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
-     \tvb \disjoint \tv, \tvs}
+     \tvb \disjoint \tv, \tvs, \cb}
     {\cletr \x \tv {\tvs, \tvb} \ca \cb}
 
   \rewrite[S-Let-ExistsRight]
@@ -1975,7 +1977,7 @@ multi-equation $\ueq$---we search for a decomposition $\C = \Ca[\ueq \cand
 Application constraints can be solved by copying constraints:
 \begin{mathpar}
   \rewrite[S-Let-App-Beta]
-    {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tv, \tvs \disjoint \t \\ x \disjoint \C}
+    {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tv, \tvs \disjoint \t \\ x \disjoint \bvs \C}
     {\clet \x \tv \ca {\C\where{\cexists {\tv, \tvs} \cunif \tv \t \cand \ca}}}
 \end{mathpar}
 This resembles $\beta$-reduction, except that the original abstraction is
@@ -2027,135 +2029,173 @@ in future as suspended constraints are discharged.
 
 \begin{mathparfig}
   {fig:constraint-partial-app}
-  {The syntax and semantics of partial applications.}
-\begin{minipage}[t]{0.4\textwidth}
+  {The syntax and semantics of partial instantiations.}
   \begin{bnfgrammar}
     \entry[Constraints]{\c}{
-      \dots \and \cpapp \x \ren \ueqs
+      \dots
+      \and \cexistsi \inst \x \c
+      \and \cpinst \inst \tv \t
     } \\
-    \entry[Region renamings]{\ren}{
-      \tv := \tvb \and \ren\where{\tv := \tvb}
+    \entry[Semantic environments]{\semenv}{
+      \dots
+      \and \semenv\where{\inst := \semenvp}
     }
   \end{bnfgrammar}
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.6\textwidth}
-\infer[Papp]
+\\
+\infer[Exists-Inst]
+  {\greg \tv\semenvp \in \semenv(\x) \\
+   \semenv\where{\inst \is \semenvp} \th \c}
+  {\semenv \th \cexistsi \inst \x \c}
+
+\infer[Partial-Inst]
 % Forgive my sins @Didier
-  {\semenv\compose \ren \th \ueqs \implies
-   \gregren {\semenv \compose \ren} {\tvbs} {\gts} \in \semenv(\x)}
-  {\semenv \th \cpapp \x \ren \ueqs}
-\end{minipage}
+  {\semenv(\inst)(\tv) = \semenv(\t) }
+  {\semenv \th \cpinst \inst \tv \t}
 \end{mathparfig}
 
 
 \parcomment {Intro partial applications}
 
 To support this, we extend the constraint language with \emph{partial
-application constraints} $\cpapp \x \ren \ueqs$, representing a partially
-solved application of $\capp \x {(\renroot \ren)}$. The renaming $\ren$ map
-$\x$'s root and regional variables to fresh copies, and $\ueqs$ accumulates the
-solved equations copied so far. This enables efficient, incremental
-instantiation of constraint abstractions: solved parts are reused immediately,
-while unresolved constraints (\ie suspended constraints) can be solved later,
-further refining the abstraction and propagation additional equations to the
-application sites.
+instantiation constraints}. Instead of duplicating an abstraction at each
+application site, we introduce:
+\begin{enumerate*}
+  \item $\cexistsi \inst \x \c$, which binds a fresh instantiation $\inst$ of $\x$'s
+    region within $\c$, and
+  \item $\cpinst \inst \tv \t$, which asserts that the copy of $\tv$ in $\inst$
+    equals $\t$.
+\end{enumerate*}
+%
+The instantiation variable $\inst$ is required to ensure all partial
+instantiations $\cpinst \inst \tv \t$ are solved uniformly. Within the solver,
+we view partial instantiations as markers indicating which parts of the
+abstraction still need to be copied.
+
+Partial instantiations enables efficient, incremental instantiation of
+constraint abstractions: solved parts are reused immediately, while unresolved
+constraints (\ie suspended constraints) can be solved later, further refining
+the abstraction and propagation additional equations to the application sites.
 
 \parcomment{Semantics of partial applications}
 
-The semantics of partial applications (\Rule{Papp}) requires that if $\semenv
-\compose \ren$ is a solution to the equations copied thus far $\ueqs$ under the
-renaming $\ren$, then $\semenv \compose \ren$ must be a prefix of a ground
-region satisfying the abstraction bound to $\x$.
+The semantics of the existential constraint $\cexistsi \inst \x \c$
+(\Rule{Exists-Inst}) introduces the fresh instantation $\inst$ by ``guessing''
+a region $\semenvp$ that satisfies the regional constraint abstraction bound to
+$\x$.
 %
-Thus the domain of $\ren$ must be a subset of the regional variables of $\x$.
-As a result, the regional variables $\tv, \tvs$ of a let constraint $\cletr \x
-\tv \tvs \ca \cb$ are bound not only in the body of the abstraction $\ca$, but
-also in the constraint $\cb$, where they may appear in partial applications of
-$\x$ via renamings---and only there. Hence, they cannot appear in $\cb$ when
-the corresponding variable $\x$ does not itself appear in $\cb$.
+Partial instantiations (\Rule{Partial-Inst}) equate the copy of $\tv$ in
+$\inst$ with $\t$.
+%
+The domain of partial instantiation constraints must lie within the closure of
+the abstraction or among the regional variables of $\x$. Consequently, the
+variables $\tv, \tvs$ bound by the $\Let$-constraint $\cletr \x \tv \tvs \ca
+\cb$ are bound not only in the body of the abstraction $\ca$, but also in the
+constraint $\cb$, where they may appear in partial instantiations of $\x$ via
+renamings---and only there. Hence, they cannot appear in $\cb$ when the
+corresponding variable $\x$ does not itself appear in $\cb$.
 
-Partial application constraints are solved using the following rules:
+\parcomment{Solving partial instantiations}
+
+Partial instantiation constraints are reduced using the following rules:
 \begin{enumerate}
 
 \item
-  \Rule{S-Papp-Exists} allocates fresh existential variables at the
-  call site that are mapped to uninstantiated variables within the
-  abstraction.
+  \Rule{S-Inst-Copy} copies the shape of a type to the instantiation site,
+    introducing fresh variables for each subcomponents and marking them with
+    corresponding instantiation constraints.
+    %
+    We write $\cpapp \x \tv \t \inst$ as a shorthand for $\cpinst \inst \tv \t$
+    when $\inst$ is bound with $\exists \inst^\x$ in the context. To ensure
+    termination, the abstraction must contain acyclic types.
 
-\item \Rule{S-Papp-Unif} copies multi-equations from the abstraction to the call
-  site, provided we have already introduced the renamings by \Rule
-    {S-Papp-Exists} and we have not copied them previously. \\
+  \item \Rule{S-Inst-Unify} unifies two instantiations if they refer to the
+    same source variable.
 \end{enumerate}
+There are three cases in which an instantiation constraint is eliminated:
+\begin{enumerate}
+  \item A nullary shape is copied and no further instantiations are needed (\Rule{S-Inst-Copy}).
+
+  \item The copied variable $\tvb$ is polymorphic, and thus the instantiation constraint
+    imposes no restriction (\Rule{S-Inst-Poly}), provided no other instantiations of
+    $\tvb$ remain (if not, then apply \Rule{S-Inst-Unify}).
+
+  \item The copy is monomorphic and in scope, so we unify it directly (\Rule{S-Inst-Mono}).
+\end{enumerate}
+
 
 \begin{mathparfig}[htpb!]
   {fig:solver-schemes}
-  {Rewriting rules for let-bindings and applications.}
+  {Select rewriting rules for let-bindings and applications.}
   \rewrite[S-Let-AppR]
-    {\C\where{\capp \x \t} \\
-     \C(\x) = \cabsr \tv \tvs \c \\
-     \tvc \disjoint \t}
-    {\C\where{\cexists \tvc \cunif \tvc \t
-			       \cand \cpapp \x {\tv \is \tvc} \eset }}
+    {\cletr \x \tv \tvs \c {\C\where{\capp \x \t}} \\
+     \tvc \disjoint \t \\
+     \x \disjoint \bvs \C}
+    {\cletr \x \tv \tvs \c {\C\where{\cexistsi {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}}}
 
-  \rewrite[S-Papp-Exists]
-    {\C\where{\cpapp \x \ren \ueqs} \\
-     \C(\x) = \cabsr \tv {\tvs, \tvb} \c \\
-     \tvb, \tvbp \disjoint \ren, \ueqs, \tvc}
-    {\C\where{\cexists \tvbp \cpapp \x {\ren \where {\tvb \is \tvbp}} \ueqs}}
+  \rewrite[S-Inst-Copy]
+    {\cletr \x \tv \tvs {\c}
+      \C\where{\cpapp \x \tvp \tvc \inst}\\
+      \c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
+      \tvp \in \reg \tv \tvs \\
+      \neg \cyclic {\c} \\
+     \x \disjoint \bvs \C}
+    {\cletr \x \tv \tvs {\c}
+      \C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
 
-  \rewrite[S-Papp-Unif]
-    {\C\where{\cpapp \x \ren \ueqs}\\
-     \C(\x) = \cabsr \tv \tvs {\c \cand \ueq}\\
-     \dom \ren = \reg \tv \tvs \\
-     \ueqs \nvDash \ueq}
-    {\C\where{\cpapp \x \ren {\ueqs, \ueq} \tvc}}
+  \rewrite[S-Inst-Unify]
+    {\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}
+    {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
-  \rewrite[S-Papp-Solve]
-    {\C\where{\cpapp \x \ren \ueqs} \\
-     \C(\x) = \cabsr \tv \tvs {\ueqs'} \\
-     \C \centails \ueqs\where\ren \\
-     \dom \ren = \reg \tv \tvs \\
-     \ueqs \vDash \ueqs'}
-    {\C\where\ctrue}
+  \rewrite[S-Inst-Poly]
+    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+     \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+     \tvp \disjoint \c, \insts \C \inst \\
+     \x \disjoint \bvs \C}
+    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
+
+  \rewrite[S-Inst-Mono]
+    {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
+     \tvb \disjoint \tv, \tvs \\
+     \x, \tvb \disjoint \bvs \C}
+    {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
   \rewrite[S-Let-Solve]
-    {\cletr \x \tv \tvs \ueqs \c \\ \x \disjoint \c \\
-     \cexists {\tv, \tvs} \ueqs \cequiv \ctrue}
+    {\cletr \x \tv \tvs \ueqs \c \\
+     \cexists {\tv, \tvs} \ueqs \cequiv \ctrue \\
+     \x \disjoint \c}
     {\c}
 
+  \rewrite[S-Compress]
+    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} }
+    {\cletr \x \tv {\tvs, \tvb} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvc \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
+
   \rewrite[S-Exists-Lower]
-    {\cletr \x \tv {\tvas, \tvbs} \c
-     {\C\where{\overline{\cpapp \x \ren \ueqs}}} \\
-     \cdetermines {\cexists {\tv, \tvas} \c} \tvbs \\
-     \tvbs \subseteq \dom \bar \ren \\
-     \x, \tvbs \disjoint \C
+    {\cletr \x \tv {\tvas, \tvbs} \ca \cb \\
+     \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
      }
-    {\cexists \tvbs
-      \cletr \x \tv \tvas \c
-	{\C\where{{\overline{\cpapp \x {\ren \setminus \tvbs} \ueqs
-			 \cand \cunif {\ren(\tvbs)} \tvbs}}}}}
+    {\cexists \tvbs \cletr \x \tv \tvas \ca \cb}
 
   \rewrite[S-BackProp]
     {\C\where
        {\cletr \x \tv {\tvs} {\Ca\where{\cmatch \tvp \cbrs}}
-                           {\Cb\where{\cpapp \x \ren \ueqs}}} \\
+                           {\Cb\where{\cpapp \x \tvp \tvc \inst}}} \\
     \tvp \in \reg \tv \tvs \\
-     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
-     \x \disjoint \Cb}
+     \cunif {\tvp} {\cunif \t \ueq} \in \C\where\Cb \\
+     \x \disjoint \bvs \Cb}
     {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
-		      {\Cb\where{\cpapp \x \ren \ueqs}}}}
+		      {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
 \end{mathparfig}
 
 
 \parcomment{Cleaning up partial applications and let constraints}
 
-\Rule{S-Papp-Solve} removes partial applications once all necessary constraints
-have been copied---that is, when the copied equations entail the abstraction's
-body. We ensure the solver has copied all the renamed equations $\ueq\where\ren$
-to the call site with the side condition $\C \centails \ueq\where\ren$.
-\Rule{S-Let-Solve} remove a $\Let$ constraint when
-the bound term variable is unused and the abstraction is satisfiable.
+\Rule{S-Let-Solve} remove a $\Let$ constraint when the bound term variable is
+unused and the abstraction is satisfiable. \Rule{S-Compress} determines that a
+regional variable $\tvb$ is an an alias for $\tvc$. We replace every free
+occurrance of $\tvb$ with $\tvc$--- \emph{including} the domains of any partial
+instantiation constraints, written as the substitution $\where{\x.\tvb \is
+\tvc}$\footnote{Removal of `dead' variables is handled by \Rule{S-Gc} in
+\cref{TODO}.}. We view this as an analogous copy rule for variables.
 
 \parcomment{Lowering}
 
@@ -2174,12 +2214,12 @@ $\tvbs$ are uniquely fixed by the solutions to other variables in $\c$.
 
 \begin{definition}
   $\cdetermines \c \tvbs$ if and only if every ground assignments
-  $\semenv$ and $\semenvp$ that satisfy $\c$ and coincide outside of $\tvb$
+  $\semenv$ and $\semenvp$ that satisfy (the erasure of) $\c$ and coincide outside of $\tvb$
   concide on $\tvbs$ as well.
   \begin{mathpar}
     \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
-      \semenv \th \c
-      \wedge \semenvp \th \c
+      \semenv \th \cerase c
+      \wedge \semenvp \th \cerase \c
       \wedge \semenv =_{\setminus \tvbs} \semenvp
       \implies
       \semenv = \semenvp
@@ -2209,21 +2249,9 @@ $\tvbb$, as $\tvbb$ is free.
 \parcomment{Why we lower?}
 
 Lowering such variables improves solver efficiency. It avoids unnecessary
-duplication of work that would otherwise occur via \Rule{S-Papp-Exists}, which
-allocates fresh copies of all regional variables at each application site. By
+duplication of work that would otherwise occur via \Rule{S-Inst-Copy}. By
 reducing the number of variables that need to be copied, lowering directly
 reduces instantiation overhead.
-
-\parcomment{Updating partial applications}
-
-However, sometimes \Rule{S-Papp-Exists} must copy a variable before it can be
-lowered, for instance, in the constraint $\cexists \tvc \cletr \x \tva \tvb
-{\cunif \tva \tvb \cand \cmatch \tvb {\cbranch \cpatwild {\cunif \tvb \tvc}}}
-{\capp \x \tint}$ requires us to instantiate $\x$ before we can make any
-progress on lowering $\tvb$. In this case, when we eventually lower the
-variable, we must also update any partial applications that previously copied
-it, ensuring their local copies are unified with the new, lowered variables
-$\tvbs$.
 
 \paragraph{Backpropagation}
 
@@ -2231,8 +2259,8 @@ Finally, \Rule{S-BackProp} expresses \emph{backpropagation}, previously
 illustrated in \cref{ex:backprop}. In particular, the shape of a regional
 variable can sometimes be determined from its instantiations. If an abstraction
 contains a suspended match constraint on a regional variable $\tvp$, and the
-constraint context includes a partial application $\cpapp \x \ren \ueqs$
-together with a multi-equation constraining the copy of $\tvp$ ($\ren(\tvp)$)
+constraint context includes a partial instantiation $\cpapp \x \tvp \tvc \inst$
+together with a multi-equation constraining the copy of $\tvp$ ($\tvc$)
 to a non-variable type $\t$, then $\shape \t$ must be the unique shape of
 $\tvp$. Any other shape would render the instantiation unsatisfiable.
 
@@ -4052,8 +4080,6 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \Erule{\clet \x \tv \ca \cb}{\clet \x \tv {\cerase \ca} {\cerase \cb}} \\
   \Erule{\capp \x \t}{\capp \x \t} \\
     \Erule{\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}{\ctrue} \\
-  \Erule{\cpapp \x \ren \ueqs}
-      {\cpapp \x \ren \ueqs}\\
   \Erule{\cletr \x \tv \tvs \ca \cb}{\cletr \x \tv \tvs {\cerase \ca} {\cerase \cb}}
 \end{tabular}
 \end{mathparfig}
