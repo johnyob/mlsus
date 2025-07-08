@@ -1608,6 +1608,8 @@ $\th \e : \t$ iff\/
 $\cunif \tv \t \centails \csem {\e : \tv}$.
 \end{theorem}
 
+\TODO{We are wondering about moving the rest of this section to an appendix.}
+
 The type system itself has good stability properties, discussed below.
 
 \paragraph{Stability by program transformations}
@@ -2282,13 +2284,12 @@ universality.
   If $\ca \csolve \cb$, then $\ca \cequiv \cb$.
 \end{restatable}
 
-
-
 \section{Discussion}
 \label{sec:discussion}
 
-
 \subsection{Prototype implementation}
+
+\TODO{This should go to its own section before Discussion.}
 
 \parcomment{We have a solver, but it isn't an algorithm}
 We've formalized our constraint solver, but it is not immediately clear how to
@@ -2656,8 +2657,6 @@ The canonical representation useing shapes is simiular.
 \section{Related work}
 \label{sec:related-work}
 
-Should we cite \cite{Leijen-Ye/prefix@pldi2025} ?
-
 \paragraph{Qualified types} Qualified
 types~\citep*{jones-qualified-types}, most well-known via their usage
 in Haskell type-classes, are related to our suspended match
@@ -2701,7 +2700,11 @@ systems such as fully-implicit predicative
 polymorphism~\citep*{dunfield-krishnaswami-bidirectional-poly} and we
 have not considered scaling our approach to those systems.
 
-\subsection{Suspended constraints in \textsc{OutsideIn}}
+\paragraph{Leijen et al. (TODO change paragraph naming)}
+Should we cite \cite{Leijen-Ye/prefix@pldi2025}?
+\Xdidier{I'm volunteering to write this, but we are not sure we have to}.
+
+\paragraph{\textsc{OutsideIn}} \Xalistair{volunteered to write this.}
 
 DRAFT: They first solve simple constraints (existentials,
 unification). Then they solve ``... constraints'', with implication
@@ -2710,23 +2713,7 @@ abandon local let generalization.
 
 \subsection{Principality tracking in \OCaml}
 
-\Xdidier{The point of that is to enforce a directional type inference that
-is based on let-bindings. When we check that the level is generic, we check
-that we already ``closed'' this thing, it is an earlier 'let'
-binding. Because we are omni-directional, we don't have principality issues
-anymore -- except with default rules. We are principal by construction, we
-never make any choice.}
-
-\Xdidier{Principality tracking is making the choice that we are going to
-make a directional let-binding-based type inference. We get rid of that, we
-are omni-directional, and don't have any principality issues.}
-
-\Xgabriel{We should not claim too much if we don't understand default
-clauses well enough. It could people the impression that we hide the issue
-under the carpet.}
-
-\Xdidier{First a declarative/principal system, and then non-principal
-heuristics to refine it, a two-phase process. It's fine.}
+\TODO{We discussion this in the introduction, let's point to that section again here.}
 
 \section{Future work}
 \label{sec:future-work}
