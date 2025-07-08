@@ -43,6 +43,14 @@
 \newcommand{\clet}[4]{\cletin {#1}{\cabs{#2}{#3}}{#4}}
 \newcommand{\Clet}[4]{\Let #1\; #2 = #3 \In #4}
 \newcommand{\cletr}[5]{\Clet{#1}{#2\;\where{#3}}{#4}{#5}}
+
+\newcommand{\Csuspend}[4]{\cmatch {#1}{#3}{\clam {#2}{#4}}}
+\newcommand{\csuspend}[4]{#1?#2 [#3]\to}
+
+\newcommand{\cwild}{\wild}
+
+
+\newcommand{\cmatchesz}[3]{\cmatch {#1 \is #2} {#3}}
 \newcommand{\cmatched}[3]{\cmatch {#1 \is #2} {#3}}
 
 % Patterns / branches
@@ -57,6 +65,7 @@
 \newcommand{\cbranch}[2]{#1 \to #2}
 
 % Partial applications
+
 \newcommand{\cpapp}[3]{{#1} \where{{#2} \th {#3}}}
 \defmetavar{\ren}{\rho}
 \newcommand{\renroot}[1]{\mathprefix{root}(#1)}
@@ -64,21 +73,23 @@
 \newcommand{\reg}[2]{#1\where{#2}}
 
 % Unification problems
+
 \defmetavar{\up}{U}
 \defmetavar[s]{\ueq}{\epsilon}
 \defmetavar{\Up}{\mathscr{U}}
 
 % Equivalences
+
 \newcommand{\cequiv}{\equiv}
 \newcommand{\cnequiv}{\nequiv}
 \newcommand{\cequivctx}{\cequiv_{\mathrm{ctx}}}
 \newcommand{\cctxequiv}{\equiv_{\square}}
 \newcommand{\centails}{\vDash}
 \newcommand{\ncentails}{\nvDash}
-
 \newcommand{\cmatches}[4][=]{#2 \Matches #3 #1 #4}
 
 % Solving
+
 \newcommand{\bvs}[1]{\mathsf{bs}({#1})}
 \newcommand{\csolve}{\longrightarrow}
 \newcommand{\cnsolve}{\longarrownot\longrightarrow}
@@ -89,10 +100,12 @@
 \newcommand{\trivial}[1]{\mathprefix{trivial}(#1)}
 
 % Semantics
+
 \defmetavar{\semenv}{\phi}
 \newcommand{\cerase}[1]{\floor {#1}}
 
 % Generation
+
 \newcommand{\ctxinfer}[3]{\csem {#1 \where {\square : #2} : #3}}
 \newcommand{\csem}[1]{\bbrackets {#1}}
 \newcommand{\cinfer}[2]{\csem {#1 : #2}}
@@ -151,6 +164,7 @@
 \newcommand{\Tapp}[1][\T]{\mathprefix[]{#1}}
 
 % Shapes
+
 \newcommand \sbot {\bot}
 \newcommand{\Sh}{\zeta}
 \newcommand{\Shp}{\Sh'}
@@ -164,6 +178,7 @@
 \newcommand{\decomp}[1]{\mathprefix{decomp}(#1)}
 
 % Type schemes
+
 \defmetavar {\ts} {\sigma}
 \newcommand{\tfor}[2]{\forall {#1}.\,{#2}}
 \newcommand{\sigmaone}{\ts_1}
@@ -213,6 +228,8 @@
 \newcommand{\etuple}[1]{\parens{#1}}
 \newcommand \emagic[1]{\set{#1}}
 \newcommand{\eerase}[1]{\floor {#1}}
+\newcommand{\exover}[2]{#1.#2}
+\newcommand{\eover}[1]{{.#1}}
 
 % Typing contexts
 \defmetavar {\G} {\Gamma}
@@ -223,6 +240,7 @@
 %% Other
 
 % Sets
+
 \newcommand{\Ground}{\mathcal {G}}
 \newcommand{\Types}{\mathcal {T}}
 \newcommand{\TyVars}{\mathcal{V}}
@@ -231,8 +249,10 @@
 \newcommand{\Powerset}[1]{\mathcal{P}(#1)}
 
 % Relations
+
 \newcommand{\simple}{\mathpostfix{simple}}
 \newcommand{\discriminates}[2]{#1 \mathinfix{discrimitates} #2}
+\newcommand{\Discriminates}[2]{#1 \lessdot #2}
 \defmetavar{\sub}{\vartheta}
 \newcommand{\compose}{\circ}
 \newcommand \Cshape[3]{#1 \where {#2 \mathop{!} #3}}
@@ -249,6 +269,8 @@
 
 % Braces
 \newcommand {\parens}[1]{(#1)}
+\newcommand {\iparens}[2][\iton]{\parens{#2}#1}
+\newcommand {\seq}[2][\iton]{\parens{#2}#1}
 \newcommand {\braces}[1]{\{#1\}}
 \newcommand {\brackets}[1]{[#1]}
 \newcommand {\bbrackets}[1]{\llbracket #1\rrbracket}
@@ -289,5 +311,3 @@
 \newcommand \ehole {\square}
 \newcommand \wild {{\_}}
 %% \newcommand \ecast [3]{#1  : #2 \bowtie #3}
-
-

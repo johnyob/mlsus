@@ -896,9 +896,11 @@ existence
 of some base types such as $\tint$. In \cref{sec/rec-types}, we dissuss the
 alternative choice of regular trees for the set of ground types that models
 equirecursive types.} $\semenv$ maps each type variable $\tv$ to a ground
-types $\gt \in \Ground$ (the type guessed for $\tv$), and each term variable
-$x$ to sets of ground types $\gabs \subseteq \Ground$ (the set of ground
-instances of the type scheme guessed for $\x$).
+types $\gt \in \Ground$\Xdidier[ (the type guessed for $\tv$)]{Not really,
+this is the semantics, we do not guess anything in the semantics, which is
+math, but take ground types to test/check validity of assertions. We should
+cut.}, and each term variable $x$ to sets of ground types $\gabs \subseteq
+\Ground$ (the set of ground instances of the type scheme guessed for $\x$).
 %
 We write $\semenv\where{\tv \is \gt}$ and $\semenv\where{\x \is \gabs}$ for
 the extension of $\semenv$ with a new binding. For a type $\t$, we write
@@ -906,23 +908,36 @@ $\semenv(\t)$ for the ground type obtained by substitution.
 
 \parcomment {Definition exampled}
 
-The judgment is defined in \cref{fig:constraint-semantics} for all constraint-formers except suspended
-constraints; its definition on this fragment is standard and somewhat tautological. $\ctrue$ is satisfied in any
+The judgment is defined in \cref{fig:constraint-semantics} for all
+constraint-formers except suspended constraints; its definition on this
+fragment is standard and somewhat tautological. $\ctrue$ is satisfied in any
 environment, and $\cfalse$ in none. An environment $\semenv$ satisfies $\ca
-\cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying $\cexists \tv \c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint $\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv \is \gt}$. A unification constraint $\t_1 = \t_2$ is satisfied when $\semenv(\t_1)$ and $\semenv(t_2)$ are equal.
+\cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying $\cexists \tv
+\c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint
+$\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv
+\is \gt}$. A unification constraint $\t_1 = \t_2$ is satisfied when
+$\semenv(\t_1)$ and $\semenv(t_2)$ are equal.
 
-The rule for $\clet \tv \ca \cb$ states that $\ca$ must satisfied under \emph{some} instantiation of its bound variable, and that $\cb$ must be satisfiable when $\x$ is bound $\cabs \tv \ca$, or rather its semantic interpretation as a set of ground types.
+The rule for $\clet \tv \ca \cb$ states that $\ca$ must satisfied under
+\emph{some} instantiation of its bound variable, and that $\cb$ must be
+satisfiable when $\x$ is bound $\cabs \tv \ca$, or rather its semantic
+interpretation as a set of ground types.
 
-Application constraints $\capp \x \t$ are interpreted by checking that $\t$
+An application constraints $\capp \x \t$ is interpreted by checking that $\t$
 belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
-\in \semenv(\x)$. Note that when $\semenv(\x)$ is of the form $\semenvp(\cabs \tv \c)$, where $\semenvp$ is the environment at the binding site of $\x$, then $\semenv(\t) \in \semenv(x)$ holds iff $\semenvp\where{\tv \is \semenv(\t)} \th \c$, which corresponds to the intuition that the application $\capp {(\cabs \tv \c)} \t$ should be equivalent to $\c \where {\tv \is \t}$.
+\in \semenv(\x)$. Note that when $\semenv(\x)$ is of the form
+$\semenvp(\cabs \tv \c)$, where $\semenvp$ is the environment at the binding
+site of $\x$, then $\semenv(\t) \in \semenv(x)$ holds iff
+$\semenvp\where{\tv \is \semenv(\t)} \th \c$, which corresponds to the
+intuition that the application $\capp {(\cabs \tv \c)} \t$ should be
+equivalent to $\c \where {\tv \is \t}$.
 
 \begin{mathparfig}[t]%
   {fig:constraint-semantics}%
   {Semantics of constraints (without suspended constraints)}
   \begin{bnfgrammar}
-    \entry[Semantic environments]{\semenv}{\emptyset \and \semenv\where{\tv \is \gt} \and \semenv\where{\x \is \gabs}
-    }
+    \entry[Semantic environments]{\semenv}
+    {\emptyset \and \semenv\where{\tv \is \gt} \and \semenv\where{\x \is \gabs}}
   \end{bnfgrammar}
 
   \infer[True]
@@ -946,8 +961,6 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
     {\semenv(\ta) = \semenv(\tb)}
     {\semenv \th \cunif \ta \tb}
 
-  \semenv(\cabs \tv \c) \eqdef \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
-
   \infer[Let]
     {\semenv \th \exists \tv. \ca \\
      \semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb}
@@ -957,17 +970,22 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
     {\semenv(\t) \in \semenv(\x)}
     {\semenv \th \capp x \t}
 
-  \begin{array}{lll}
-  \ca \centails \cb & \eqdef & \forall \semenv,\ \semenv \th \ca \implies \semenv \th \cb
+  \let \Eqdef\eqdef \def \eqdef {&\Eqdef&}
+  \begin{array}{.r;;c;;l.}
+  \semenv(\cabs \tv \c) \eqdef \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
   \\
-  \ca \cequiv \cb & \eqdef & \forall \semenv,\ \semenv \th \ca \iff \semenv \th \cb
+  \ca \centails \cb \eqdef \forall \semenv,\ \semenv \th \ca \implies \semenv \th \cb
+  \\
+  \ca \cequiv \cb   \eqdef
+  (\ca \centails \cb) \wide\wedge   (\ca \centails \cb)
+  %% \forall \semenv,\ \semenv \th \ca \iff \semenv \th \cb
   \end{array}
 \end{mathparfig}
 
 
 Closed constraints are either satisfiable in any semantic environment (\ie
-they are tautologies) or unsatisfiable. For example, consider the constraint
-$\cexists \tv {\cunif \tv \tint}$, its satisfiability is established by the
+they are tautologies) or unsatisfiable. For example, the satisfiability of
+the constraint $\cexists \tv {\cunif \tv \tint}$ is established by the
 following derivation:
 \begin{mathline}
   \infer*[Right=Exists]
@@ -1100,8 +1118,8 @@ for any variables bound in the pattern.\footnote{\Xgabriel{I find it
     to the semantic environment. That would ensure uniformity by
     construction, whereas for the current approach we need to check
     each partial definition of $\cmatches \rho {(\sh, \tys)} \theta$
-    for uniformity. Can I make the change?}}\Xdidier {I don't understand
-    what you are proposing. Can you explain---without implementing it?}
+    for uniformity. Can I make the change?}\Xdidier {I don't understand
+    what you are proposing. Can you explain---without implementing it?}}
 %
 For our examples we define the trivial pattern $\cpatwild$ which matches
 any shape and binds nothing:
@@ -2389,71 +2407,94 @@ instances with itself (once lowered).
 
 \paragraph{Lazy generalization}
 
-Repeatedly generalzing a region after every update is expensive.
-Instead, we adopt a lazy approach: we track updates to the region using
-a \emph{generalization tree}, marking regions as ``visited'' when they may
-require re-generalization. Only when an instance is taken do we
-force generalization of a region and all of its descendants---the descendants
-must be fully generalized before generalizing the parent region, since
+Repeatedly generalzing a region after every update is expensive.  Instead,
+we adopt a lazy approach: we track updates to the region using a
+\emph{generalization tree}, marking regions as ``visited'' when they may
+require re-generalization. Only when an instance is taken do we force
+generalization of a region and all of its descendants---the descendants must
+be fully generalized before generalizing the parent region, since
 generalization may update ancestor regions when lowering variables.
 
 
-\subsection{Static overloading and variational types}
+\subsection{Static overloading}
 
 We applied omnidirectional type inference to three features that have
 already been used in some dialect of \ML.  But applications are not limited
 to those.
 
-In particular, overloading of nominal record fields (or data-consttructors)
-is a very specific case of overloading.  Omnidirectional type inference can
+In particular, overloading of nominal record fields (or data-constructors)
+is a rather specific case of overloading.  Omnidirectional type inference can
 also be used for a general forms of static overloading.
 
-Following~\cite{Leijen-Ye/prefix@pldi2025},
-we may allow identifiers $\M.\x$ to be prefixed by a
-disambiguation name $\M$ and let the prefix be optional in expressions.
-When absent, such expressions are then overloaded and the prefix must be
-resolved before the program may be compiled.
+Notice that our formalization of overloading of record fields and
+labels does not model type definitions and therefore the which labels and
+type constructors belong to which type.  This is an orthogonal issue, which
+would need a notion of program phrase and some  synchronisation between the
+typing of each phrase, as we cannot use a lable or datatype constructor
+before it has been defined.
 
-In this setting an overlaoded symbol $\x$ may have two (or more) definitions
-$\Ma.\x$ an $\Mb.\x$ of respective types $\tya$, $\tyb$, which may have very
-litte in common. In particular, $\tya$ and $\tyb$ may share the same prefix
-an only differ from their leaves.
+We make the same asumption for general overloading and assume that
+overloading definitions have been previously defined. That is, we focus on
+the typing of an expression $\e$ in a context $\Gz$ that already contains
+overloaded definitions.
 
-The framework we presented for \OML may only suspend a constraint on the
-shape of a variable, that is roughtly on the toplevel symbol.  While it
-would be possible to extend the framework to alow more general shapes, we
-can actually encode general overloading without such an extension.
-We present a solution below based on variational types, but other variants
-are possible.
+Following~\cite{Leijen-Ye/prefix@pldi2025}, a way to model overloaded
+definitions to allow identifiers $\M.\x$ to be prefixed by a disambiguation
+name $\M$ and omit prefix in overloaded invocation of the definition.
+As usual, overloaded expression need to be elaborated in their explicit form
+where all prefixes are present.
 
-\paragraph{Variational types}
+The typing Rule \Rule {Over-X} for explicit definitions is obvious
+\begin{mathpar}
+\infer [Over-X]{
+    \exover \Mi \x : \t \in \G
+}{% --------------------------
+    \G \th \exover \Mi \x : \t
+}
 
-\begin{version}{}
-\color{red}
-Variational types are a mean to factor a tuple of types into a single one so
-as to shape the common prefixes.
+\infer [Over-I]{
+    \G \th \Eshape \E \x \Sh  \\
+    \G \th \E \where {\exover \M \x} : \t \\
+    \Discriminates \Sh {\seq {\G(\Mi.\x)}}
+}{% --------------------------------------
+    \G \th \E \where {\eover \x} : \t
+}
+\end{mathpar}
+The interesting rule is \Rule {Over-I} for (implicit) uses of overloaded
+definitions. The main (middle) premise ensure that the program is well-typed
+when replacing the overloaded variable by its prefixed elaboration $\Mi.\x$.
+The key premise ensure that in the context $\E$ the expected shape
+$\Sh$ of the type of $x$ is sufficient to discriminate between all possible
+types, written $\Discriminates \Sh {\seq {\G(\Mi.\x)}}$.
 
-The syntax of variational type just extends simple types with a special form
-of n-ary products $\varpi (\ti)\iton$, which however distributes other type
-symbols. For example, $\vty {\tint \to \tint \to \tbool \vor \tbool \to
-\tbool \to \tbool}$ is a 2-variational type $\t$ that represents both the type
-$\tint \to \tint \to \tbool$ and $\tbool \to \tbool \to \tbool$.  However,
-the interest of variational types is to be able to push them down the leaves
-and equivalently write $\vty {\tint \vor \tbool} \to \vty {\tint \vor
-\tbool} \to \tbool$ for $\t$ so as to share the common prefix of all types.
-We may thus maintained variational types in such canonical form.  If $\vty
-{\ti}\iton$ is in canonical form, then at least two $\tyi$ and $\tyj$ have
-different shapes.  The arity of avariational typ must be known from context
-since in the pathological case where all types agrees, its canonical form is
-$\t$.
+\Xdidier{\vskip 1ex Missing text here \vskip 1ex}
 
-An n-variational type may be projected on any index of its domain: $\t/1$
-means $\tint \to
-\tint \to \tbool$.
+The framework we presented for \OML does not immediately allow to implement
+these rules, as it only uses patterns that discriminate on shallow shapes.
+But this need not be the case and the formalism may be extended.
+%% be adapted. In the current setting, a shape always discriminates amount the
+%% different patterns of a match constraint $\cmatched
+%% \t {\any \tvcs \tp} {\cbranch \cpats \cs}$.  This is not the case any longer
+%% when shapes are non caonical.
+We may allow patterns $\cpat$ to be shapes. and extend discriminatation
+$\Discriminates \Sh {\seq{\cpati}}$ to work on sequences of patterns.
 
-For overloading of two defintions $\Ma.\x$ and $\Mb.\x$ of types $\tya$ and
-$\tyb$, we may assign $\x$ the variational type $\vty {\tya \vor \tyb}$.
-\end{version}
+Then, we restrict the definition
+of $\cmatched \t \Sh {\cbranch \cpats \cs}$ to the case where
+$\discriminates \Sh \cpats$, which in our setting held by construction: That is:
+\begin{mathpar}
+  \cmatched \t \Sh {\parens{\cbranch \cpati \ci}}\iton \Wide\eqdef
+    \cexists \tvs \cunif \t {\Sh \tvs} \cand \theta(\ci)
+    \eqno {\text{if}\quad \bigg\{\begin{tabular}[c]{L.}
+      \cmatches \cpati {\shapp [\Sh] \tvs} \theta \\
+      \discriminates {\Sh} {\parens\cpati\iton}
+    \end{tabular}}
+\end{mathpar}
+Where patterns may now be non shallow terms.
+
+
+%% \Xdidier{The end of this section is drafty}
+%% \InputIfFileExists{overloading.tex}{}{}
 
 \paragraph {Opaqueness of suspended constraints}
 
