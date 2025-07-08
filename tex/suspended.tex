@@ -2341,37 +2341,12 @@ generalizable. Conversely, if a partially generalized variable is lowered (\eg b
 \label{sec:discussion}
 
 
-\subsection{Static overloading}
-
-\Xgabriel{I'm planning to compress this.}
+\subsection{Other uses of suspended constraints}
 
 We applied omnidirectional type inference to three features that have
-already been used in some dialect of \ML.  But applications are not limited
-to those.
+already been used in some dialect of \ML, with specific typing rules we propose for each feature. Suspended match constraints can be used to encode other typing rules for those fragile features, and to support other features.
 
-In particular, overloading of nominal record fields (or data-constructors)
-is a rather specific case of overloading.  Omnidirectional type inference can
-also be used for a general forms of static overloading.
-
-Notice that our formalization of overloading of record fields and
-labels does not model type definitions and therefore the which labels and
-type constructors belong to which type.  This is an orthogonal issue, which
-would need a notion of program phrase and some  synchronisation between the
-typing of each phrase, as we cannot use a lable or datatype constructor
-before it has been defined.
-
-We make the same asumption for general overloading and assume that
-overloading definitions have been previously defined. That is, we focus on
-the typing of an expression $\e$ in a context $\Gz$ that already contains
-overloaded definitions.
-
-Following~\cite{Leijen-Ye/prefix@pldi2025}, a way to model overloaded
-definitions to allow identifiers $\M.\x$ to be prefixed by a disambiguation
-name $\M$ and omit prefix in overloaded invocation of the definition.
-As usual, overloaded expression need to be elaborated in their explicit form
-where all prefixes are present.
-
-The typing Rule \Rule {Over-X} for explicit definitions is obvious
+\citet*{Leijen-Ye/prefix@pldi2025} propose a general mechanism for overloading identifiers, with an implicit form $\eover \x$ and an explicit form $\exover \M \x$ prefixed by a disambiguation name $\M$. We can extend our approach to typing rules for this construct:
 \begin{mathpar}
 \infer [Over-X]{
     \exover \Mi \x : \t \in \G
@@ -2382,114 +2357,16 @@ The typing Rule \Rule {Over-X} for explicit definitions is obvious
 \infer [Over-I]{
     \G \th \Eshape \E \x \Sh  \\
     \G \th \E \where {\exover \M \x} : \t \\
-    \Discriminates \Sh {\seq {\G(\Mi.\x)}}
+    \exists !z.\ \Sh \leq \G(\exover \M \x)
 }{% --------------------------------------
     \G \th \E \where {\eover \x} : \t
 }
 \end{mathpar}
-The interesting rule is \Rule {Over-I} for (implicit) uses of overloaded
-definitions. The main (middle) premise ensure that the program is well-typed
-when replacing the overloaded variable by its prefixed elaboration $\Mi.\x$.
-The key premise ensure that in the context $\E$ the expected shape
-$\Sh$ of the type of $x$ is sufficient to discriminate between all possible
-types, written $\Discriminates \Sh {\seq {\G(\Mi.\x)}}$.
-
-\Xdidier{\vskip 1ex Missing text here \vskip 1ex}
-
-The framework we presented for \OML does not immediately allow to implement
-these rules, as it only uses patterns that discriminate on shallow shapes.
-But this need not be the case and the formalism may be extended.
-%% be adapted. In the current setting, a shape always discriminates amount the
-%% different patterns of a match constraint $\cmatched
-%% \t {\any \tvcs \tp} {\cbranch \cpats \cs}$.  This is not the case any longer
-%% when shapes are non caonical.
-We may allow patterns $\cpat$ to be shapes. and extend discriminatation
-$\Discriminates \Sh {\seq{\cpati}}$ to work on sequences of patterns.
-
-Then, we restrict the definition
-of $\cmatched \t \Sh {\cbranch \cpats \cs}$ to the case where
-$\discriminates \Sh \cpats$, which in our setting held by construction: That is:
-\begin{mathpar}
-  \cmatched \t \Sh {\parens{\cbranch \cpati \ci}}\iton \Wide\eqdef
-    \cexists \tvs \cunif \t {\Sh \tvs} \cand \theta(\ci)
-    \eqno {\text{if}\quad \bigg\{\begin{tabular}[c]{L.}
-      \cmatches \cpati \Sh \tvs \theta \\
-      \discriminates {\Sh} {\parens\cpati\iton}
-    \end{tabular}}
-\end{mathpar}
-Where patterns may now be non shallow terms.
-
-
-%% \Xdidier{The end of this section is drafty}
-%% \InputIfFileExists{overloading.tex}{}{}
-
-\paragraph {Opaqueness of suspended constraints}
-
-Suspended constraints are opaque, \ie the solve may not learn anything form
-suspended constraints until uniqueness of the shape the control them allows
-to discharge them.
-
-For example, this prevents typing of example \ocaml{e_9}, which we repeat
-below:
-\begin{program}
-let e9 r = (r.x : bool)
-\end{program}
-Hence, the constraint type of \ocaml{r.x} is frozen until the record type
-$r$ can be resolved. Hence, the overloading resolution ignores that the
-return type of \ocaml{r.x} is \ocaml{bool} and fails. While, if we were
-able to take it into account, then the only possibility would be that
-\ocaml{r} has type \ocaml{bool one}---in the closed world view.
-
-
-constaint that the return type of
-\ocaml{r.x} is not taken into account in the overloading resolution.
-
-
-While sometimes there is obvious information that we could learn from them,
-especially by merging constraints on the same variable.
-
-For example,
-
-
-\paragraph {Variational types}
-
-\begin{version}{\color{blue}\Draft}
-Title to adjust.
-This section is to explain
-\begin{itemize}
-
-\item
-  that there are possible variants on static overloading.
-
-\item
-  The main idea of omnidirectional type inference is to collect as
-  many constraints that can help resolve overloading, statically.
-  Hence, we may be more aggressive, in some cases,
-
-\item
-  Variational types in general---but the have a cost
-
-\item
-  Using rows in nomimal records to merge contraints on the same record.
-\end{itemize}
-
-
-\end{version}
-
-\Xdidier [From 2.1]{Then, it seems that we cannot solve
-$\efun r {r.x + r.y}$, since the two accesses $r.x$ and $r.y$ will both wait
-for the type of $r$ to be known independently of the other.
-Since we could collect the information that $r$ must have two fields $x$
-and $y$ and there is a unique solution. In fact, an approach based on
-qualified types would solve this example statically.
-Nominal records are an example where we should allow to combine information
-from two different use points---of the same type. That is several matches on
-the same variable should be combined. I cannot either for the moment, but at
-some point I wanted to merge overloaded constraint on the same variable to
-take take the intersection of their head constructors. Still planing to do
-that, which would solve this example}
-
-
+The third premise of \Rule {Over-I} asks that there is a unique
+explicit name $\exover \M \x$ that instantiates $\Sh$ in the
+context. The framework we presented for \OML does not immediately
+allow to implement these rules, as it only uses patterns that
+discriminate on minimal (shallow) shapes, but it can be extended to support patterns on arbitrary shapes (as long as none is a prefix of another).
 
 \subsection{Default rules}
 
