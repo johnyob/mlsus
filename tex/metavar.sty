@@ -8,6 +8,7 @@
 \DeclareBoolOption[false]{j}\DeclareComplementaryOption{J}{j}
 \DeclareBoolOption[false]{k}\DeclareComplementaryOption{K}{k}
 \DeclareBoolOption[false]{s}\DeclareComplementaryOption{S}{s}
+\DeclareBoolOption[false]{n}\DeclareComplementaryOption{N}{n}
 \DeclareBoolOption[false]{as}
 \DeclareBoolOption[false]{bs}
 \DeclareBoolOption[false]{ps}
@@ -30,6 +31,7 @@
 \define@key {metavar}{j}[]{\metavar@jtrue}
 \define@key {metavar}{k}[]{\metavar@ktrue}
 \define@key {metavar}{s}[]{\metavar@strue}
+\define@key {metavar}{n}[]{\metavar@ntrue}
 \define@key {metavar}{as}[]{\metavar@astrue}
 \define@key {metavar}{bs}[]{\metavar@bstrue}
 \define@key {metavar}{ps}[]{\metavar@pstrue}
@@ -55,6 +57,7 @@
   \ifmetavar@i  {#2}{i}{{#3_i}}\fi%
   \ifmetavar@j \mva@add{j}{{#3_j}}\fi%
   \ifmetavar@k \mva@add{k}{{#3_k}}\fi%
+  \ifmetavar@n \mva@add{n}{{#3_n}}\fi%
   \ifmetavar@s \mva@add{s}{{\bar #3}}\fi%
   \ifmetavar@as \mva@add{as}{{\bar #3_1}}\fi%
   \ifmetavar@bs \mva@add{bs}{{\bar #3_2}}\fi%

@@ -459,7 +459,7 @@ Our contributions are
 \entry[Types]{\t}{
     \tv \and
     \tunit \and
-    \tone \to \ttwo \color{gray} \and
+    \ta \to \tb \color{gray} \and
     \Pi\iton \ti \and
     \T \tys \and
     \tpoly \ts
@@ -474,7 +474,7 @@ Our contributions are
   \and  \ca \cand \cb
   \and  \cexists \tv \c
   \and 	\cfor \tv \c
-  \and  \cunif \tone \ttwo
+  \and  \cunif \ta \tb
   \nextline
   \and  \clet \x \tv \ca \cb
   \and  \capp \x \t
@@ -516,10 +516,10 @@ term and type variables, described in~\Cref{fig:constraint-syntax}.
 %
 The constraint language contains tautological ($\ctrue$) and
 unsatisfiable ($\cfalse$) constraints, conjunctions
-($\cone \cand \ctwo$). The constraint form $(\cexists \tv \c)$ binds an
+($\ca \cand \cb$). The constraint form $(\cexists \tv \c)$ binds an
 existentially quantified type variable $\tv$ in $\c$, while the
 constraint $(\cfor \tv \c)$ binds $\tv$ universally. The constraint form
-$(\cunif \tone \ttwo)$ asserts that the types $\tone$ and $\ttwo$ are
+$(\cunif \ta \tb)$ asserts that the types $\ta$ and $\tb$ are
 equal.
 %
 When $\ts$ is a polymorphic type scheme $\tfor \tvs \tp$, we use the
@@ -532,9 +532,9 @@ Two constructs that deal with the introduction and elimination of
 constraint abstractions. A constraint abstraction $\cabs \tv \c$ can
 simply be seen as a function which when applied to some type $\t$
 returns $\c \where {\tv \is \t}$. Constraint abstractions are
-introduced by a let-construct $(\clet \x \tv \cone \ctwo)$ which binds
+introduced by a let-construct $(\clet \x \tv \ca \cb)$ which binds
 the constraint abstraction to the term variable $\x$ in
-$\ctwo$---additionally ensuring the abstraction is satisfiable. They
+$\cb$---additionally ensuring the abstraction is satisfiable. They
 are eliminated using the application constraint $(\capp \x \t)$ which
 applies the type $\t$ to the abstraction constraint bound to $x$.
 
@@ -908,14 +908,14 @@ $\semenv(\t)$ for the ground type obtained by substitution.
 
 The judgment is defined in \cref{fig:constraint-semantics} for all constraint-formers except suspended
 constraints; its definition on this fragment is standard and somewhat tautological. $\ctrue$ is satisfied in any
-environment, and $\cfalse$ in none. An environment $\semenv$ satisfies $\cone
-\cand \ctwo$ if it satisfies both $\cone$ and $\ctwo$. Satisfying $\cexists \tv \c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint $\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv \is \gt}$. A unification constraint $\t_1 = \t_2$ is satisfied when $\semenv(\t_1)$ and $\semenv(t_2)$ are equal.
+environment, and $\cfalse$ in none. An environment $\semenv$ satisfies $\ca
+\cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying $\cexists \tv \c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint $\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv \is \gt}$. A unification constraint $\t_1 = \t_2$ is satisfied when $\semenv(\t_1)$ and $\semenv(t_2)$ are equal.
 
-The rule for $\clet \tv \cone \ctwo$ states that $\cone$ must satisfied under \emph{some} instantiation of its bound variable, and that $\ctwo$ must be satisfiable when $\x$ is bound $\cabs \tv \cone$, or rather its semantic interpretation as a set of ground types.
+The rule for $\clet \tv \ca \cb$ states that $\ca$ must satisfied under \emph{some} instantiation of its bound variable, and that $\cb$ must be satisfiable when $\x$ is bound $\cabs \tv \ca$, or rather its semantic interpretation as a set of ground types.
 
 Application constraints $\capp \x \t$ are interpreted by checking that $\t$
 belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
-\in \semenv(\x)$. Note that when $\semenv(\x)$ is of the form $\semenvp(\clam \tv \c)$, where $\semenvp$ is the environment at the binding site of $\x$, then $\semenv(\t) \in \semenv(x)$ holds iff $\semenvp\where{\tv \is \semenv(\t)} \th \c$, which corresponds to the intuition that the application $\capp {(\clam \tv \c)} \t$ should be equivalent to $\c \where {\tv \is \t}$.
+\in \semenv(\x)$. Note that when $\semenv(\x)$ is of the form $\semenvp(\cabs \tv \c)$, where $\semenvp$ is the environment at the binding site of $\x$, then $\semenv(\t) \in \semenv(x)$ holds iff $\semenvp\where{\tv \is \semenv(\t)} \th \c$, which corresponds to the intuition that the application $\capp {(\cabs \tv \c)} \t$ should be equivalent to $\c \where {\tv \is \t}$.
 
 \begin{mathparfig}[t]%
   {fig:constraint-semantics}%
@@ -930,9 +930,9 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
     {\semenv \th \ctrue}
 
   \infer[Conj]
-    {\semenv \th \cone \\
-     \semenv \th \ctwo}
-    {\semenv \th \cone \cand \ctwo}
+    {\semenv \th \ca \\
+     \semenv \th \cb}
+    {\semenv \th \ca \cand \cb}
 
   \infer[Exists]
     {\semenv\where{\tv \is \gt} \th \c}
@@ -943,24 +943,24 @@ belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
     {\semenv \th \tfor \tv \c}
 
   \infer[Unif]
-    {\semenv(\tone) = \semenv(\ttwo)}
-    {\semenv \th \cunif \tone \ttwo}
+    {\semenv(\ta) = \semenv(\tb)}
+    {\semenv \th \cunif \ta \tb}
 
-  \semenv(\clam \tv \c) \eqdef \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
+  \semenv(\cabs \tv \c) \eqdef \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
 
   \infer[Let]
-    {\semenv \th \exists \tv. \cone \\
-     \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
-    {\semenv \th \clet \x \tv \cone \ctwo}
+    {\semenv \th \exists \tv. \ca \\
+     \semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb}
+    {\semenv \th \clet \x \tv \ca \cb}
 
   \infer[App]
     {\semenv(\t) \in \semenv(\x)}
     {\semenv \th \capp x \t}
 
   \begin{array}{lll}
-  \cone \centails \ctwo & \eqdef & \forall \semenv,\ \semenv \th \cone \implies \semenv \th \ctwo
+  \ca \centails \cb & \eqdef & \forall \semenv,\ \semenv \th \ca \implies \semenv \th \cb
   \\
-  \cone \cequiv \ctwo & \eqdef & \forall \semenv,\ \semenv \th \cone \iff \semenv \th \ctwo
+  \ca \cequiv \cb & \eqdef & \forall \semenv,\ \semenv \th \ca \iff \semenv \th \cb
   \end{array}
 \end{mathparfig}
 
@@ -979,9 +979,9 @@ following derivation:
 
 % Equivalence and entailment
 
-We write $\cone \centails \ctwo$ to express that $\cone$ \emph{entails} $\ctwo$,
-meaning every solution $\semenv$ to $\cone$ is also a solution to $\ctwo$.
-We write $\cone \cequiv \ctwo$ to indicate that $\cone$ and $\ctwo$ are equivalent,
+We write $\ca \centails \cb$ to express that $\ca$ \emph{entails} $\cb$,
+meaning every solution $\semenv$ to $\ca$ is also a solution to $\cb$.
+We write $\ca \cequiv \cb$ to indicate that $\ca$ and $\cb$ are equivalent,
 that is, they have exactly the same set of solutions.
 
 \subsection{Shapes
@@ -1103,10 +1103,10 @@ for any variables bound in the pattern.\footnote{\Xgabriel{I find it
     for uniformity. Can I make the change?}}\Xdidier {I don't understand
     what you are proposing. Can you explain---without implementing it?}
 %
-For our examples we define the trivial pattern $\cwild$ which matches
+For our examples we define the trivial pattern $\cpatwild$ which matches
 any shape and binds nothing:
 \begin{mathline}
-  \cmatches[\eqdef] \cwild {\pshapp \tys} \eset
+  \cmatches[\eqdef] \cpatwild {\pshapp \tys} \eset
 \end{mathline}
 
 
@@ -1139,10 +1139,10 @@ is to propose the following rule---henceforth referred to as the
 This rule states that a suspended constraint is satisfied by $\semenv$ whenever the corresponding discharged constraint holds for the canonical shape $\sh$ of $\t$ in the semantic environment $\semenv$. If $\sh$ matches no branch in $\cbrs$, then the discharged constraint is not defined, so this rule cannot be applied and the suspended constraint is unsatisfiable.
 
 % Consider the constraint $\cexists \tv \cunif \tv \tint \cand \cmatch \tv
-% {\cbranch \cwild \ctrue}$. This is satisfiable, as intended, under the current
+% {\cbranch \cpatwild \ctrue}$. This is satisfiable, as intended, under the current
 % semantics, as shown by the derivation:
 % \begin{mathline}
-% \def \cmatchex {\cmatch \tv {\cbranch \cwild \ctrue}}
+% \def \cmatchex {\cmatch \tv {\cbranch \cpatwild \ctrue}}
 % \def \semenvex {\semenv\where{\tv \is \tint}}
 %     \infer*[Right=Conj]
 %     {
@@ -1153,7 +1153,7 @@ This rule states that a suspended constraint is satisfied by $\semenv$ whenever 
 %      \\
 %      \infer*[Right=Susp-Nat]
 %       {
-% 	\cmatches \cwild {\pshapp[\tint]\cdot} \eset
+% 	\cmatches \cpatwild {\pshapp[\tint]\cdot} \eset
 % 	\\
 % 	\infer*[Right=True]
 % 	  { }
@@ -1173,13 +1173,13 @@ This rule states that a suspended constraint is satisfied by $\semenv$ whenever 
 
 \parcomment {The problem}
 
-This semantics rule is nicely declarative, but unfortunately it accepts to omany constraints. Consider for example: $\cexists \tv \cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}$. It is satisfiable with this natural semantics:
+This semantics rule is nicely declarative, but unfortunately it accepts to omany constraints. Consider for example: $\cexists \tv \cmatch \tv {\cbranch \cpatwild {\cunif \tv \tint}}$. It is satisfiable with this natural semantics:
 \begin{mathpar}
-\def \cmatchex {\cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}}
+\def \cmatchex {\cmatch \tv {\cbranch \cpatwild {\cunif \tv \tint}}}
 \def \semenvex {\semenv\where{\tv \is \tint}}
     \infer*[Right=Susp-Nat]
     {
-      \cmatches \cwild {\pshapp[\tint]\cdot} \eset
+      \cmatches \cpatwild {\pshapp[\tint]\cdot} \eset
       \\
       \infer*[Right=Unif]
         {\tint = \tint}
@@ -1271,9 +1271,9 @@ Consider the two examples from above:
 \begin{mathpar}
 \cexists \tv \cunif \tv \tint
   \cand
-  \cmatch \tv {\cbranch \cwild \ctrue}
+  \cmatch \tv {\cbranch \cpatwild \ctrue}
 
-  \cexists \tv \cmatch \tv {\cbranch \cwild {\cunif \tv \tint}}
+  \cexists \tv \cmatch \tv {\cbranch \cpatwild {\cunif \tv \tint}}
 \end{mathpar}
 In the first example, we apply the contextual rule with the context $\C \is
 (\exists \tv. \tv = \tint \cand \square)$. Any solution $\phi$ of this part
@@ -1288,7 +1288,7 @@ Consider the more intricate example:
 \begin{mathpar}
   \cexists {\tva \tvb}
   \Parens{\begin{array}{l}
-    \quad \cmatch \tva {\cbranch \cwild {\cunif \tvb \tbool}} \\
+    \quad \cmatch \tva {\cbranch \cpatwild {\cunif \tvb \tbool}} \\
     {} \cand \cmatch \tvb {\cbranch \cpatwild \ctrue} \\
     {} \cand \tva = \tint
   \end{array}}
@@ -1325,8 +1325,8 @@ constraints:
 \begin{mathpar}
   \cexists {\tva \tvb}
   \left(\begin{array}{l}
-    \quad \cmatch \tva {\cbranch \cwild {\cunif \tvb \tbool}} \\
-    {} \cand \cmatch \tvb {\cbranch \cwild {\cunif \tva \tint}}
+    \quad \cmatch \tva {\cbranch \cpatwild {\cunif \tvb \tbool}} \\
+    {} \cand \cmatch \tvb {\cbranch \cpatwild {\cunif \tva \tint}}
   \end{array}\right)
 \end{mathpar}
 This constraint can be proved satisfiable under the ``natural semantics'' introduced
@@ -1336,7 +1336,7 @@ our solver fails to solve it, as does our contextual semantics.
 
 By symmetry we can try to apply \Rule{Susp-Ctx} on $\tva$ first: we
 must show $\Cshape \C \tva \tint$ for the context
-$\C \eqdef (\square \cand \cmatch \tvb {\cbranch \cwild {\cunif \tva \tint}})$. But
+$\C \eqdef (\square \cand \cmatch \tvb {\cbranch \cpatwild {\cunif \tva \tint}})$. But
 this unicity condition does not hold as the erasure
 $\cerase \C = \square \cand \ctrue$ does not constrain $\tva$, so we cannot
 apply the \Rule{Susp-Ctx} rule.
@@ -1447,12 +1447,12 @@ We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton \tvcs}$, wh
   x \and
   () \and
   \efun x e \and
-  \eapp \eone \etwo \and
-  \elet x \eone \etwo \and
+  \eapp \ea \eb \and
+  \elet x \ea \eb \and
   \eannot \e \tvs \t \andcr
   \erecord {\overline{\el = \e} } \and
   \efield e \el \andcr
-   (\eone, \ldots, \en) \and
+   (\ea, \ldots, \en) \and
    \efield e j \and
    \exfield e n j \andcr
    \epoly e \and
@@ -1483,17 +1483,17 @@ We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton \tvcs}$, wh
 
 In \cref {fig/syntax}, we give the grammar for our calculus. Terms include
 all of the \ML calculus: variables $x$, the unit literal $\eunit$,
-lambda-abstractions $\efun x e$, applications $\eapp \eone \etwo$,
-annotations $\eannot \e \tvs \t$ and let-bindings $\elet x \eone \etwo$.
+lambda-abstractions $\efun x e$, applications $\eapp \ea \eb$,
+annotations $\eannot \e \tvs \t$ and let-bindings $\elet x \ea \eb$.
 Our extensions include:
 \begin{enumerate}
 \item
   Constructor and record label disambiguation, modelled using record
-  literals $\erecord { \ela = \eone; \ldots; \el_n = \en }$ and field
+  literals $\erecord { \ela = \ea; \ldots; \el_n = \en }$ and field
   projections $\efield \e l$.
 
 \item
-  Tuples $(\eone, \ldots, \en)$ with implicit projections
+  Tuples $(\ea, \ldots, \en)$ with implicit projections
   $\efield \e j$ and explicit projections $\exfield \e j n$.
 
 \item
@@ -2211,7 +2211,7 @@ reduces instantiation overhead.
 
 However, sometimes \Rule{S-Papp-Exists} must copy a variable before it can be
 lowered, for instance, in the constraint $\cexists \tvc \cletr \x \tva \tvb
-{\cunif \tva \tvb \cand \cmatch \tvb {\cbranch \cwild {\cunif \tvb \tvc}}}
+{\cunif \tva \tvb \cand \cmatch \tvb {\cbranch \cpatwild {\cunif \tvb \tvc}}}
 {\capp \x \tint}$ requires us to instantiate $\x$ before we can make any
 progress on lowering $\tvb$. In this case, when we eventually lower the
 variable, we must also update any partial applications that previously copied
@@ -2718,13 +2718,13 @@ label instantiations respectively.
     {\G \th x : \sigma}
 
   \inferrule[Fun]
-    {\G, x : \tone \th e : \ttwo }
-    {\G \th \efun x e : \tone \to \ttwo}
+    {\G, x : \ta \th e : \tb }
+    {\G \th \efun x e : \ta \to \tb}
 
   \inferrule[App]
-    {\G \th \eone : \tone \to \ttwo \\
-     \G \th \etwo : \tone}
-    {\G \th \eapp \eone \etwo : \ttwo}
+    {\G \th \ea : \ta \to \tb \\
+     \G \th \eb : \ta}
+    {\G \th \eapp \ea \eb : \tb}
 
   \inferrule[Unit]
     {}
@@ -2743,13 +2743,13 @@ label instantiations respectively.
     {\G \th e : \ts \where{\tv \is \t}}
 
   \inferrule[Let]
-    {\G \th \eone : \sigma \\
-     \G, x : \sigma \th \etwo : \t}
-    {\G \th \elet x \eone \etwo : \t}
+    {\G \th \ea : \sigma \\
+     \G, x : \sigma \th \eb : \t}
+    {\G \th \elet x \ea \eb : \t}
 
   \inferrule[Tuple]
     {\parens{\G \th \ei : \ti}\iton}
-    {\G \th (\eone, \ldots, \en) : \Pi\iton \ti}
+    {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
 
   \inferrule[Proj-X]
     {\G \th \e : \Pi\iton \ti \\
@@ -2787,7 +2787,7 @@ label instantiations respectively.
   \inferrule[Rcd]
     {\parens{\G \th \eli = \ei : \t}\iton \\
      \G \th \bar \el \uni \t}
-    {\G \th \erecord {\ela = \eone; \ldots; \el_n = \en} : \t}
+    {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
 
   \inferrule[Rcd-Proj]
     {\G \th \e : \tp \\
@@ -2874,7 +2874,7 @@ Concrete proposal:
 
 Rule \Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
 Function types are introduced via lambda abstractions: in Rule \Rule{Fun}, the
-system guesses a well-formed type $\tone$ for the type of $x$, typechecks the
+system guesses a well-formed type $\ta$ for the type of $x$, typechecks the
 body $e$ is under the extended context $\G, \x : \tya$ producing the return
 type $\tyb$, and assigns the abstraction the function type $\tya \to \tyb$.
 Conversely, function types are eliminated by applications; in Rule \Rule{App},
@@ -2896,8 +2896,8 @@ substituting $\tv$ for an arbitrary monotype $\t$.
 Let-polymorphism is handled by the \Rule{Let} rule, where a
 \textit{polymorphic} term can be bound. This allows a single definition to be
 instantiated differently at each use site---an essential feature of \ML. In
-this rule, the term $\eone$ has a polymorphic type scheme $\ts$, adds $\x :
-\ts$ into the context $\G$ to typecheck $\etwo$.
+this rule, the term $\ea$ has a polymorphic type scheme $\ts$, adds $\x :
+\ts$ into the context $\G$ to typecheck $\eb$.
 
 \parcomment {Annotations}
 
@@ -2988,7 +2988,7 @@ surrounding context in which a label $\elab$ may appear:
     \E \where {\e.\square} \and
     \E \where
          {\erecord
-            {\ela = \eone; \ldots; \square = \ei ; \ldots; \el_n = \en}
+            {\ela = \ea; \ldots; \square = \ei ; \ldots; \el_n = \en}
          }
 }
 \end{bnfgrammar}
@@ -3003,18 +3003,21 @@ $\T$ for $\elab$ and the resulting elaboration is well-typed.
 
 The unicity of the inferred record type is captured by the judgement $\Lshape
 \Lab \elab \T$. The definition fits into the framework we established for
-expressions above by introducing a label cast operator $\elcast \elab \t$,
-analogous to the combination of typed holes and annotations in expressions,
-which asserts that the label is instantiated to the type $\tp \to \t$ for any
-$\tp$.
+expressions above by introducing analogous annotation and hole constructs for
+labels.
 \begin{mathpar}
   \infer[Lab-Magic]
     {}
-    {\G \th \elcast \elab \t : \tp \to \t}
+    {\G \th \elmagic \elab : \tp \to \t}
+
+  \infer[Lab-Annot]
+    {\G \th \el : \tp \to \t\where{\tvs \is \tys}}
+    {\G \th \elannot \el \tvs \t : \tp \to \t\where{\tvs \is \tys}}
+
 \\
 \Eshape \Lab \elab \T \Wide\eqdef
    \forall \G, \t, \gt , \uad
-     \G \th \eerase {\Lab[\elcast \elab \gt]} : \t
+     \G \th \eerase {\Lab[\elannot {\elmagic \elab} {} \gt]} : \t
 	\implies \shape \gt= \any \tvcs {\tvcs \T}
 \end{mathpar}
 
@@ -3040,7 +3043,7 @@ $\labenv$ to resolve overloaded labels:
   unqiue record type $\T$ to $\elab$;
 
 \item
-  in a record expression $\erecord {\ela = \eone; \ldots; \el_n =
+  in a record expression $\erecord {\ela = \ea; \ldots; \el_n =
   \en}$, if the set of labels ${ \ela, \ldots, \el_n }$ uniquely
   identifies a record type $\T$ in the typing context $\labenv$, then
   we can assign this type to the record expression.
@@ -3067,9 +3070,13 @@ casted labels:
     {\elab / {\T} \in \labenv}
     {(\elab / \T) / {\T} \in \labenv}
 
-  \infer[Lab-$\in$Cast]
+  \infer[Lab-$\in$Magic]
     {\elab / {\T} \in \labenv}
-    {\elcast \elab \t / {\T} \in \labenv}
+    {\elmagic \elab / {\T} \in \labenv}
+
+  \infer[Lab-$\in$Annot]
+    {\el / {\T} \in \labenv}
+    {\elannot \el \tvs \t / {\t} \in \labenv}
 \end{mathpar}
 We then define the uniqueness predicate $\bar \el \uni {\T} \in \labenv$ as:
 \begin{mathpar}
@@ -3320,8 +3327,8 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     } \\
     \entry[Constraints]{\c}{
       \dots
-      \and \labenv(\elab/\ct) \leq \tone \to \ttwo
-      \and \labenv(\elab/\T) \leq \tone \to \ttwo
+      \and \labenv(\elab/\ct) \leq \ta \to \tb
+      \and \labenv(\elab/\T) \leq \ta \to \tb
       \andcr \cscm \leq \t
       \and \ts \leq \t
       \andcr \x \leq \cscm
@@ -3348,8 +3355,8 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
   \end{tabular}
   \\
   \inferrule[Lab-Inst]
-    {\semenv \th \labenv(\elab/\semenv(\ct)) \leq \tone \to \ttwo}
-    {\semenv \th \labenv(\elab/\ct) \leq \tone \to \ttwo}
+    {\semenv \th \labenv(\elab/\semenv(\ct)) \leq \ta \to \tb}
+    {\semenv \th \labenv(\elab/\ct) \leq \ta \to \tb}
 
   \inferrule[Scm-Inst]
     {\semenv \th \semenv(\cscm) \leq \t}
@@ -3362,8 +3369,8 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
   \newcommand{\Srule}[3][]{{#2} &\eqdef& {#3} & {#1}}
   \begin{tabular}{RCLL}
     \Srule[\text{if } \labenv(\elab/\T) = \tfor \tvs \t \to \Tapp \tvs]
-      {\labenv(\elab/\T) \leq \tone \to \ttwo}
-      {\cexists \tvs \cunif \tone \t \cand \cunif \ttwo {\Tapp \tvs}}
+      {\labenv(\elab/\T) \leq \ta \to \tb}
+      {\cexists \tvs \cunif \ta \t \cand \cunif \tb {\Tapp \tvs}}
     \\[1ex]
     \Srule
       {(\tfor \tvs \tp) \leq \t}
@@ -3402,19 +3409,19 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}}
 \\
 \Crule
-  {\cinfer {\eapp \eone \etwo} \t}
-  {\cexists {\tva} \cinfer \eone {\tva \to \t} \cand \cinfer \etwo \tva}\
+  {\cinfer {\eapp \ea \eb} \t}
+  {\cexists {\tva} \cinfer \ea {\tva \to \t} \cand \cinfer \eb \tva}\
 \\
 \Crule
-  {\cinfer {\elet \x \eone \etwo} \t}
-  {\clet \x \tva {\cinfer \eone \tva} {\cinfer \etwo \t}}
+  {\cinfer {\elet \x \ea \eb} \t}
+  {\clet \x \tva {\cinfer \ea \tva} {\cinfer \eb \t}}
 \\
 \Crule
   {\cinfer {\eannot \e \tvs \tp} \t}
   {\cexists \tvs \cunif \t \tp \cand \cinfer \e \tp}
 \\
 \Crule
-  {\cinfer {\etuple {\eone, \ldots, \en}} \t}
+  {\cinfer {\etuple {\ea, \ldots, \en}} \t}
   {\cexists \tvs \cunif \t {\Pi\iton \tvs}
     \cand \cAnd \iton \cinfer \ei {\tv_i}}
 \\
@@ -3477,16 +3484,20 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
     \cand \cinferlab \el \tv \t}
 \\
 \Crule
-  {\cinferlab \elab \tone \ttwo}
-  {\cmatch \ttwo {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \tone \to \ttwo}}}
+  {\cinferlab \elab \ta \tb}
+  {\cmatch \tb {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \ta \to \tb}}}
 \\
 \Crule
-  {\cinferlab {\elab/\T} \tone \ttwo}
-  {\labenv(\elab/\T) \leq \tone \to \ttwo}
+  {\cinferlab {\elab/\T} \ta \tb}
+  {\labenv(\elab/\T) \leq \ta \to \tb}
 \\
 \Crule
-  {\cinferlab {\elcast \elab \t} \tone \ttwo}
-  {\cunif \t \ttwo}
+  {\cinferlab {\elmagic \elab} \ta \tb}
+  {\ctrue}
+\\
+\Crule
+  {\cinferlab {\elannot \el \tvs \t} \ta \tb}
+  {\cexists \tvs \cinferlab \el \ta \tb \cand \cunif \tb \t}
 \\
 \Crule
   {\cinferlabuni {\bar \el} \t}
@@ -3496,7 +3507,7 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
    \end{cases}}
 \\ \\
 \Crule
-  {\csem {\enil \th \e : \t}}
+  {\csem {\Gnil \th \e : \t}}
   {\cinfer \e \t}
 \\
 \Crule
@@ -3555,7 +3566,7 @@ is at least as general as $\cscm$, via the constraint $\x \leq \cscm$.
 % Records
 Record projections generate a fresh variable for the nominal record type,
 constraining $\e$ to this type, and use the auxiliary function $\cinferlab \el
-\tone \ttwo$ to instantiate the label. The function $\cinferlabuni {\bar \el}
+\ta \tb$ to instantiate the label. The function $\cinferlabuni {\bar \el}
 \t$ checks whether a label sequence $\bar \el$ uniquely determines a record
 type, unifying $\t$ with $\Tapp \tvs$ if so, or leaving it unconstrained if
 ambiguous. This function enables closed-world reasoning for both projections
@@ -3567,8 +3578,8 @@ constraint $\eli = \ei$, introducing a fresh variable $\tv$ for each
 field's type and ensuring that $\e$ has this type and the label $\el$
 instantiates to $\tv \to \t$.
 
-Label instantiation constraints $\cinferlab \elab \tone \ttwo$ suspend
-until $\ttwo$ is known to be a record type; once resolved, the label type is
+Label instantiation constraints $\cinferlab \elab \ta \tb$ suspend
+until $\tb$ is known to be a record type; once resolved, the label type is
 looked up in $\labenv$ and instantiated. Explicit instantiations bypass
 suspension and directly instantiate the label's type.
 
@@ -3593,13 +3604,13 @@ constructs used in \OML's typing rules and are included for completeness.
     {\G \th x : \sigma}
 
   \inferrule[Fun]
-    {\G, x : \tone \th e : \ttwo }
-    {\G \th \efun x e : \tone \to \ttwo}
+    {\G, x : \ta \th e : \tb }
+    {\G \th \efun x e : \ta \to \tb}
 
   \inferrule[App]
-    {\G \th \eone : \tone \to \ttwo \\
-     \G \th \etwo : \tone}
-    {\G \th \eapp \eone \etwo : \ttwo}
+    {\G \th \ea : \ta \to \tb \\
+     \G \th \eb : \ta}
+    {\G \th \eapp \ea \eb : \tb}
 
   \inferrule[Annot]
     {\G \th e : \t\where {\tvs \is \tys}}
@@ -3614,9 +3625,9 @@ constructs used in \OML's typing rules and are included for completeness.
     {\G \th e : \ts \where{\tv \is \t}}
 
   \inferrule[Let]
-    {\G \th \eone : \sigma \\
-     \G, x : \sigma \th \etwo : \t}
-    {\G \th \elet x \eone \etwo : \t}
+    {\G \th \ea : \sigma \\
+     \G, x : \sigma \th \eb : \t}
+    {\G \th \elet x \ea \eb : \t}
 \\
 \newcommand {\Crule}[2]{#1 & \eqdef & #2}
 \begin{array}{l@{\uad} c@{\uad} l}
@@ -3628,8 +3639,8 @@ constructs used in \OML's typing rules and are included for completeness.
 \\ & & \quad\uad {} \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}
 \\
 \Crule
-  {\cinfer {\eapp \eone \etwo} \t}
-  {\cexists {\tva} \cinfer \eone {\tva \to \t} \cand \cinfer \etwo \tva}
+  {\cinfer {\eapp \ea \eb} \t}
+  {\cexists {\tva} \cinfer \ea {\tva \to \t} \cand \cinfer \eb \tva}
 \end{array}
 \quad
 \begin{array}{l@{\uad} c@{\uad} l}
@@ -3638,8 +3649,8 @@ constructs used in \OML's typing rules and are included for completeness.
    {\cinst x \t}
 \\
 \Crule
-  {\cinfer {\elet \x \eone \etwo} \t}
-  {\clet \x \tva {\cinfer \eone \tva} {\cinfer \etwo \t}}
+  {\cinfer {\elet \x \ea \eb} \t}
+  {\clet \x \tva {\cinfer \ea \tva} {\cinfer \eb \t}}
 \\
 \Crule
   {\cinfer {\eannot \e \tvs \tp} \t}
@@ -3667,7 +3678,7 @@ TODO: a figure with the magic rule and the two unicity criterion (not for labels
 \begin{mathparfig}{fig/typing-tuples}{Typing and inference: tuples}
   \inferrule[Tuple]
     {\parens{\G \th \ei : \ti}\iton}
-    {\G \th (\eone, \ldots, \en) : \Pi\iton \ti}
+    {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
 
   \inferrule[Proj-X]
     {\G \th \e : \Pi\iton \ti \\
@@ -3692,7 +3703,7 @@ TODO: a figure with the magic rule and the two unicity criterion (not for labels
 \newcommand {\Crule}[2]{#1 & \eqdef & #2}
 \begin{array}{l@{\uad} c@{\uad} l}
 \Crule
-  {\cinfer {\etuple {\eone, \ldots, \en}} \t}
+  {\cinfer {\etuple {\ea, \ldots, \en}} \t}
   {\cexists \tvs \cunif \t {\Pi\iton \tvs}
     \cand \cAnd \iton \cinfer \ei {\tv_i}}
 \\
@@ -3784,7 +3795,7 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
   \inferrule[Rcd]
     {\parens{\G \th \eli = \ei : \t}\iton \\
      \G \th \bar \el \uni \t}
-    {\G \th \erecord {\ela = \eone; \ldots; \el_n = \en} : \t}
+    {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
 
   \inferrule[Rcd-Proj]
     {\G \th \e : \tp \\
@@ -3813,8 +3824,8 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
  \begin{array}{rcl@{}l@{\qquad} r}
    \cpat & ::= & \dots \mid \cpatrcd \ct & & \text{record patterns} \\
    \c & ::= & \dots
-              \mid \labenv(\elab/\ct) \leq \tone \to \ttwo
-              \mid \labenv(\elab/\T) \leq \tone \to \ttwo
+              \mid \labenv(\elab/\ct) \leq \ta \to \tb
+              \mid \labenv(\elab/\T) \leq \ta \to \tb
             & & \text{record constraints} \\
     \Mrule
       {\cpatrcd \ct}
@@ -3831,16 +3842,20 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
     \cand \cinferlab \el \tv \t}
 \\
 \Crule
-  {\cinferlab \elab \tone \ttwo}
-  {\cmatch \ttwo {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \tone \to \ttwo}}}
+  {\cinferlab \elab \ta \tb}
+  {\cmatch \tb {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \ta \to \tb}}}
 \\
 \Crule
-  {\cinferlab {\elab/\T} \tone \ttwo}
-  {\labenv(\elab/\T) \leq \tone \to \ttwo}
+  {\cinferlab {\elab/\T} \ta \tb}
+  {\labenv(\elab/\T) \leq \ta \to \tb}
 \\
 \Crule
-  {\cinferlab {\elcast \elab \t} \tone \ttwo}
-  {\cunif \t \ttwo}
+  {\cinferlab {\elmagic \elab} \ta \tb}
+  {\ctrue}
+\\
+\Crule
+  {\cinferlab {\elannot \el \tvs \t} \ta \tb}
+  {\cexists \tvs \cinferlab \el \ta \tb \cand \cunif \tb \t}
 \\
 \Crule
   {\cinferlabuni {\bar \el} \t}
@@ -3870,9 +3885,9 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\semenv \th \ctrue}
 
   \infer[Conj]
-    {\semenv \th \cone \\
-     \semenv \th \ctwo}
-    {\semenv \th \cone \cand \ctwo}
+    {\semenv \th \ca \\
+     \semenv \th \cb}
+    {\semenv \th \ca \cand \cb}
 
   \infer[Exists]
     {\semenv\where{\tv \is \gt} \th \c}
@@ -3883,13 +3898,13 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\semenv \th \tfor \tv \c}
 
   \infer[Unif]
-    {\semenv(\tone) = \semenv(\ttwo)}
-    {\semenv \th \cunif \tone \ttwo}
+    {\semenv(\ta) = \semenv(\tb)}
+    {\semenv \th \cunif \ta \tb}
 
   \infer[Let]
-    {\semenv \th \exists \tv. \cone \\
-     \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
-    {\semenv \th \clet \x \tv \cone \ctwo}
+    {\semenv \th \exists \tv. \ca \\
+     \semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb}
+    {\semenv \th \clet \x \tv \ca \cb}
 
   \infer[App]
     {\semenv(\t) \in \semenv(\x)}
@@ -3944,8 +3959,8 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\cfalse \simple}
 
   \inferrule[Simple-Conj]
-    {\cone \simple \\ \ctwo \simple}
-    {\cone \cand \ctwo \simple}
+    {\ca \simple \\ \cb \simple}
+    {\ca \cand \cb \simple}
 
   \inferrule[Simple-Exists]
     {\c \simple}
@@ -3957,19 +3972,19 @@ list of figures and definitions. Some of them are repeated from the main paper.
 
   \inferrule[Simple-Unif]
     {}
-    {\cunif \tone \ttwo \simple}
+    {\cunif \ta \tb \simple}
 
   \inferrule[Simple-Let]
-    {\cone \simple \\ \ctwo \simple}
-    {\clet \x \tv \cone \ctwo \simple}
+    {\ca \simple \\ \cb \simple}
+    {\clet \x \tv \ca \cb \simple}
 
   \inferrule[Simple-App]
     {}
     {\capp \x \t \simple}
 
   \inferrule[Simple-LetR]
-    {\cone \simple \\ \ctwo \simple}
-    {\cletr \x \tv \tvs \cone \ctwo \simple}
+    {\ca \simple \\ \cb \simple}
+    {\cletr \x \tv \tvs \ca \cb \simple}
 
   \inferrule[Simple-Papp]
     {}
@@ -4019,16 +4034,16 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \begin{tabular}{RCL}
   \Erule{\ctrue}{\ctrue} \\
   \Erule{\cfalse}{\cfalse} \\
-  \Erule{\cone \cand \ctwo}{\cerase \cone \cand \cerase \ctwo} \\
+  \Erule{\ca \cand \cb}{\cerase \ca \cand \cerase \cb} \\
   \Erule{\cexists \tv \c}{\cexists \tv \cerase \c} \\
   \Erule{\cfor \tv \c}{\cfor \tv \cerase \c} \\
-  \Erule{\cunif \tone \ttwo}{\cunif \tone \ttwo} \\
-  \Erule{\clet \x \tv \cone \ctwo}{\clet \x \tv {\cerase \cone} {\cerase \ctwo}} \\
+  \Erule{\cunif \ta \tb}{\cunif \ta \tb} \\
+  \Erule{\clet \x \tv \ca \cb}{\clet \x \tv {\cerase \ca} {\cerase \cb}} \\
   \Erule{\capp \x \t}{\capp \x \t} \\
     \Erule{\cmatch \t {\cbranch {\bar \cpat} {\bar \c}}}{\ctrue} \\
   \Erule{\cpapp \x \ren \ueqs}
       {\cpapp \x \ren \ueqs}\\
-  \Erule{\cletr \x \tv \tvs \cone \ctwo}{\cletr \x \tv \tvs {\cerase \cone} {\cerase \ctwo}}
+  \Erule{\cletr \x \tv \tvs \ca \cb}{\cletr \x \tv \tvs {\cerase \ca} {\cerase \cb}}
 \end{tabular}
 \end{mathparfig}
 \FloatBarrier
@@ -4076,13 +4091,13 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\G \th x : \sigma}
 
   \inferrule[Fun]
-    {\G, x : \tone \th e : \ttwo }
-    {\G \th \efun x e : \tone \to \ttwo}
+    {\G, x : \ta \th e : \tb }
+    {\G \th \efun x e : \ta \to \tb}
 
   \inferrule[App]
-    {\G \th \eone : \tone \to \ttwo \\
-     \G \th \etwo : \tone}
-    {\G \th \eapp \eone \etwo : \ttwo}
+    {\G \th \ea : \ta \to \tb \\
+     \G \th \eb : \ta}
+    {\G \th \eapp \ea \eb : \tb}
 
   \inferrule[Unit]
     {}
@@ -4101,13 +4116,13 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\G \th e : \tv \where{\tv \is \t}}
 
   \inferrule[Let]
-    {\G \th \eone : \sigma \\
-     \G, x : \sigma \th \etwo : \t}
-    {\G \th \elet x \eone \etwo : \t}
+    {\G \th \ea : \sigma \\
+     \G, x : \sigma \th \eb : \t}
+    {\G \th \elet x \ea \eb : \t}
 
   \inferrule[Tuple]
     {\parens{\G \th \ei : \ti}\iton}
-    {\G \th (\eone, \ldots, \en) : \Pi\iton \ti}
+    {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
 
   \inferrule[Proj-X]
     {\G \th \e : \Pi\iton \ti \\
@@ -4145,7 +4160,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \inferrule[Rcd]
     {\parens{\G \th \eli = \ei : \t}\iton \\
      \G \th \bar \el \uni \t}
-    {\G \th \erecord {\ela = \eone; \ldots; \el_n = \en} : \t}
+    {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
 
   \inferrule[Rcd-Proj]
     {\G \th \e : \tp \\
@@ -4216,16 +4231,16 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\efun \x \e \simple}
 
   \inferrule[Simple-App]
-    {\eone \simple \\ \etwo \simple}
-    {\eapp \eone \etwo \simple}
+    {\ea \simple \\ \eb \simple}
+    {\eapp \ea \eb \simple}
 
   \inferrule[Simple-Unit]
     {}
     {\eunit \simple}
 
   \inferrule[Simple-Let]
-    {\eone \simple \\ \etwo \simple}
-    {\elet \x \eone \etwo \simple}
+    {\ea \simple \\ \eb \simple}
+    {\elet \x \ea \eb \simple}
 
   \inferrule[Simple-Annot]
     {\e \simple}
@@ -4233,7 +4248,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
 
   \inferrule[Simple-Tuple]
     {\parens {\ei \simple}\iton}
-    {\etuple {\eone, \ldots, \en} \simple}
+    {\etuple {\ea, \ldots, \en} \simple}
 
   \inferrule[Simple-ProjX]
     {\e \simple}
@@ -4249,7 +4264,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
 
   \inferrule[Simple-Rcd]
     {\parens {\eli = \ei \simple} \iton}
-    {\erecord {\ela = \eone\; \ldots\; \el_n = \en}}
+    {\erecord {\ela = \ea\; \ldots\; \el_n = \en}}
 
   \inferrule[Simple-Rcd-Assn]
     {\el \simple \\ \e \simple}
@@ -4269,7 +4284,11 @@ list of figures and definitions. Some of them are repeated from the main paper.
 
   \inferrule[Simple-Lab-Magic]
     {}
-    {\elcast \elab \t}
+    {\elmagic \elab \simple}
+
+  \inferrule[Simple-Lab-Annot]
+    {\el \simple}
+    {\elannot \el \tvs \t \simple}
 \end{mathparfig}
 \FloatBarrier
 
@@ -4282,18 +4301,18 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \begin{tabular}{RCL}
   \Erule{\x}{\x} \\
   \Erule{\efun \x \e}{\efun \x \eerase \e} \\
-  \Erule{\eapp \eone \etwo}{\eapp {\eerase \eone} {\eerase \etwo}} \\
+  \Erule{\eapp \ea \eb}{\eapp {\eerase \ea} {\eerase \eb}} \\
   \Erule{\eunit}{\eunit} \\
-  \Erule{\elet \x \eone \etwo}{\elet \x {\eerase \eone} {\eerase \etwo}} \\
+  \Erule{\elet \x \ea \eb}{\elet \x {\eerase \ea} {\eerase \eb}} \\
   \Erule{\eannot \e \tvs \t}{\eannot {\eerase \e} \tvs \t} \\
-  \Erule{\etuple {\eone, \ldots, \en}}{\etuple {\eerase \eone, \ldots, \eerase \en}} \\
+  \Erule{\etuple {\ea, \ldots, \en}}{\etuple {\eerase \ea, \ldots, \eerase \en}} \\
   \Erule{\eproj \e j}{\emagic {\eerase \e}} \\
   \Erule{\exproj \e j n}{\exproj {\eerase \e} j n} \\
   \Erule{\expoly \e \tvs \ts}{\expoly {\eerase \e} \tvs \ts} \\
   \Erule{\epoly \e}{\emagic {\eerase \e}}\\
   \Erule{\einst \e}{\emagic {\eerase \e}}\\
   \Erule{\exinst \e \tvs \ts}{\exinst {\eerase \e} \tvs \ts}\\
-  \Erule{\erecord {\ela = \eone\; \ldots\; \el_n = \en}}{\erecord {\eerase \ela = \eerase \eone\; \ldots\; \eerase {\el_n} = \eerase \en}}\\
+  \Erule{\erecord {\ela = \ea\; \ldots\; \el_n = \en}}{\erecord {\eerase \ela = \eerase \ea\; \ldots\; \eerase {\el_n} = \eerase \en}}\\
   \Erule{\efield \e \el}{\efield {\eerase \e} {\eerase \el}}\\
   \Erule{\elab/\T}{\elab/\T}\\
   \Erule{\elab}{\elmagic \elab}\\
@@ -4313,10 +4332,10 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\G \thsimplesd x : \t\where{\tvs \is \tys}}
 
   \inferrule[Let-SD]
-    {\G \th \eone : \tone\\
+    {\G \th \ea : \ta\\
      \tvs \disjoint \G \\
-     \G, x : \tfor \tvs \tone \th \etwo : \ttwo}
-    {\G \thsimplesd \elet x \eone \etwo : \ttwo}
+     \G, x : \tfor \tvs \ta \th \eb : \tb}
+    {\G \thsimplesd \elet x \ea \eb : \tb}
 \end{mathparfig}
 \FloatBarrier
 
@@ -4520,10 +4539,10 @@ principal shape. We show that this is indeed the case.
 
 \medskip
 
-When $\t$ is not a polytype, it has a toplevel constructor $c$ of
+When $\t$ is not a polytype, it has a toplevel constructor $\tconstr$ of
 arity $n$, which in our setting may be the nullary $\tunit$, the binary
 arrow, the n-ary product, or a $n$-ary nominal type. In all these
-cases, the shape of $\t$ is $\any \tvcs \tc \tvcs$ where $\tvcs$ is a
+cases, the shape of $\t$ is $\any \tvcs \tconstr \tvcs$ where $\tvcs$ is a
 sequence of $n$ distinct type variables.
 
 \medskip
@@ -4635,30 +4654,30 @@ entailment in our system.
 \begin{lemma}[Simple inversion]~
   \label{lem:simple-inversion}
   \begin{enumerate}[(\roman*)]
-    \item If $\semenv \th \cunif \tone \ttwo$, then $\semenv(\tone) = \semenv(\ttwo)$.
+    \item If $\semenv \th \cunif \ta \tb$, then $\semenv(\ta) = \semenv(\tb)$.
     \item If $\semenv \th \ueq$, then $\semenv(\t) = \gt$ for all $\t \in \ueq$ and some ground type $\gt$.
     \item If $\semenv \th \capp \x \t$, then $\semenv(\t) \in \semenv(\x)$.
     \item If $\semenv \th \cpapp \x \ren \ueqs$, then $\semenv(\x) = \gabsr \tv \tvs$, $\dom \ren \subseteq \tvs$, and \\$\semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \gabs$.
 
-    \item If $\semenv \th \cone \cand \ctwo$ and $\cone \cand \ctwo \simple$, then $\semenv \th \cone$ and $\semenv \th \ctwo$.
+    \item If $\semenv \th \ca \cand \cb$ and $\ca \cand \cb \simple$, then $\semenv \th \ca$ and $\semenv \th \cb$.
     \item If $\semenv \th \cexists \tv \c$ and $\cexists \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for some $\gt$.
     \item If $\semenv \th \cfor \tv \c$ and $\cfor \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for all ground types $\gt$.
-    \item If $\semenv \th \clet \x \tv \cone \ctwo$ and $\clet \x \tv \cone \ctwo \simple$, then $\semenv \th \cexists \tv \cone$ and \\$\semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo$.
-    \item If $\semenv \th \cletr \x \tv \tvs \cone \ctwo$ and $\cletr \x \tv \tvs \cone \ctwo \simple$, then
-      $\semenv \th \cexists {\tv, \tvs} \cone$ and \\$\semenv\where{\x \is \semenv(\cabsr \tv \tvs \cone)} \th \ctwo$.
+    \item If $\semenv \th \clet \x \tv \ca \cb$ and $\clet \x \tv \ca \cb \simple$, then $\semenv \th \cexists \tv \ca$ and \\$\semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb$.
+    \item If $\semenv \th \cletr \x \tv \tvs \ca \cb$ and $\cletr \x \tv \tvs \ca \cb \simple$, then
+      $\semenv \th \cexists {\tv, \tvs} \ca$ and \\$\semenv\where{\x \is \semenv(\cabsr \tv \tvs \ca)} \th \cb$.
   \end{enumerate}
   \begin{proof}~
     \begin{enumerate}[(\roman*)]
-      \item Case analysis on the given derivation $\semenv \th \cunif \tone \ttwo$.
-	There is a unique case for the atomic constraint $\cunif \tone \ttwo$:
+      \item Case analysis on the given derivation $\semenv \th \cunif \ta \tb$.
+	There is a unique case for the atomic constraint $\cunif \ta \tb$:
 	\begin{proofcases}
 	    \proofcasederivation
 	      {Unif}
-	      {\semenv(\tone) = \semenv(\ttwo)}
-	      {\semenv \th \cunif \tone \ttwo}
+	      {\semenv(\ta) = \semenv(\tb)}
+	      {\semenv \th \cunif \ta \tb}
 
 	    \begin{llproof}
-\Hand 		\eqPf{\semenv(\tone)}{\semenv(\ttwo)}  {Premise}
+\Hand 		\eqPf{\semenv(\ta)}{\semenv(\tb)}  {Premise}
 	    \end{llproof}
 	\end{proofcases}
 
@@ -4666,27 +4685,27 @@ entailment in our system.
       \item Similar to \Rule{Unif} case.
       \item Similar to \Rule{Unif} case.
 
-      \item Case analysis on the given derivation $\semenv \th \cone \cand \ctwo$.
+      \item Case analysis on the given derivation $\semenv \th \ca \cand \cb$.
       \begin{proofcases}
 	\proofcasederivation
 	  {Conj}
-	  {\semenv \th \cone \\ \semenv \th \ctwo}
-	  {\semenv \th \cone \cand \ctwo}
+	  {\semenv \th \ca \\ \semenv \th \cb}
+	  {\semenv \th \ca \cand \cb}
 
 	\begin{llproof}
-\Hand 	  \vdashPf{\semenv}{\cone} {Premise}
-\Hand     \vdashPf{\semenv}{\ctwo} {Premise}
+\Hand 	  \vdashPf{\semenv}{\ca} {Premise}
+\Hand     \vdashPf{\semenv}{\cb} {Premise}
 	\end{llproof}
 
 	\proofcasederivation
 	  {Susp-Ctx}
 	  {\Cshape \C \t \sh \\ \semenv \th \C\where{\cmatched \t \sh \cbrs}}
-	  {\semenv \th \underbrace{\C\where{\cmatch \t \cbrs}}_{\cone \cand \ctwo}}
+	  {\semenv \th \underbrace{\C\where{\cmatch \t \cbrs}}_{\ca \cand \cb}}
 
 	\begin{llproof}
 	  \simplePf{\C\where{\cmatch \t \cbrs}} {Given}
 	  \nsimplePf{\C\where{\cmatch \t \cbrs}} {By \cref{lem:match-is-not-simple}}
-\Hand 	  \contraPf{\semenv \th \cone, \semenv \th \ctwo}
+\Hand 	  \contraPf{\semenv \th \ca, \semenv \th \cb}
 	\end{llproof}
 
       \end{proofcases}
@@ -4710,8 +4729,8 @@ entailment in our system.
 
 \begin{lemma}[Simple congruence]
   \label{lem:cong-simple}
-  Given simple constraints $\cone, \ctwo$ and simple context $\C$.
-  If \\$\cone \centails \ctwo$, then $\C\where{\cone} \centails \C\where{\ctwo}$.
+  Given simple constraints $\ca, \cb$ and simple context $\C$.
+  If \\$\ca \centails \cb$, then $\C\where{\ca} \centails \C\where{\cb}$.
   \begin{proof}
     Induction on the derivation of $\C \simple$.
   \end{proof}
@@ -4859,8 +4878,8 @@ entailment in our system.
       $\c$.
 
     \item the last component $\csize \c$ is a structural measure of constraints \ie a
-      conjunction $\cone \cand \ctwo$ is larger than the two conjuncts $\cone,
-      \ctwo$.
+      conjunction $\ca \cand \cb$ is larger than the two conjuncts $\ca,
+      \cb$.
 
   \end{enumerate}
 \end{definition}
@@ -4883,40 +4902,40 @@ entailment in our system.
       \end{llproof}
     \proofcasederivation
       {Unif}
-      {\semenv(\tone) = \semenv(\ttwo)}
-      {\semenv \th \cunif \tone \ttwo}
+      {\semenv(\ta) = \semenv(\tb)}
+      {\semenv \th \cunif \ta \tb}
 
       \begin{llproof}
 	Similar to the \Rule{True} case.
       \end{llproof}
     \proofcasederivation
       {Conj}
-      {\semenv \th \cone \\ \semenv \th \ctwo}
-      {\semenv \th \cone \cand \ctwo}
+      {\semenv \th \ca \\ \semenv \th \cb}
+      {\semenv \th \ca \cand \cb}
 
       \begin{llproof}
-	\vdashPf{\semenv}{\cone} {Premise}
-	\vdashPf{\semenv}{\ctwo} {Premise}
-	\VdashPf{\semenv}{\cone} {By \ih}
-	\VdashPf{\semenv}{\ctwo} {By \ih}
+	\vdashPf{\semenv}{\ca} {Premise}
+	\vdashPf{\semenv}{\cb} {Premise}
+	\VdashPf{\semenv}{\ca} {By \ih}
+	\VdashPf{\semenv}{\cb} {By \ih}
 	\decolumnizePf
-	\casesPf{\semenv \Th \cone, \semenv \Th \ctwo}
+	\casesPf{\semenv \Th \ca, \semenv \Th \cb}
       \end{llproof}
 
       \begin{proofcases}
 	\proofcasederivationdouble
 	  {Can-Base}
-	  {\semenv \th \cone \\ \cone \simple}
-	  {\semenv \Th \cone}
+	  {\semenv \th \ca \\ \ca \simple}
+	  {\semenv \Th \ca}
 	  {Can-Base}
-	  {\semenv \th \ctwo \\ \ctwo \simple}
-	  {\semenv \Th \ctwo}
+	  {\semenv \th \cb \\ \cb \simple}
+	  {\semenv \Th \cb}
 
 	  \begin{llproof}
-	    \simplePf{\cone}{Premise}
-	    \simplePf{\ctwo}{Premise}
-	    \simplePf{\cone \cand \ctwo}{By \Rule{Simple-Conj}}
-\Hand 	    \VdashPf{\semenv}{\cone \cand \ctwo}{By \Rule{Can-Base}}
+	    \simplePf{\ca}{Premise}
+	    \simplePf{\cb}{Premise}
+	    \simplePf{\ca \cand \cb}{By \Rule{Simple-Conj}}
+\Hand 	    \VdashPf{\semenv}{\ca \cand \cb}{By \Rule{Can-Base}}
 
 	  \end{llproof}
 
@@ -5004,73 +5023,73 @@ entailment in our system.
 
 	\proofcasederivation
 	  {Let}
-	  {\semenv \th \cexists \tv \cone \\ \semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo}
-	  {\semenv \th \clet \x \tv \cone \ctwo}
+	  {\semenv \th \cexists \tv \ca \\ \semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb}
+	  {\semenv \th \clet \x \tv \ca \cb}
 
 	  \begin{llproof}
-	    \vdashPf{\semenv}{\cexists \tv \cone}{Premise}
-	    \VdashPf{\semenv}{\cexists \tv \cone}{By \ih}
-	    \vdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\ctwo}{Premise}
-	    \VdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\ctwo}{By \ih}
+	    \vdashPf{\semenv}{\cexists \tv \ca}{Premise}
+	    \VdashPf{\semenv}{\cexists \tv \ca}{By \ih}
+	    \vdashPf{\semenv\where{\x \is \semenv(\cabs \tv \ca)}}{\cb}{Premise}
+	    \VdashPf{\semenv\where{\x \is \semenv(\cabs \tv \ca)}}{\cb}{By \ih}
 	    \decolumnizePf
-	    \casesPf{\semenv \Th \cexists \tv \cone, \semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \ctwo}
+	    \casesPf{\semenv \Th \cexists \tv \ca, \semenv\where{\x \is \semenv(\cabs \tv \ca)} \Th \cb}
 	  \end{llproof}
 
 	  \begin{proofcases}
 	    \proofcasederivationdouble
 	      {Can-Base}
-	      {\semenv \th \cexists \tv \cone \\ \cexists \tv \cone \simple}
-	      {\semenv \Th \cexists \tv \cone}
+	      {\semenv \th \cexists \tv \ca \\ \cexists \tv \ca \simple}
+	      {\semenv \Th \cexists \tv \ca}
 	      {Can-Base}
-	      {\semenv\where{\x \is \semenv(\cabs \tv \cone)} \th \ctwo \\ \ctwo \simple}
-	      {\semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \ctwo}
+	      {\semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb \\ \cb \simple}
+	      {\semenv\where{\x \is \semenv(\cabs \tv \ca)} \Th \cb}
 
 	      \begin{llproof}
-		\simplePf{\cexists \tv \cone}{Premise}
-		\simplePf{\cone}{Inversion of \Rule{Simple-Exists}}
-		\simplePf{\ctwo}{Premise}
-		\simplePf{\clet \x \tv \cone \ctwo}{By \Rule{Simple-Let}}
-\Hand		\VdashPf{\semenv}{\clet \x \tv \cone \ctwo}{By \Rule{Can-Base}}
+		\simplePf{\cexists \tv \ca}{Premise}
+		\simplePf{\ca}{Inversion of \Rule{Simple-Exists}}
+		\simplePf{\cb}{Premise}
+		\simplePf{\clet \x \tv \ca \cb}{By \Rule{Simple-Let}}
+\Hand		\VdashPf{\semenv}{\clet \x \tv \ca \cb}{By \Rule{Can-Base}}
 	      \end{llproof}
 
 	    \proofcasederivationdouble
 	      {Can-Susp-Ctx}
-	      {\Cshape {\parens {\cexists \tv \cone}} \t \sh \\ \semenv \Th \cexists \tv \C\where{\cmatched \t \sh \cbrs}}
+	      {\Cshape {\parens {\cexists \tv \ca}} \t \sh \\ \semenv \Th \cexists \tv \C\where{\cmatched \t \sh \cbrs}}
 	      {\semenv \Th \cexists \tv \underbrace{\C\where{\cmatch \t \cbrs}}_\ca}
 	      {}
 	      {}
-	      {\semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \ctwo}
+	      {\semenv\where{\x \is \semenv(\cabs \tv \ca)} \Th \cb}
 
 	      \begin{llproof}
 		\shapePf{\parens {\cexists \tv \C}}{\t}{\sh}{Premise}
 		\shapePf{\C}{\t}{\sh}{\cref{lem:unicity-inversion}}
 		\VdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{Premise}
 		\vdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{\cref{lem:decanonicalization}}
-		\eqPf{\semenv(\cabs \tv \cone)}
+		\eqPf{\semenv(\cabs \tv \ca)}
 		  {\semenv(\cabs \tv \C\where{\cmatched \t \sh \cbrs})}
 		  {\cref{corollary:matched-abstractions}}
-		\vdashPf{\semenv}{\clet \x \tv {\C\where{\cmatched \t \sh \cbrs}} \ctwo}{By \Rule{Let}}
-		\VdashPf{\semenv}{\clet \x \tv {\C\where{\cmatched \t \sh \cbrs}} \ctwo}{By \ih}
-		\shapePf{\parens{\clet \x \tv \C \ctwo}}{\t}{\sh}{\cref{lem:compose-unicity}}
-\Hand 		\VdashPf{\semenv}{\clet \x \tv {\C\where{\cmatch \t \cbrs}} \ctwo}{By \Rule{Can-Susp-Ctx}}
+		\vdashPf{\semenv}{\clet \x \tv {\C\where{\cmatched \t \sh \cbrs}} \cb}{By \Rule{Let}}
+		\VdashPf{\semenv}{\clet \x \tv {\C\where{\cmatched \t \sh \cbrs}} \cb}{By \ih}
+		\shapePf{\parens{\clet \x \tv \C \cb}}{\t}{\sh}{\cref{lem:compose-unicity}}
+\Hand 		\VdashPf{\semenv}{\clet \x \tv {\C\where{\cmatch \t \cbrs}} \cb}{By \Rule{Can-Susp-Ctx}}
 	      \end{llproof}
 
 	    \proofcasederivationdouble
 		{}
 		{}
-		{\semenv \Th \cexists \tv \cone}
+		{\semenv \Th \cexists \tv \ca}
 		{Can-Susp-Ctx}
-		{\Cshape \C \t \sh \\ \semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \C\where{\cmatched \t \sh \cbrs}}
-		{\semenv\where{\x \is \semenv(\cabs \tv \cone)} \Th \underbrace{\C\where{\cmatch \t \cbrs}}_\cb}
+		{\Cshape \C \t \sh \\ \semenv\where{\x \is \semenv(\cabs \tv \ca)} \Th \C\where{\cmatched \t \sh \cbrs}}
+		{\semenv\where{\x \is \semenv(\cabs \tv \ca)} \Th \underbrace{\C\where{\cmatch \t \cbrs}}_\cb}
 
 		\begin{llproof}
 		  \shapePf{\C}{\t}{\sh}{Premise}
-		  \shapePf{\parens{\clet \x \tv \cone \C}}{\t}{\sh}{\cref{lem:compose-unicity}}
-		  \VdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
-		  \vdashPf{\semenv\where{\x \is \semenv(\cabs \tv \cone)}}{\C\where{\cmatched \t \sh \cbrs}}{\cref{lem:decanonicalization}}
-		  \vdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatched \t \sh \cbrs}}}{By \Rule{Let}}
-		  \VdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatched \t \sh \cbrs}}}{By \ih}
-\Hand 		  \VdashPf{\semenv}{\clet \x \tv \cone {\C\where{\cmatch \t \sh}}}{By \Rule{Can-Susp-Ctx}}
+		  \shapePf{\parens{\clet \x \tv \ca \C}}{\t}{\sh}{\cref{lem:compose-unicity}}
+		  \VdashPf{\semenv\where{\x \is \semenv(\cabs \tv \ca)}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
+		  \vdashPf{\semenv\where{\x \is \semenv(\cabs \tv \ca)}}{\C\where{\cmatched \t \sh \cbrs}}{\cref{lem:decanonicalization}}
+		  \vdashPf{\semenv}{\clet \x \tv \ca {\C\where{\cmatched \t \sh \cbrs}}}{By \Rule{Let}}
+		  \VdashPf{\semenv}{\clet \x \tv \ca {\C\where{\cmatched \t \sh \cbrs}}}{By \ih}
+\Hand 		  \VdashPf{\semenv}{\clet \x \tv \ca {\C\where{\cmatch \t \sh}}}{By \Rule{Can-Susp-Ctx}}
 		\end{llproof}
 	  \end{proofcases}
 
@@ -5085,9 +5104,9 @@ entailment in our system.
 
       \proofcasederivation
 	{LetR}
-	{\semenv \th \cexists {\tv, \tvs} \cone \\
-	 \semenv\where{\x \is \semenv(\cabsr \tv \tvs \cone)} \th \ctwo}
-	{\semenv \th \cletr \x \tv \tvs \cone \ctwo}
+	{\semenv \th \cexists {\tv, \tvs} \ca \\
+	 \semenv\where{\x \is \semenv(\cabsr \tv \tvs \ca)} \th \cb}
+	{\semenv \th \cletr \x \tv \tvs \ca \cb}
 
       \begin{llproof}
 	Similar to the \Rule{Let} case.
@@ -5340,7 +5359,7 @@ and $\sub(\tvs) = \tys$.
 \begin{lemma}[Simple inversion of unifiers]
   ~
   \begin{itemize}
-    \item If $\sub$ is a unifier of $\cunif \tone \ttwo$, then $\sub(\tone) = \sub(\ttwo)$.
+    \item If $\sub$ is a unifier of $\cunif \ta \tb$, then $\sub(\ta) = \sub(\tb)$.
     \item For simple $\ca, \cb$, if $\sub$ is a unifier of $\ca \cand \cb$, then $\sub$ is a unifier of $\ca$ and $\cb$.
     \item For simple $\c$, if $\sub$ is a unifier of $\cexists \tv \c$, then $\sub\where{\tv \is \t}$ is a unifier of $\c$ for some $\t$.
     \item For simple $\c$, if $\sub$ is a unifier of $\cfor \tv \c$, then $\sub$ is a unifier of $\c$.
@@ -5365,7 +5384,7 @@ and $\sub(\tvs) = \tys$.
 \subsection{Soundness and completeness of constraint generation}
 
 \begin{lemma}
-  For any term context $\E$, term $\e$, $\ctxinfer \E \tone \ttwo \where{\cinfer \e \tone} = \cinfer {\E\where{\e}} \ttwo$.
+  For any term context $\E$, term $\e$, $\ctxinfer \E \ta \tb \where{\cinfer \e \ta} = \cinfer {\E\where{\e}} \tb$.
   \begin{proof}
     By induction on the structure of $\E$.
   \end{proof}
@@ -6263,41 +6282,41 @@ we need something more powerful.
 %    \proofcase{\Rule{Conj}}
 %      \begin{mathpar}
 %	\infer[Conj]
-%	  {\semenv \th \cone \\ \semenv \th \ctwo}
-%	  {\semenv \th \cone \cand \ctwo}
+%	  {\semenv \th \ca \\ \semenv \th \cb}
+%	  {\semenv \th \ca \cand \cb}
 %      \end{mathpar}
-%      We have $\C\where{\cmatch \tv \cbrs} = \cone \cand \ctwo$. Consider
+%      We have $\C\where{\cmatch \tv \cbrs} = \ca \cand \cb$. Consider
 %      cases on $\C$:
 %      \begin{proofcases}
-%	\item \proofcase{$\C = \Cp \cand \ctwo$}
+%	\item \proofcase{$\C = \Cp \cand \cb$}
 %	  So we have $\semenv \th \Cp\where{\cmatch \tv \cbrs}$.
 %	  By induction, we have $\Cshape \Cp \tv {\any \tvcs \t}$ and
 %	  $\semenv \th \Cp\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}$.
-%	  By Lemma ??, we have $\Cshape {\parens {\Cp \cand \ctwo}} \tv {\any \tvcs \t}$.
+%	  By Lemma ??, we have $\Cshape {\parens {\Cp \cand \cb}} \tv {\any \tvcs \t}$.
 %	  By \Rule{Conj}, we have
 %	  \begin{mathpar}
 %	    \infer[Conj]
 %	      {\semenv \th \Cp\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs} \\
-%	       \semenv \th \ctwo}
-%	      {\semenv \th \parens{\Cp \cand \ctwo}\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}}
+%	       \semenv \th \cb}
+%	      {\semenv \th \parens{\Cp \cand \cb}\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}}
 %	  \end{mathpar}
-%	\item \proofcase{$\C = \cone \cand \Cp$}
+%	\item \proofcase{$\C = \ca \cand \Cp$}
 %	  Symmetric.
 %      \end{proofcases}
 %
 %    \proofcase{\Rule{Let}}
 %      \begin{mathpar}
 %	\infer[Let]
-%	  {\semenv \th \cexists \tvb \cone \\
-%	   \semenv, \x \is \semenv(\cabs \tvb \cone) \th \ctwo}
-%	  {\semenv \th \clet \x \tvb \cone \ctwo}
+%	  {\semenv \th \cexists \tvb \ca \\
+%	   \semenv, \x \is \semenv(\cabs \tvb \ca) \th \cb}
+%	  {\semenv \th \clet \x \tvb \ca \cb}
 %      \end{mathpar}
-%      We have $\C\where{\cmatch \tv \cbrs} = \clet \x \tv \cone \ctwo$.
+%      We have $\C\where{\cmatch \tv \cbrs} = \clet \x \tv \ca \cb$.
 %      Consider cases on $\C$:
 %      \begin{proofcases}
-%	\item \proofcase{$\C = \clet \x \tvb \Cp \ctwo$}
+%	\item \proofcase{$\C = \clet \x \tvb \Cp \cb$}
 %	  So we have $\semenv \th \cexists \tvb \Cp\where{\cmatch \tv \cbrs}$ (1)
-%	  and $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) \th \ctwo$ (2).
+%	  and $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) \th \cb$ (2).
 %
 %	  By induction (1), we have $\cexists \tvb \Cshape \Cp \tv {\any \tvcs \t}$ and $\semenv \th \cexists \tvb
 %	  \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$. By Lemma ??, we have $\Cshape \Cp \tv {\any \tvcs \t}$.
@@ -6306,20 +6325,20 @@ we need something more powerful.
 %	  That is $\semenv, \tvb \is \gt \th \Cp\where{\cmatch \tv \cbrs} \iff \semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$.
 %	  This follows directly from induction, as we have $\Cshape \Cp \tv {\any \tvcs \t}$.
 %
-%	  So we have $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \ctwo$ from (2).
-%	  Applying Lemma ??, we have $\Cshape {\parens {\clet \x \tvb \Cp \ctwo}} \tv {\any \tvcs \t}$, and applying the \Rule{Let} rule
+%	  So we have $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \cb$ from (2).
+%	  Applying Lemma ??, we have $\Cshape {\parens {\clet \x \tvb \Cp \cb}} \tv {\any \tvcs \t}$, and applying the \Rule{Let} rule
 %	  gives us:
 %	  \begin{mathpar}
 %	    \infer[Let]
 %	      {\semenv \th \cexists \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} \\
-%	       \semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \ctwo}
-%	      {\semenv \th \parens {\clet \x \tvb \Cp \ctwo} \where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} }
+%	       \semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \cb}
+%	      {\semenv \th \parens {\clet \x \tvb \Cp \cb} \where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} }
 %	  \end{mathpar}
 %
 %
 %
 %
-%	\item \proofcase{$\C = \clet \x \tvb \cone \Cp$}
+%	\item \proofcase{$\C = \clet \x \tvb \ca \Cp$}
 %	  Similiar to the \Rule{Conj} case.
 %
 %      \end{proofcases}
