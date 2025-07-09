@@ -2081,63 +2081,66 @@ There are three cases in which an instantiation constraint is eliminated:
 \end{enumerate}
 
 
+%% Uncomment to restore the old style
+%% \let \REWRITE \hrewrite
 \begin{mathparfig}[htpb!]
   {fig:solver-schemes}
   {Select rewriting rules for let-bindings and applications.}
-  \rewrite[S-Let-AppR]
-    {\cletr \x \tv \tvs \c {\C\where{\capp \x \t}} \\
-     \tvc \disjoint \t \\
+  \REWRITE[S-Exists-Lower]
+    {\cletr \x \tv {\tvas, \tvbs} \ca \cb}
+    {\cdetermines {\cexists {\tv, \tvas} \ca} \tvbs}
+    {\cexists \tvbs \cletr \x \tv \tvas \ca \cb}
+
+  \REWRITE[S-Let-AppR]
+    {\cletr \x \tv \tvs \c {\C\where{\capp \x \t}}}
+    {\tvc \disjoint \t \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv \tvs \c {\C\where{\cexistsi {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}}}
 
-  \rewrite[S-Inst-Copy]
+  \REWRITE[S-Inst-Copy]
     {\cletr \x \tv \tvs {\c}
-      \C\where{\cpapp \x \tvp \tvc \inst}\\
-      \c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
+      \C\where{\cpapp \x \tvp \tvc \inst}}
+     {\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
       \tvp \in \reg \tv \tvs \\
       \neg \cyclic {\c} \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv \tvs {\c}
       \C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
 
-  \rewrite[S-Inst-Unify]
+  \REWRITE[S-Inst-Unify]
     {\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}
+    {}
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
-  \rewrite[S-Inst-Poly]
-    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
-     \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
+  \REWRITE[S-Inst-Poly]
+    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}}}
+    {\cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
      \tvp \disjoint \c, \insts \C \inst \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
-  \rewrite[S-Inst-Mono]
-    {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
-     \tvb \disjoint \tv, \tvs \\
+  \REWRITE[S-Inst-Mono]
+    {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} }
+   {\tvb \disjoint \tv, \tvs \\
      \x, \tvb \disjoint \bvs \C}
     {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
-  \rewrite[S-Let-Solve]
-    {\cletr \x \tv \tvs \ueqs \c \\
-     \cexists {\tv, \tvs} \ueqs \cequiv \ctrue \\
+  \REWRITE[S-Let-Solve]
+    {\cletr \x \tv \tvs \ueqs \c}
+    {\cexists {\tv, \tvs} \ueqs \cequiv \ctrue \\
      \x \disjoint \c}
     {\c}
 
-  \rewrite[S-Compress]
-    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} \\ \tvb \neq \tvc}
+  \REWRITE[S-Compress]
+    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb}}
+    {\tvb \neq \tvc}
     {\cletr \x \tv {\tvs} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvb \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
 
-  \rewrite[S-Exists-Lower]
-    {\cletr \x \tv {\tvas, \tvbs} \ca \cb \\
-     \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
-     }
-    {\cexists \tvbs \cletr \x \tv \tvas \ca \cb}
-
-  \rewrite[S-BackProp]
+  \REWRITE[S-BackProp]
     {\C\where
        {\cletr \x \tv {\tvs} {\Ca\where{\cmatch \tvp \cbrs}}
-                           {\Cb\where{\cpapp \x \tvp \tvc \inst}}} \\
-    \tvp \in \reg \tv \tvs \\
+                           {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
+    {\tvp \in \reg \tv \tvs \\
      \cunif {\tvp} {\cunif \t \ueq} \in \C\where\Cb \\
      \x \disjoint \bvs \Cb}
     {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
