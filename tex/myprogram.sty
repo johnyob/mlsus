@@ -84,10 +84,14 @@
   %% escapeend={//*)},
 }
 
-\newenvironment{programsplit}
+\newdimen \lst@mydim
+\newenvironment{programsplit}[1][0.5\hsize]
    {\hfil \vspace{-2ex}\penalty -50
     \def \programjoin{&}%
-    \begin{tabular}[t]{.*2{p{.5\hsize}.}}\ignorespaces}
+    \lst@mydim=#1\relax
+    \lst@mydim=-\lst@mydim
+    \advance \lst@mydim by \hsize
+    \begin{tabular}[t]{.p{#1}.p{\lst@mydim}}\ignorespaces}
    {\end{tabular}\vspace{-1em}\hfil\penalty -50\ignorespacesafterend}
 
 %% \newenvironment{programsplit}

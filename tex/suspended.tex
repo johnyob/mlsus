@@ -804,7 +804,7 @@ formal account has been given.
 
 Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to
 resolve ambiguities in record types. For instance:
-\begin{programsplit}
+\begin{programsplit}[0.6\hsize]
 \begin{program}[input]
 let e_1_1 = {x = 42; y = 13} °\ocamlflags 00°
 \end{program}
@@ -822,7 +822,7 @@ allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
 If local type information and closed-world reasoning are insufficient,
 \OCaml falls back to a syntactic default: it selects the most recently
 defined compatible type. For example:
-\begin{programsplit}
+\begin{programsplit}[0.6\hsize]
 \begin{program}[input]
 let getx r = r.x         °\ocamlflags 01°
 \end{program}
