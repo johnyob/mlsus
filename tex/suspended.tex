@@ -1632,12 +1632,13 @@ That is to say, the term $\e$ is typable with $\t$ if and only if
 $\cinfer \e \tv$ is satisfiable when $\tv$ is $\t$.
 %
 \begin{theorem}[Constraint generation is sound and complete]
+Given a closed term $\e$ and type $\t$. Then for any $\tv \disjoint \t$,
 $\th \e : \t$ iff\/
 $\cunif \tv \t \centails \csem {\e : \tv}$.
 \end{theorem}
 
 \begin{theorem}[Principal types]
-  For any closed term $\e$, there exists a principal type $\t$ such that
+  For any well-typed closed term $\e$, there exists a type $\t$, which we call principal, such that:
   \begin{enumerate}[(\roman*)]
     \item $\th \e : \t$.
     \item For any other typing $\th \e : \tp$, then $\tp = \theta(\t)$ for some substitution $\theta$.
@@ -5403,12 +5404,12 @@ entailment in our system.
 \clearpage
 \section{Properties of the constraint solver}
 
-The primary requirement of our constraint solver is soundness and completeness:
+The primary requirement of our constraint solver is correctness:
 a constraint $\c$ is satisfiable if and only if the solver terminates with a solution.
 
 This section decomposes this requirement into three properties: preservation,
-progress, and termination---and provides proofs for each. Soundness and
-completeness then follow as a corollary of these results.
+progress, and termination---and provides proofs for each. Correctness then
+follows as a corollary of these results.
 
 \subsection{Preservation}
 
@@ -6102,6 +6103,19 @@ generally in our system.
 
 \subsection{Progress}
 
+\begin{lemma}[Unification progress]
+  For any unification problem $\up$, either:
+  \begin{enumerate}[(\roman*)]
+    \item $\up$ is solved.
+    \item $\up$ is $\cfalse$.
+    \item $\up \unif \upp$ for some $\upp$.
+    \end{enumerate}
+  \begin{proof}
+    This is a standard result. See \citep{Pottier-Rem/emlti}.
+  \end{proof}
+\end{lemma}
+
+
 \progress
 \begin{proof}
   We proceed by induction on the structure of $\c$. We
@@ -6235,6 +6249,172 @@ generally in our system.
 
   \end{proofcases}
 \end{proof}
+
+\subsection{Termination}
+
+This section presents a proof of termination for our solver.
+%
+Most rewrite rules, in both unification and constraint solving, are
+\emph{destructive}---that is, they eliminate or modify the structure of a
+constraint in a way that prevents the rule from begin applied again.
+%
+Consequently, to establish termination, it sufficies to consider only those
+rules that are not inherently destructive.
+
+\begin{lemma}[Unification termination]
+  The unifier terminates on all inputs.
+  \begin{proof}
+    \newcommand{\sw}[1]{\mathprefix{sw}{(#1)}}
+    \newcommand{\iw}[1]{\mathprefix{iw}{(#1)}}
+    \newcommand{\tw}[1]{\mathprefix{tw}{(#1)}}
+    \newcommand{\uw}[1]{\mathprefix{uw}{(#1)}}
+
+    Let every shape $\sh$ have an integer \emph{weight}
+    defined by $\sw \sh \eqdef 2 + 2 \times |\sh|$, where $|\sh|$ is the
+    arity of the shape $\sh$.
+    %
+    The weight of a type $\tw \t$ is defined by:
+    \begin{mathpar}
+      \begin{tabular}{RCL}
+	\tw \tv &\eqdef& 1\\
+	\tw {\shapp \tys} &\eqdef& \iw {\shapp \tys} - 1\\[1ex]
+	\iw \tv &\eqdef& 0\\
+	\iw {\shapp \tys} &\eqdef& \sw \sh + \sum\iton \iw \ti
+      \end{tabular}
+    \end{mathpar}
+    We define the weight of a multi-equation as the sum of its
+    members. The weight of a unification problem $\uw \up$ is defined
+    as the sum of the weights of its multi-equations.
+
+    In $\up \unif \upp$, the rules \Rule{U-Decomp} and \Rule{U-Name} are not
+    obviously destructive, as they may introduce new constraints that
+    are structurally larger than the constraint being rewritten.
+
+    However, we show that this is not problematic: in both cases, the unification
+    weight $\uw \up$ strictly decreases. The remaining rules are obviously
+    destructive and either maintain or decrease the unification weight.
+
+    \begin{proofcases}
+      \proofcaserewrite
+	{U-Decomp}
+	{\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
+	{\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
+
+	We have
+	\begin{mathpar}
+	  \begin{tabular}{RCL}
+	    \uw {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}} &=&
+	      2 \times (\sw \sh - 1) + \uw \ueq \\
+	      &=& 4 \times |\sh| + 2  + \uw \ueq \\[1ex]
+	    \uw {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
+	      &=&
+	      \sw \sh - 1 + \uw \ueq + 2 \times |\sh| \\
+	      &=&
+	      3 \times |\sh| + 1 + \uw \ueq
+	  \end{tabular}
+	\end{mathpar}
+	Hence $\uw {{\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}} > \uw {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}$.
+
+
+      \proofcaserewrite
+	{U-Name}
+	{\cunif {\pshapp \parens{\ta, \ldots, \ti, \ldots, \t_n}} \ueq \\ \tv \disjoint \tys, \ueq \\ \ti \notin \TyVars }
+	{\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\ta, \ldots, \ti, \ldots, \t_n}} \ueq}}
+
+	We have
+	\begin{mathpar}
+	  \begin{tabular}{RCL}
+	    \uw {\cunif {\pshapp {\parens{\ta, \ldots, \ti, \ldots, \t_n}}} \ueq} &=& \sw \sh + \sum_{j \neq i} \iw \tj + \iw \ti - 1 + \uw \ueq \\
+	    \uw {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\ta, \ldots, \tv, \ldots, \t_n}} \ueq}}
+	      &=& 1 + \tw \ti + \sw \sh + \sum_{j \neq i} \iw \tj - 1 + \uw \ueq
+	  \end{tabular}
+	\end{mathpar}
+	So it sufficies to show that $1 + \tw \ti < \iw \ti$. Given $\ti \notin \TyVars$, this is indeed the case.
+	So we are done.
+    \end{proofcases}
+  \end{proof}
+\end{lemma}
+
+
+\termination
+\begin{proof}
+  The termination argument for the constraint solver follows similar lines to
+  that of unification.
+
+  The only rule of concern is \Rule{S-Inst-Copy}, which is not obviously destructive:
+  it introduces new instantiation constraints and structurally increases the size of the
+  constraint.
+
+  \newcommand{\sw}[1]{\mathprefix{sw}{(#1)}}
+  \newcommand{\iw}[1]{\mathprefix{iw}{(#1)}}
+  \newcommand{\stw}[1]{\mathprefix{tw}{(#1)}}
+  \newcommand{\tw}[2]{\mathprefix{tw}{(#1 \in #2)}}
+  \newcommand{\eqs}[1]{\mathprefix{eqs}({#1})}
+  \newcommand{\cw}[1]{\mathprefix{cw}{(#1)}}
+
+  We define a weight function that captures the contribution of types within constraints.
+  The type weight of a type $\t$ within a constraint $\c$, written $\tw \t \c$, is defined
+  as:
+  \begin{mathpar}
+    \begin{tabular}{RCL}
+      \tw {\shapp \tys} \c &\eqdef& 2 \times \sw \sh + \sum \iton \tw \ti \c \\[1ex]
+    \tw \tv \c &\eqdef& \sup \Braces {\tw \t \c : \cerase \c \centails \cunif \tv \t}
+    \end{tabular}
+  \end{mathpar}
+  Intuivitely this weight corresponds to the \emph{size} of the type.
+  Our conjecture is that \Rule{S-Inst-Copy} results on instantiations of types
+  with \emph{smaller} sizes.
+
+  This weight is well-defined whenever $\cerase \c$ is satisfiable (and thus acyclic).
+  If $\cerase \c$ is unsatisfiable, then some destructive rule (\ie unification rules) must be applicable.
+
+  The weight of a partial instantiation $\cw {\cpapp \x \tv \t \inst}$ is defined as
+  the sum of $\stw \t$ and $\tw \tv \c$, where $\x$ is bound to the abstraction $\cabsr \tv \tvs \c$.
+  The weight of other constraints is given using the measure $\mathprefix{uw}$ defined in the the
+  proof of Lemma XXX.
+
+  \begin{proofcases}
+    \proofcaserewrite
+      {S-Inst-Copy}
+      {\cletr \x \tv \tvs {\c}
+	\C\where{\cpapp \x \tvp \tvc \inst}\\
+	\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
+	\tvp \in \reg \tv \tvs \\
+	\neg \cyclic {\c} \\
+       \tvbs' \disjoint \tvp, \tvc, \tvbs \\
+       \x \disjoint \bvs \C}
+      {\cletr \x \tv \tvs {\c}
+	\C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
+
+      We aim to show that the weight of the rewritten constraint
+      $\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst$
+      is strictly less than the original $\cpapp \x \tvp \tvc \inst$.
+
+      \begin{mathpar}
+	\begin{tabular}{RCL}
+	  \cw {\cpapp \x \tvp \tvc \inst} &=& 1 + \tw \tv \c \\
+	  &\geq& 1 + 2 \times \sw \sh + \sum\iton \tw \tvbi \c  \\[1ex]
+	  \cw {\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}
+	  &=&
+	  1 + \sw \sh + \sum\iton \tw \tvbi \c + |\tvbs'|
+	\end{tabular}
+      \end{mathpar}
+      To esnure a strict decrease, it suffices to show that $\sw \sh > |\tvbs'|$.
+      Given that $|\tvbs'| = |\sh|$, and by the definition of $\sw \sh$, this inequality holds.
+      Therefore, the weight strictly decreases under \Rule{S-Inst-Copy}.
+
+  \end{proofcases}
+
+  Finally, the size weight (when defined) is preserved by all other rules, except the
+  \Rule{S-Match*} rules, which may increase the weight. However, these rules are destructive
+  (they eliminate a match constraint), and hence cannot be applied indefinitely.
+  Thus, termination follows from a lexicographical ordering of the number of match
+  constraints and the weight of constraints. THis order strictly decreases
+  across all rules of interest and is preserved by all obviously destructive rules.
+  Thus the constraint solver terminates.
+\end{proof}
+
+\subsection{Correctness}
 
 \clearpage
 \section{Properties of \OML}
