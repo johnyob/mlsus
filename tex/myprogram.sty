@@ -84,6 +84,26 @@
   %% escapeend={//*)},
 }
 
+\newenvironment{programsplit}
+   {\hfil \vspace{-2ex}\penalty -50
+    \def \programjoin{&}%
+    \begin{tabular}[t]{.*2{p{.5\hsize}.}}\ignorespaces}
+   {\end{tabular}\vspace{-1em}\hfil\penalty -50\ignorespacesafterend}
+
+%% \newenvironment{programsplit}
+%%    {\hfil \vspace{-1ex}\penalty -50
+%%     \def \programjoin{&}%
+%%     $\vcenter \bgroup
+%%     \begin{tabular}[t]{.*2{p{.5\hsize}.}}\ignorespaces}
+%%    {\end{tabular}\egroup$\penalty -50\ignorespacesafterend}
+
+%% \renewenvironment{programsplit}
+%%    {\hfil\vskip -1ex\penalty -50\relax
+%%     \def \programjoin{\end{minipage}\begin{minipage}[t]{0.5\textwidth}}%
+%%     \begin{minipage}[t]{0.48\hsize}\ignorespaces}
+%%    {\end{minipage}
+%%     \hfil \penalty -50\ignorespacesafterend}
+
 \newcommand{\programjoin}[1][0ex]
     {\@tempdima #1\advance \@tempdima by -\lst@belowskip
      %% \advance \@tempdima by -\lst@aboveskip
@@ -105,7 +125,6 @@
      {_7}{\ensuremath{_7}}1
      {_8}{\ensuremath{_8}}1
      {_9}{\ensuremath{_9}}1
-     {_{10}}{\ensuremath{_{10}}}1
      }}}
 
 \define@key{lst}{greek}[]{}
@@ -168,7 +187,7 @@
 %% \newcommand \ocamlflags[2]
 %%   {\hfill \ocamlFlag{\OCaml}{#1}\space\ocamlFlag{\OML}{#2}\space\strut}
 \newcommand \Ocamlcomment[1]
-  {\hfill #1 \space\strut}
+  {\hfill #1\space\strut}
 \newcommand \ocamlflags[2]
   {\Ocamlcomment
       {\ocamlFlag{\textsf{\footnotesize Caml}}{#1}\space

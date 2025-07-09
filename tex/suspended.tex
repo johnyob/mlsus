@@ -295,14 +295,16 @@ let e_6 r = (r.x, r.y)                          °\ocamlflags 10°
 let e_7 r = let x = r.x in x + r.y              °\ocamlflags 10°
 let e_8 = let getx r = r.x in getx {x = 1}      °\ocamlflags 10°
 let e_9 r = (r.x : bool)                        °\ocamlflags 11°
-let e$_{10}$ r = r.x.x                           °\ocamlflags 11°
+let e_1_0 r = r.x.x                              °\ocamlflags 11°
 \end{program}
-All are arguably unambiguous; \OCaml accepts none of them\footnote{It accepts \ocaml{e_6} with a warning, and fails if we reverse the order of the type declarations.}, \OML accepts the first three.
+All are arguably unambiguous; \OCaml accepts none of them\footnote{It
+accepts \ocaml{e_6} with a warning, and fails if we reverse the order of the
+type declarations.}, \OML accepts the first three.
 
 In \ocaml{e_6}, \ocaml{r} can only be of type \ocaml{two}. Indeed,
 considering the second projection first, we should learn that
 \ocaml{r} is of type \ocaml{two} and since it is $\lambda$-bound, this
-should then make the first projection unambiguous. Disambiguating this example is a matter 
+should then make the first projection unambiguous. Disambiguating this example is a matter
 of solving the constraint in the right order.
 
 A similar failure occurs in \ocaml{e_7}, where the type of the
@@ -718,14 +720,18 @@ unboxing to proceed. Whereas the second term applies the annotation to the
 argument $f$, which fixes $f$'s type to the monotype $\tapoly {\tfor \tv
 {\tv \to \tv}} \ava$ for some fresh annotation variable $\ava$. Because this
 type is assigned to $f$ at its binding site, $\ava$ is bound in the context
-when typing $\einst f$ and cannot be generalized, so the second term is ill-typed despite the annotation.
+when typing $\einst f$ and cannot be generalized, so the second term is
+ill-typed despite the annotation.
 
 \parcomment {Suspended match constraints fixes this}
 
-Suspended match constraints eliminate this sensitivity to directionality when type-checking $\einst e$. If $\e$ is already known to have the type $[\ts]$, then we can simply
+Suspended match constraints eliminate this sensitivity to directionality
+when type-checking $\einst e$. If $\e$ is already known to have the type
+$[\ts]$, then we can simply
 instantiate it.  However, if the type of $\e$ is not yet known, \ie  it is a
 (possibly constrained) type variable $\tv$: then, we must defer until more
-information is available. We capture this behaviour with a suspended match constraint:
+information is available. We capture this behaviour with a suspended match
+constraint:
 \begin{mathpar}
 \cinfer {\einst \e} \tva \Wide\eqdef
     \cexists \tvb \cinfer \e \tvb
@@ -741,7 +747,8 @@ instantiation $\cleq s \tva$, that is $\cleq \ts \tva$.
 % immediately and behaves like a standard instantiation constraint $\cleq \ts
 % \tva$.
 %
-By waiting for the type of $e$ to be \emph{known}, we ensure principal types without annotation variables.
+By waiting for the type of $e$ to be \emph{known}, we ensure principal types
+without annotation variables.
 
 \subsection{Static overloading of constuctors and record labels}
 
@@ -765,11 +772,11 @@ optimized away by monomorphization and aggressive inlining.
 \parcomment {OCaml and OCaml's approach (PI-directionality)}
 
 As noted in the introduction, \OCaml supports a limited yet useful form of
-static overloading for record labels and data type constructors. When
+static overloading for record labels and datatype constructors. When
 encountering overloaded labels or constructors, \OCaml resolves ambiguity
 using local type information, guided by \geninst-directional
 inference. Nominal types $\Tapp \tys$ carry annotation variables $\av$,
-written $\tys \Tapp^\av$. As discussed in \cref{sec/constraints/polytypes},
+written $\Tapp^\av \tys$. As discussed in \cref{sec/constraints/polytypes},
 this mechanism allows one to deduce that types polymorphic over their
 annotation variable $\tfor \av {\Tapp^\av \tys}$ are \emph{known}.
 
@@ -782,15 +789,18 @@ formal account has been given.
 
 \parcomment {Closed-world reasoning}
 
-Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to resolve
-ambiguities in record types. For instance:
+
+Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to
+resolve ambiguities in record types. For instance:
+\begin{programsplit}
 \begin{program}[input]
-  let e$_{11}$ = {x = 42; y = 1337}
+let e_1_1 = {x = 42; y = 13} °\ocamlflags 00°
 \end{program}
 \programjoin
 \begin{program}[output]
-  val e$_{11}$ : two
+val e$_{11}$ : two
 \end{program}
+\end{programsplit}
 Here, \code{x} and \code{y} appear together only in the type \code{two},
 allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
 \code{two}.
@@ -800,13 +810,15 @@ allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
 If local type information and closed-world reasoning are insufficient,
 \OCaml falls back to a syntactic default: it selects the most recently
 defined compatible type. For example:
+\begin{programsplit}
 \begin{program}[input]
-  let getx r = r.x
+let getx r = r.x         °\ocamlflags 01°
 \end{program}
 \programjoin
 \begin{program}[output]
-  val getx : two -> int
+val getx : two -> int
 \end{program}
+\end{programsplit}
 The expression is compatiable with both \code{one} and \code{two},
 since each defines a field \code{x}. But \code{two} is chosen simply
 because it appears later in the source.
@@ -817,16 +829,15 @@ discussed further in \cref{sec:discussion}.
 This fallback mechanism highlights the directionality of \OCaml inference.
 Once the compiler selects a type, it commits to it---even if that choice
 causes errors downstream. Consider the example where we flip the order of the
-definitons of \code{one} and \code{two}:
-\begin{program}[error]
-  type two = {x : int; y : int}
-  type 'a one = {x : 'a}
-  let e$_{12}$ = fun r -> let x (* infers ['a one] *) = r.x in x + r.y
+definitions of \code{one} and \code{two}:
+\begin{program}[input]
+type two = {x : int; y : int}
+type 'a one = {x : 'a}
+let e_1_2 r = let x (* infers ['a one] *) = r.x in x + r.y °\ocamlflags 10°
 \end{program}
 \programjoin
 \begin{program}[error, style=message]
-  Error: The expression has type int one
-	 There is no field y within type one
+Error: The expression has type "int one" There is no field "y" within "type one"
 \end{program}
 
 \parcomment {Record field disambiguation in suspended constraints}
@@ -834,7 +845,7 @@ definitons of \code{one} and \code{two}:
 We assume a global typing environment $\labenv$ mapping labels to type
 schemes, written $\elab : \tfor \tvs \t \to \Tapp \tys \in \labenv$. A given
 label $\elab$ may be defined several times in $\labenv$, but at most once at
-a given record type $\T$. We write $\labenv(\elab / \T)$ for the type scheme
+a given record type~$\T$. We write $\labenv(\elab / \T)$ for the type scheme
 of $\elab$ in $\T$ when it exists.
 
 We propose an alternative account of static overloading using suspended
@@ -845,20 +856,22 @@ projection $\efield \e \elab$, we generate the typing constraint:
   \cexists \tvb \cinfer \e \tvb
   \cand
   \cmatch \tvb
-    \parens
       {\cbranch {(\Tapp \wild)}
-	{\labenv(\elab / \T) \leq \tva \to \tvb}
+	{\parens {\labenv(\elab / \T) \leq \tva \to \tvb}}
       }
 \end{mathpar}
-This constraint suspends resolution of the return type $\alpha$ until the record type $\tvb$ of $\e$ is known. Its branch matches against the nominal type pattern $\cpatrcd t$,
-binding the type constructor name to $t$. Using this, the appropriate type
-scheme for $\elab$ is retrieved from $\labenv(\elab/t)$, instantiated, and the
-resulting constraints are imposed on the argument and return types of the label
-access.
+This constraint suspends resolution of the return type $\alpha$ until the
+record type $\tvb$ of $\e$ is known. Its branch matches against the nominal
+type pattern $\cpatrcd t$, binding the type constructor name to~$t$. Using
+this, the appropriate type scheme for $\elab$ is retrieved from
+$\labenv(\elab/t)$, instantiated, and the resulting constraints are imposed
+on the domain and codomain of the field-access type.
 
 \parcomment{Suspended constraints are better}
 
-\OCaml programs that do not use the default rule are accepted by this approach. Certain expressions, such as \code{e}$_{12}$ are well-typed under our account but rejected by \OCaml's current type checker.
+\OCaml programs that do not use the default rule are accepted by this
+approach. Certain expressions, such as \code{e}$_{12}$ are well-typed under
+our account but rejected by \OCaml's current type checker.
 
 \subsection{Tuple projections \`a la \SML}
 
@@ -866,9 +879,10 @@ access.
 \ocaml{#$j$ e} to extract the $j$-th component of the tuple \code{e}.
 %
 Internally, tuples in \SML are treated as structural records with numeric
-labels, so \ocaml{#$j$ e} desugars into a structural record field access \ocaml{e.$j$}: if $\e$ has the type $\tsrecord {j = \tj; \varrho}$,
-where $\varrho$ is a row describing the remaining tuple fields, then $\eproj \e
-j$ has type $\tj$.
+labels, so \ocaml{#$j$ e} desugars into a structural record field access
+\ocaml{e.$j$}: if $\e$ has the type $\tsrecord {j = \tj; \varrho}$, where
+$\varrho$ is a row describing the remaining tuple fields, then $\eproj \e j$
+has type $\tj$.
 
 \SML enforces an additional restriction: the tail $\varrho$ must be fully
 determined (\ie cannot be a polymorphic row variable).  This ensures that the
