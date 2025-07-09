@@ -488,7 +488,7 @@ Our contributions are
 } \\
 \entry[Shapes] {\Sh} {} {}
 \\
-\entry[Canonical shapes] {\sh} {} {}
+\entry[Canonical principal shapes] {\sh} {} {}
 \end{bnffig}
 
 \parcomment{Syntax!}
@@ -1036,9 +1036,10 @@ $\t$ iff:
 \end{enumerate}
 \end{definition}
 
-\begin{theorem}[principal shapes]\label{th/shapes/principal}
-Any nonvariable type $\t$ has a non-trivial principal shape $\Sh$.
-\end{theorem}
+\begin{restatable}[Principal shapes]{theorem}{principalShapes}
+  \label{th/shapes/principal}
+Any non-variable type $\t$ has a non-trivial principal shape $\Sh$.
+\end{restatable}
 
 We can give an equivalent direct description of the set of principal shapes
 $\sh$: they are the $\any \tvcs \t$:
@@ -1585,6 +1586,7 @@ $\cunif \tv \t \centails \csem {\e : \tv}$.
 It is also interesting to discuss the stability of typing by common program transformations.
 
 \paragraph{Application equi-typability does hold}
+\newcommand {\eswap}{\mathprefix  {swap}}
 The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
 equitypable where $\eswap$ is
 $\efun f {\efun \xa {\efun \xb {\eappp f \xb \ea}}}$. We also have
@@ -3710,8 +3712,6 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
 This section contains supplementary material to the main paper, including a
 list of figures and definitions. Some of them are repeated from the main paper.
 
-\TODO{also add all definition blocks}
-
 \begin{bnffig}[htpb!]%
   {fig:all--syntax}%
   {All syntax definitions.}
@@ -3732,6 +3732,9 @@ list of figures and definitions. Some of them are repeated from the main paper.
 }\\[1ex]
 \entry[Ground types]{\gt}{}{}\\
 \entry[Ground type schemes]{\gscm}{}{}\\
+  \entry[Ground region]{\gr}{\greg \tv \semenv}\\
+\entry[Sets of ground types]{\gabs \subseteq \GroundRegion}{}{}\\
+\entry[Sets of ground regions]{\gabsr \subseteq \Ground}{}\\
 \entry[Constraints]{\c}{
         \ctrue
   \and  \cfalse
@@ -3764,6 +3767,9 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \and \semenv\where{\x := \gabs}
   \and \semenv\where{\x := \gabsr}
   \and \semenv\where{\inst := \semenvp}
+  \nextline
+  \and \semenv\where{\ct := \T}
+  \and \semenv\where{\cscm := \gscm}
 }\\
 \entry[Unification problems]{\up}{
   \ctrue \and \cfalse \and \upa \cand \upb \and \cexists \tv \up \and \ueq
@@ -3789,7 +3795,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \any \tvcs \t
 }
 \\
-\entry[Canonical shapes] {\sh} {} {}\\
+\entry[Canonical principal shapes] {\sh} {} {}\\
 \entry[Terms]{\e}{
   x \and
   () \and
@@ -3842,6 +3848,9 @@ list of figures and definitions. Some of them are repeated from the main paper.
    \eset \and
    \G, x : \ts
 }\\
+\entry[Label environment]{\labenv}{
+  \eset \and \labenv, \elab : \tfor \tvs \t \to \T \tvs
+}
 \end{bnffig}
 
 
@@ -3909,6 +3918,35 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\semenv(\inst)(\tv) = \semenv(\t) }
     {\semenv \th \cpinst \inst \tv \t}
 
+  \inferrule[Lab-Inst]
+    {\semenv \th \labenv(\elab/\semenv(\ct)) \leq \ta \to \tb}
+    {\semenv \th \labenv(\elab/\ct) \leq \ta \to \tb}
+
+  \inferrule[Scm-Inst]
+    {\semenv \th \semenv(\cscm) \leq \t}
+    {\semenv \th \cscm \leq \t}
+
+  \inferrule[Abs-Inst]
+    {\semenv \th \x \leq \semenv(\cscm)}
+    {\semenv \th \x \leq \cscm}
+\\
+  \newcommand{\Srule}[3][]{{#2} &\eqdef& {#3} & {#1}}
+  \begin{tabular}{RCLL}
+    \Srule[\text{if } \cmatches \cpati \sh \tvs \theta]{\cmatched \t \sh {\cbranch \cpat \cs}}
+      {\cexists \tvs \cunif \t \shapp \tvs \cand \theta(\ci)}
+    \\[1ex]
+    \Srule[\text{if } \labenv(\elab/\T) = \tfor \tvs \t \to \Tapp \tvs]
+      {\labenv(\elab/\T) \leq \ta \to \tb}
+      {\cexists \tvs \cunif \ta \t \cand \cunif \tb {\Tapp \tvs}}
+    \\[1ex]
+    \Srule
+      {(\tfor \tvs \tp) \leq \t}
+      {\cexists \tvs \cunif \tp \t}
+    \\[1ex]
+    \Srule
+      {\x \leq (\tfor \tvs \t)}
+      {\cfor \tvs \capp \x \t}
+  \end{tabular}
 \\
   \semenv(\cabsr \tv \tvs \c) \uad\eqdef\uad \set{\greg \tv {\semenv\where{\tv \is \gt, \tvs \is \gts}} \in \GroundRegion :
     \semenv\where{\tv \is \gt, \tvs \is \gts} \th \c}
@@ -3919,6 +3957,55 @@ list of figures and definitions. Some of them are repeated from the main paper.
 \Cshape \C \t \sh \Wide\eqdef \
   \forall \semenv, \gt. \uad
       \semenv \th \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
+\end{judgboxmathpar}
+\emph{Note: in most definitions, we ignore the additional  $\OML$ constraints, as they are not particularly interesting.} \\
+
+\begin{judgboxmathpar}
+  {\Sh \preceq \Shp}
+  {The shape $\Shp$ is an instance of $\Sh$. Alternatively, $\Shp$ is more general than $\Sh$.}
+  \infer[Inst-Shape]
+    {\bar \tvcs_2 \disjoint \any {\tvcs_1} \t}
+    {\any {\tvcs_1} \t \preceq
+     \any {\tvcs_2} \t \where {\tvcs_1 \is \tys_1}}
+\end{judgboxmathpar}
+
+\begin{definition}
+A non-trival shape $\Sh \in \Shapesz$ is the principal shape of the type
+$\t$ iff:
+\begin{enumerate}
+  \item
+    $\exists \typs,\ \t = \shapp[\Sh] \typs$
+  \item
+    $\forall \Shp \in \Shapesz, \forall \typs,\ \t = \shapp[\Shp] \typs
+    \implies \Sh \preceq \Shp$
+\end{enumerate}
+
+A principal shape $\any \tvcs \t$ is \emph{canonical} if the sequence of its
+free variables $\tvcs$ appear in the order in which the variables occur in
+$\t$. $\shape \t$ is the canonical principal shape of $\t$.
+\end{definition}
+
+\begin{judgboxmathpar}
+  {\cmatches \cpat \sh \tvs \theta}
+  {The pattern $\cpat$ matches the shape $\sh$ with components $\tvs$ binding\\pattern variables in $\theta$.}
+  \\
+  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
+  \begin{tabular}{RCLL}
+    \Mrule[\text{if } n \geq j]
+      {\cpatprod \tvb j}
+      {\any \tvcs \Pi\iton \tvcs} \tvs
+      {[\tvb \is \tv_j]}
+    \\[1ex]
+    \Mrule
+      {\cpatrcd \ct}
+      {\any \tvcs \Tapp} \tvs
+      {[\ct \is \T]}
+    \\[1ex]
+    \Mrule
+      {\cpatpoly \cscm}
+      {\any \tvcs \tpoly \ts} \tvs
+      {[\cscm \is \ts \where{\tvcs \is \tvs}]}
+  \end{tabular}
 \end{judgboxmathpar}
 
 \begin{judgboxmathpar}
@@ -4001,6 +4088,10 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \inferrule[Simple-Ctx-Let-In]
     {\c \simple \\ \C \simple}
     {\clet \x \tv \c \C \simple}
+
+  \inferrule[Simple-Ctx-Exists-Inst]
+    {\C \simple}
+    {\cexistsi \inst \x \C \simple}
 \end{judgboxmathpar}
 
 \begin{judgboxmathpar}
@@ -4048,6 +4139,68 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\Cshape \C \t \sh \\ \semenv \Th \C\where{\cmatched \t \sh \cbrs}}
     {\semenv \Th \C\where{\cmatch \t \cbrs}}
 \end{judgboxmathpar}
+
+\begin{judgboxmathpar}
+  {\G \th \el : \ta \to \tb}
+  {Under the typing context $\G$, the label $\el$ has the field type $\ta$ and record type $\tb$.}
+  \infer[Lab-Magic]
+    {}
+    {\G \th \elmagic \elab : \tp \to \t}
+
+  \infer[Lab-Annot]
+    {\G \th \el : \tp \to \t\where{\tvs \is \tys}}
+    {\G \th \elannot \el \tvs \t : \tp \to \t\where{\tvs \is \tys}}
+
+  \inferrule[Lab-X]
+    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
+    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
+\end{judgboxmathpar}
+
+\judgbox
+  {\el / {\T} \in \labenv}
+  {The label $\el$ belongs to the nominal record type $\T$ in $\labenv$.}
+
+\judgbox
+  {\bar\el \uni {\T} \in \labenv}
+  {The set of labels $\bar\el$ belong to a unique nominal record type $\T$ in $\labenv$.}
+
+\begin{judgboxmathpar}
+  {\bar \el \uni \t}
+  {The set of labels $\bar\el$ infer the possibly unique type $\t$.}
+  \infer[Lab-$\in$I]
+    {\elab : \tfor \tvs \t \to \T \tvs \in \labenv}
+    {\elab / {\T} \in \labenv}
+
+  \infer[Lab-$\in$X]
+    {\elab / {\T} \in \labenv}
+    {(\elab / \T) / {\T} \in \labenv}
+
+  \infer[Lab-$\in$Magic]
+    {\elab / {\T} \in \labenv}
+    {\elmagic \elab / {\T} \in \labenv}
+
+  \infer[Lab-$\in$Annot]
+    {\el / {\T} \in \labenv}
+    {\elannot \el \tvs \t / {\T} \in \labenv}
+
+  \infer[Lab-U]
+    {\bar \el / {\T} \in \labenv \\
+     \forall {\T'}, \uad\bar \el / \T' \in \labenv \implies {\T} = \T'}
+    {\bar \el \uni {\T} \in \labenv}
+
+  \inferrule[Lab-!]
+    {\bar \el \uni {\T} \in \labenv}
+    {\el \uni {\T \tys}}
+
+  \inferrule[Lab-?]
+    {}
+    {\bar \el \uni \t}
+\end{judgboxmathpar}
+
+
+\judgbox
+  {\G \th \el = \e : \t}
+  {Under the typing context $\G$, the record assignment $\el = \e$ has the record type $\t$.}
 
 \begin{judgboxmathpar}
   {\G \th \e : \ts}
@@ -4125,62 +4278,198 @@ list of figures and definitions. Some of them are repeated from the main paper.
 
   \inferrule[Rcd]
     {\parens{\G \th \eli = \ei : \t}\iton \\
-     \G \th \bar \el \uni \t}
+     \bar \el \uni \t}
     {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
 
   \inferrule[Rcd-Proj]
     {\G \th \e : \tp \\
      \G \th \el : \t \to \tp \\
-     \G \th \el \uni \t }
+     \el \uni \t }
     {\G \th \efield \e \el : \t}
-
-  \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
-    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
 
   \inferrule[Lab-I]
     {\Lshape \Lab \elab \T \\
-      \G \th \Lab[\elab / \T] : \ts}
-    {\G \th \Lab[\elab] : \ts}
-
-  \inferrule[Lab-!]
-    {\bar \el \uni {\T} \in \labenv}
-    {\G \th \bar \el \uni \T \tys}
-
-  \inferrule[Lab-?]
-    {\G \th \t}
-    {\G \th \bar \el \uni \t}
+      \G \th \Lab[\elab / \T] : \t}
+    {\G \th \Lab[\elab] : \t}
 
   \inferrule[Magic]
     {\G \th \e : \t}
     {\G \th \emagic \e : \tp}
-
-  \infer[Lab-Annot]
-    {\G \th \el : \tp \to \t\where{\tvs \is \tys}}
-    {\G \th \elannot \el \tvs \t : \tp \to \t\where{\tvs \is \tys}}
-
-  \infer[Lab-Magic]
-    {}
-    {\G \th \elmagic \elab : \tp \to \t}
 \\
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
 \eshape E \e \sh \Eqdef
-  \forall \G, \ts, \gt, \uad
-  \G \th \eerase {\E \where {\emagic {\eannot \e {} \gt }}} : \ts
+  \forall \G, \t, \gt, \uad
+  \G \th \eerase {\E \where {\emagic {\eannot \e {} \gt }}} : \t
       \wide\implies \shape \gt = \sh
 \\[1ex]
 \Eshape E \e \sh \Eqdef
-  \forall \G, \ts, \gt, \uad
-      \G \th \eerase {\E\where{\eannot {\emagic \e} {} \gt}} : \ts
+  \forall \G, \t, \gt, \uad
+      \G \th \eerase {\E\where{\eannot {\emagic \e} {} \gt}} : \t
       \wide\implies \shape \gt = \sh
-\end{tabular}}
-\\
-\Eshape \Lab \elab \T \Wide\eqdef
-   \forall \G, \ts, \gt , \uad
-     \G \th \eerase {\Lab[\elannot {\elmagic \elab} {} \gt]} : \ts
+\\[1ex]
+\Lshape \Lab \elab \T \Eqdef
+   \forall \G, \t, \gt , \uad
+     \G \th \eerase {\Lab[\elannot {\elmagic \elab} {} \gt]} : \t
 	\implies \shape \gt= \any \tvcs {\tvcs \T}
+
+\end{tabular}}
 \end{judgboxmathpar}
+
+\judgbox
+  {\cinfer {\G \th \e} \t}
+  {$\cinfer {\G \th \e} \t$ is satisfiable iff $\e$ has the expected \emph{known} type $\t$ under \emph{known} context $\G$.}
+
+\judgbox
+  {\cinferlabuni {\bar\el} \tv}
+  {$\cinferlabuni {\bar\el} \tv$ is satisfiable iff $\bar\el$ has the possibly unique type $\tv$.}
+
+\judgbox
+  {\cinferlab \el \tva \tvb}
+  {$\cinferlab \el \tva \tvb$ is satisfiable iff $\el$ has the record type $\tvb$ and field type $\tva$. }
+
+\judgbox
+  {\cinferassn \el \e \tv}
+  {$\cinferassn \el \e \tv$ is satisfiable iff the record assignment $\el = \e$ has the record type $\tv$.}
+
+\judgbox
+  {\cinfer \e \ts}
+  {$\cinfer \e \ts$ is satisfiable iff $\e$ has the expected \emph{known} type scheme $\ts$.}
+
+\begin{judgboxmathpar}
+  {\cinfer \e \tv}
+  {$\cinfer \e \tv$ is satisfiable iff $\e$ has the expected type $\tv$.}
+
+\newcommand {\Crule}[2]{#1 &\eqdef& #2}
+\def \arraystretch{1.2}%4
+\begin{tabular}{LCL}
+\Crule
+   {\cinfer x \tv}
+   {\cinst x \tv}
+\\
+\Crule
+  {\cinfer {()} \tv}
+  {\cunif \tv \tunit}
+\\
+\Crule
+  {\cinfer {\efun \x \e} \tv}
+  {\cexists {\tvb, \tvc} \cunif \tv {\tvb \to \tvc}
+    \cand \clet \x \tvbp {\cunif \tvbp \tvb} {\cinfer \e \tvc}}
+\\
+\Crule
+  {\cinfer {\eapp \ea \eb} \tv}
+  {\cexists {\tvb \tvc} \cunif \tvc {\tvb \to \tv} \cand \cinfer \ea {\tvc} \cand \cinfer \eb \tvb}\
+\\
+\Crule
+  {\cinfer {\elet \x \ea \eb} \tv}
+  {\clet \x \tvb {\cinfer \ea \tvb} {\cinfer \eb \tv}}
+\\
+\Crule
+  {\cinfer {\eannot \e \tvs \t} \tv}
+  {\cexists \tvs \cunif \tv \t \cand \cinfer \e \tv}
+\\
+\Crule
+  {\cinfer {\etuple {\ea, \ldots, \en}} \tv}
+  {\cexists \tvs \cunif \tv {\tProd \tvs}
+    \cand \cAnd \iton \cinfer \ei {\tv_i}}
+\\
+\Crule
+  {\cinfer {\exproj \e j n} \tv}
+  {\cexists {\tvb, \tvbs}
+    \cinfer \e \tvb
+    \cand \cunif \tvb {\tProd \tvbs}
+    \cand \cunif \tv {\tvb_j}}
+\\
+\Crule
+  {\cinfer {\eproj \e j} \tv}
+  {\cexists \tvb \cinfer \e \tvb
+    \cand \cmatch \tvb {\cbranch {\cpatprod \tvc j} {\cunif \tv \tvc}}}
+\\
+\Crule
+  {\cinfer {\expoly \e \tvs \ts} \tv}
+  {\cexists {\tvs}
+    \cinfer \e \ts
+    \cand \cunif \tv {\tpoly \ts}}
+\\
+\Crule
+  {\cinfer {\exinst \e \tvs \ts} \tv}
+  {\cexists {\tvs, \tvb}
+    \cinfer \e \tvb
+    \cand \cunif \tvb {\tpoly \ts}
+    \cand \ts \leq \tv}
+\\
+\Crule
+  {\cinfer {\einst \e} \tv}
+  {\cexists \tva
+    \cinfer \e \tva
+    \cand \cmatch \tva {\cbranch {\cpatpoly \cscm} \cscm \leq \tv}}
+\\
+\Crule
+  {\cinfer {\epoly \e} \tv}
+  {\clet \x \tvb {\cinfer \e \tvb}
+    {\cmatch \tv {\cbranch {\cpatpoly \cscm} {\x \leq \cscm}}}}
+\\
+\Crule
+  {\cinfer {\efield \e \el} \tv}
+  {\cexists \tvb \cinfer \e \tvb
+    \cand \cinferlabuni \el \tvb
+    \cand \cinferlab \elab \tv \tvb}
+\\
+\Crule
+  {\cinfer {\erecord {\overline{\el = \e}}} \tv}
+  {\cinferlabuni {\bar \el} \tv
+    \cand \cAnd \iton \cinferassn \eli \ei \tv}
+\\
+\Crule
+  {\cinfer {\emagic \e} \tv}
+  {\cexists \tvb \cinfer \e \tvb}
+\\\\
+\Crule
+  {\cinfer \e \t}
+  {\cexists \tv \cunif \tv \t \cand \cinfer \e \tv}
+\\
+\Crule
+  {\cinfer \e {\tfor \tvs \t}}
+  {\cfor \tvs \cinfer \e \t}
+\\\\
+\Crule
+  {\cinferassn \el \e \tv}
+  {\cexists \tvb \cinfer \e \tvb
+    \cand \cinferlab \el \tvb \tv}
+\\\\
+\Crule
+  {\cinferlab \elab \tva \tvb}
+  {\cmatch \tb {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \tva \to \tvb}}}
+\\
+\Crule
+  {\cinferlab {\elab/\T} \tva \tvb}
+  {\labenv(\elab/\T) \leq \tva \to \tvb}
+\\
+\Crule
+  {\cinferlab {\elmagic \elab} \tva \tvb}
+  {\ctrue}
+\\
+\Crule
+  {\cinferlab {\elannot \el \tvs \t} \tva \tvb}
+  {\cexists \tvs \cunif \tvb \t \cand \cinferlab \el \tva \tvb}
+\\
+\Crule
+  {\cinferlabuni {\bar \el} \tv}
+  {\begin{cases}
+    \cexists \tvs \cunif \tv {\Tapp \tvs} &\text{if } \bar \el \uni {\T} \in \labenv \\
+    \ctrue &\text{otherwise}
+   \end{cases}}
+\\ \\
+\Crule
+  {\csem {\eset \th \e : \t}}
+  {\cinfer \e \t}
+\\
+\Crule
+  {\csem {\x : \ts, \G \th \e : \t}}
+  {\clet \x \tv {\ts \le \tv} {\csem {\G \th \e : \t}}}
+\end{tabular}
+\end{judgboxmathpar}
+
 
 \begin{judgboxmathpar}
   {\e \simple}
@@ -4254,6 +4543,10 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\elannot \el \tvs \t \simple}
 \end{judgboxmathpar}
 
+\judgbox
+  {\eerase \el}
+  {The erasure of $\el$.}
+
 \begin{judgboxmathpar}
   {\eerase \e}
   {The erasure of $\e$.}
@@ -4273,7 +4566,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \Erule{\einst \e}{\emagic {\eerase \e}}\\
   \Erule{\exinst \e \tvs \ts}{\exinst {\eerase \e} \tvs \ts}\\
   \Erule{\erecord {\ela = \ea\; \ldots\; \el_n = \en}}{\erecord {\eerase \ela = \eerase \ea\; \ldots\; \eerase {\el_n} = \eerase \en}}\\
-  \Erule{\efield \e \el}{\efield {\eerase \e} {\eerase \el}}\\
+  \Erule{\efield \e \el}{\efield {\eerase \e} {\eerase \el}}\\[1ex]
   \Erule{\elab/\T}{\elab/\T}\\
   \Erule{\elab}{\elmagic \elab}\\
   \Erule{\elannot \el \tvs \t}{\elannot {\eerase \el} \tvs \t}\\
@@ -4532,6 +4825,21 @@ list of figures and definitions. Some of them are repeated from the main paper.
     {\ctrue}
 \end{judgboxmathpar}
 
+\begin{definition}
+  $\cdetermines \c \tvbs$ if and only if every ground assignments
+  $\semenv$ and $\semenvp$ that satisfy (the erasure of) $\c$ and coincide outside of $\tvb$
+  concide on $\tvbs$ as well.
+  \begin{mathpar}
+    \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
+      \semenv \th \cerase c
+      \wedge \semenvp \th \cerase \c
+      \wedge \semenv =_{\setminus \tvbs} \semenvp
+      \implies
+      \semenv = \semenvp
+  \end{mathpar}
+\end{definition}
+
+
 \newcommand{\cnmatches}[1]{\#\Match #1}
 \newcommand{\csize}[1]{|#1|}
 \newcommand{\cmeasure}[1]{{\| #1 \|}}
@@ -4558,104 +4866,115 @@ list of figures and definitions. Some of them are repeated from the main paper.
 
 \section{Properties of the constraint language}
 
+This appendix establishes key properties of the constraint language. The first
+is the principality of shapes \cref{th/shapes/principal}: any non-variable type
+$\t$ admits a non-trivial principal shape $\sh$.
+
+The second is the canonicalization of satisfiability derivations $\semenv \th
+\c$, which enables a simple induction principal for reasoning about unicity.
+This canonical form for derivations is a cruicial tool in our proof of
+soundness and completeness in \cref{TODO}.
+
 \subsection{Principality of shapes}
-\TODO{Make the styling between this section and other proofs more consistent}
 
-\Cref {th/shapes/principal} states that any non variable type $\t$ has a
-principal shape. We show that this is indeed the case.
+\principalShapes
+\begin{proof}
+  Let us assume $\t$ is a non-variable type.
 
-\medskip
+  \begin{proofcases}
+    \proofcase{$\t$ is a type constructor $\tconstr \tys$}
 
-When $\t$ is not a polytype, it has a toplevel constructor $\tconstr$ of
-arity $n$, which in our setting may be the nullary $\tunit$, the binary
-arrow, the n-ary product, or a $n$-ary nominal type. In all these
-cases, the shape of $\t$ is $\any \tvcs \tconstr \tvcs$ where $\tvcs$ is a
-sequence of $n$ distinct type variables.
+    $\tconstr$ is a top-level type constructor of arity $n$, which in our
+    setting may be the nullary $\tunit$, the binary arrow, the $n$-ary product,
+    or a $n$-ary nominal type. In all these cases, the shape of $\t$ is $\any
+    \tvcs \tconstr \tvcs$ where $\tvcs$ is a sequence of $n$ distinct type
+    variables. This is clearly principal.
 
-\medskip
+    \proofcase{$\t$ is a polytype $\tpoly {\tfor \tvs \t}$}
 
-It only remains to check that a polytype $\tpoly {\all \tvs \t}$ also has a
-unique shape. We may assume \Wlog that each variable of $\tvs$ occurs free in
-$\t$.
-%
-Let $(\pi_i)\iton$ be the sequence of shortest paths in $\t$ that cannot be
-extended to reach a (polymorphic) variable in $\tvas$, in lexicographic
-order and $\tvcs$ be a sequence $(\tvci)\iton$ of distinct variables that do
-not appear in~$\t$.
-%
-Let $\tyz$ be $\t \where {\pi_i \is \tvci}\iton$, \ie the term $\t$ where each
-path $\pi_i$ has been substituted by the variable $\tvci$.  Let $\Sh$ be the
-shape $\any \tvcs {\tpoly {\all \tvs \tyz}}$.
-We claim that $\Sh$ is actually the principal shape of $\tpoly {\all \tvs
-\t}$.
+    We may assume \Wlog that each variable of $\tvs$ occurs free in
+    $\t$.
+    \Xalistair{We never say we equate type schemes up to dead generic variables.}
+    %
+    Let $(\pi_i)\iton$ be the sequence of shortest paths in $\t$ that cannot be
+    extended to reach a (polymorphic) variable in $\tvas$, in lexicographic
+    order and $\tvcs$ be a sequence $(\tvci)\iton$ of distinct variables that do
+    not appear in~$\t$.
+    %
+    Let $\tyz$ be $\t \where {\pi_i \is \tvci}\iton$, \ie the term $\t$ where each
+    path $\pi_i$ has been substituted by the variable $\tvci$.  Let $\Sh$ be the
+    shape $\any \tvcs {\tpoly {\all \tvs \tyz}}$.
+    We claim that $\Sh$ is actually the principal shape of $\tpoly {\all \tvs
+    \t}$.
 
-\medskip
-\locallabelreset
+    \medskip
+    \locallabelreset
 
-By construction, $\t$ is equal to $\shapp[\Sh] \tys$~\llabel 1.
-where $\tys$ is the sequence composed of $\ti$ equal to $\t/\pi_i$
-for $i$ ranging from $1$ to $n$.
-%
-Indeed, by
-definition, $\shapp[\Sh] \tys$ is equal to $(\t\where {\pi_i \is \tvci}\iton)
-\where {\tvci \is \ti}$ which is obviously equal to $\t$.
-The remaining of the proof checks that $\Sh$ is minimal~\llabel 2, that is,
-we assume that $\Sh'$ is another shape such that $\tpoly {\all\tvs\t}$ is
-equal to $\shapp [\Shp] \typs$ for some $\typs$~\llabel H and show that $\Sh
-\preceq \Shp$~\llabel C.
+    By construction, $\t$ is equal to $\shapp[\Sh] \tys$~\llabel 1.
+    where $\tys$ is the sequence composed of $\ti$ equal to $\t/\pi_i$
+    for $i$ ranging from $1$ to $n$.
+    %
+    Indeed, by
+    definition, $\shapp[\Sh] \tys$ is equal to $(\t\where {\pi_i \is \tvci}\iton)
+    \where {\tvci \is \ti}$ which is obviously equal to $\t$.
+    The remaining of the proof checks that $\Sh$ is minimal~\llabel 2, that is,
+    we assume that $\Sh'$ is another shape such that $\tpoly {\all\tvs\t}$ is
+    equal to $\shapp [\Shp] \typs$ for some $\typs$~\llabel H and show that $\Sh
+    \preceq \Shp$~\llabel C.
 
-\medskip
+    \medskip
 
-It follows from~\lref H that
-  $\Shp$ must be a polytype shape, \ie of the form $\any \tvcps {\tpoly
-  {\all \tvbs \typ}}$ and
-  $\tpoly {\all \tvs \t}$ is equal to $\tpoly {\all\tvbs \tp} \where {\tvcps
-  \is \typs}$~\llabel{P}.
-\relax
-We may assume \Wlog that $\tvbs$ and $\tvcps$ are disjoint, that
-$\tvcps$ does not contain useless variables, \ie
-that they all appear in $\tp$ and that they actually appear in lexicographic
-order.
-\relax
-Now that never term contains useless variables, \lref P implies that the
-sequences $\\tvas$ and $\tvbs$ can be put in one-to-one correspondances.
-Besides, since they all ordered in the order of appearance in terms, they
-the correspondance respects the ordering. Hence, the subsitution $\where
-{\tvbs \is \tvas}$ is a renaming. Therefore, we can assume \Wlog that
-$\tvbs$ is $\tvas$,
-\relax
-That is, \lref P becomes that $\tpoly {\all \tvs \t}$ is equal to $\tpoly
-{\all \tvs \typ \where {\tvcps \is \typs}}$, which given that they $\tvs$
-apprear in the same order in both terms, implies that $\t$ is equal to $\typ
-\where {\tvcps \is
-\typs}$~\llabel T.
+    It follows from~\lref H that
+      $\Shp$ must be a polytype shape, \ie of the form $\any \tvcps {\tpoly
+      {\all \tvbs \typ}}$ and
+      $\tpoly {\all \tvs \t}$ is equal to $\tpoly {\all\tvbs \tp} \where {\tvcps
+      \is \typs}$~\llabel{P}.
+    \relax
+    We may assume \Wlog that $\tvbs$ and $\tvcps$ are disjoint, that
+    $\tvcps$ does not contain useless variables, \ie
+    that they all appear in $\tp$ and that they actually appear in lexicographic
+    order.
+    \relax
+    Now that never term contains useless variables, \lref P implies that the
+    sequences $\tvas$ and $\tvbs$ can be put in one-to-one correspondances.
+    Besides, since they all ordered in the order of appearance in terms, they
+    the correspondance respects the ordering. Hence, the subsitution $\where
+    {\tvbs \is \tvas}$ is a renaming. Therefore, we can assume \Wlog that
+    $\tvbs$ is $\tvas$,
+    \relax
+    That is, \lref P becomes that $\tpoly {\all \tvs \t}$ is equal to $\tpoly
+    {\all \tvs \typ \where {\tvcps \is \typs}}$, which given that they $\tvs$
+    apprear in the same order in both terms, implies that $\t$ is equal to $\typ
+    \where {\tvcps \is
+    \typs}$~\llabel T.
 
-\relax
+    \relax
 
-\medskip
+    \medskip
 
-Since $\typs$ does not contain any variable in $\tvs$, every path $\pi_i$
-is a path in $\typ$. Thus, we may write $\typ$ as
-\relax $\typ \where {\pi_i \is \tyi''}\iton$ where $\tyi''$ is $\typ/\pi_i$.
-This is also equal to
-\relax $(\typ \where {\pi_i \is \tvci}\iton) \where {\tvci \is \tyi''}\iton$,
-that is $\tyz\where {\tvci \is \tyi''}\iton$.
-%
-In summary, we have $\typ$ is equal to
-\relax $\tyz \where {\tvci \is \tyi''}\iton$,
-which implies that
-\relax  $\tpoly {\all \tvs \typ}$ is equal to
-\relax  $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
-\relax  $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$~\llabel E.
-%
-By Rule \Rule {Inst-Shape}, we have
-\begin{mathpar}[inline]
-\any \tvcs  \tpoly {\all \tvs \tyz} \preceq
-\any \tvcps\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton,
-\end{mathpar}
-which, given~\lref E, is exactly~\lref C.
+    Since $\typs$ does not contain any variable in $\tvs$, every path $\pi_i$
+    is a path in $\typ$. Thus, we may write $\typ$ as
+    \relax $\typ \where {\pi_i \is \tyi''}\iton$ where $\tyi''$ is $\typ/\pi_i$.
+    This is also equal to
+    \relax $(\typ \where {\pi_i \is \tvci}\iton) \where {\tvci \is \tyi''}\iton$,
+    that is $\tyz\where {\tvci \is \tyi''}\iton$.
+    %
+    In summary, we have $\typ$ is equal to
+    \relax $\tyz \where {\tvci \is \tyi''}\iton$,
+    which implies that
+    \relax  $\tpoly {\all \tvs \typ}$ is equal to
+    \relax  $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
+    \relax  $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$~\llabel E.
+    %
+    By Rule \Rule {Inst-Shape}, we have
+    \begin{mathpar}[inline]
+    \any \tvcs  \tpoly {\all \tvs \tyz} \preceq
+    \any \tvcps\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton,
+    \end{mathpar}
+    which, given~\lref E, is exactly~\lref C.
 
-
+  \end{proofcases}
+\end{proof}
 
 \subsection{Canonicalization of satisfiability}
 
@@ -4683,11 +5002,12 @@ entailment in our system.
   \begin{enumerate}[(\roman*)]
     \item If $\semenv \th \cunif \ta \tb$, then $\semenv(\ta) = \semenv(\tb)$.
     \item If $\semenv \th \ueq$, then $\semenv(\t) = \gt$ for all $\t \in \ueq$ and some ground type $\gt$.
-    \item If $\semenv \th \capp \x \t$, then $\semenv(\t) \in \semenv(\x)$.
-    \item If $\semenv \th \cpapp \x \ren \ueqs$, then $\semenv(\x) = \gabsr \tv \tvs$, $\dom \ren \subseteq \tvs$, and \\$\semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \gabs$.
+    \item If $\semenv \th \capp \x \t$, then $\semenv(\t) \in \semenv(\x)$ or $\greg \tv \semenvp \in \semenv(\x)$ and $\semenvp(\tv) = \semenv(\t)$.
+    \item If $\semenv \th \cpinst \inst \tv \t$, then $\semenv(\inst)(\tv) = \semenv(\t)$
 
     \item If $\semenv \th \ca \cand \cb$ and $\ca \cand \cb \simple$, then $\semenv \th \ca$ and $\semenv \th \cb$.
     \item If $\semenv \th \cexists \tv \c$ and $\cexists \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for some $\gt$.
+    \item If $\semenv \th \cexistsi \inst \x \c$ and $\cexistsi \inst \x \c \simple$, then $\semenv\where{\inst \is \semenvp} \th \c$ for some $\semenvp$ such that $\greg \tv \semenvp \in \semenv(\x)$.
     \item If $\semenv \th \cfor \tv \c$ and $\cfor \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for all ground types $\gt$.
     \item If $\semenv \th \clet \x \tv \ca \cb$ and $\clet \x \tv \ca \cb \simple$, then $\semenv \th \cexists \tv \ca$ and \\$\semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb$.
     \item If $\semenv \th \cletr \x \tv \tvs \ca \cb$ and $\cletr \x \tv \tvs \ca \cb \simple$, then
@@ -4737,6 +5057,7 @@ entailment in our system.
 
       \end{proofcases}
 
+      \item Similar to \Rule{Conj} case.
       \item Similar to \Rule{Conj} case.
       \item Similar to \Rule{Conj} case.
       \item Similar to \Rule{Conj} case.
@@ -4828,6 +5149,12 @@ entailment in our system.
 	  Similar to $\cexists \tv \Cc$ case.
 	\end{llproof}
 
+      \proofcase{$\cexistsi \inst \x \Cc$}
+
+	\begin{llproof}
+	  Similar to $\cexists \tv \Cc$ case.
+	\end{llproof}
+
       \proofcase{$\clet \x \tv \Cc \c$}
 
 	\begin{llproof}
@@ -4862,8 +5189,6 @@ entailment in our system.
 	\begin{llproof}
 	  Similar to $\clet \x \tv \c \Cc$ case.
 	\end{llproof}
-
-
     \end{proofcases}
   \end{proof}
 \end{lemma}
@@ -5117,13 +5442,23 @@ entailment in our system.
 
       \proofcasederivation
 	{AppR}
-	{\semenv(\x) = \gabsr \tv \tvs \\
-	 \semenv(\t) \in \gabs}
+	{\greg \tv \semenvp \in \semenv(\x) \\
+	 \semenv(\t) = \semenvp(\tv)}
 	{\semenv \th \capp \x \t}
 
       \begin{llproof}
 	Similar to the \Rule{App} case.
       \end{llproof}
+
+    \proofcasederivation
+      {Exists-Inst}
+      {\greg \tv \semenvp \in \semenv(\x) \\ \semenv\where{\inst \is \semenvp} \th \c}
+      {\semenv \th \cexistsi \inst \x \c}
+
+      \begin{llproof}
+	Similar to the \Rule{Exists} case.
+      \end{llproof}
+
 
     \proofcasederivation
       {Multi-Unif}
@@ -5135,10 +5470,9 @@ entailment in our system.
       \end{llproof}
 
     \proofcasederivation
-      {Papp}
-      {\semenv(\x) = \gabsr \tv \tvs \\ \dom \ren \subseteq \tvs \\
-       \semenv\where{\tv \is \semenv(\t)} \th \ueqs\where\ren \implies \semenv(\t) \in \gabs}
-      {\semenv \th \cpapp \x \ren \ueqs \t}
+      {Partial-Inst}
+      {\semenv(\inst)(\tv) = \semenv(\t)}
+      {\semenv \th \cpinst \inst \tv \t}
 
 
       \begin{llproof}
@@ -5201,9 +5535,6 @@ entailment in our system.
 	    \end{llproof}
 
 	  \proofcase{$\C \neq \Cp$}
-
-	    \TODO{The formatting here is really off. Mainly due to the janky match notation
-	          we have. }
 
 	    \newcommand{\Ctwo}{\C_2}
 	    \begin{llproof}
@@ -5350,14 +5681,6 @@ and $\sub(\tvs) = \tys$.
   A unifier $\sub$ of $\c$ is \emph{most general} when $\exists \sub$ is equivalent
   to $\c$.
 \end{definition}
-
-\begin{lemma}
-  Every closed constraint $\c$ either has a most general unifier or is unsatisfiable.
-  \begin{proof}
-    ?? ensures that every satisfiable constraint has a solved form. We therefore need
-    to construct a $\sub$ by reading off the solution.
-  \end{proof}
-\end{lemma}
 
 \begin{lemma}[Simple inversion of unifiers]
   ~
