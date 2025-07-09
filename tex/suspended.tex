@@ -75,10 +75,9 @@ type can be annotated to a rigid type which will be refined by type
 equalities in each branch. Those type annotations may sometimes but
 not always be omitted.
 
-Consider impredicative higher-rank polymorphism,
-\MLF~\cite{LeBotlan-Remy/recasting-mlf} for instance:
+Consider impredicative higher-rank polymorphism for instance:
 \begin{program}[input]
-let self f = f f      °\Ocamlcomment{\ocamlFlag {\MLF}1}°
+let self f = f f
 \end{program}
 With higher-rank types, one could \emph{guess} the type of \code{f} to be
 either $\tfor \tv \tv \to \tv$ or $\tfor \tv \tv \to \tv \to \tv$ in order
@@ -96,10 +95,9 @@ direct or indirect algorithmic flavor in order to preserve
 principality and completeness.
 %
 Moreover, these (more or less) ad-hoc restrictions commonly reject examples
-whose type could easily be guessed. For instance, \MLF accepts
+whose type could easily be guessed. For instance, \MLF~\cite{LeBotlan-Remy/recasting-mlf} accepts
 or rejects the following expression, depending on the position of the
-annotation:\footnote{Green and red backgroun are to mean success or failure
-of typechecking.}
+annotation (green and red background indicate type-checking success):
 \begin{program}[input]
 let self' (f : $\forall$'a. 'a -> 'a) = if true then f f else f $
 $   °\Ocamlcomment{\ocamlFlag {\MLF}0}°
@@ -299,29 +297,28 @@ let e_8 = let getx r = r.x in getx {x = 1}      °\ocamlflags 10°
 let e_9 r = (r.x : bool)                        °\ocamlflags 11°
 let e$_{10}$ r = r.x.x                           °\ocamlflags 11°
 \end{program}
-All these examples are ambiguous for \OCaml\footnote{Its succeeds on \ocaml{e_6},
-using the default choice, but it fails if we reverse the order of the type
-declarations.}.  However, \ocaml{r} can only be of type
-\ocaml{two} in \ocaml{e_6}. Indeed, considering the second projection first,
-we should learn that \ocaml{r} is of type \ocaml{two} and since it is
-$\lambda$-bound, this should then make the first projection unambiguous.
-The failure is a matter of solving the constraint in the right order, which
-should be accepted by omnidirectional type inference.
+All are arguably unambiguous; \OCaml accepts none of them\footnote{It accepts \ocaml{e_6} with a warning, and fails if we reverse the order of the type declarations.}, \OML accepts the first three.
+
+In \ocaml{e_6}, \ocaml{r} can only be of type \ocaml{two}. Indeed,
+considering the second projection first, we should learn that
+\ocaml{r} is of type \ocaml{two} and since it is $\lambda$-bound, this
+should then make the first projection unambiguous. Disambiguating this example is a matter 
+of solving the constraint in the right order.
 
 A similar failure occurs in \ocaml{e_7}, where the type of the
 $\lambda$-bound variable \code{r} is initially ambiguous and
 unknown. It is only upon typing the projection \code{r.y} that
-\code{r} is forced to have the type \ocaml{two}.
+\code{r} is forced to have the type \ocaml{two}; this requires
+inferring the $\Let$-body to disambiguate the $\Let$-definition.
 %
-\OCaml also fails on \ocaml$e_8$. Omnidirectional inference
-supports both examples, despite the fact that the disambiguation
-information flows from an instance to a polymorphic definition, opposite to
-the \Geninst-order. We call this \emph{back-propagation}.
+In \code{e_8}, disambiguation information flows from an instance to
+back the definition, opposite to the \Geninst-order; we call this
+\emph{back-propagation}.
 
 The example \ocaml{e_9} can be disambiguated from the return type of the
 projection, rather than from its source. The typing rules for records that
-we present on this work restricts disambiguation to the source type only and
-rejects this example. But\Xdidier[we believe that]{Wht not the affirmative?}
+we present on this work restrict disambiguation to the source type only and
+rejects this example. But\Xdidier[we believe that]{Why not the affirmative?}
 other typing rules using omni-directional type inference could support this
 example as well.
 
@@ -384,7 +381,7 @@ a cost, which is that everything is hard:
 \begin{enumerate}
 
 \item
-  Giving an adequate semantics for suspended constraints is also hard, as we
+  Giving an adequate semantics for suspended constraints is hard, as we
   must capture declaratively the intuition that some type information must be
   \emph{known} rather than \emph{guessed}, but also that some programs
   that are semantically non-ambiguous (there is a unique fully-annotated
@@ -393,7 +390,7 @@ a cost, which is that everything is hard:
 
 \item
   Implementing partial types schemes (without duplicating constraint-solving
-  work) is hard.
+  work) is also hard.
 
 \end{enumerate}
 In return, the declarative semantics of suspended constraints
@@ -419,7 +416,7 @@ The rest of the paper is organized as follows.
   semi-explicit first-class polymorphism, sketch its typing rules,
   and states the theorems of soundness and completeness.
   By lack of space, detailed typing rules and constraint generation are
-  posponed to \cref {app:oml-calculus}.
+  postponed to \cref {app:oml-calculus}.
 
 \item
   In \cref{sec:solving}, we provide a formal definition of our constraint
