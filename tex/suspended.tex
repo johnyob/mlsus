@@ -879,17 +879,17 @@ our account but rejected by \OCaml's current type checker.
 \ocaml{#$j$ e} to extract the $j$-th component of the tuple \code{e}.
 %
 Internally, tuples in \SML are treated as structural records with numeric
-labels, so \ocaml{#$j$ e} desugars into a structural record field access
+labels, so \ocaml{(#$j$ e)} desugars into a structural record field access
 \ocaml{e.$j$}: if $\e$ has the type $\tsrecord {j = \tj; \varrho}$, where
 $\varrho$ is a row describing the remaining tuple fields, then $\eproj \e j$
 has type $\tj$.
 
 \SML enforces an additional restriction: the tail $\varrho$ must be fully
-determined (\ie cannot be a polymorphic row variable).  This ensures that the
-arity of the tuple is \emph{known} statically from the surrounding context,
-thereby avoiding the need for row polymorphism. The restriction is not reflected
-in the typing rules themselves, but is instead enforced within \SML's type
-inference algorithm.
+determined (\ie it cannot be a polymorphic row variable).  This ensures that
+the arity of the tuple is \emph{known} statically from the surrounding
+context, thereby avoiding the need for row polymorphism. The restriction is
+not reflected in the typing rules themselves, but is instead enforced within
+\SML's type inference algorithm.
 
 \parcomment {Tuple projection is statically overloaded}
 
@@ -916,12 +916,28 @@ of sufficient arity. The pattern $\cpatprod
 $j$-th component to $\tvc$, which is then unified with the expected result type
 $\tva$.
 
+\Xdidier
+{Can we do better than \SML with \OML? ---I think not. Then, we should
+say it explicitly!}
+
 \section{Semantics of constraints}
 \label{sec:semantics}
 
-To implement a type-checker using constraint-based type inference it suffices to generate constraints from terms and to solve them. To study the meta-theory of constraint generation and solving, we follow the standard approach of defining \emph{semantics} for our constraints, as declarative as possible. The existence of declarative semantics validates the design of the constraint language.
+To implement a type-checker using constraint-based type inference it
+suffices to generate constraints from terms and to solve them. To study the
+meta-theory of constraint generation and solving, we follow the standard
+approach of defining \emph{semantics} for our constraints, as declarative as
+possible. The existence of declarative semantics validates the design of the
+constraint language.
 
-In our work on suspended constraints, defining a satisfying semantics was the hardest problem: it needs to capture what it means for type information to be \emph{known}. Our semantics is declarative but not syntax-directed, harder to manipulate than standard constraint semantics. On the upside, the semantics directly suggest declarative typing rules for the surface language.
+
+In our work on suspended constraints, defining a satisfying semantics was
+the hardest problem: it needs to capture what it means for type information
+to be \emph{known}. Our semantics is declarative but not syntax-directed,
+harder to manipulate than standard constraint semantics. On the upside, the
+semantics directly suggest declarative typing rules for the surface
+language.
+
 
 \parcomment {Judgement shape}
 
