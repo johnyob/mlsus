@@ -6399,7 +6399,7 @@ rules that are not inherently destructive.
   \end{mathpar}
 
   This weight is well-defined if $\cerase \c$ is satisfiable (and thus acyclic).
-  If $\cerase \c$ is unsatisfiable, then some destructive rule (\ie unification rules) must be applicable.\Xgabriel{This sounds fishy. A constraint could a priori have a finite reduction sequence to $\cfalse$, and \emph{also} an infinite sequence of partial instantiation rules.}}
+  If $\cerase \c$ is unsatisfiable, then some destructive rule (\ie unification rules) must be applicable.\Xgabriel{This sounds fishy. A constraint could a priori have a finite reduction sequence to $\cfalse$, and \emph{also} an infinite sequence of partial instantiation rules.}
 
   The weight of a partial instantiation $\cw {\cpapp \x \tv \t \inst}$ is defined as
   the sum of $\stw \t$ and $\tw \tv \c$, where $\x$ is bound to the abstraction $\cabsr \tv \tvs \c$.
