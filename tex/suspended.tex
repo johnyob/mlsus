@@ -1500,18 +1500,18 @@ We use the metavariables $\e^i$ or $\el^i$ to range over the fragile/implicit co
 
 \subsection{Unicity conditions in typing rules}
 
-Our typing rules for implicit constructs follow the shape we described previously, of a contextual rule with a unicity condition and an elaboration into an explicit rule. Our unicity conditions in typing rules request that the shape $\sh$ the annotation is fully determined from the context, either from the type of the expression, which we write $\eshape \E \e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
-
-In order to describe the judgments $\eshape \E \e \sh$ and $\Eshape \E \e \sh$,
-we introduce a \emph{typed hole} construct $\emagic \e$ that allows any
-well-typed expression $\e$ to be treated as if it had any type:
+Our typing rules for implicit constructs are inspipred by the semantics: a contextual rule with a unicity condition, and an elaboration into an explicit rule. Our unicity conditions in typing rules request that the annotating shape is fully determined from the context, either from the type of the expression.
+%
+In order to define the unicity conditions, we introduce a \emph{typed
+  hole} construct $\emagic \e$ that allows any well-typed expression
+$\e$ to be treated as if it had any type:
 \begin{mathpar}
   \inferrule[Magic]
     {\G \th \e : \t}
     {\G \th \emagic \e : \tp}
 \end{mathpar}
 Typed holes are not allowed in source terms and are just a device for
-the definition of non-ambiguous shapes. We also introduce an erasure
+the definition of unicity conditions. We also introduce an erasure
 function $\eerase \e$, the term counterpart of constraint erasure
 $\cerase \c$, which erases all not-yet-elaborated implicit constructs
 $\e^i$ in $\e$. They are replaced by their subterms placed into magic
@@ -1520,8 +1520,7 @@ type. For example $\eerase {\efield \e j}$ is $\emagic {\cerase \e}$;
 the full definition is given in \cref{fig:defn-term-erasure}
 (appendix).
 
-Finally, we define what it means for a
-shape to be determined from the type of a context or an expression:
+We can now state that a shape is uniquely determined by the type of a context or an expression:
 \begin{mathpar}
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
@@ -1537,8 +1536,8 @@ shape to be determined from the type of a context or an expression:
 \end{tabular}}
 \end{mathpar}
 These states that the shape $\sh$ of expression $\e$ in context $\E$ is
-determined by the expression $\e$, in the former case, or by the context
-$\E$ in the latter case.
+determined by the expression $\e$, for $\eshape E \e \sh$, or by the context
+$E$, for $\Eshape E \e \sh$.
 
 \subsection{Typing rules and constraint generation}
 
@@ -1586,7 +1585,7 @@ The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
 equitypable where $\eswap$ is
 $\efun f {\efun \xa {\efun \xb {\eappp f \xb \ea}}}$. We also have
 that $\eapp f \e$ and $\eappp {\mathsf{app}} f \e$ and
-$\eappp {\mathsf{rev\_app}} \e f$ are themselves equitypable where
+$\eappp {\mathsf{rev\_app}} \e f$ are equitypable, where
 $\mathsf{app}$ and $\mathsf{rev\_app}$ are the application function
 $\efun f \efun \x \eapp f \x$ and the reverse application function
 $\efun \x \efun f \eapp f \x$, respectively. It is well-known that
@@ -1617,8 +1616,9 @@ non-deterministic rewriting relation between \emph{unification problems} $\upa
 
 \begin{mathparfig}[htpb!]
   {fig:unification-syntax-and-semantics}
-  {Syntax and semantics of unification problems. Constraints are also extended with the
-  administrative multi-equation construct.}
+  {Syntax and semantics of unification problems.
+   %Constraints are also extended with the administrative multi-equation construct.
+  }
 \begin{minipage}[t]{0.45\textwidth}
 \begin{bnfgrammar}
   \entry[Unification problems]{\up}{
@@ -1738,8 +1738,8 @@ We now gradually introduce the rules of the constraint solver itself (\cref{fig:
 and \cref{TODO}).
 These rules define a non-deterministic rewriting
 system, operating modulo $\alpha$-equivalence and the associativity and
-commutativity of conjunction. Rewriting is performed under an arbitrary
-one-hole constraint context $\C$.
+commutativity of conjunction. $\C$ represents an arbitrary
+one-hole constraint context.
 
 % Solved forms
 A constraint $C$ is satisfiable if it can be rewritten into a \emph{solved
@@ -1794,41 +1794,42 @@ variables. The order of $\tvs$ is immaterial; regions are considered equal up
 to permutation of these variables.
 
 Satisfiability of regional $\Let$-constraints is defined in
-\cref{fig:constraint-let-regions}. The semantic interpretation of an
+\cref{fig:constraint-let-regions}. The semantics of an
 abstraction with a region, written $\semenv(\cabsr \tv \tvs \c)$, is a set of
 \emph{ground regions} that satisfy $\c$. A ground region is a satisfying
 interpretation for the region $\semenvp$ with a designated \emph{root} variable
 $\tv$, written $\greg \tv \semenvp$. Regional $\Let$-constraints strictly
 generalize ordinary constraint abstractions, as captured by the equivalence:
 \begin{mathline}
-  \clet \x \tv \ca \cb \cequiv \cletr \x \tv \eset \ca \cb
+  (\clet \x \tv \ca \cb) \cequiv (\cletr \x \tv \eset \ca \cb)
 \end{mathline}
 
 \parcomment{Explaination of rules}
 
-In particular, \Rule{S-Let} rewrites the usual let constraints into region
+\Rule{S-Let} rewrites let constraints into regional
 form.
 %
 \Rule{S-Exists-Conj} lifts existentials across conjunctions;
 \Rule{S-Let-ExistsLeft} and \Rule{S-Let-ExistsRight} lift existentials across
-let-binders; and \Rule{S-Let-ConjLeft}, \Rule{S-Let-ConjRight} hoist
-constraints out of let-binders when they are independent of the locally bound
+let-binders; \Rule{S-Let-ConjLeft}, \Rule{S-Let-ConjRight} hoist
+constraints out of let-binders when they are independent of the local
 variables.
 %
-Collectively, these lifting rules normalize the structure of each region into a
-block of existentially bound variables, whose body consists of a conjunction of
-solved multi-equations (from unification) followed by a residual
-constraint---typically an application, let-binding, or suspended constraint.
+Collectively, these lifting rules normalize the structure of each
+region into a block of existentially bound variables, whose body
+consists of a conjunction of solved multi-equations followed by
+a residual constraint---typically an application, let-binding, or
+suspended constraint.
 
 \begin{mathparfig}[htpb!]
   {fig:solver-basic}
   {Basic rewriting rules $\ca \csolve \cb$}
   \rewrite[S-Unif]
-    {\upa \\ \upa \unif \upb}
+    {\upa \quad \upa \unif \upb}
     {\upb}
 
   \rewrite[S-False]
-    {\C\where\cfalse \\ \C \neq \square}
+    {\C\where\cfalse \quad \C \neq \square}
     {\cfalse}
 
   \rewrite[S-Let]
@@ -1836,10 +1837,10 @@ constraint---typically an application, let-binding, or suspended constraint.
     {\cletr \x \tv \eset \ca \cb}
 
   \rewrite[S-Exists-Conj]
-    {(\cexists \alpha \ca) \cand \cb \\
+    {(\cexists \alpha \ca) \cand \cb \quad
      \tv \disjoint \cb}
     {\cexists \tv {\ca \cand \cb}}
-
+  \\
   \rewrite[S-Let-ExistsLeft]
     {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
      \tvb \disjoint \tv, \tvs, \cb}
@@ -1849,7 +1850,7 @@ constraint---typically an application, let-binding, or suspended constraint.
     {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
      \tvb \disjoint \tv, \tvs, \cb}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
-
+  \\
   \rewrite[S-Let-ConjLeft]
     {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
      \ca \disjoint \tv, \tvs}
@@ -1871,14 +1872,6 @@ constraint---they are desugared into constraints already handled by the solver.
 
 \paragraph{Suspended match constraints}
 
-\parcomment{S-Susp-Use}
-
-\Rule{S-Match-Type} solves suspended match constraints whose scrutinee is a
-non-variable type $\t$ by rewriting them using the sugar $\cmatched \t \sh
-\cbrs$, introduced in \cref{sec:constraints}. In this case, $\shape
-\t$ is used for $\sh$ to determine the matching branch. If no branch matches,
-the rule is stuck, indicating that the constraint is unsatisfiable.
-
 \begin{mathparfig}
   {fig:solver-susp}
   {Rewriting rules for suspended match constraints.}
@@ -1893,18 +1886,19 @@ the rule is stuck, indicating that the constraint is unsatisfiable.
     {\C\where{\cmatched \tv {\shape \t} \cbrs}}
 \end{mathparfig}
 
+\parcomment{S-Susp-Use}
+
+\Rule{S-Match-Type} solves suspended match constraints whose scrutinee is a
+non-variable type $\t$ by rewriting them using the sugar $\cmatched \t {\shape \t}
+\cbrs$, introduced in \cref{sec:constraints}. If no branch matches $\shape \t$,
+the rule is stuck and the constraint is unsatisfiable.
+
 \parcomment {S-Susp-Ctx}
 
-\Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and the
-context $\C$ proves that $\tv$ is equal to some non-variable type $\t$, which
-suffices to establish the unicity property $\Cshape \C \t {~\shape \t}$. This
-may occur immediately (\eg due to earlier unification) or only after more
-constraints are solved. In either case, if $\tv$ is eventually unified with a
-non-variable type $\t$, the constraint is rewritten to the matching branch.
-%
-To check whether the context $\C$ proves an equality---or more generally, a
-multi-equation $\ueq$---we search for a decomposition $\C = \Ca[\ueq \cand
-\Cb]$ such that $\fvs \ueq$ is disjoint from the binders of $\Cb$.
+\Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and
+the context $\C$ proves that $\tv$ is equal to some non-variable type
+$\t$, so we have the unicity property
+$\Cshape \C \t {~\shape \t}$.
 
 \paragraph{Let constraints}
 
