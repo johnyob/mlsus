@@ -1651,84 +1651,7 @@ permutation of their members.
 
 \parcomment{The algorithm}
 
-The unification rules are listed in \cref{fig:omni-unification-algorithm}.
-Rewriting proceeds under an arbitrary context $\Up$, modulo $\alpha$-equivalence
-and associativity/commutativity of conjunctions.
-%
-Our algorithm is largely standard \cite{Pottier-Remy/emlti} but replaces type
-constructors with \emph{canonical principal shapes}, enabling a uniform
-treatment of monotypes and polytypes within unification compared to
-prior formulations \citep{Garrigue-Remy/poly-ml}.
-
-\begin{mathparfig}[htpb!]
-  {fig:unification-algorithm}
-  {Unification algorithm as a series of rewriting rules
-   $\upa \unif \upb$. All shapes are principal.}
-   \rewrite[U-Exists]
-      {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
-      {\cexists \tv {\upa \cand \upb}}
-
-    \rewrite[U-Cycle]
-      {\up \\ \cyclic \up}
-      {\cfalse}
-
-    \rewrite[U-True]
-      {\up \cand \ctrue}
-      {\up}
-
-    \rewrite[U-False]
-      {\Up\where\cfalse \\ \Up \neq \square}
-      {\cfalse}
-
-    \rewrite[U-Merge]
-      {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
-      {\cunif \tv {\cunif \ueqa \ueqb}}
-
-    \rewrite[U-Stutter]
-      {\cunif \tv {\cunif \tv \ueq}}
-      {\cunif \tv \ueq}
-
-    \rewrite[U-Name]
-      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
-      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq}}
-
-    \rewrite[U-Decomp]
-      {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
-      {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
-
-    \rewrite[U-Clash]
-      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }\\
-       \sh \neq \shp}
-      {\cfalse}
-
-    \rewrite[U-Trivial]
-      {\ueq \\ |\ueq| \leq 1}
-      {\ctrue}
-\end{mathparfig}
-
-
-\parcomment{Explaination of the rules}
-
-We briefly summarize the role of each rule. \Rule{U-Exists} lifts existential
-quantifiers, enabling applications of \Rule{U-Merge} and \Rule{U-Cycle} since
-all multi-equations eventually become part of a single conjunction.
-\Rule{U-Merge} combines mutli-equations sharing a common variable and
-\Rule{U-Stutter} removes duplicate variables. \Rule{U-Decomp} decomposes equal
-types with matching shapes into equalities between their subcomponents, while
-\Rule{U-Clash} detects shape mismatches that result in failure. \Rule{U-Name}
-introduces fresh variable for subcomponents, ensuring unification operates on
-\emph{shallow terms}, making sharing of type variables explicit and avoiding
-copying types in rules such as \Rule{U-Decomp}. \Rule{U-True} and
-\Rule{U-Trivial} eliminate trivial constraints, and \Rule{U-False} propagates
-failure.
-%
-Finally, \Rule{U-Cycle} implements the \emph{occurs check}, ensuring that a
-type variable does not occur in the type it is being unified with. This is a
-necessary condition for unification, as it would otherwise lead to infinite
-types\footnote{We discuss relaxing this constraint in \cref{sec/rec-types}.}.
-This is formalized by the relation $\tv \prec_\up \tvb$ indicating that $\tv$
-occurs in a type assigned to $\tvb$ in $\up$. A unification problem is cyclic,
-written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
+Our unification algorithm $\upa \to \upb$ is largely standard. For reasons of space we describe it in \cref{app:unification} (appendix).
 
 \subsection{Solving rules}
 
@@ -1758,7 +1681,7 @@ form}. A solved form is a constraint $\hat\up$ of the form $\cexists \tvs \cAnd
 
 \Rule{S-Unif} invokes the unification algorithm to the
 current unification problem. The unification algorithm itself is treated as a
-black box by the solver, allowing the solver to be parameterized over the
+black box by the solver, so the system could be extended with any
 equational theory of types implemented by the unifier.
 \begin{mathparfig}[htpb!]
   {fig:constraint-let-regions}
@@ -2002,10 +1925,11 @@ instantiations $\cpinst \inst \tv \t$ are solved uniformly. Within the solver,
 we view partial instantiations as markers indicating which parts of the
 abstraction still need to be copied.
 
-Partial instantiations enables efficient, incremental instantiation of
-constraint abstractions: solved parts are reused immediately, while unresolved
-constraints (\ie suspended constraints) can be solved later, further refining
-the abstraction and propagation additional equations to the application sites.
+Partial instantiations enables efficient incremental instantiation of
+constraint abstractions: solved parts are reused immediately, while
+suspended constraints can be solved later, further refining the
+abstraction and propagation additional equations to the application
+sites.
 
 \parcomment{Semantics of partial applications}
 
@@ -2476,6 +2400,8 @@ original motivations.
 
 % \begin{acks}
 % \end{acks}
+
+\Xgabriel{No conclusion? I'm fine with this, and it takes less space than having a conclusion.}
 
 %% \bibliographystyle{ACM-Reference-Format}
 \bibliography{suspended}
@@ -3371,6 +3297,91 @@ The remaining (greyed) cases \TODO{Make the cases grey} correspond to internal
 constructs used in \OML's typing rules and are included for completeness.
 
 % Soundness/completeness of constraint gen
+
+\section{Unification}
+\label{app:unification}
+
+The unification rules are listed in \cref{fig:omni-unification-algorithm}.
+Rewriting proceeds under an arbitrary context $\Up$, modulo $\alpha$-equivalence
+and associativity/commutativity of conjunctions.
+
+Our algorithm is largely standard \cite{Pottier-Remy/emlti} but replaces type
+constructors with \emph{canonical principal shapes}, enabling a uniform
+treatment of monotypes and polytypes within unification compared to
+prior formulations \citep{Garrigue-Remy/poly-ml}.
+
+%
+
+
+\begin{mathparfig}[htpb!]
+  {fig:unification-algorithm}
+  {Unification algorithm as a series of rewriting rules
+   $\upa \unif \upb$. All shapes are principal.}
+   \rewrite[U-Exists]
+      {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
+      {\cexists \tv {\upa \cand \upb}}
+
+    \rewrite[U-Cycle]
+      {\up \\ \cyclic \up}
+      {\cfalse}
+
+    \rewrite[U-True]
+      {\up \cand \ctrue}
+      {\up}
+
+    \rewrite[U-False]
+      {\Up\where\cfalse \\ \Up \neq \square}
+      {\cfalse}
+
+    \rewrite[U-Merge]
+      {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
+      {\cunif \tv {\cunif \ueqa \ueqb}}
+
+    \rewrite[U-Stutter]
+      {\cunif \tv {\cunif \tv \ueq}}
+      {\cunif \tv \ueq}
+
+    \rewrite[U-Name]
+      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
+      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq}}
+
+    \rewrite[U-Decomp]
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
+      {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
+
+    \rewrite[U-Clash]
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }\\
+       \sh \neq \shp}
+      {\cfalse}
+
+    \rewrite[U-Trivial]
+      {\ueq \\ |\ueq| \leq 1}
+      {\ctrue}
+\end{mathparfig}
+
+
+\parcomment{Explaination of the rules}
+
+We briefly summarize the role of each rule. \Rule{U-Exists} lifts existential
+quantifiers, enabling applications of \Rule{U-Merge} and \Rule{U-Cycle} since
+all multi-equations eventually become part of a single conjunction.
+\Rule{U-Merge} combines mutli-equations sharing a common variable and
+\Rule{U-Stutter} removes duplicate variables. \Rule{U-Decomp} decomposes equal
+types with matching shapes into equalities between their subcomponents, while
+\Rule{U-Clash} detects shape mismatches that result in failure. \Rule{U-Name}
+introduces fresh variable for subcomponents, ensuring unification operates on
+\emph{shallow terms}, making sharing of type variables explicit and avoiding
+copying types in rules such as \Rule{U-Decomp}. \Rule{U-True} and
+\Rule{U-Trivial} eliminate trivial constraints, and \Rule{U-False} propagates
+failure.
+%
+Finally, \Rule{U-Cycle} implements the \emph{occurs check}, ensuring that a
+type variable does not occur in the type it is being unified with. This is a
+necessary condition for unification, as it would otherwise lead to infinite
+types\footnote{We discuss relaxing this constraint in \cref{sec/rec-types}.}.
+This is formalized by the relation $\tv \prec_\up \tvb$ indicating that $\tv$
+occurs in a type assigned to $\tvb$ in $\up$. A unification problem is cyclic,
+written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
 
 \section{More discussion}
 
