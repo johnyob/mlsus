@@ -4401,37 +4401,20 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\clet \x \tv \ca \cb}
     {\cletr \x \tv \eset \ca \cb}
 
-  \rewrite[S-Exists-Exists-Inst]
-    {\cexistsi \inst \x \cexists \tv \c}
-    {\cexists \tv \cexistsi \inst \x \c}
-
   \rewrite[S-Exists-Conj]
     {(\cexists \alpha \ca) \cand \cb \\
      \tv \disjoint \cb}
     {\cexists \tv {\ca \cand \cb}}
-
-  \rewrite[S-Exists-Inst-Conj]
-    {(\cexistsi \inst \x \ca) \cand \cb}
-    {\cexistsi \inst \x \ca \cand \cb}
 
   \rewrite[S-Let-ExistsLeft]
     {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
      \tvb \disjoint \tv, \tvs}
     {\cletr \x \tv {\tvs, \tvb} \ca \cb}
 
-  \rewrite[S-Let-Exists-InstLeft]
-    {\cletr \x \tv \tvs {\cexistsi \inst \xp \ca} \cb}
-    {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
-
   \rewrite[S-Let-ExistsRight]
     {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
      \tvb \disjoint \tv, \tvs, \cb}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
-
-  \rewrite[S-Let-Exists-InstRight]
-    {\cletr \x \tv \tvs \ca {\cexistsi \inst \xp \cb} \\
-     \x \neq \xp}
-    {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
 
   \rewrite[S-Let-ConjLeft]
     {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
@@ -4520,13 +4503,17 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
 		      {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
 
+  \rewrite[S-Exists-Exists-Inst]
+    {\cexistsi \inst \x \cexists \tv \c}
+    {\cexists \tv \cexistsi \inst \x \c}
+
+  \rewrite[S-Exists-Inst-Conj]
+    {\cexistsi \inst \x \ca \cand \cb \\ \inst \disjoint \ca}
+    {\ca \cand \cexistsi \inst \x \cb}
+
   \rewrite[S-Exists-Inst-Solve]
     {\cexistsi \inst \x \c \\ \inst \disjoint \c}
     {\c}
-
-  \rewrite[S-All-Exists-Inst]
-    {\cfor \tvs {\cexists \tvbs {\cexistsi \inst \x \c}}}
-    {\cexistsi \inst \x {\cfor \tvs {\cexists \tvbs \c}}}
 
   \rewrite[S-All-Conj]
     {\cfor \tvs {\cexists \tvbs {\ca \cand \cb}} \\ \tvs, \tvbs \disjoint \ca}
