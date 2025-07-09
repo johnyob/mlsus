@@ -2116,8 +2116,8 @@ There are three cases in which an instantiation constraint is eliminated:
     {\c}
 
   \rewrite[S-Compress]
-    {\cletr \x \tv {\tvs} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} \\ \tvb \in \reg \tv \tvs }
-    {\cletr \x \tv {\tvs, \tvb} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvc \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
+    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} \\ \tvb \neq \tvc}
+    {\cletr \x \tv {\tvs} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvb \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
 
   \rewrite[S-Exists-Lower]
     {\cletr \x \tv {\tvas, \tvbs} \ca \cb \\
@@ -2142,10 +2142,9 @@ There are three cases in which an instantiation constraint is eliminated:
 \Rule{S-Let-Solve} remove a $\Let$ constraint when the bound term variable is
 unused and the abstraction is satisfiable. \Rule{S-Compress} determines that a
 regional variable $\tvb$ is an an alias for $\tvc$. We replace every free
-occurrance of $\tvb$ with $\tvc$--- \emph{including} the domains of any partial
+occurrence of $\tvb$ with $\tvc$--- \emph{including} the domains of any partial
 instantiation constraints, written as the substitution $\where{\x.\tvb \is
-\tvc}$\footnote{Removal of `dead' variables is handled by \Rule{S-Gc} in
-\cref{TODO}.}. We view this as an analogous copy rule for variables.
+\tvc}$. We view this as an analogous copy rule for variables.
 
 \parcomment{Lowering}
 
@@ -4579,7 +4578,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
   \rewrite[S-Compress]
     {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} \\ \tvb \neq \tvc}
-    {\cletr \x \tv {\tvs, \tvb} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvb \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
+    {\cletr \x \tv {\tvs} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvb \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
 
   \rewrite[S-Gc]
     {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb \ueq} \cb \\ \tvb \disjoint \ca, \ueq, \cb}
