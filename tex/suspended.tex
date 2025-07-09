@@ -1523,18 +1523,18 @@ We use the metavariables $\e^i$ or $\el^i$ to range over the fragile/implicit co
 
 \subsection{Unicity conditions in typing rules}
 
-Our typing rules for implicit constructs follow the shape we described previously, of a contextual rule with a unicity condition and an elaboration into an explicit rule. Our unicity conditions in typing rules request that the shape $\sh$ the annotation is fully determined from the context, either from the type of the expression, which we write $\eshape \E \e \sh$, or from the type of the hole, which we write $\Eshape \E \e \sh$.
-
-In order to describe the judgments $\eshape \E \e \sh$ and $\Eshape \E \e \sh$,
-we introduce a \emph{typed hole} construct $\emagic \e$ that allows any
-well-typed expression $\e$ to be treated as if it had any type:
+Our typing rules for implicit constructs are inspipred by the semantics: a contextual rule with a unicity condition, and an elaboration into an explicit rule. Our unicity conditions in typing rules request that the annotating shape is fully determined from the context, either from the type of the expression.
+%
+In order to define the unicity conditions, we introduce a \emph{typed
+  hole} construct $\emagic \e$ that allows any well-typed expression
+$\e$ to be treated as if it had any type:
 \begin{mathpar}
   \inferrule[Magic]
     {\G \th \e : \t}
     {\G \th \emagic \e : \tp}
 \end{mathpar}
 Typed holes are not allowed in source terms and are just a device for
-the definition of non-ambiguous shapes. We also introduce an erasure
+the definition of unicity conditions. We also introduce an erasure
 function $\eerase \e$, the term counterpart of constraint erasure
 $\cerase \c$, which erases all not-yet-elaborated implicit constructs
 $\e^i$ in $\e$. They are replaced by their subterms placed into magic
@@ -1543,8 +1543,7 @@ type. For example $\eerase {\efield \e j}$ is $\emagic {\cerase \e}$;
 the full definition is given in \cref{fig:defn-term-erasure}
 (appendix).
 
-Finally, we define what it means for a
-shape to be determined from the type of a context or an expression:
+We can now state that a shape is uniquely determined by the type of a context or an expression:
 \begin{mathpar}
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
@@ -1560,8 +1559,8 @@ shape to be determined from the type of a context or an expression:
 \end{tabular}}
 \end{mathpar}
 These states that the shape $\sh$ of expression $\e$ in context $\E$ is
-determined by the expression $\e$, in the former case, or by the context
-$\E$ in the latter case.
+determined by the expression $\e$, for $\eshape E \e \sh$, or by the context
+$E$, for $\Eshape E \e \sh$.
 
 \subsection{Typing rules and constraint generation}
 
@@ -1596,9 +1595,17 @@ Constraint generation is sound and complete with respect to the typing judgment.
 That is to say, the term $\e$ is typable with $\t$ if and only if
 $\cinfer \e \tv$ is satisfiable when $\tv$ is $\t$.
 %
-\begin{theorem}{(Constraint generation is sound and complete)}
+\begin{theorem}[Constraint generation is sound and complete]
 $\th \e : \t$ iff\/
 $\cunif \tv \t \centails \csem {\e : \tv}$.
+\end{theorem}
+
+\begin{theorem}[Principal types]
+  For any closed term $\e$, there exists a principal type $\t$ such that
+  \begin{enumerate}[(\roman*)]
+    \item $\th \e : \t$.
+    \item For any other typing $\th \e : \tp$, then $\tp = \theta(\t)$ for some substitution $\theta$.
+  \end{enumerate}
 \end{theorem}
 
 It is also interesting to discuss the stability of typing by common program transformations.
@@ -1609,7 +1616,7 @@ The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
 equitypable where $\eswap$ is
 $\efun f {\efun \xa {\efun \xb {\eappp f \xb \ea}}}$. We also have
 that $\eapp f \e$ and $\eappp {\mathsf{app}} f \e$ and
-$\eappp {\mathsf{rev\_app}} \e f$ are themselves equitypable where
+$\eappp {\mathsf{rev\_app}} \e f$ are equitypable, where
 $\mathsf{app}$ and $\mathsf{rev\_app}$ are the application function
 $\efun f \efun \x \eapp f \x$ and the reverse application function
 $\efun \x \efun f \eapp f \x$, respectively. It is well-known that
@@ -1631,17 +1638,29 @@ transitions are applicable, \ie $\c \cnsolve$, the constraint $\c$ is either in
 solved form---from which we can read off a most general solution---or the
 solver becomes stuck, indicating that $\c$ is unsatisfiable.
 
+\begin{definition}[Solved form $\hat\up$]
+  \label{def:solved-form}
+  A solved form is a constraint $\hat\up$ of the form $\cexists \tvs \cAnd
+\iton \ueqi$, where:
+\begin{enumerate*}
+  \item each $\ueqi$ contains at most one non-variable type,
+  \item head variables do not occur in multiple equations,
+  \item the constraint is acyclic.
+\end{enumerate*}
+\end{definition}
+
 \subsection{Unification}
 %
 Our constraints ultimately reduce to equations between types, which we solve
 using first-order unification. Like our solver, we specify unification as a
 non-deterministic rewriting relation between \emph{unification problems} $\upa
-\unif \upb$.
+\unif \upb$, that eventually reduces to a solved form $\hat\up$ or to $\cfalse$.
 
 \begin{mathparfig}[htpb!]
   {fig:unification-syntax-and-semantics}
-  {Syntax and semantics of unification problems. Constraints are also extended with the
-  administrative multi-equation construct.}
+  {Syntax and semantics of unification problems.
+   %Constraints are also extended with the administrative multi-equation construct.
+  }
 \begin{minipage}[t]{0.45\textwidth}
 \begin{bnfgrammar}
   \entry[Unification problems]{\up}{
@@ -1665,93 +1684,16 @@ non-deterministic rewriting relation between \emph{unification problems} $\upa
 
 \parcomment{Unification problems and multi-equations}
 
-Unification problems $\up$ are a restricted subset of constraints, extended
-with \emph{multi-equations} \citep{Pottier-Remy/emlti}---a multi-set of types
-considered equal. These generalize binary equalities: $\semenv$ satisfies a
-multi-equation $\ueq$ if all of its memebers are mapped to a single ground type
-$\gt$ (Rule \Rule{Multi-Unif}). Multi-equations are considered equal modulo
-permutation of their members.
+Unification problems $\up$
+(\cref{fig:unification-syntax-and-semantics}) are a restricted subset
+of constraints, extended with \emph{multi-equations}
+\citep{Pottier-Remy/emlti}---a multi-set of types considered
+equal. These generalize binary equalities: $\semenv$ satisfies
+a multi-equation $\ueq$ if all of its memebers are mapped to a single
+ground type $\gt$ (Rule \Rule{Multi-Unif}). Multi-equations are
+considered equal modulo permutation of their members.
 
-\parcomment{The algorithm}
-
-The unification rules are listed in \cref{fig:omni-unification-algorithm}.
-Rewriting proceeds under an arbitrary context $\Up$, modulo $\alpha$-equivalence
-and associativity/commutativity of conjunctions.
-%
-Our algorithm is largely standard \cite{Pottier-Remy/emlti} but replaces type
-constructors with \emph{canonical principal shapes}, enabling a uniform
-treatment of monotypes and polytypes within unification compared to
-prior formulations \citep{Garrigue-Remy/poly-ml}.
-
-\begin{mathparfig}[htpb!]
-  {fig:unification-algorithm}
-  {Unification algorithm as a series of rewriting rules
-   $\upa \unif \upb$. All shapes are principal.}
-   \rewrite[U-Exists]
-      {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
-      {\cexists \tv {\upa \cand \upb}}
-
-    \rewrite[U-Cycle]
-      {\up \\ \cyclic \up}
-      {\cfalse}
-
-    \rewrite[U-True]
-      {\up \cand \ctrue}
-      {\up}
-
-    \rewrite[U-False]
-      {\Up\where\cfalse \\ \Up \neq \square}
-      {\cfalse}
-
-    \rewrite[U-Merge]
-      {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
-      {\cunif \tv {\cunif \ueqa \ueqb}}
-
-    \rewrite[U-Stutter]
-      {\cunif \tv {\cunif \tv \ueq}}
-      {\cunif \tv \ueq}
-
-    \rewrite[U-Name]
-      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
-      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq}}
-
-    \rewrite[U-Decomp]
-      {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
-      {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
-
-    \rewrite[U-Clash]
-      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }\\
-       \sh \neq \shp}
-      {\cfalse}
-
-    \rewrite[U-Trivial]
-      {\ueq \\ |\ueq| \leq 1}
-      {\ctrue}
-\end{mathparfig}
-
-
-\parcomment{Explaination of the rules}
-
-We briefly summarize the role of each rule. \Rule{U-Exists} lifts existential
-quantifiers, enabling applications of \Rule{U-Merge} and \Rule{U-Cycle} since
-all multi-equations eventually become part of a single conjunction.
-\Rule{U-Merge} combines mutli-equations sharing a common variable and
-\Rule{U-Stutter} removes duplicate variables. \Rule{U-Decomp} decomposes equal
-types with matching shapes into equalities between their subcomponents, while
-\Rule{U-Clash} detects shape mismatches that result in failure. \Rule{U-Name}
-introduces fresh variable for subcomponents, ensuring unification operates on
-\emph{shallow terms}, making sharing of type variables explicit and avoiding
-copying types in rules such as \Rule{U-Decomp}. \Rule{U-True} and
-\Rule{U-Trivial} eliminate trivial constraints, and \Rule{U-False} propagates
-failure.
-%
-Finally, \Rule{U-Cycle} implements the \emph{occurs check}, ensuring that a
-type variable does not occur in the type it is being unified with. This is a
-necessary condition for unification, as it would otherwise lead to infinite
-types\footnote{We discuss relaxing this constraint in \cref{sec/rec-types}.}.
-This is formalized by the relation $\tv \prec_\up \tvb$ indicating that $\tv$
-occurs in a type assigned to $\tvb$ in $\up$. A unification problem is cyclic,
-written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
+Our algorithm is largely standard. For reasons of space we describe it in \cref{app:unification} (appendix).
 
 \subsection{Solving rules}
 
@@ -1761,19 +1703,13 @@ We now gradually introduce the rules of the constraint solver itself (\cref{fig:
 and \cref{TODO}).
 These rules define a non-deterministic rewriting
 system, operating modulo $\alpha$-equivalence and the associativity and
-commutativity of conjunction. Rewriting is performed under an arbitrary
-one-hole constraint context $\C$.
+commutativity of conjunction. $\C$ represents an arbitrary
+one-hole constraint context.
 
 % Solved forms
-A constraint $C$ is satisfiable if it can be rewritten into a \emph{solved
-form}. A solved form is a constraint $\hat\up$ of the form $\cexists \tvs \cAnd
-\iton \ueqi$, where:
-\begin{enumerate*}
-  \item each $\ueqi$ contains at most one non-variable type,
-  \item head variables do not occur in multiple equations,
-  \item the constraint is acyclic.
-\end{enumerate*}
-% Common rule descriptions
+A constraint $C$ is satisfiable if rewrites into a solved form
+$\hat\up$ (\cref{def:solved-form}). Otherwise it gets
+stuck.
 
 \paragraph{Basic rules}
 
@@ -1781,7 +1717,7 @@ form}. A solved form is a constraint $\hat\up$ of the form $\cexists \tvs \cAnd
 
 \Rule{S-Unif} invokes the unification algorithm to the
 current unification problem. The unification algorithm itself is treated as a
-black box by the solver, allowing the solver to be parameterized over the
+black box by the solver, so the system could be extended with any
 equational theory of types implemented by the unifier.
 \begin{mathparfig}[htpb!]
   {fig:constraint-let-regions}
@@ -1817,41 +1753,42 @@ variables. The order of $\tvs$ is immaterial; regions are considered equal up
 to permutation of these variables.
 
 Satisfiability of regional $\Let$-constraints is defined in
-\cref{fig:constraint-let-regions}. The semantic interpretation of an
+\cref{fig:constraint-let-regions}. The semantics of an
 abstraction with a region, written $\semenv(\cabsr \tv \tvs \c)$, is a set of
 \emph{ground regions} that satisfy $\c$. A ground region is a satisfying
 interpretation for the region $\semenvp$ with a designated \emph{root} variable
 $\tv$, written $\greg \tv \semenvp$. Regional $\Let$-constraints strictly
 generalize ordinary constraint abstractions, as captured by the equivalence:
 \begin{mathline}
-  \clet \x \tv \ca \cb \cequiv \cletr \x \tv \eset \ca \cb
+  (\clet \x \tv \ca \cb) \cequiv (\cletr \x \tv \eset \ca \cb)
 \end{mathline}
 
 \parcomment{Explaination of rules}
 
-In particular, \Rule{S-Let} rewrites the usual let constraints into region
+\Rule{S-Let} rewrites let constraints into regional
 form.
 %
 \Rule{S-Exists-Conj} lifts existentials across conjunctions;
 \Rule{S-Let-ExistsLeft} and \Rule{S-Let-ExistsRight} lift existentials across
-let-binders; and \Rule{S-Let-ConjLeft}, \Rule{S-Let-ConjRight} hoist
-constraints out of let-binders when they are independent of the locally bound
+let-binders; \Rule{S-Let-ConjLeft}, \Rule{S-Let-ConjRight} hoist
+constraints out of let-binders when they are independent of the local
 variables.
 %
-Collectively, these lifting rules normalize the structure of each region into a
-block of existentially bound variables, whose body consists of a conjunction of
-solved multi-equations (from unification) followed by a residual
-constraint---typically an application, let-binding, or suspended constraint.
+Collectively, these lifting rules normalize the structure of each
+region into a block of existentially bound variables, whose body
+consists of a conjunction of solved multi-equations followed by
+a residual constraint---typically an application, let-binding, or
+suspended constraint.
 
 \begin{mathparfig}[htpb!]
   {fig:solver-basic}
   {Basic rewriting rules $\ca \csolve \cb$}
   \rewrite[S-Unif]
-    {\upa \\ \upa \unif \upb}
+    {\upa \quad \upa \unif \upb}
     {\upb}
 
   \rewrite[S-False]
-    {\C\where\cfalse \\ \C \neq \square}
+    {\C\where\cfalse \quad \C \neq \square}
     {\cfalse}
 
   \rewrite[S-Let]
@@ -1859,10 +1796,10 @@ constraint---typically an application, let-binding, or suspended constraint.
     {\cletr \x \tv \eset \ca \cb}
 
   \rewrite[S-Exists-Conj]
-    {(\cexists \alpha \ca) \cand \cb \\
+    {(\cexists \alpha \ca) \cand \cb \quad
      \tv \disjoint \cb}
     {\cexists \tv {\ca \cand \cb}}
-
+  \\
   \rewrite[S-Let-ExistsLeft]
     {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
      \tvb \disjoint \tv, \tvs, \cb}
@@ -1872,7 +1809,7 @@ constraint---typically an application, let-binding, or suspended constraint.
     {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
      \tvb \disjoint \tv, \tvs, \cb}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
-
+  \\
   \rewrite[S-Let-ConjLeft]
     {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
      \ca \disjoint \tv, \tvs}
@@ -1894,14 +1831,6 @@ constraint---they are desugared into constraints already handled by the solver.
 
 \paragraph{Suspended match constraints}
 
-\parcomment{S-Susp-Use}
-
-\Rule{S-Match-Type} solves suspended match constraints whose scrutinee is a
-non-variable type $\t$ by rewriting them using the sugar $\cmatched \t \sh
-\cbrs$, introduced in \cref{sec:constraints}. In this case, $\shape
-\t$ is used for $\sh$ to determine the matching branch. If no branch matches,
-the rule is stuck, indicating that the constraint is unsatisfiable.
-
 \begin{mathparfig}
   {fig:solver-susp}
   {Rewriting rules for suspended match constraints.}
@@ -1916,18 +1845,19 @@ the rule is stuck, indicating that the constraint is unsatisfiable.
     {\C\where{\cmatched \tv {\shape \t} \cbrs}}
 \end{mathparfig}
 
+\parcomment{S-Susp-Use}
+
+\Rule{S-Match-Type} solves suspended match constraints whose scrutinee is a
+non-variable type $\t$ by rewriting them using the sugar $\cmatched \t {\shape \t}
+\cbrs$, introduced in \cref{sec:constraints}. If no branch matches $\shape \t$,
+the rule is stuck and the constraint is unsatisfiable.
+
 \parcomment {S-Susp-Ctx}
 
-\Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and the
-context $\C$ proves that $\tv$ is equal to some non-variable type $\t$, which
-suffices to establish the unicity property $\Cshape \C \t {~\shape \t}$. This
-may occur immediately (\eg due to earlier unification) or only after more
-constraints are solved. In either case, if $\tv$ is eventually unified with a
-non-variable type $\t$, the constraint is rewritten to the matching branch.
-%
-To check whether the context $\C$ proves an equality---or more generally, a
-multi-equation $\ueq$---we search for a decomposition $\C = \Ca[\ueq \cand
-\Cb]$ such that $\fvs \ueq$ is disjoint from the binders of $\Cb$.
+\Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and
+the context $\C$ proves that $\tv$ is equal to some non-variable type
+$\t$, so we have the unicity property
+$\Cshape \C \t {~\shape \t}$.
 
 \paragraph{Let constraints}
 
@@ -2031,10 +1961,11 @@ instantiations $\cpinst \inst \tv \t$ are solved uniformly. Within the solver,
 we view partial instantiations as markers indicating which parts of the
 abstraction still need to be copied.
 
-Partial instantiations enables efficient, incremental instantiation of
-constraint abstractions: solved parts are reused immediately, while unresolved
-constraints (\ie suspended constraints) can be solved later, further refining
-the abstraction and propagation additional equations to the application sites.
+Partial instantiations enables efficient incremental instantiation of
+constraint abstractions: solved parts are reused immediately, while
+suspended constraints can be solved later, further refining the
+abstraction and propagation additional equations to the application
+sites.
 
 \parcomment{Semantics of partial applications}
 
@@ -2067,6 +1998,7 @@ Partial instantiation constraints are reduced using the following rules:
     We write $\cpapp \x \tv \t \inst$ as a shorthand for $\cpinst \inst \tv \t$
     when $\inst$ is bound with $\exists \inst^\x$ in the context. To ensure
     termination, the abstraction must contain acyclic types.
+    \Xgabriel{This is confusing when trying to read the rules directly. Could you instead stick to the $\inst^\x$ notation throughout, so that we only see $\cpinst {\inst^\x} \tv t$?}
 
   \item \Rule{S-Inst-Unify} unifies two instantiations if they refer to the
     same source variable.
@@ -2107,11 +2039,11 @@ There are three cases in which an instantiation constraint is eliminated:
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
   \rewrite[S-Inst-Poly]
-    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
-     \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+     \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
      \tvp \disjoint \c, \insts \C \inst \\
      \x \disjoint \bvs \C}
-    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
+    {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
   \rewrite[S-Inst-Mono]
     {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
@@ -2126,7 +2058,7 @@ There are three cases in which an instantiation constraint is eliminated:
     {\c}
 
   \rewrite[S-Compress]
-    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} }
+    {\cletr \x \tv {\tvs} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} \\ \tvb \in \reg \tv \tvs }
     {\cletr \x \tv {\tvs, \tvb} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvc \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
 
   \rewrite[S-Exists-Lower]
@@ -2240,20 +2172,20 @@ universality.
 
 % Properties
 
-\begin{theorem}[Progress]
+\begin{restatable}[Progress]{theorem}{progress}
   For any constraint $\c$, then either
   \begin{enumerate}[(\roman*)]
     \item $\c$ is solved.
-    \item $\c$ is stuck: either $\cfalse$; $\hat\C\where{\capp \x \t}$ where $\x \disjoint \hat\C$; $\hat\C\where{\cpapp \x \ren \ueqs}$
-      where $\x \disjoint \hat\C$ or $\C\where\ctrue \ncentails \C\where{\ueqs\where\ren}$; $\hat\C\where{\cmatch \tv \cbrs}$ where $\nCshape {\hat\C} \tv \sh$
+    \item $\c$ is stuck: either $\cfalse$; $\hat\C\where{\capp \x \t}$ where $\x \disjoint \hat\C$; $\hat\C\where{\cpapp \x \tv \tvc \inst}$
+      where $\x \disjoint \hat\C$ and $\insts {\hat\C} \inst = \eset$; $\hat\C\where{\cmatch \tv \cbrs}$ where $\nCshape {\hat\C} \tv \sh$
       for any shape. Here $\hat\C$ is a \emph{solved} context \ie no other rewrites can be applied.
     \item $\c \csolve \cp$ for some $\cp$.
   \end{enumerate}
-\end{theorem}
+\end{restatable}
 
-\begin{theorem}[Termination]
+\begin{restatable}[Termination]{theorem}{termination}
   The constraint solver terminates on all inputs.
-\end{theorem}
+\end{restatable}
 
 \begin{restatable}[Preservation]{theorem}{preservation}
   If $\ca \csolve \cb$, then $\ca \cequiv \cb$.
@@ -2265,15 +2197,13 @@ universality.
 We have a working prototype of a core \ML language with suspended
 match constraints and partial generalization, in which we have
 reproduced the various type-system features and examples presented in
-this work. This prototype will be made available as open-source
-software along with the present article.
+this work. This prototype is public and open-source (link omitted for anonymity).
 
 The implementation is inspired by previous work such as
 Inferno~\citet*{inferno}. It uses state-of-the-art implementation
 techniques for efficiency, such as a Union-Find data structure and the
 use of \emph{ranks} (or \emph{levels}) for efficient
-generalization. Let us discuss a few salient points related to
-suspended constraints and partial generalization.
+generalization. Let us discuss a few salient points.
 
 \paragraph{Unification and scheduling} Each unsolved unification
 variable maintains a \emph{wait list} of suspended constraints that
@@ -2283,24 +2213,24 @@ scheduled on the global constraint scheduler, which is responsible for
 eventually solving them.
 
 \paragraph{From a stack to a tree}
-To implement generalization (the \Rule{S-Lower-Exists} rule)
-efficiently, we follow the classic rank-based approach to
-generalization. Each $\Let$ constraint and type variable is allocated
-an integer \emph{rank}, which informs us the depth of the region
-within the constraint. Type variables of rank $0$ are bound at the
-top-level region, and type variables of rank $r \geq 1$ are bound in
-the region of $\Let$ constraint at depth $r$.
+% To implement generalization (the \Rule{S-Lower-Exists} rule)
+% efficiently, we follow the classic rank-based approach to
+% generalization. Each $\Let$ constraint and type variable is allocated
+% an integer \emph{rank}, which informs us the depth of the region
+% within the constraint. Type variables of rank $0$ are bound at the
+% top-level region, and type variables of rank $r \geq 1$ are bound in
+% the region of $\Let$ constraint at depth $r$.
 
-As inference progresses, unification may widen the scope of variables,
-thereby lowering their rank. The set of variables eligible for
-generalization at a given region consists precisely of those
-whose rank remains equal to that of the region.
+% As inference progresses, unification may widen the scope of variables,
+% thereby lowering their rank. The set of variables eligible for
+% generalization at a given region consists precisely of those
+% whose rank remains equal to that of the region.
 
 Many standard \ML implementations, for example Inferno, represent the
 solver state as a linear \emph{stack} of inference regions, from the
-outermost variable scope to the current region being inferred.
+outermost variable scope to the current region being inferred. Unification maintains an integer \emph{rank} (or \emph{level}) for each variable, that index a region in the stack.
 %
-This choice does not work for \emph{partial generalization}. If
+This choice does not work for partial generalization. If
 generalization at some region is suspended by a match constraint, the
 region must remain alive while we restart inference in outer
 regions. Later parts of the constraint may introduce a new
@@ -2355,10 +2285,11 @@ Once a suspended match constraint is solved, it removes the guard it
 introduced. This may enable previously partial generics to become fully
 generalizable. Conversely, if a partially generalized variable is lowered (\eg by \Rule{S-Lower-Exists}), it must be unified with all its instances.
 
-\paragraph{Lazy generalization} Repeatedly generalzing a region after every update is expensive.  Instead we generalize on demand. We mark regions as ``stale'' when they may require re-generalization. When an instance is taken, we generalize the region of the partial type scheme, if stale, and all its stale descendants in the region tree before it.
+\paragraph{Lazy generalization} Repeatedly generalzing a region after every update is expensive.  Instead we generalize on demand. We mark regions as ``stale'' when they may require re-generalization. When an instance is taken, we re-generalize the stale descendants of the region in the region tree.
 
 \section{Discussion and Future Work}
 \label{sec:discussion}
+\label{sec:future-work}
 
 \subsection{Other uses of suspended constraints}
 
@@ -2396,7 +2327,7 @@ uses such a fallback when a field name cannot be disambiguated, it
 selects the last declaration of a record type with this field in the
 lexical scope.
 
-To implement a type-system matching this specification, we considered
+To support this specification we considered
 adding \emph{default rules} for suspended match constraints, that
 would be selected instead of failing when a suspended constraint is
 never discharged. This extension is however difficult to design, as it
@@ -2419,46 +2350,6 @@ For polytypes, one option is to fallback to a monomorphic polytype. The
 other one is to pick the principal type scheme of the expression with an
 unresolved polytype. Of course, there are examples that favor one choice
 and other examples that favor the other.
-
-\subsection{Equi-recursive types}
-\label {sec/rec-types}
-
-For sake of simplicity, we have taken finite trees for ground types, that
-is, for the semantics of constraints.  Iso-recursive types can easily be
-added as in \ML, using a new datatype definition where  a record label
-or datatype constructor is used to fold or unfold the recursive definition.
-
-\OCaml also allows equi-recursive types, which can be modeled by taking
-regular trees instead of tree for ground types.  Doing this change would
-preserve the main metatheoretical properties, as in~\cite
-{Pottier-Remy/emlti}, as we never rely on finiteness of ground types.  This
-would allow type inference with equi-recursive types.
-
-Technically, we need to extend the syntax of types with
-a new introduction form $\trec \tv \t$ with the condition that $\t$ is
-constructive, \ie a nonvariable type.  Internally, we never manipulate
-recursive types but equations. The change, is a remove
-\Rule {U-Cycle} and consistently allow canonical forms to contain cycles,
-as they now admit regular tree solutions.
-
-Similarly, shapes may be recursive, but only minimal shapes of polytypes may
-be recursive. All types still have unique minimal shapes where equality of
-shapes is taken up to equi-recursion, indeed.  While equality of shapes is
-syntactical in the absence of recursive types, this is no longer the
-case---but this does not raise any issue.
-
-\Xdidier{There is an inline note here.}
-\begin{version}{}
-I did not see any difficult with equi-recursive types.
-I am not even sure we need to mention~\cite
-{Gauthier-Pottier/numbering@icfp04}.
-Ths provides a cannonical representation, generalizing de Bruin indicies so
-that second-order equality of terms amount to fisrt-order equality.
-The canonical representation useing shapes is simiular.
-\Xdidier {How much more should we say?}
-
-\Xdidier {Should we give the change in unification rules?}
-\end{version}
 
 \section{Related work}
 \label{sec:related-work}
@@ -2544,12 +2435,10 @@ suspended constraints in this work, and would be interested in
 studying applications to GADT typing, which was also one of our
 original motivations.
 
-\section{Future work}
-\label{sec:future-work}
-
 % \begin{acks}
 % \end{acks}
 
+\Xgabriel{No conclusion? I'm fine with this, and it takes less space than having a conclusion.}
 
 %% \bibliographystyle{ACM-Reference-Format}
 \bibliography{suspended}
@@ -3446,284 +3335,132 @@ constructs used in \OML's typing rules and are included for completeness.
 
 % Soundness/completeness of constraint gen
 
+\section{Unification}
+\label{app:unification}
 
-\section{The \OML calculus, feature by feature}
+The unification rules are listed in \cref{fig:omni-unification-algorithm}.
+Rewriting proceeds under an arbitrary context $\Up$, modulo $\alpha$-equivalence
+and associativity/commutativity of conjunctions.
 
-\Xgabriel{This section contains work-in-progress content that I intended to use to rewrite Section 4, ``The \OML calculus''. I still believe that there will not be enough space to keep Section 4 anyway, so I decided to stop this rewrite effort and dump the current content here.}
+Our algorithm is largely standard \cite{Pottier-Remy/emlti} but replaces type
+constructors with \emph{canonical principal shapes}, enabling a uniform
+treatment of monotypes and polytypes within unification compared to
+prior formulations \citep{Garrigue-Remy/poly-ml}.
 
-\subsection{The core fragment}
-\label{sec:language:core}
-\label{sec/language/typing-rules}
+%
 
-\begin{mathparfig}{fig/typing-core}{Typing and inference: Core \ML}
-  \inferrule[Var]
-    {x : \sigma \in \G}
-    {\G \th x : \sigma}
 
-  \inferrule[Fun]
-    {\G, x : \ta \th e : \tb }
-    {\G \th \efun x e : \ta \to \tb}
+\begin{mathparfig}[htpb!]
+  {fig:unification-algorithm}
+  {Unification algorithm as a series of rewriting rules
+   $\upa \unif \upb$. All shapes are principal.}
+   \rewrite[U-Exists]
+      {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
+      {\cexists \tv {\upa \cand \upb}}
 
-  \inferrule[App]
-    {\G \th \ea : \ta \to \tb \\
-     \G \th \eb : \ta}
-    {\G \th \eapp \ea \eb : \tb}
+    \rewrite[U-Cycle]
+      {\up \\ \cyclic \up}
+      {\cfalse}
 
-  \inferrule[Annot]
-    {\G \th e : \t\where {\tvs \is \tys}}
-    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
+    \rewrite[U-True]
+      {\up \cand \ctrue}
+      {\up}
 
-  \inferrule[Gen]
-    {\G \th e : \sigma \\ \tv \disjoint \G}
-    {\G \th e : \tfor \tv \sigma}
+    \rewrite[U-False]
+      {\Up\where\cfalse \\ \Up \neq \square}
+      {\cfalse}
 
-  \inferrule[Inst]
-    {\G \th e : \tfor \tv \ts}
-    {\G \th e : \ts \where{\tv \is \t}}
+    \rewrite[U-Merge]
+      {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
+      {\cunif \tv {\cunif \ueqa \ueqb}}
 
-  \inferrule[Let]
-    {\G \th \ea : \sigma \\
-     \G, x : \sigma \th \eb : \t}
-    {\G \th \elet x \ea \eb : \t}
-\\
-\newcommand {\Crule}[2]{#1 & \eqdef & #2}
-\begin{array}{l@{\uad} c@{\uad} l}
-\Crule
-  {\cinfer {\efun \x \e} \t}
-  {\cexists {\tva, \tvb}
-    \cunif \t {\tva \to \tvb}
-    {}}
-\\ & & \quad\uad {} \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}
-\\
-\Crule
-  {\cinfer {\eapp \ea \eb} \t}
-  {\cexists {\tva} \cinfer \ea {\tva \to \t} \cand \cinfer \eb \tva}
-\end{array}
-\quad
-\begin{array}{l@{\uad} c@{\uad} l}
-\Crule
-   {\cinfer x \t}
-   {\cinst x \t}
-\\
-\Crule
-  {\cinfer {\elet \x \ea \eb} \t}
-  {\clet \x \tva {\cinfer \ea \tva} {\cinfer \eb \t}}
-\\
-\Crule
-  {\cinfer {\eannot \e \tvs \tp} \t}
-  {\cexists \tvs \cunif \t \tp \cand \cinfer \e \tp}
-\end{array}
+    \rewrite[U-Stutter]
+      {\cunif \tv {\cunif \tv \ueq}}
+      {\cunif \tv \ueq}
+
+    \rewrite[U-Name]
+      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
+      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq}}
+
+    \rewrite[U-Decomp]
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
+      {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
+
+    \rewrite[U-Clash]
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }\\
+       \sh \neq \shp}
+      {\cfalse}
+
+    \rewrite[U-Trivial]
+      {\ueq \\ |\ueq| \leq 1}
+      {\ctrue}
 \end{mathparfig}
 
-As usual, the main typing judgment $\G \th \e : \ts$ states that in
-context $\G$, expression $\e$ has type scheme $\ts$. We give the
-typing rules for the core \ML fragment in \cref{fig/typing-core}. It
-also defines constraint generation for this fragment: given a term
-$\e$ and its expected type $\t$, which may contain some free type
-variables, we define a constraint $\cinfer e \t$ that is satisfiable
-if and only if the term is well-typed for some instantiation of those
-free type variables. Both typing rules and constraint generations are
-standard on this fragment, and we will not comment them further due to
-space restrictions.
 
-\subsection{Unicity via magic rules}
+\parcomment{Explaination of the rules}
 
-TODO: a figure with the magic rule and the two unicity criterion (not for labels).
+We briefly summarize the role of each rule. \Rule{U-Exists} lifts existential
+quantifiers, enabling applications of \Rule{U-Merge} and \Rule{U-Cycle} since
+all multi-equations eventually become part of a single conjunction.
+\Rule{U-Merge} combines mutli-equations sharing a common variable and
+\Rule{U-Stutter} removes duplicate variables. \Rule{U-Decomp} decomposes equal
+types with matching shapes into equalities between their subcomponents, while
+\Rule{U-Clash} detects shape mismatches that result in failure. \Rule{U-Name}
+introduces fresh variable for subcomponents, ensuring unification operates on
+\emph{shallow terms}, making sharing of type variables explicit and avoiding
+copying types in rules such as \Rule{U-Decomp}. \Rule{U-True} and
+\Rule{U-Trivial} eliminate trivial constraints, and \Rule{U-False} propagates
+failure.
+%
+Finally, \Rule{U-Cycle} implements the \emph{occurs check}, ensuring that a
+type variable does not occur in the type it is being unified with. This is a
+necessary condition for unification, as it would otherwise lead to infinite
+types\footnote{We discuss relaxing this constraint in \cref{sec/rec-types}.}.
+This is formalized by the relation $\tv \prec_\up \tvb$ indicating that $\tv$
+occurs in a type assigned to $\tvb$ in $\up$. A unification problem is cyclic,
+written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
 
-\subsection{Overloaded tuples}
+\section{More discussion}
 
-\begin{mathparfig}{fig/typing-tuples}{Typing and inference: tuples}
-  \inferrule[Tuple]
-    {\parens{\G \th \ei : \ti}\iton}
-    {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
+\subsection{Equi-recursive types}
+\label {sec/rec-types}
 
-  \inferrule[Proj-X]
-    {\G \th \e : \Pi\iton \ti \\
-     1 \leq j \leq n}
-    {\G \th \exfield \e n j : \tj}
+For sake of simplicity, we have taken finite trees for ground types, that
+is, for the semantics of constraints.  Iso-recursive types can easily be
+added as in \ML, using a new datatype definition where  a record label
+or datatype constructor is used to fold or unfold the recursive definition.
 
-  \inferrule[Proj-I]
-    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
-     \G \th \E\where{\exfield \e n j} : \t}
-    {\G \th \E\where{\efield \e j} : \t}
-\\
-  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
- \begin{array}{rcl@{\qquad}l@{\qquad\qquad} r}
-   \cpat & ::= & \dots \mid \cpatprod \tv j & & \text{tuple patterns} \\
-    \Mrule[\text{if } n \geq j]
-      {\cpatprod \tv j}
-      {\any \tvcs \Pi\iton \tvcs} \tvbs
-      {[\tv \is \tvb_j]}
-   & \text{matching relation}
- \end{array}
-\\
-\newcommand {\Crule}[2]{#1 & \eqdef & #2}
-\begin{array}{l@{\uad} c@{\uad} l}
-\Crule
-  {\cinfer {\etuple {\ea, \ldots, \en}} \t}
-  {\cexists \tvs \cunif \t {\Pi\iton \tvs}
-    \cand \cAnd \iton \cinfer \ei {\tv_i}}
-\\
-\Crule
-  {\cinfer {\exfield \e j n} \t}
-  {\cexists {\tvbs}
-    \cinfer \e {\Pi\iton \tvbs}
-    \cand \cunif \t {\tvb_j}}
-\\
-\Crule
-  {\cinfer {\efield \e j} \t}
-  {\cexists \tv \cinfer \e \tv
-    \cand \cmatch \tv {\cbranch {\cpatprod \tvb j} {\cunif \t \tvb}}}
-\end{array}
-\end{mathparfig}
+\OCaml also allows equi-recursive types, which can be modeled by taking
+regular trees instead of tree for ground types.  Doing this change would
+preserve the main metatheoretical properties, as in~\cite
+{Pottier-Remy/emlti}, as we never rely on finiteness of ground types.  This
+would allow type inference with equi-recursive types.
 
-\subsection{Polytypes}
+Technically, we need to extend the syntax of types with
+a new introduction form $\trec \tv \t$ with the condition that $\t$ is
+constructive, \ie a nonvariable type.  Internally, we never manipulate
+recursive types but equations. The change, is a remove
+\Rule {U-Cycle} and consistently allow canonical forms to contain cycles,
+as they now admit regular tree solutions.
 
-\begin{mathparfig}{fig/typing-polytypes}{Typing and inference: polytypes}
-  \inferrule [Poly-X]
-    {\G \th \e : \ts\where {\tvs \is \tys}}
-    {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
+Similarly, shapes may be recursive, but only minimal shapes of polytypes may
+be recursive. All types still have unique minimal shapes where equality of
+shapes is taken up to equi-recursion, indeed.  While equality of shapes is
+syntactical in the absence of recursive types, this is no longer the
+case---but this does not raise any issue.
 
-  \inferrule [Poly-I]
-    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
-     \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
-    {\G \th \E \where{\epoly \e} : \t}
+\Xdidier{There is an inline note here.}
+\begin{version}{}
+I did not see any difficult with equi-recursive types.
+I am not even sure we need to mention~\cite
+{Gauthier-Pottier/numbering@icfp04}.
+Ths provides a cannonical representation, generalizing de Bruin indicies so
+that second-order equality of terms amount to fisrt-order equality.
+The canonical representation useing shapes is simiular.
+\Xdidier {How much more should we say?}
 
-  \inferrule [Use-X]
-    {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
-    {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
-
-  \inferrule [Use-I]
-    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
-     \G \th \E\where{\exinst \e \tvcs \ts} : \t}
-    {\G \th \E\where{\einst \e} : \t}
-\\
-  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
- \begin{array}{rcl@{\qquad}l@{\qquad\qquad} r}
-   \cpat & ::= & \dots \mid \cpatpoly \cscm
-               & & \text{polytype patterns} \\
-   \c & ::= & \dots \mid \cscm \leq \t \mid \ts \leq \t \mid \x \leq \cscm \mid \x \leq \ts
-            & & \text{polytype constraints} \\
-    \Mrule
-      {\cpatpoly \cscm}
-      {\any \tvcs \tpoly \ts} \tvbs
-      {[\cscm \is \ts \where{\tvcs \is \tvbs}]}
-   & \text{matching relation}
- \end{array}
-\\
-\newcommand {\Crule}[2]{#1 & \eqdef & #2}
-\begin{array}{l@{\uad} c@{\uad} l}
-\\
-\Crule
-  {\cinfer {\expoly \e \tvs \ts} \t}
-  {\cexists {\tvs}
-    \cinfer \e \ts
-    \cand \cunif \t {\tpoly \ts}}
-\\
-\Crule
-  {\cinfer {\exinst \e \tvs \ts} \t}
-  {\cexists {\tvs}
-    \cinfer \e {\tpoly \ts}
-    \cand \ts \leq \t}
-\\
-\Crule
-  {\cinfer {\einst \e} \t}
-  {\cexists \tva
-    \cinfer \e \tva
-    \cand \cmatch \tva {\cbranch {\cpatpoly \cscm} \cscm \leq \t}}
-\\
-\Crule
-  {\cinfer {\epoly \e} \t}
-  {\clet \x \tv {\cinfer \e \tv}
-    {\cmatch \t {\cbranch {\cpatpoly \cscm} {\x \leq \cscm}}}}
-\end{array}
-\end{mathparfig}
-
-\subsection{Nominal records}
-
-Todo: extend the magic rule and the disambiguation rule, and also provide the unicity-in-env criterion definition. I propose to add those to the figure below.
-
-\begin{mathparfig}{fig/typing-records}{Typing and inference: nominal records}
-  \inferrule[Rcd-Assn]
-    {\G \th \e : \t \\
-     \G \th \el : \t \to \tp}
-    {\G \th \el = \e : \tp}
-
-  \inferrule[Rcd]
-    {\parens{\G \th \eli = \ei : \t}\iton \\
-     \G \th \bar \el \uni \t}
-    {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
-
-  \inferrule[Rcd-Proj]
-    {\G \th \e : \tp \\
-     \G \th \el : \t \to \tp \\
-     \G \th \el \uni \t }
-    {\G \th \efield \e \el : \t}
-
-  \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \tvs \T }
-    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \tys \T}
-
-  \inferrule[Lab-I]
-    {\Lshape \Lab \elab \T \\
-      \G \th \Lab[\elab / \T] : \t}
-    {\G \th \Lab[\elab] : \t}
-
-  \inferrule[Lab-!]
-    {\bar \el \uni \T \in \labenv}
-    {\G \th \bar \el \uni \tys \T}
-
-  \inferrule[Lab-?]
-    {\G \th \t}
-    {\G \th \bar \el \uni \t}
-\\
-  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
- \begin{array}{rcl@{}l@{\qquad} r}
-   \cpat & ::= & \dots \mid \cpatrcd \ct & & \text{record patterns} \\
-   \c & ::= & \dots
-              \mid \labenv(\elab/\ct) \leq \ta \to \tb
-              \mid \labenv(\elab/\T) \leq \ta \to \tb
-            & & \text{record constraints} \\
-    \Mrule
-      {\cpatrcd \ct}
-      {\any \tvcs \tvcs \Tapp} \tvbs
-      {[\ct \is ~ \T]}
-   & \text{matching relation}
- \end{array}
-\\
-\newcommand {\Crule}[2]{#1 & \eqdef & #2}
-\begin{array}{l@{\uad} c@{\uad} l}
-\Crule
-  {\cinferassn \el \e \t}
-  {\cexists \tv \cinfer \e \tv
-    \cand \cinferlab \el \tv \t}
-\\
-\Crule
-  {\cinferlab \elab \ta \tb}
-  {\cmatch \tb {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \ta \to \tb}}}
-\\
-\Crule
-  {\cinferlab {\elab/\T} \ta \tb}
-  {\labenv(\elab/\T) \leq \ta \to \tb}
-\\
-\Crule
-  {\cinferlab {\elmagic \elab} \ta \tb}
-  {\ctrue}
-\\
-\Crule
-  {\cinferlab {\elannot \el \tvs \t} \ta \tb}
-  {\cexists \tvs \cinferlab \el \ta \tb \cand \cunif \tb \t}
-\\
-\Crule
-  {\cinferlabuni {\bar \el} \t}
-  {\begin{cases}
-    \cexists \tvs \cunif \t {\tvs \Tapp} &\text{if } \bar \el \uni \T \in \labenv \\
-    \ctrue &\text{otherwise}
-   \end{cases}}
-\end{array}
-\end{mathparfig}
-
-\clearpage % avoid mixing figures from above and from the Figures section below.
+\Xdidier {Should we give the change in unification rules?}
+\end{version}
 
 \section{Figures}
 
@@ -3870,6 +3607,7 @@ list of figures and definitions. Some of them are repeated from the main paper.
   \eset \and \labenv, \elab : \tfor \tvs \t \to \T \tvs
 }
 \end{bnffig}
+\clearpage
 
 
 
@@ -4691,41 +4429,32 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\upa \\ \upa \unif \upb}
     {\upb}
 
+  \rewrite[S-True]
+    {C \cand \ctrue}
+    {C}
+
+  \rewrite[S-False]
+    {\C\where\cfalse \\ \C \neq \square}
+    {\cfalse}
+
   \rewrite[S-Let]
     {\clet \x \tv \ca \cb}
     {\cletr \x \tv \eset \ca \cb}
-
-  \rewrite[S-Exists-Exists-Inst]
-    {\cexistsi \inst \x \cexists \tv \c}
-    {\cexists \tv \cexistsi \inst \x \c}
 
   \rewrite[S-Exists-Conj]
     {(\cexists \alpha \ca) \cand \cb \\
      \tv \disjoint \cb}
     {\cexists \tv {\ca \cand \cb}}
 
-  \rewrite[S-Exists-Inst-Conj]
-    {(\cexistsi \inst \x \ca) \cand \cb}
-    {\cexistsi \inst \x \ca \cand \cb}
-
   \rewrite[S-Let-ExistsLeft]
     {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
      \tvb \disjoint \tv, \tvs}
     {\cletr \x \tv {\tvs, \tvb} \ca \cb}
 
-  \rewrite[S-Let-Exists-InstLeft]
-    {\cletr \x \tv \tvs {\cexistsi \inst \xp \ca} \cb}
-    {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
-
   \rewrite[S-Let-ExistsRight]
     {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
      \tvb \disjoint \tv, \tvs, \cb}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
-
-  \rewrite[S-Let-Exists-InstRight]
-    {\cletr \x \tv \tvs \ca {\cexistsi \inst \xp \cb} \\
-     \x \neq \xp}
-    {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
 
   \rewrite[S-Let-ConjLeft]
     {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
@@ -4772,11 +4501,11 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
   \rewrite[S-Inst-Poly]
-    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
-     \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+     \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
      \tvp \disjoint \c, \insts \C \inst \\
      \x \disjoint \bvs \C}
-    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
+    {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
   \rewrite[S-Inst-Mono]
     {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
@@ -4809,18 +4538,26 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
        {\cletr \x \tv {\tvs} {\Ca\where{\cmatch \tvp \cbrs}}
                            {\Cb\where{\cpapp \x \tvp \tvc \inst}}} \\
     \tvp \in \reg \tv \tvs \\
-     \cunif {\tvp} {\cunif \t \ueq} \in \C\where\Cb \\
+     \cunif {\tvc} {\cunif \t \ueq} \in \C\where\Cb \\
      \x \disjoint \bvs \Cb}
     {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
 		      {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
 
+  \rewrite[S-Exists-Exists-Inst]
+    {\cexistsi \inst \x \cexists \tv \c}
+    {\cexists \tv \cexistsi \inst \x \c}
+
+  \rewrite[S-Exists-Inst-Conj]
+    {\cexistsi \inst \x \ca \cand \cb \\ \inst \disjoint \ca}
+    {\ca \cand \cexistsi \inst \x \cb}
+
+  \rewrite[S-Exists-Inst-Let]
+    {\cletr \x \tv \tvs \ca {\cexistsi \inst \xp \cb} \\ \x \neq \xp}
+    {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
+
   \rewrite[S-Exists-Inst-Solve]
     {\cexistsi \inst \x \c \\ \inst \disjoint \c}
     {\c}
-
-  \rewrite[S-All-Exists-Inst]
-    {\cfor \tvs {\cexists \tvbs {\cexistsi \inst \x \c}}}
-    {\cexistsi \inst \x {\cfor \tvs {\cexists \tvbs \c}}}
 
   \rewrite[S-All-Conj]
     {\cfor \tvs {\cexists \tvbs {\ca \cand \cb}} \\ \tvs, \tvbs \disjoint \ca}
@@ -4855,6 +4592,11 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
       \implies
       \semenv = \semenvp
   \end{mathpar}
+\end{definition}
+
+\begin{definition}
+A context $\C$ proves a multi-equation $\ueq$, written $\ueq \in \C$,  if there exists a decomposition
+  $\C = \Ca[\ueq \cand \Cb]$ such that $\fvs \ueq \disjoint \bvs \Cb$
 \end{definition}
 
 
@@ -5281,6 +5023,7 @@ entailment in our system.
 	    \simplePf{\ca}{Premise}
 	    \simplePf{\cb}{Premise}
 	    \simplePf{\ca \cand \cb}{By \Rule{Simple-Conj}}
+	    \decolumnizePf
 \Hand 	    \VdashPf{\semenv}{\ca \cand \cb}{By \Rule{Can-Base}}
 
 	  \end{llproof}
@@ -5350,6 +5093,7 @@ entailment in our system.
 		\begin{llproof}
 		  \VdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{Premise}
 		  \vdashPf{\semenv\where{\tv \is \gt}}{\C\where{\cmatched \t \sh \cbrs}}{\cref{lem:decanonicalization}}
+	    \decolumnizePf
 		  \vdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{By \Rule{Exists}}
 		  \VdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{By \ih}
 		  \Pf{}{}{\Cshape \C \t \sh}{Premise}
@@ -5411,6 +5155,7 @@ entailment in our system.
 		\shapePf{\C}{\t}{\sh}{\cref{lem:unicity-inversion}}
 		\VdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{Premise}
 		\vdashPf{\semenv}{\cexists \tv \C\where{\cmatched \t \sh \cbrs}}{\cref{lem:decanonicalization}}
+	    \decolumnizePf
 		\eqPf{\semenv(\cabs \tv \ca)}
 		  {\semenv(\cabs \tv \C\where{\cmatched \t \sh \cbrs})}
 		  {\cref{corollary:matched-abstractions}}
@@ -5565,6 +5310,7 @@ entailment in our system.
 	      \decolumnizePf
 	      \vdashPf{\semenvp}{\cerase {\Ctwo\where{\cunif \t \gtp, \cmatched \tp \shp \cbrs'}}}{$\implies$I}
 	      \vdashPf{\semenvp}{\cerase {\Ctwo\where{\cunif \t \gtp, \ctrue}}}{\cref{lem:cong-simple}}
+	    \decolumnizePf
 	      \eqPf{\cerase {\Ctwo\where{\cunif \t \gtp, \ctrue}}}{\cerase {\Ctwo\where{\cunif \t \gtp, \cerase {\cmatch \tp \cbrs'}}}}{By definition}
 	      \continueeqPf{\cerase {\C\where{\cunif \t \gtp}}}{By definition}
 	      \vdashPf{\semenvp}{\cerase {\C\where{\cunif \t \gtp}}}{Above}
@@ -5618,6 +5364,843 @@ entailment in our system.
   \end{proof}
 \end{corollary}
 
+\clearpage
+\section{Properties of the constraint solver}
+
+The primary requirement of our constraint solver is soundness and completeness:
+a constraint $\c$ is satisfiable if and only if the solver terminates with a solution.
+
+This section decomposes this requirement into three properties: preservation,
+progress, and termination---and provides proofs for each. Soundness and
+completeness then follow as a corollary of these results.
+
+\subsection{Preservation}
+
+This section details the proof of \emph{preservation} for the solver: if $\ca
+\csolve \cb$, then $\ca \cequiv \cb$.
+%
+Since rewriting may occur under arbitrary contexts, it sufficies to check for
+each rule, that the equivalence $\ca \cequiv \cb$ holds under all contexts
+$\C$.
+
+However, the introduction of suspended match constraints breaks congruence of
+equivalence. That is, it is no longer the case that $\ca \cequiv \cb$ implies
+$\C\where\ca \cequiv \C\where\cb$.
+%
+For instance, we have $\cmatch \tv \cbrs \cequiv \cfalse$, yet
+$\C\where{\cmatch \tv \cbrs} \cnequiv \C\where\cfalse$ for $\C \is \square
+\cand \cunif \tv \tint$.
+
+As a result, we must prove \emph{contextual equivalence} for each rewriting
+rule explicitly. This is both nontrivial and tedious. To simplify the task, we
+first present a series of auxillary lemmas that recover contextual equivalence
+for many common cases.
+%
+Whenever possible, we prefer to work with equivalences on \emph{simple}
+constraints, as these retain the desired congruence properties that do not hold
+generally in our system.
+
+\begin{definition}[Contextual eqiuvalence]
+  Two constraints $\ca$ and $\cb$ are contextually equivalence, written $\ca \cequivctx \cb$,
+  iff:
+  \begin{mathpar}
+    \ca \cequivctx \cb \uad\eqdef\uad \all \C \uad \C\where\ca \cequiv \C\where\cb
+  \end{mathpar}
+\end{definition}
+
+\begin{corollary}[Simple equivalence is congruent]
+  \label{corollary:cong-simple-equiv}
+  Given simple constraints $\ca, \cb$ and simple context $\C$. If
+  $\ca \cequiv \cb$, then $\C\where\ca \equiv \C\where\cb$.
+  \begin{proof}
+    Follows from \cref{lem:cong-simple}.
+  \end{proof}
+\end{corollary}
+
+\begin{lemma}[Simple equivalence is contextual]
+  For simple constraints $\ca, \cb$. If $\ca \cequiv \cb$, then $\ca \cequivctx \cb$.
+  \begin{proof}
+    We proceed by induction on the number of suspended match constraints $n$ in $\C$.
+
+    \begin{proofcases}
+      \proofcase{$n$ is 0}
+	Follows from \cref{corollary:cong-simple-equiv}.
+
+      \proofcase{$n$ is $k + 1$}
+
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	  \newcommand{\Ctwo}{\Cb}
+	  \begin{llproof}
+	    \vdashPf{\semenv}{\C\where{\ca}}{Premise}
+	    \VdashPf{\semenv}{\C\where{\ca}}{\cref{thm:canonicalization}}
+	    \shapePf\Cp\t\sh{Inversion of \Rule{Can-Susp-Ctx}}
+	    \VdashPf{\semenv}{\Cp\where{\cmatched \t \sh \cbrs}}{\ditto}
+	    \eqPf{\C\where{\ca}}{\Cp\where{\cmatched \t \sh \cbrs}}{\ditto}
+	    \continueeqPf{\Ctwo\where{\cmatched \t \sh \cbrs, \ca}}{For some two-hole context $\Ctwo$}
+	    \vdashPf{\semenv}{\Ctwo\where{\cmatched \t \sh \cbrs, \cb}}{By \ih}
+	    \ForallPf{\semenvp, \gt}{}{Defn of $\Cshape \Cp \t \sh$}
+	    \vdashPf{\semenvp}{\cerase{\Ctwo\where{\t \is \gt, \cb}}}{Premise}
+	    \vdashPf{\semenvp}{\cerase{\Ctwo\where{\t \is \gt, \ca}}}{\cref{corollary:cong-simple-equiv}}
+	    \vdashPf{\semenvp}{\cerase{\Cp\where{\t \is \gt}}}{Above}
+	    \eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape \Cp \t \sh$}
+	    \decolumnizePf
+	    \shapePf{\Ctwo\where{\square, \cb}}{\t}{\sh}{Above}
+\Hand	    \vdashPf{\semenv}{\Ctwo\where{\cmatch \t \cbrs, \cb}}{By \Rule{Susp-Ctx}}
+	  \end{llproof}
+
+	  \proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    Symmetric argument.
+	  \end{llproof}
+	\end{proofcases}
+    \end{proofcases}
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}[Unification is simple]
+  For all unification problems $\up$, $\up \simple$.
+  \begin{proof}
+    By induction on the structure of $\up$.
+  \end{proof}
+\end{lemma}
+
+
+\begin{definition}[Context equivalence]
+  Two contexts $\Ca$ and $\Cb$ are equivalent with guard $P$, written $\Ca \cctxequiv^P \Cb$ iff:
+  \begin{mathpar}
+    \Ca \cctxequiv^P \Cb \uad\eqdef\uad \all \cs \uad P(\cs) \implies \Ca\where\cs \cequivctx \Cb\where\cs
+  \end{mathpar}
+\end{definition}
+
+\begin{definition}[Match-closed]
+  A predicate $P$ on constraints is \emph{match-closed} if, for all constraints $\cs, \cs'$, matches $\cmatch \t \cbrs$ and shapes $\sh$,
+  \begin{mathpar}
+    P(\cs, \cmatch \t \cbrs, \cs') \implies P(\cs, \cmatched \t \sh \cbrs, \cs')
+  \end{mathpar}
+\end{definition}
+
+
+\begin{lemma}[Simple context equivalence]
+  For any two simple contexts $\Ca, \Cb$ and a match-closed guard $P$. If
+  the two contexts $\Ca$ and $\Cb$ are equivalent under any simple constraints satisfying $P$,
+  then $\Ca \cctxequiv^P \Cb$.
+
+  \begin{proof}
+    Let us assume that ($\dagger$) holds:
+    \begin{mathpar}
+      \all{\C, \cs \simple} P(\cs) \implies \C\where{\Ca\where\cs} \cequiv \C\where{\Cb\where\cs}
+    \end{mathpar}
+
+    We proceed by induction on the number of suspended match constraints $n$ with
+    the statement $Q(n) \is  \all {\cs, \C} \cnmatches {\C} + \cnmatches \cs = n \implies P(\cs) \implies
+    \C\where{\Ca\where\cs} \equiv \C\where{\Cb\where\cs}$.
+
+
+    \begin{proofcases}
+      \proofcase{$n$ is 0}
+
+	\begin{llproof}
+	  \simplePf{\C, \cs}{Premise ($n$ is 0)}
+	  \Hand	  \equivPf{P(\cs) \implies \C\where\Ca\where\cs}{\C\where\Cb\where\cs}{$\dagger$}
+	\end{llproof}
+
+      \proofcase{$n$ is $k + 1$}
+
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \Pf{P(\cs)}{}{}{Premise}
+	    \vdashPf{\semenv}{\C\where\Ca\where\cs}{Premise}
+	    \VdashPf{\semenv}{\C\where\Ca\where\cs}{\cref{thm:canonicalization}}
+	    \VdashPf{\semenv}{\Cp\where{\cmatched \t \sh \cbrs}}{Inversion of \Rule{Can-Susp-Ctx}}
+	    \shapePf{\Cp}{\t}{\sh}{\ditto}
+	    \eqPf{\C\where\Ca\where\cs}{\Cp\where{\cmatch \t \cbrs}}{\ditto}
+	    \commentPf{Cases on $\C, \cs$.}{}
+	  \end{llproof}
+
+	  \begin{proofcases}
+	    \proofcase{$\C$ contains $\Cp$'s hole}
+
+	      \newcommand{\Ctwo}{\Cc}
+	      \begin{llproof}
+		\eqPf{\C\where\Ca\where\cs}{\Ctwo\where{\cmatch \t \cbrs, \Ca\where\cs}}{For some 2-hole context $\Ctwo$}
+		\VdashPf{\semenv}{\Ctwo\where{\cmatched \t \sh \cbrs, \Ca\where\cs}}{}
+		\eqPf{k}{\cnmatches {\Ctwo\where{\cmatched \t \sh \cbrs, \Ca\where\cs}}}{}
+		\vdashPf{\semenv}{\Ctwo\where{\cmatched \t \sh \cbrs, \Cb\where\cs}}{By \ih}
+		\decolumnizePf
+		\ForallPf{\semenvp, \gt}{}{}
+		\vdashPf{\semenvp}{\cerase{\Ctwo\where{\cunif \t \gt, \Cb\where\cs}}}{Premise}
+		\vdashPf{\semenvp}{\cerase{\Ctwo\where{\cunif \t \gt, \Ca\where\cs}}}{$\dagger$}
+		\eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape \Cp \t \sh$}
+		\shapePf{\Ctwo\where{\square, \Cb\where\cs}}{\t}{\sh}{Above}
+\Hand		\vdashPf{\semenv}{\Ctwo\where{\cmatch \t \cbrs, \Cb\where\cs}}{By \Rule{Susp-Ctx}}
+	      \end{llproof}
+
+	    \proofcase{$\ci$ contains $\Cp$'s hole}
+
+	      \begin{llproof}
+		Similar argument to the above case, but relies on the match-closure of $P$.
+	      \end{llproof}
+	  \end{proofcases}
+
+
+	  \proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    Symmetric argument.
+	  \end{llproof}
+	\end{proofcases}
+    \end{proofcases}
+  \end{proof}
+\end{lemma}
+
+
+\begin{lemma}[Simple let equivalence]
+  Given simple constraints $\ca, \cb$ and a simple context $\C$.
+  Suppose that
+    \begin{mathpar}
+      \forall \semenv, \semenvp, \cs \simple. \uad
+	\semenvp(\x) = \semenv(\cabsr \tv \tvs {\C\where\cs}) \implies
+	  \semenvp \th \ca \iff \semenvp \th \cb
+    \end{mathpar}
+  Then, for any context $\Cp$ that does not re-bind $\x$, we have:
+    \begin{mathpar}
+      \cletr \x \tv \tvs {\C\where{\bar\square}} {\Cp\where\ca}
+	\cctxequiv^P \cletr \x \tv \tvs {\C\where{\bar\square}} {\Cp\where\cb}
+    \end{mathpar}
+  for any match-closed guard $P$ on the holes.
+
+  \begin{proof}
+    Let us assume ($\dagger$):
+    \begin{mathpar}
+      \forall \semenv, \semenvp, \cs. \uad
+	\semenvp(\x) = \semenv(\cabsr \tv \tvs {\C\where\cs}) \implies
+	  \semenvp \th \ca \iff \semenvp \th \cb
+    \end{mathpar}
+
+    We proceed by induction on the number of suspended match constraints in
+    $\Cpp, \Cp, \cs$ with the statement $P(n) \is \all {\Cpp, \Cp, \cs} \cnmatches {\Cpp, \Cp, \cs} = n \implies \Cpp\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where{\ca}}}
+    \cequiv \Cpp\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where\cb}}$.
+
+    \begin{proofcases}
+      \proofcase{$n$ is 0}
+
+	Thus $\Cpp, \Cp, \cs$ are simple. Sufficies to show the equivalence on the $\Let$-constraint directly and use congruence
+	of equivalence for simple constraints (Lemma XXX) to establish the result.
+
+	We proceed by induction on the structure of $\Cp$ with the statement ($\ddagger$):
+	\begin{mathpar}
+	\forall \semenv, \semenvp. \uad
+	  \semenvp(\x) = \semenv(\cabsr \tv \tvs {\C\where\cs}) \implies
+	    \semenvp \th \Cp\where{\ca} \iff \semenvp \th \Cp\where{\cb}
+	\end{mathpar}
+	This holds due to the compositionality of simple equivalence using $\dagger$ as a base case.
+
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	\begin{llproof}
+	  \vdashPf{\semenv}{\cletr \x \tv \tvs {\C\where{\cs}} {\Cp\where{\ca}}}{Premise}
+	  \vdashPf{\semenv}{\cexists {\tv, \tvs} \C\where{\cs}}{Lemma XXX}
+	  \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \C\where{\cs})}}{\Cp\where{\ca}}{\ditto}
+	  \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \C\where{\cs})}}{\Cp\where{\cb}}{$\ddagger$}
+	  \vdashPf{\semenv}{\cletr \x \tv \tvs {\C\where{\cs}} {\Cp\where{\cb}}}{By \Rule{LetR}}
+	\end{llproof}
+	  \proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    Symmetric argument.
+	  \end{llproof}
+	\end{proofcases}
+
+      \proofcase{$n$ is $k + 1$}
+
+      \begin{llproof}
+	Analogous to the inductive step in Lemma XXX.
+      \end{llproof}
+    \end{proofcases}
+  \end{proof}
+\end{lemma}
+
+\newcommand{\disjointPf}[3]{\Pf{#1}{\disjoint}{#2}{#3}}
+\begin{lemma}
+  If $\cunif \tv {\cunif \t \ueq} \in \C$ and $\t \notin \TyVars$, then
+  $\Cshape \C \tv {~\shape \t}$.
+  \begin{proof}~
+
+    \begin{llproof}
+      \inPf{\cunif \tv {\cunif \t \ueq}}{\C}{Premise}
+      \notinPf{\t}{\TyVars}{Premise}
+      \eqPf{\t}{\shapp[\shape \t] \tys}{For some $\tys$}
+      \eqPf{\C}{\Ca\where{\cunif \tv {\cunif \t \ueq} \cand \Cb}}{By definition}
+      \disjointPf{\fvs {\tv, \t, \ueq}}{\bvs \Cb}{\ditto}
+      \ForallPf{\semenv, \gt}{}{Defn. of $\Cshape \C \tv {~\shape \t}$}
+      \vdashPf{\semenv}{\cerase{\Ca\where{\cunif \tv {\cunif {\shapp[\shape \t] \tys} \ueq} \cand \Cb\where{\cunif \tv \gt}}}}{Premise}
+      \vdashPf{\semenva}{\cunif \tv {\cunif {\shapp[\shape \t] \tys} \ueq}}{Inversion of $\Ca$}
+      \vdashPf{\semenvb}{\cunif \tv \gt}{Inversion of $\Cb$}
+      \eqPf{\gt}{\semenvb(\tv)}{Lemma XXX}
+      \continueeqPf{\semenva(\tv)}{$\tv \disjoint \bvs \Cb$}
+      \continueeqPf{\shapp[\shape \t] {\semenva(\tys)}}{Lemma XXX}
+\Hand \eqPf{\shape \gt}{\shape \t}{Applying shape to both sides}
+    \end{llproof}
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}
+  If $\cunif {\tvc} {\cunif \t \ueq} \in \C\where\Cb$ and $\t \notin \TyVars$,
+  then
+  \begin{mathpar}
+    \Cshape {\C\where
+       {\cletr \x \tv {\tvs} {\Ca\where{\square}}
+			     {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
+      \tvp
+      {~\shape \t}
+  \end{mathpar}
+  \begin{proof}
+    Similar proof to Lemma XXX.
+  \end{proof}
+\end{lemma}
+
+
+\begin{lemma}[Unification preservation]
+  If $\upa \unif \upb$, then $\upa \equiv \upb$
+  \begin{proof}
+    By induction on the given derivation $\upa \unif \upb$.
+    See \cite{Pottier-Remy/emlti} for more details.
+  \end{proof}
+\end{lemma}
+
+\preservation
+\newcommand{\unifPf}[3]{\Pf{#1}{\unif}{#2}{#3}}
+\newcommand{\equivctxPf}[3]{\Pf{#1}{\cequivctx}{#2}{#3}}
+\newcommand{\ctxequivPf}[3]{\Pf{#1}{\cctxequiv}{#2}{#3}}
+\begin{proof}
+  We proceed by induction on the given derivation.
+  It sufficies to show that for each individual rule $R$ ($\ca \csolve_R \cb$),
+  that $\ca \cequivctx \cb$.
+
+  \begin{proofcases}
+    \proofcaserewrite
+      {S-Unif}
+      {\upa \\ \upa \unif \upb}
+      {\upb}
+
+	\begin{llproof}
+	  \unifPf{\upa}{\upb}{Premise}
+	  \equivPf{\upa}{\upb}{Theorem XXX}
+	  \simplePf{\upa, \upb}{Lemma XXX}
+\Hand 	  \equivctxPf{\upa}{\upb}{Lemma XXX}
+	\end{llproof}
+
+    \proofcaserewrite
+      {S-Exists-Conj}
+      {\parens {\cexists \tv \ca} \cand \cb \\ \tv \disjoint \cb}
+      {\cexists \tv \ca \cand \cb}
+
+	\begin{llproof}
+	  \disjointPf{\tv}{\cb}{Premise}
+	  \decolumnizePf
+	  \sufficientPf{equivalence for simple constraints}{}{Lemma XXX}
+	  \supposePf{\ca, \cb \simple} {Premise}
+	\end{llproof}
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \ForallPf{\semenv}{}{}
+	    \vdashPf{\semenv}{\parens {\cexists \tv \ca} \cand \cb}{Premise}
+	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca}{\cref{lem:simple-inversion}}
+	    \vdashPf{\semenv}{\cb}{\cref{lem:simple-inversion}}
+	    \vdashPf{\semenv\where{\tv \is \gt}}{\cb}{Lemma XXX}
+	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca \cand \cb}{By \Rule{Conj}}
+\Hand       \vdashPf{\semenv}{\cexists \tv \ca \cand \cb}{By \Rule{Exists}}
+	  \end{llproof}
+	  \proofcase{$\impliedby$}
+
+	    \begin{llproof}
+	    Symmetric argument.
+	    \end{llproof}
+	\end{proofcases}
+
+
+      \proofcase{\Rule{S-Let}, \Rule{S-Exists-Exists-Inst},
+      \Rule{S-Exists-Inst-Conj}, \Rule{S-Let-ExistsLeft},
+      \Rule{S-Let-Exists-InstLeft}, \Rule{S-Let-ExistsRight},
+      \Rule{S-Let-Exists-InstRIght}, \Rule{S-Let-ConjLet},
+      \Rule{S-Let-ConjRight}, \Rule{S-Inst-Name}, \Rule{S-Exists-Inst-Solve},
+      \Rule{S-All-Exists-Inst}, \Rule{S-All-Conj}}
+
+      \begin{llproof}
+	Similar argument to the \Rule{S-Exists-Conj} case.
+      \end{llproof}
+
+    \proofcaserewrite
+      {S-Susp-Trivial}
+      {\cmatch \t \cbrs \\ \t \notin \TyVars}
+      {\cmatched \t {\shape \t} \cbrs}
+
+	\begin{llproof}
+	    \notinPf{\t}{\TyVars}{Premise}
+	    \shapePf{\square}{\t}{~\shape \t}{By definition}
+	\end{llproof}
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \ForallPf{\semenv}{}{}
+	    \vdashPf{\semenv}{\cmatch \t \cbrs}{Premise}
+\Hand 	    \vdashPf{\semenv}{\cmatched \t {\shape \t} \cbrs}{\cref{lem:susp-inversion}}
+	  \end{llproof}
+
+	  \proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    \ForallPf{\semenv}{}{}
+	    \vdashPf{\semenv}{\cmatched \t {\shape \t} \cbrs}{Premise}
+\Hand 	    \vdashPf{\semenv}{\cmatch \t \cbrs}{By \Rule{Susp-Ctx}}
+	  \end{llproof}
+	\end{proofcases}
+
+    \proofcaserewrite
+      {S-Susp-Ctx}
+      {\C\where{\cmatch \tv \cbrs} \\ \cunif \tv {\cunif \t \ueq} \in \C}
+      {\C\where{\cmatched \tv {\shape \t} \cbrs}}
+
+	\begin{llproof}
+	  \inPf{\cunif \tv {\cunif \t \ueq}}{\C}{Premise}
+	  \shapePf{\C}{\tv}{~ \shape \t}{Lemma XXX}
+	\end{llproof}
+
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \ForallPf{\semenv}{}{}
+	    \vdashPf{\semenv}{\C\where{\cmatch \tv \cbrs}}{Premise}
+\Hand 	    \vdashPf{\semenv}{\C\where{\cmatched \tv {\shape \t} \cbrs}}{\cref{lem:susp-inversion}}
+	  \end{llproof}
+
+	  \proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    \ForallPf{\semenv}{}{}
+	    \vdashPf{\semenv}{\C\where{\cmatched \tv {\shape \t} \cbrs}}{Premise}
+\Hand 	    \vdashPf{\semenv}{\C\where{\cmatch \tv \cbrs}}{By \Rule{Susp-Ctx}}
+	  \end{llproof}
+	\end{proofcases}
+
+
+    \proofcaserewrite
+      {S-Let-AppR}
+      {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tvc \disjoint \t \\ \x \disjoint \bvs \C}
+      {\cletr \x \tv \tvs \ca {\C\where{\cexistsi {\tvc, \inst} \x \cunif \tvc \t \cand \cpinst \inst \tv \tvc }}}
+
+
+	\begin{llproof}
+	  \disjointPf{\tvc}{\t}{Premise}
+	  \disjointPf{\x}{\bvs \C}{Premise}
+	  \decolumnizePf
+	  \sufficientPf{equivalence between}{\capp \x \t \text{ and } \cexistsi {\tvc, \inst} \x \cunif \tvc \t \cand \cpinst \inst \tv \tvc}{Lemma XXX}
+	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv \tvs \ca)}{Premise}
+	\end{llproof}
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	    \begin{llproof}
+	      \vdashPf{\semenvp}{\capp \x \t}{Premise}
+	      \inPf{\greg \tv {\semenva}}{\semenv(\x)}{Lemma XXX}
+	      \eqPf{\semenva(\tv)}{\semenvp(\t)}{\ditto}
+	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cpinst \inst \tv \tvc}{By \Rule{Partial-Inst}}
+	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cunif \tvc \t}{By \Rule{Unif}}
+\Hand	      \vdashPf{\semenvp}{\cexistsi {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}{By \Rule{Exists}, \Rule{Exists-Inst} and \Rule{Conj}}
+	    \end{llproof}
+
+	  \proofcase{$\impliedby$}
+
+	    \begin{llproof}
+	      Symmetric argument.
+	    \end{llproof}
+	\end{proofcases}
+
+    \proofcaserewrite
+      {S-Inst-Copy}
+      {\cletr \x \tv \tvs {\c}
+	\C\where{\cpapp \x \tvp \tvc \inst}\\
+	\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
+	\tvp \in \reg \tv \tvs \\
+	\neg \cyclic {\c} \\
+	\tvbs' \disjoint \tvp, \tvc, \tvbs \\
+       \x \disjoint \bvs \C}
+      {\cletr \x \tv \tvs {\c}
+	\C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
+
+
+	\begin{llproof}
+	  \disjointPf{\x}{\bvs \C}{Premise}
+	  \disjointPf{\tvbs'}{\tvp, \tvc, \tvbs}{Premise}
+	  \decolumnizePf
+	  \sufficientPf{equivalence between}{\cpapp \x \tvp \tvc \inst \text{ and } \cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}{Lemma XXX}
+	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c)}{Premise}
+	\end{llproof}
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	    \begin{llproof}
+	      \vdashPf{\semenvp} {\cpapp \x \tvp \tvc \inst}{Premise}
+	      \inPf{\greg \tv \semenva}{\semenv(\x)}{$\cexistsi \inst \x \in \C$}
+	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
+	      \eqPf{\semenvp(\tvc)}{\semenv(\inst)(\tvp)}{Lemma XXX}
+	      \continueeqPf{\semenva(\tvp)}{Above}
+	      \vdashPf{\semenva}{\cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Above}
+	      \vdashPf{\semenva}{\cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Lemma XXX}
+	      \eqPf{\semenva(\tvp)}{\shapp {\semenva(\tvbs)}}{\ditto}
+	      \eqPf{\semenvp(\tvc)}{\shapp {\semenva(\tvbs)}}{Above}
+	      \vdashPf{\semenvp\where{\tvbs' \is \semenva(\tvbs)}}{\cunif \tvc {\shapp {\tvbs'}}}{By \Rule{Unif}}
+	      \vdashPf{\semenvp\where{\tvbs' \is \semenva(\tvbs)}}{\cpapp \x \tvbs {\tvbs'} \inst}{By \Rule{Partial-Inst}}
+\Hand 	      \vdashPf{\semenvp}{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}{By \Rule{Exists} and \Rule{Conj}}
+	    \end{llproof}
+
+	  \proofcase{$\impliedby$}
+
+	    \begin{llproof}
+	      Symmetric argument.
+	    \end{llproof}
+	\end{proofcases}
+
+    \proofcaserewrite
+      {S-Inst-Unif}
+      {\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}
+      {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
+
+      \begin{llproof}
+
+	\sufficientPf{equivalence between}{{\cpinst \inst \tv \tvca \cand
+	\cpinst \inst \tv \tvcb} \text{ and } {\cpinst \inst \tv \tvca \cand
+	\cunif \tvca \tvcb} }{Lemma XXX}
+
+      \end{llproof}
+
+      \begin{proofcases}
+	\proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}{Premise}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca}{Lemma XXX}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvcb}{Lemma XXX}
+	    \eqPf{\semenv(\tvca)}{\semenv(\inst)(\tv)}{Lemma XXX}
+	    \eqPf{\semenv(\tvcb)}{\semenv(\inst)(\tv)}{\ditto}
+	    \eqPf{\semenv(\tvca)}{\semenv(\tvcb)}{Above}
+	    \vdashPf{\semenv}{\cunif \tvca \tvcb}{By \Rule{Unif}}
+\Hand	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}{By \Rule{Conj}}
+	  \end{llproof}
+
+	\proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    Symmetric argument.
+	  \end{llproof}
+      \end{proofcases}
+
+    \proofcaserewrite
+      {S-Inst-Poly}
+      {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+       \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
+       \tvp \disjoint \c, \insts \C \inst \\
+       \x \disjoint \bvs \C}
+      {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
+
+
+	\begin{llproof}
+	  \equivPf{\cfor \tvp \cexists {\tv, \tvs} \ueqs}{\ctrue}{Premise}
+	  \disjointPf{\tvp}{\c, \insts \C \inst}{Premise}
+	  \disjointPf{\x}{\bvs \C}{Premise}
+	  \decolumnizePf
+	  \sufficientPf{equivalence between}
+	    {\cpapp \x \tvp \tvc \inst \text{ and } \ctrue}
+	    {Lemma XXX}
+	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs, \tvp} \ueqs \cand \c)}{Premise}
+	\end{llproof}
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	    \begin{llproof}
+	      \vdashPf{\semenvp}{\cpapp \x \tvp \tvc \inst}{Premise}
+\Hand	      \vdashPf{\semenvp}{\ctrue}{By \Rule{True}}
+	    \end{llproof}
+
+	  \proofcase{$\impliedby$}
+
+	    \begin{llproof}
+	      \vdashPf{\semenvp}{\ctrue}{Premise}
+	      \inPf{\greg \tv {\semenva}}{\semenvp(\x)}{$\C = \Ca\where{\cexistsi \inst \x \Cb}$}
+	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
+	      \eqPf{\semenvp(\tvc)}{\semenva(\tvp)}{Lemma XXX}
+	      \casesPf{\semenva(\tvp)}
+	    \end{llproof}
+	    \begin{proofcases}
+	      \proofcase{$\semenva(\tvp) = \semenvp(\tvc)$}
+
+		\begin{llproof}
+		  \eqPf{\semenva(\tvp)}{\semenvp(\tvc)}{Premise}
+\Hand		  \vdashPf{\semenvp}{\cpapp \x \tvp \tvc \inst}{By \Rule{Partial-Inst}}
+		\end{llproof}
+
+
+	      \proofcase{$\semenva(\tvp) \neq \semenvp(\tvc)$}
+
+		\begin{llproof}
+		  \LetPf{\semenvb}{\semenva\where{\tvp \is \semenvp(\tvc)}}{}
+		  \vdashPf{\semenva}{\ueqs \cand \c}{By definition}
+		  \vdashPf{\semenva}{\ueqs}{Lemma XXX}
+		  \vdashPf{\semenvb}{\ueqs}{$\tvp$ is polymorphic}
+		  \vdashPf{\semenvb}{\c}{$\tvp \disjoint \c$}
+		  \vdashPf{\semenvb}{\ueqs \cand \c}{By \Rule{Conj}}
+		  \inPf{\greg \tv \semenvb}{\semenv(\x)}{By definition}
+		  \supposePf{\semenvc \th \Cb\where\ctrue}{Considering entailment on $\cexistsi \inst \x$}
+		  \eqPf{\semenvc(\inst)}{\semenva}{\ditto}
+		  \vdashPf{\semenvc\where{\inst \is \semenvb}}{\Cb\where\ctrue}{$\inst.\tvp \disjoint \Cb$}
+		  \vdashPf{\deriv :: \semenvc}{\Cb\where\ctrue}{By \Rule{Exists-Inst}}
+		  \commentPf{$\deriv$ is a derivation that satisfies $\semenva(\tvp) = \semenvp(\tvc)$.}{}
+\Hand		  \commentPf{So this case degenerates to the former case.}{}
+		\end{llproof}
+	    \end{proofcases}
+	\end{proofcases}
+
+    \proofcaserewrite
+      {S-Inst-Mono}
+      {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
+       \tvb \disjoint \tv, \tvs \\
+       \x, \tvb \disjoint \bvs \C}
+      {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
+
+	\begin{llproof}
+	  \disjointPf{\tvb}{\tv, \tvs}{Premise}
+	  \disjointPf{\x, \tvb}{\bvs \C}{Premise}
+	  \decolumnizePf
+	  \sufficientPf{equivalence between}
+	    {\cpapp \x \tvb \tvc \inst \text{ and } \cunif \tvb \tvc}
+	    {Lemma XXX}
+	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c)}{Premise}
+	\end{llproof}
+
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \vdashPf{\semenvp}{\cpapp \x \tvb \tvc \inst}{Premise}
+	    \inPf{\greg \tv \semenva}{\semenv(\c)}{$\cexistsi \inst \x \in \C$}
+	    \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
+	    \eqPf{\semenvp(\tvc)}{\semenva(\tvb)}{Lemma XXX}
+	    \eqPf{\semenva(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \tv, \tvs$}
+	    \eqPf{\semenvp(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \bvs \C$}
+	    \eqPf{\semenvp(\tvc)}{\semenvp(\tvb)}{Above}
+	    \vdashPf{\semenvp}{\cunif \tvc \tvb}{By \Rule{Unif}}
+	  \end{llproof}
+
+	  \proofcase{$\impliedby$}
+
+	  \begin{llproof}
+	    Symmetric argument.
+	  \end{llproof}
+	\end{proofcases}
+
+
+    \proofcaserewrite
+      {S-Let-Solve}
+      {\cletr \x \tv \tvs \ueqs \c \\ \x \disjoint \c \\
+       \cexists {\tv, \tvs} \ueqs \cequiv \ctrue}
+      {\c}
+	\begin{llproof}
+	  \disjointPf{\x}{\c}{Premise}
+	  \equivPf{\cexists {\tv, \tvs} \ueqs}{\ctrue}{}
+	  \decolumnizePf
+	  \sufficientPf{equivalence for simple constraints}{}{Lemma XXX}
+	  \supposePf{\c \simple} {Premise}
+	\end{llproof}
+	\begin{proofcases}
+	  \proofcase{$\implies$}
+
+	  \begin{llproof}
+	    \ForallPf{\semenv}{}{}
+	    \vdashPf{\semenv}{\cletr \x \tv \tvs \ueqs \c}{Premise}
+	    \vdashPf{\semenv}{\cexists {\tv, \tvs} \ueqs}{\cref{lem:simple-inversion}}
+	    \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \ueqs)}}{\c}{\ditto}
+\Hand	    \vdashPf{\semenv}{\c}{$\x \disjoint \c$}
+	  \end{llproof}
+	  \proofcase{$\impliedby$}
+
+	    \begin{llproof}
+	    \ForallPf{\semenv}{}{}
+	    \vdashPf{\semenv}{\c}{Premise}
+	    \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \ueqs)}}{\c}{$\x \disjoint \c$}
+	    \vdashPf{\semenv}{\cexists {\tv, \tvs} \ueqs}{}
+\Hand	    \vdashPf{\semenv}{\cletr \x \tv \tvs \ueqs \c}{By \Rule{LetR}}
+	    \end{llproof}
+	\end{proofcases}
+
+  \proofcaserewrite
+    {S-BackProp}
+    {\C\where
+       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
+                           {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
+     \tvp \in \dom \ren \\
+     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
+     \x \disjoint \Cb}
+    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
+		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
+
+    \TODO{Lemma for this that determines unicity}
+
+
+  \proofcase{\Rule{S-Compress}, \Rule{S-Gc}, \Rule{S-Exists-All}, \Rule{S-All-Escape}, \Rule{S-All-Rigid}, \Rule{S-All-Solve}}
+
+  \begin{llproof}
+    Equivalences are standard, see \citep{Pottier-Remy/emlti}.
+  \end{llproof}
+  \end{proofcases}
+\end{proof}
+
+\subsection{Progress}
+
+\progress
+\begin{proof}
+  We proceed by induction on the structure of $\c$. We
+  focus on conjunctions and $\Let$ rules.
+
+  \begin{proofcases}
+    \proofcase{$\ca \cand \cb$}
+    We begin by inducting on $\ca$ and $\cb$. Then we consider cases:
+    \begin{proofcases}
+      \proofcase{$\ca$ (or $\cb$) take a step} Apply congruence rewriting rule.
+      \proofcase{$\ca$ (or $\cb$) is $\ctrue$} Apply \Rule{S-True}.
+      \proofcase{$\ca$ (or $\cb$) is $\cfalse$} Apply \Rule{S-False}.
+      \proofcase{$\ca$ (or $\cb$) begins with $\exists$} Apply \Rule{S-Exists-Conj}.
+      \proofcase{$\ca, \cb$ are solved}
+	We either apply the above $\exists$ case, or both $\ca$ and $\cb$ are solved
+	multi-equations $\ueqs_1, \ueqs_2$. We perform cases on this:
+	\begin{proofcases}
+	  \proofcase{$\ueqs_1$ and $\ueqs_2$ are mergable} Apply \Rule{U-Merge}.
+	  \proofcase{$\cyclic {\ueqs_1, \ueqs_2}$} Apply \Rule{U-Cycle}.
+	  \proofcase{Otherwise} The conjunction $\ueqs_1 \cand \ueqs_2$ is solved.
+	\end{proofcases}
+
+      \proofcase{$\ca$ and $\cb$ are stuck (and not $\cfalse$)}
+
+	\Wlog, consider cases $\ca$.
+	\begin{proofcases}
+	  \proofcase{$\hat\Ca\where{\capp \x \t}$}
+	    We have $\x \disjoint \bvs {\hat\Ca}$.
+	    $\hat\Ca\where{\capp \x \t} \cand \cb$ is stuck as we do not bind $\x$ in $\hat\Ca \cand \cb$.
+	  \proofcase{$\hat\Ca\where{\cpapp \x \tv \tvc \inst}$}
+	    We have $\x \disjoint \bvs {\hat \Ca}$ and $\tv \disjoint ~ \insts {\hat \Ca} \inst$.
+
+	    If $\tv \in \insts \cb \inst$ and $\inst \disjoint \bvs {\hat\ca}$, then apply \Rule{S-Inst-Unify}.
+	    It must be the case that we can apply \Rule{S-Inst-Unify}, otherwise, we could lift these instantiation
+	    constraints using \Rule{S-Exists-Lower} and \Rule{S-Let-ConjLeft}, contradicting that $\hat\Ca$ is stuck.
+
+	    Otherwise, $\x \disjoint \bvs {\hat \Ca \cand \cb}$, thus $\hat\Ca\where{\cpapp \x \tv \tvc \inst}$ is stuck.
+
+	  \proofcase{$\hat\Ca\where{\cmatch \tvp \cbrs}$}
+	    We have $\nCshape \Ca \tvp \sh$ for any $\sh$.
+
+	    If $\cunif \tvp {\cunif \t \ueq} \in \cb$ and $\t \notin \TyVars$. By the above logic, it must be at the root (otherwise $\cb$
+	    is not stuck). So we have $\cunif \tvp {\cunif \t \ueq} \in \hat \Ca \cand \cb$. Thus we can apply \Rule{S-Match-Type}.
+
+	    If $\cunif \tvc {\cunif \t \ueq} \in \cb$, $\t \notin \TyVars$, and $\hat\Ca$ contains $\cletr \x \tv \tvs {\hat\Cc\where{\cmatch \tvp \cbrs}} {\hat\C_4\where{\cpapp \x \tvp \tvc \inst}}$.
+	    Apply \Rule{S-BackProp}.
+
+	    Otherwise, we are stuck and $\nCshape {(\Ca \cand \cb)} \tvp \sh$ for any $\sh$.
+	\end{proofcases}
+
+    \end{proofcases}
+
+    \proofcase{$\cletr \x \tv \tvs \ca \cb$}
+    We begin by inducting on $\ca$ and $\cb$. Then we consider cases:
+    \begin{proofcases}
+      \proofcase{$\ca$ (or $\cb$) take a step} Apply congruence rewriting rule.
+      \proofcase{$\ca$ (or $\cb$) is $\cfalse$} Apply \Rule{S-False}.
+      \proofcase{$\ca$ begins with $\exists$} Apply \Rule{S-Let-ExistsLeft}
+      \proofcase{$\cb$ begins with $\exists$} Apply \Rule{S-Let-ExistsRight}
+      \proofcase{$\cb$ begins with $\cand$ with $\x \disjoint$ from conjunct} Apply \Rule{S-Let-ConjRight}.
+      \proofcase{$\ca$ begins with $\cand$ with $\tv, \tvs \disjoint$ from conjunct } Try apply \Rule{S-Let-ConjLeft}
+      \proofcase{$\cb$ begins with $\cexistsi \inst \xp {}$, $\x \neq \xp$} Apply \Rule{S-Exists-Inst-Let}
+      \proofcase{$\cb$ is solved}
+
+	Thus $\cb$ must be $\ctrue$ (due to above cases).
+	\begin{proofcases}
+	  \proofcase{$\ca$ is solved}
+	    Thus $\ca$ must be $\ueqs$. There are two cases:
+	    \begin{itemize}
+	      \proofcase{$\cexists {\tv, \tvs} \ueqs \cequiv \ctrue$} Apply \Rule{S-Let-Solve}.
+	      \proofcase{$\cexists {\tv, \tvs} \ueqs \cnequiv \ctrue$} It must be the case there is some $\tvb$ that dominates a $\tvp$ in $\tv, \tvs$ in $\ueqs$.
+		Hence $\cdetermines {\cexists {\tv, \tvs \setminus \tvp} \ueqs} \tvp$.
+		So we can apply \Rule{S-Exists-Lower}.
+	    \end{itemize}
+
+	  \proofcase{$\ca$ is stuck}
+	    The constraint $\cletr \x \tv \tvs \ca \cb$ remains stuck, since
+	    no additional term variable bindings occur for the scope of $\ca$,
+	    ruling out the instantiation cases. Additionally, we cannot apply
+	    backpropagation since $\cb$ is $\ctrue$.
+	\end{proofcases}
+
+      \proofcase{$\cb$ is stuck}
+	\begin{proofcases}
+	  \proofcase{$\hat\C\where{\capp \x \t}$} Apply \Rule{S-Let-AppR}.
+
+	  \proofcase{$\hat\C\where{\cpapp \x \tvp \tvc \inst}$}
+	    \begin{itemize}
+	      \proofcase{$\tvp \in \reg \tv \tvs$}
+
+		We can either apply \Rule{S-Inst-Copy} or \Rule{S-Compress}
+		if a multi-equation involving $\tvp$ occurs in $\ca$.
+
+		Otherwise, we consider cases where $\ca$ is solved or stuck.
+
+		If $\ca$ is solved, then it must be of the form $\ueqs$.
+		There are two cases:
+		\begin{itemize}
+		  \proofcase{$\cexists {\tv, \tvs} \ueqs \cequiv \ctrue$}
+		  As $\tvp$ does not appear in the head position of any multi-equation in $\ueqs$,
+		  it must be polymorphic. Thus $\cfor \tvp {\cexists {\tv, \tvs \setminus \tvp} \ueqs} \cequiv \ctrue$.
+		  So we can apply \Rule{S-Inst-Poly}.
+
+		  \proofcase{$\cexists {\tv, \tvs} \ueqs \cnequiv \ctrue$}
+		  Apply \Rule{S-Lower-Exists} (using the same logic as above).
+
+		\end{itemize}
+
+		If $\ca$ is stuck, then neither case regarding instantiations
+		in $\ca$ is fixed, so in these cases the constraint remains
+		stuck. If $\ca$ is stuck with $\hat\Cp\where{\cmatch \tvb
+		\cbrs'}$. Then either backpropagation (\Rule{S-BackProp})
+		applies with an equation in $\hat\C$, or the entire constraint
+		is stuck.
+
+		\proofcase{$\tvp \notin \reg \tv \tvs$} Apply \Rule{S-Inst-Mono}.
+
+
+
+
+	    \end{itemize}
+
+	  \proofcase{$\hat\C\where{\cmatch \tvp \cbrs}$}
+
+	  Either $\cb$ can progress with an instantiation constraint to discharge
+	  the match constraint or $\cletr \x \tv \tvs \ca \cb$ is stuck.
+	\end{proofcases}
+
+    \end{proofcases}
+
+
+  \end{proofcases}
+\end{proof}
+
+\clearpage
 \section{Properties of \OML}
 
 \subsection{Simple syntax-directed system}
@@ -5854,602 +6437,6 @@ and $\sub(\tvs) = \tys$.
     \end{proofcases}
   \end{proof}
 \end{theorem}
-
-
-\section{Properties of the constraint solver}
-
-\subsection{Preservation}
-
-This section gives details about proving preservation for the solver, that is,
-if $\ca \csolve \cb$, then $\ca \cequiv \cb$. For each rule, it sufficies to check
-this equivalance holds in any context $\C$ (since rewriting rules are performed under
-arbitrary contexts).
-
-Unfortunately, the introduction of suspended match constraint loses congruence
-for equivalence, \ie it is no longer the case that if $\ca \cequiv \cb$, then
-$\C\where\ca \cequiv \C\where\cb$. A clear counterexample of this is
-that $\cmatch \tv \cbrs \cequiv \cfalse$, yet $\C\where{\cmatch \tv \cbrs} \cnequiv \C\where{\cfalse}$
-where $\C \is \square \cand \cunif \tv \tint$. Thus we have to prove contextual
-equivalence for each rewriting rule explicitly. This is hard, and we are lazy.
-
-So we begin by giving a series of auxillary lemmas that makes contextual equivalence
-easy for most rewriting rules. Like with soundness and completeness, it nicer to
-deal with simple equivalences.
-
-\begin{definition}[Contextual eqiuvalence]
-  Two constraints $\ca$ and $\cb$ are contextually equivalence, written $\ca \cequivctx \cb$,
-  iff:
-  \begin{mathpar}
-    \ca \cequivctx \cb \uad\eqdef\uad \all \C \uad \C\where\ca \cequiv \C\where\cb
-  \end{mathpar}
-\end{definition}
-
-\begin{corollary}[Simple equivalence is congruent]
-  \label{corollary:cong-simple-equiv}
-  Given simple constraints $\ca, \cb$ and simple context $\C$. If
-  $\ca \cequiv \cb$, then $\C\where\ca \equiv \C\where\cb$.
-  \begin{proof}
-    This is a corollary of \cref{lem:cong-simple}
-  \end{proof}
-\end{corollary}
-
-\begin{lemma}[Simple equivalence is contextual]
-  For simple constraints $\ca, \cb$. If $\ca \cequiv \cb$, then $\ca \cequivctx \cb$.
-  \begin{proof}
-    We proceed by induction on the number of suspended match constraints in $\C$,
-    with the base case of \cref{corollary:cong-simple-equiv}.
-  \end{proof}
-\end{lemma}
-
-\begin{lemma}[Unification is simple]
-  For all unification problems $\up$, $\up \simple$.
-  \begin{proof}
-    By induction on the structure of $\up$.
-  \end{proof}
-\end{lemma}
-
-
-\begin{definition}[Context equivalence]
-  Two contexts $\Ca$ and $\Cb$ are equivalent with guard $P$, written $\Ca \cctxequiv^P \Cb$ iff:
-  \begin{mathpar}
-    \Ca \cctxequiv \Cb \uad\eqdef\uad \all \cs \uad P(\cs) \implies \Ca\where\cs \cequivctx \Cb\where\cs
-  \end{mathpar}
-\end{definition}
-
-
-\TODO{This lemma needs to be proven for susp-ctx closed guards. }
-\begin{lemma}[Simple context equivalence]
-  For any two simple contexts $\Ca, \Cb$ and guard $P$. If
-  the two contexts $\Ca$ and $\Cb$ are equivalent under any simple constraints satisfying $P$,
-  then $\Ca \cctxequiv^P \Cb$.
-
-  \begin{proof}
-    Let us assume that ($\dagger$) holds:
-    \begin{mathpar}
-      \all{\C, \cs \simple} P(\cs) \implies \C\where\Ca\where\cs \equiv \C\where\Cb\where\cs
-    \end{mathpar}
-
-    We proceed by induction on the number of suspended match constraints $n$ with
-    the statement $Q(n) \is  \all {\cs, \C} \cnmatches {\C} + \cnmatches \cs = n \implies P(\cs) \implies
-    \C\where{\Ca\where\cs} \equiv \C\where\Cb\where\cs$.
-
-
-    \begin{proofcases}
-      \proofcase{$n$ is 0}
-
-	\begin{llproof}
-	  \simplePf{\C, \cs}{Premise ($n$ is 0)}
-	  \Hand	  \equivPf{P(\cs) \implies \C\where\Ca\where\cs}{\C\where\Cb\where\cs}{$\dagger$}
-	\end{llproof}
-
-      \proofcase{$n$ is $k + 1$}
-
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	  \begin{llproof}
-	    \Pf{P(\cs)}{}{}{Premise}
-	    \vdashPf{\semenv}{\C\where\Ca\where\cs}{Premise}
-	    \VdashPf{\semenv}{\C\where\Ca\where\cs}{\cref{thm:canonicalization}}
-	    \VdashPf{\semenv}{\Cp\where{\cmatched \t \sh \cbrs}}{Inversion of \Rule{Can-Susp-Ctx}}
-	    \shapePf{\Cp}{\t}{\sh}{\ditto}
-	    \eqPf{\C\where\Ca\where\cs}{\Cp\where{\cmatch \t \cbrs}}{\ditto}
-	    \commentPf{Cases on $\C, \cs$.}{}
-	  \end{llproof}
-
-	  \begin{proofcases}
-	    \proofcase{$\C$ contains $\Cp$'s hole}
-
-	      \newcommand{\Ctwo}{\Cc}
-	      \begin{llproof}
-		\eqPf{\C\where\Ca\where\cs}{\Ctwo\where{\cmatch \t \cbrs, \Ca\where\cs}}{For some 2-hole context $\Ctwo$}
-		\VdashPf{\semenv}{\Ctwo\where{\cmatched \t \sh \cbrs, \Ca\where\cs}}{}
-		\eqPf{k}{\cnmatches {\Ctwo\where{\cmatched \t \sh \cbrs, \Ca\where\cs}}}{}
-		\vdashPf{\semenv}{\Ctwo\where{\cmatched \t \sh \cbrs, \Cb\where\cs}}{By \ih}
-		\ForallPf{\semenvp, \gt}{}{}
-		\vdashPf{\semenvp}{\cerase{\Ctwo\where{\cunif \t \gt, \Cb\where\cs}}}{Premise}
-		\vdashPf{\semenvp}{\cerase{\Ctwo\where{\cunif \t \gt, \Ca\where\cs}}}{$\dagger$}
-		\eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape \Cp \t \sh$}
-		\shapePf{\Ctwo\where{\square, \Cb\where\cs}}{\t}{\sh}{Above}
-\Hand		\vdashPf{\semenv}{\Ctwo\where{\cmatch \t \cbrs, \Cb\where\cs}}{By \Rule{Susp-Ctx}}
-	      \end{llproof}
-
-	    \proofcase{$\ci$ contains $\Cp$'s hole}
-
-	      \begin{llproof}
-		Similar argument to the above case.
-	      \end{llproof}
-	  \end{proofcases}
-
-
-	  \proofcase{$\impliedby$}
-
-	  \begin{llproof}
-	    Symmetric argument.
-	  \end{llproof}
-	\end{proofcases}
-    \end{proofcases}
-  \end{proof}
-\end{lemma}
-
-Context equivalence is used for many rules. But for rules involving let-constraints,
-we need something more powerful.
-
-\begin{lemma}[Simple let equivalence]
-  For the simple constraints $\ca, \cb$ and simple context $\C$. If
-    \begin{mathpar}
-      \forall \semenv, \semenvp, \cs \simple. \uad
-	\semenvp(\x) = \semenv(\cabsr \tv \tvs {\C\where\cs}) \implies
-	  \semenvp \th \ca \iff \semenvp \th \cb
-    \end{mathpar}
-
-  then for any $\Cp$ that does not re-bind $\x$:
-    \begin{mathpar}
-      \cletr \x \tv \tvs {\C\where{\bar\square}} {\Cp\where\ca}
-	\cctxequiv \cletr \x \tv \tvs {\C\where{\bar\square}} {\Cp\where\cb}
-    \end{mathpar}
-
-  \begin{proof}
-    Let us assume ($\dagger$):
-    \begin{mathpar}
-      \forall \semenv, \semenvp, \cs. \uad
-	\semenvp(\x) = \semenv(\cabsr \tv \tvs {\C\where\cs}) \implies
-	  \semenvp \th \ca \iff \semenvp \th \cb
-    \end{mathpar}
-
-    We proceed by induction on the number of suspended match constraints in
-    $\Cpp, \Cp, \cs$ with the statement $P(n) \is \all {\C, \Cpp, \Cp, \cs} \cnmatches {\Cpp, \Cp, \cs} = n \implies \Cpp\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where{\ca}}}
-    \cequiv \C\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where\cb}}$.
-
-    \begin{proofcases}
-      \proofcase{$n$ is 0}
-
-	\begin{proofcases}
-	    \proofcase{$\implies$}
-
-	    \begin{llproof}
-	      \simplePf{\Cpp, \Cp, \cs}{Premise ($n$ is 0)}
-	      \vdashPf{\semenv}{\Cpp\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where\ca}}}{Premise}
-	      \vdashPf{\semenvp}{\ca}{\cref{lem:simple-inversion}}
-	      \eqPf{\semenvp(\x)}{\semenvp(\cabsr \tv \tvs {\C\where\cs})}{\ditto}
-	      \vdashPf{\semenvp}{\cb}{$\dagger$}
-\Hand	      \vdashPf{\semenv}{\Cpp\where{\cletr \x \tv \tvs {\C\where\cs} {\Cp\where\cb}}}{Simple reversion}
-	    \end{llproof}
-
-	    \proofcase{$\impliedby$}
-
-	    \begin{llproof}
-	      Symmetric argument.
-	    \end{llproof}
-	\end{proofcases}
-      \proofcase{$n$ is $k + 1$}
-
-      \begin{llproof}
-	Analogous to the inductive step in Lemma XXX.
-      \end{llproof}
-    \end{proofcases}
-  \end{proof}
-\end{lemma}
-
-
-\begin{lemma}[Unification preservation]
-  If $\upa \unif \upb$, then $\upa \equiv \upb$
-  \begin{proof}
-    By induction on the given derivation $\upa \unif \upb$.
-    See \cite{Pottier-Remy/emlti} for more details.
-  \end{proof}
-\end{lemma}
-
-\preservation
-\newcommand{\unifPf}[3]{\Pf{#1}{\unif}{#2}{#3}}
-\newcommand{\equivctxPf}[3]{\Pf{#1}{\cequivctx}{#2}{#3}}
-\newcommand{\ctxequivPf}[3]{\Pf{#1}{\cctxequiv}{#2}{#3}}
-\newcommand{\disjointPf}[3]{\Pf{#1}{\disjoint}{#2}{#3}}
-\begin{proof}
-  We proceed by induction on the given derivation.
-  It sufficies to show that for each individual rule $R$ ($\ca \csolve_R \cb$),
-  that $\ca \cequivctx \cb$.
-
-  \begin{proofcases}
-    \proofcaserewrite
-      {S-Unif}
-      {\upa \\ \upa \unif \upb}
-      {\upb}
-
-	\begin{llproof}
-	  \unifPf{\upa}{\upb}{Premise}
-	  \equivPf{\upa}{\upb}{Theorem XXX}
-	  \simplePf{\upa, \upb}{Lemma XXX}
-\Hand 	  \equivctxPf{\upa}{\upb}{Lemma XXX}
-	\end{llproof}
-
-    \proofcaserewrite
-      {S-Exists-Conj}
-      {\parens {\cexists \tv \ca} \cand \cb \\ \tv \disjoint \cb}
-      {\cexists \tv \ca \cand \cb}
-
-	\begin{llproof}
-	  \disjointPf{\tv}{\cb}{Premise}
-	  \decolumnizePf
-	  \sufficientPf{equivalence for simple constraints}{}{Lemma XXX}
-	  \supposePf{\ca, \cb \simple} {Premise}
-	\end{llproof}
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	  \begin{llproof}
-	    \ForallPf{\semenv}{}{}
-	    \vdashPf{\semenv}{\parens {\cexists \tv \ca} \cand \cb}{Premise}
-	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca}{\cref{lem:simple-inversion}}
-	    \vdashPf{\semenv}{\cb}{\cref{lem:simple-inversion}}
-	    \vdashPf{\semenv\where{\tv \is \gt}}{\cb}{Lemma XXX}
-	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca \cand \cb}{By \Rule{Conj}}
-\Hand       \vdashPf{\semenv}{\cexists \tv \ca \cand \cb}{By \Rule{Exists}}
-	  \end{llproof}
-	  \proofcase{$\impliedby$}
-
-	    \begin{llproof}
-	    Symmetric argument.
-	    \end{llproof}
-	\end{proofcases}
-
-
-      \proofcase{\Rule{S-Let}, \Rule{S-Exists-Exists-Inst},
-      \Rule{S-Exists-Inst-Conj}, \Rule{S-Let-ExistsLeft},
-      \Rule{S-Let-Exists-InstLeft}, \Rule{S-Let-ExistsRight},
-      \Rule{S-Let-Exists-InstRIght}, \Rule{S-Let-ConjLet},
-      \Rule{S-Let-ConjRight}, \Rule{S-Inst-Name}, \Rule{S-Exists-Inst-Solve},
-      \Rule{S-All-Exists-Inst}, \Rule{S-All-Conj}}
-
-      \begin{llproof}
-	Similar argument to the \Rule{S-Exists-Conj} case.
-      \end{llproof}
-
-    \proofcaserewrite
-      {S-Susp-Trivial}
-      {\cmatch \t \cbrs \\ \t \notin \TyVars}
-      {\cmatched \t {\shape \t} \cbrs}
-
-	\begin{llproof}
-	    \notinPf{\t}{\TyVars}{Premise}
-	    \shapePf{\square}{\t}{~\shape \t}{By definition}
-	\end{llproof}
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	  \begin{llproof}
-	    \ForallPf{\semenv}{}{}
-	    \vdashPf{\semenv}{\cmatch \t \cbrs}{Premise}
-\Hand 	    \vdashPf{\semenv}{\cmatched \t {\shape \t} \cbrs}{\cref{lem:susp-inversion}}
-	  \end{llproof}
-
-	  \proofcase{$\impliedby$}
-
-	  \begin{llproof}
-	    \ForallPf{\semenv}{}{}
-	    \vdashPf{\semenv}{\cmatched \t {\shape \t} \cbrs}{Premise}
-\Hand 	    \vdashPf{\semenv}{\cmatch \t \cbrs}{By \Rule{Susp-Ctx}}
-	  \end{llproof}
-	\end{proofcases}
-
-    \proofcaserewrite
-      {S-Susp-Ctx}
-      {\C\where{\cmatch \tv \cbrs} \\ \cunif \tv {\cunif \t \ueq} \in \C}
-      {\C\where{\cmatched \tv {\shape \t} \cbrs}}
-
-	\begin{llproof}
-	  \inPf{\cunif \tv {\cunif \t \ueq}}{\C}{Premise}
-	  \shapePf{\C}{\tv}{~ \shape \t}{Lemma XXX}
-	\end{llproof}
-
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	  \begin{llproof}
-	    \ForallPf{\semenv}{}{}
-	    \vdashPf{\semenv}{\C\where{\cmatch \tv \cbrs}}{Premise}
-\Hand 	    \vdashPf{\semenv}{\C\where{\cmatched \tv {\shape \t} \cbrs}}{\cref{lem:susp-inversion}}
-	  \end{llproof}
-
-	  \proofcase{$\impliedby$}
-
-	  \begin{llproof}
-	    \ForallPf{\semenv}{}{}
-	    \vdashPf{\semenv}{\C\where{\cmatched \tv {\shape \t} \cbrs}}{Premise}
-\Hand 	    \vdashPf{\semenv}{\C\where{\cmatch \tv \cbrs}}{By \Rule{Susp-Ctx}}
-	  \end{llproof}
-	\end{proofcases}
-
-
-    \proofcaserewrite
-      {S-Let-AppR}
-      {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tvc \disjoint \t \\ \x \disjoint \bvs \C}
-      {\cletr \x \tv \tvs \ca {\C\where{\cexistsi {\tvc, \inst} \x \cunif \tvc \t \cand \cpinst \inst \tv \tvc }}}
-
-
-	\begin{llproof}
-	  \disjointPf{\tvc}{\t}{Premise}
-	  \disjointPf{\x}{\bvs \C}{Premise}
-	  \decolumnizePf
-	  \sufficientPf{equivalence between}{\capp \x \t \text{ and } \cexistsi {\tvc, \inst} \x \cunif \tvc \t \cand \cpinst \inst \tv \tvc}{Lemma XXX}
-	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv \tvs \ca)}{Premise}
-	\end{llproof}
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	    \begin{llproof}
-	      \vdashPf{\semenvp}{\capp \x \t}{Premise}
-	      \inPf{\greg \tv {\semenva}}{\semenv(\x)}{Lemma XXX}
-	      \eqPf{\semenva(\tv)}{\semenvp(\t)}{\ditto}
-	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cpinst \inst \tv \tvc}{By \Rule{Partial-Inst}}
-	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cunif \tvc \t}{By \Rule{Unif}}
-\Hand	      \vdashPf{\semenvp}{\cexistsi {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}{By \Rule{Exists}, \Rule{Exists-Inst} and \Rule{Conj}}
-	    \end{llproof}
-
-	  \proofcase{$\impliedby$}
-
-	    \begin{llproof}
-	      Symmetric argument.
-	    \end{llproof}
-	\end{proofcases}
-
-    \proofcaserewrite
-      {S-Inst-Copy}
-      {\cletr \x \tv \tvs {\c}
-	\C\where{\cpapp \x \tvp \tvc \inst}\\
-	\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
-	\tvp \in \reg \tv \tvs \\
-	\neg \cyclic {\c} \\
-	\tvbs' \disjoint \tvp, \tvc, \tvbs \\
-       \x \disjoint \bvs \C}
-      {\cletr \x \tv \tvs {\c}
-	\C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
-
-
-	\begin{llproof}
-	  \disjointPf{\x}{\bvs \C}{Premise}
-	  \disjointPf{\tvbs'}{\tvp, \tvc, \tvbs}{Premise}
-	  \decolumnizePf
-	  \sufficientPf{equivalence between}{\cpapp \x \tvp \tvc \inst \text{ and } \cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}{Lemma XXX}
-	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c)}{Premise}
-	\end{llproof}
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	    \begin{llproof}
-	      \vdashPf{\semenvp} {\cpapp \x \tvp \tvc \inst}{Premise}
-	      \inPf{\greg \tv \semenva}{\semenv(\x)}{$\cexistsi \inst \x \in \C$}
-	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
-	      \eqPf{\semenvp(\tvc)}{\semenv(\inst)(\tvp)}{Lemma XXX}
-	      \continueeqPf{\semenva(\tvp)}{Above}
-	      \vdashPf{\semenva}{\cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Above}
-	      \vdashPf{\semenva}{\cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Lemma XXX}
-	      \eqPf{\semenva(\tvp)}{\shapp {\semenva(\tvbs)}}{\ditto}
-	      \eqPf{\semenvp(\tvc)}{\shapp {\semenva(\tvbs)}}{Above}
-	      \vdashPf{\semenvp\where{\tvbs' \is \semenva(\tvbs)}}{\cunif \tvc {\shapp {\tvbs'}}}{By \Rule{Unif}}
-	      \vdashPf{\semenvp\where{\tvbs' \is \semenva(\tvbs)}}{\cpapp \x \tvbs {\tvbs'} \inst}{By \Rule{Partial-Inst}}
-\Hand 	      \vdashPf{\semenvp}{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}{By \Rule{Exists} and \Rule{Conj}}
-	    \end{llproof}
-
-	  \proofcase{$\impliedby$}
-
-	    \begin{llproof}
-	      Symmetric argument.
-	    \end{llproof}
-	\end{proofcases}
-
-    \proofcaserewrite
-      {S-Inst-Unif}
-      {\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}
-      {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
-
-      \begin{llproof}
-
-	\sufficientPf{equivalence between}{{\cpinst \inst \tv \tvca \cand
-	\cpinst \inst \tv \tvcb} \text{ and } {\cpinst \inst \tv \tvca \cand
-	\cunif \tvca \tvcb} }{Lemma XXX}
-
-      \end{llproof}
-
-      \begin{proofcases}
-	\proofcase{$\implies$}
-
-	  \begin{llproof}
-	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}{Premise}
-	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca}{Lemma XXX}
-	    \vdashPf{\semenv}{\cpinst \inst \tv \tvcb}{Lemma XXX}
-	    \eqPf{\semenv(\tvca)}{\semenv(\inst)(\tv)}{Lemma XXX}
-	    \eqPf{\semenv(\tvcb)}{\semenv(\inst)(\tv)}{\ditto}
-	    \eqPf{\semenv(\tvca)}{\semenv(\tvcb)}{Above}
-	    \vdashPf{\semenv}{\cunif \tvca \tvcb}{By \Rule{Unif}}
-\Hand	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}{By \Rule{Conj}}
-	  \end{llproof}
-
-	\proofcase{$\impliedby$}
-
-	  \begin{llproof}
-	    Symmetric argument.
-	  \end{llproof}
-      \end{proofcases}
-
-    \proofcaserewrite
-      {S-Inst-Poly}
-      {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
-       \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
-       \tvp \disjoint \c, \insts \C \inst \\
-       \x \disjoint \bvs \C}
-      {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
-
-
-	\begin{llproof}
-	  \equivPf{\cfor \tvp \cexists {\tv, \tvs \setminus \tvp} \ueqs}{\ctrue}{Premise}
-	  \disjointPf{\tvp}{\c, \insts \C \inst}{Premise}
-	  \disjointPf{\x}{\bvs \C}{Premise}
-	  \decolumnizePf
-	  \sufficientPf{equivalence between}
-	    {\cpapp \x \tvp \tvc \inst \text{ and } \ctrue}
-	    {Lemma XXX}
-	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \ueqs \cand \c)}{Premise}
-	\end{llproof}
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	    \begin{llproof}
-	      \vdashPf{\semenvp}{\cpapp \x \tvp \tvc \inst}{Premise}
-\Hand	      \vdashPf{\semenvp}{\ctrue}{By \Rule{True}}
-	    \end{llproof}
-
-	  \proofcase{$\impliedby$}
-
-	    \begin{llproof}
-	      \vdashPf{\semenvp}{\ctrue}{Premise}
-	      \inPf{\greg \tv {\semenva}}{\semenvp(\x)}{$\C = \Ca\where{\cexistsi \inst \x \Cb}$}
-	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
-	      \eqPf{\semenvp(\tvc)}{\semenva(\tvp)}{Lemma XXX}
-	      \casesPf{\semenva(\tvp)}
-	    \end{llproof}
-	    \begin{proofcases}
-	      \proofcase{$\semenva(\tvp) = \semenvp(\tvc)$}
-
-		\begin{llproof}
-		  \eqPf{\semenva(\tvp)}{\semenvp(\tvc)}{Premise}
-\Hand		  \vdashPf{\semenvp}{\cpapp \x \tvp \tvc \inst}{By \Rule{Partial-Inst}}
-		\end{llproof}
-
-
-	      \proofcase{$\semenva(\tvp) \neq \semenvp(\tvc)$}
-
-		\begin{llproof}
-		  \LetPf{\semenvb}{\semenva\where{\tvp \is \semenvp(\tvc)}}{}
-		  \vdashPf{\semenva}{\ueqs \cand \c}{By definition}
-		  \vdashPf{\semenva}{\ueqs}{Lemma XXX}
-		  \vdashPf{\semenvb}{\ueqs}{$\tvp$ is polymorphic}
-		  \vdashPf{\semenvb}{\c}{$\tvp \disjoint \c$}
-		  \vdashPf{\semenvb}{\ueqs \cand \c}{By \Rule{Conj}}
-		  \inPf{\greg \tv \semenvb}{\semenv(\x)}{By definition}
-		  \supposePf{\semenvc \th \Cb\where\ctrue}{Considering entailment on $\cexistsi \inst \x$}
-		  \eqPf{\semenvc(\inst)}{\semenva}{\ditto}
-		  \vdashPf{\semenvc\where{\inst \is \semenvb}}{\Cb\where\ctrue}{$\inst.\tvp \disjoint \Cb$}
-		  \vdashPf{\deriv :: \semenvc}{\Cb\where\ctrue}{By \Rule{Exists-Inst}}
-		  \commentPf{$\deriv$ is a derivation that satisfies $\semenva(\tvp) = \semenvp(\tvc)$.}{}
-\Hand		  \commentPf{So this case degenerates to the former case.}{}
-		\end{llproof}
-	    \end{proofcases}
-	\end{proofcases}
-
-    \proofcaserewrite
-      {S-Inst-Mono}
-      {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
-       \tvb \disjoint \tv, \tvs \\
-       \x, \tvb \disjoint \bvs \C}
-      {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
-
-	\begin{llproof}
-	  \disjointPf{\tvb}{\tv, \tvs}{Premise}
-	  \disjointPf{\x, \tvb}{\bvs \C}{Premise}
-	  \decolumnizePf
-	  \sufficientPf{equivalence between}
-	    {\cpapp \x \tvb \tvc \inst \text{ and } \cunif \tvb \tvc}
-	    {Lemma XXX}
-	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c)}{Premise}
-	\end{llproof}
-
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	  \begin{llproof}
-	    \vdashPf{\semenvp}{\cpapp \x \tvb \tvc \inst}{Premise}
-	    \inPf{\greg \tv \semenva}{\semenv(\c)}{$\cexistsi \inst \x \in \C$}
-	    \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
-	    \eqPf{\semenvp(\tvc)}{\semenva(\tvb)}{Lemma XXX}
-	    \eqPf{\semenva(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \tv, \tvs$}
-	    \eqPf{\semenvp(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \bvs \C$}
-	    \eqPf{\semenvp(\tvc)}{\semenvp(\tvb)}{Above}
-	    \vdashPf{\semenvp}{\cunif \tvc \tvb}{By \Rule{Unif}}
-	  \end{llproof}
-
-	  \proofcase{$\impliedby$}
-
-	  \begin{llproof}
-	    Symmetric argument.
-	  \end{llproof}
-	\end{proofcases}
-
-
-    \proofcaserewrite
-      {S-Let-Solve}
-      {\cletr \x \tv \tvs \ueqs \c \\ \x \disjoint \c \\
-       \cexists {\tv, \tvs} \ueqs \cequiv \ctrue}
-      {\c}
-	\begin{llproof}
-	  \disjointPf{\x}{\c}{Premise}
-	  \equivPf{\cexists {\tv, \tvs} \ueqs}{\ctrue}{}
-	  \decolumnizePf
-	  \sufficientPf{equivalence for simple constraints}{}{Lemma XXX}
-	  \supposePf{\c \simple} {Premise}
-	\end{llproof}
-	\begin{proofcases}
-	  \proofcase{$\implies$}
-
-	  \begin{llproof}
-	    \ForallPf{\semenv}{}{}
-	    \vdashPf{\semenv}{\cletr \x \tv \tvs \ueqs \c}{Premise}
-	    \vdashPf{\semenv}{\cexists {\tv, \tvs} \ueqs}{\cref{lem:simple-inversion}}
-	    \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \ueqs)}}{\c}{\ditto}
-\Hand	    \vdashPf{\semenv}{\c}{$\x \disjoint \c$}
-	  \end{llproof}
-	  \proofcase{$\impliedby$}
-
-	    \begin{llproof}
-	    \ForallPf{\semenv}{}{}
-	    \vdashPf{\semenv}{\c}{Premise}
-	    \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \ueqs)}}{\c}{$\x \disjoint \c$}
-	    \vdashPf{\semenv}{\cexists {\tv, \tvs} \ueqs}{}
-\Hand	    \vdashPf{\semenv}{\cletr \x \tv \tvs \ueqs \c}{By \Rule{LetR}}
-	    \end{llproof}
-	\end{proofcases}
-
-  \proofcaserewrite
-    {S-BackProp}
-    {\C\where
-       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
-                           {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
-     \tvp \in \dom \ren \\
-     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
-     \x \disjoint \Cb}
-    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
-		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
-
-    \TODO{Lemma for this that determines unicity}
-
-
-  \proofcase{\Rule{S-Compress}, \Rule{S-Gc}, \Rule{S-Exists-All}, \Rule{S-All-Escape}, \Rule{S-All-Rigid}, \Rule{S-All-Solve}}
-
-  \begin{llproof}
-    Equivalences are standard, see \citep{Pottier-Remy/emlti}.
-  \end{llproof}
-  \end{proofcases}
-\end{proof}
 
 
 \section{Examples of suspended match constraints}
@@ -6839,6 +6826,8 @@ we need something more powerful.
 %%% Below this line will is a draft
 \Draft{}{\end{document}}\color{blue}
 
+\clearpage
+
 \section{DRAFT: a later TODO  list}
 
 Problems to solve or leave unsolved:
@@ -6859,6 +6848,281 @@ Problems to solve or leave unsolved:
 
 \end{itemize}
 
+\section{The \OML calculus, feature by feature}
+
+\Xgabriel{This section contains work-in-progress content that I intended to use to rewrite Section 4, ``The \OML calculus''. I still believe that there will not be enough space to keep Section 4 anyway, so I decided to stop this rewrite effort and dump the current content here.}
+
+\subsection{The core fragment}
+\label{sec:language:core}
+\label{sec/language/typing-rules}
+
+\begin{mathparfig}{fig/typing-core}{Typing and inference: Core \ML}
+  \inferrule[Var]
+    {x : \sigma \in \G}
+    {\G \th x : \sigma}
+
+  \inferrule[Fun]
+    {\G, x : \ta \th e : \tb }
+    {\G \th \efun x e : \ta \to \tb}
+
+  \inferrule[App]
+    {\G \th \ea : \ta \to \tb \\
+     \G \th \eb : \ta}
+    {\G \th \eapp \ea \eb : \tb}
+
+  \inferrule[Annot]
+    {\G \th e : \t\where {\tvs \is \tys}}
+    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
+
+  \inferrule[Gen]
+    {\G \th e : \sigma \\ \tv \disjoint \G}
+    {\G \th e : \tfor \tv \sigma}
+
+  \inferrule[Inst]
+    {\G \th e : \tfor \tv \ts}
+    {\G \th e : \ts \where{\tv \is \t}}
+
+  \inferrule[Let]
+    {\G \th \ea : \sigma \\
+     \G, x : \sigma \th \eb : \t}
+    {\G \th \elet x \ea \eb : \t}
+\\
+\newcommand {\Crule}[2]{#1 & \eqdef & #2}
+\begin{array}{l@{\uad} c@{\uad} l}
+\Crule
+  {\cinfer {\efun \x \e} \t}
+  {\cexists {\tva, \tvb}
+    \cunif \t {\tva \to \tvb}
+    {}}
+\\ & & \quad\uad {} \cand \clet \x \tvc {\cunif \tvc \tva} {\cinfer \e \tvb}
+\\
+\Crule
+  {\cinfer {\eapp \ea \eb} \t}
+  {\cexists {\tva} \cinfer \ea {\tva \to \t} \cand \cinfer \eb \tva}
+\end{array}
+\quad
+\begin{array}{l@{\uad} c@{\uad} l}
+\Crule
+   {\cinfer x \t}
+   {\cinst x \t}
+\\
+\Crule
+  {\cinfer {\elet \x \ea \eb} \t}
+  {\clet \x \tva {\cinfer \ea \tva} {\cinfer \eb \t}}
+\\
+\Crule
+  {\cinfer {\eannot \e \tvs \tp} \t}
+  {\cexists \tvs \cunif \t \tp \cand \cinfer \e \tp}
+\end{array}
+\end{mathparfig}
+
+As usual, the main typing judgment $\G \th \e : \ts$ states that in
+context $\G$, expression $\e$ has type scheme $\ts$. We give the
+typing rules for the core \ML fragment in \cref{fig/typing-core}. It
+also defines constraint generation for this fragment: given a term
+$\e$ and its expected type $\t$, which may contain some free type
+variables, we define a constraint $\cinfer e \t$ that is satisfiable
+if and only if the term is well-typed for some instantiation of those
+free type variables. Both typing rules and constraint generations are
+standard on this fragment, and we will not comment them further due to
+space restrictions.
+
+\subsection{Unicity via magic rules}
+
+TODO: a figure with the magic rule and the two unicity criterion (not for labels).
+
+\subsection{Overloaded tuples}
+
+\begin{mathparfig}{fig/typing-tuples}{Typing and inference: tuples}
+  \inferrule[Tuple]
+    {\parens{\G \th \ei : \ti}\iton}
+    {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
+
+  \inferrule[Proj-X]
+    {\G \th \e : \Pi\iton \ti \\
+     1 \leq j \leq n}
+    {\G \th \exfield \e n j : \tj}
+
+  \inferrule[Proj-I]
+    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
+     \G \th \E\where{\exfield \e n j} : \t}
+    {\G \th \E\where{\efield \e j} : \t}
+\\
+  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
+ \begin{array}{rcl@{\qquad}l@{\qquad\qquad} r}
+   \cpat & ::= & \dots \mid \cpatprod \tv j & & \text{tuple patterns} \\
+    \Mrule[\text{if } n \geq j]
+      {\cpatprod \tv j}
+      {\any \tvcs \Pi\iton \tvcs} \tvbs
+      {[\tv \is \tvb_j]}
+   & \text{matching relation}
+ \end{array}
+\\
+\newcommand {\Crule}[2]{#1 & \eqdef & #2}
+\begin{array}{l@{\uad} c@{\uad} l}
+\Crule
+  {\cinfer {\etuple {\ea, \ldots, \en}} \t}
+  {\cexists \tvs \cunif \t {\Pi\iton \tvs}
+    \cand \cAnd \iton \cinfer \ei {\tv_i}}
+\\
+\Crule
+  {\cinfer {\exfield \e j n} \t}
+  {\cexists {\tvbs}
+    \cinfer \e {\Pi\iton \tvbs}
+    \cand \cunif \t {\tvb_j}}
+\\
+\Crule
+  {\cinfer {\efield \e j} \t}
+  {\cexists \tv \cinfer \e \tv
+    \cand \cmatch \tv {\cbranch {\cpatprod \tvb j} {\cunif \t \tvb}}}
+\end{array}
+\end{mathparfig}
+
+\subsection{Polytypes}
+
+\begin{mathparfig}{fig/typing-polytypes}{Typing and inference: polytypes}
+  \inferrule [Poly-X]
+    {\G \th \e : \ts\where {\tvs \is \tys}}
+    {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
+
+  \inferrule [Poly-I]
+    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
+     \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
+    {\G \th \E \where{\epoly \e} : \t}
+
+  \inferrule [Use-X]
+    {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
+    {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
+
+  \inferrule [Use-I]
+    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
+     \G \th \E\where{\exinst \e \tvcs \ts} : \t}
+    {\G \th \E\where{\einst \e} : \t}
+\\
+  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
+ \begin{array}{rcl@{\qquad}l@{\qquad\qquad} r}
+   \cpat & ::= & \dots \mid \cpatpoly \cscm
+               & & \text{polytype patterns} \\
+   \c & ::= & \dots \mid \cscm \leq \t \mid \ts \leq \t \mid \x \leq \cscm \mid \x \leq \ts
+            & & \text{polytype constraints} \\
+    \Mrule
+      {\cpatpoly \cscm}
+      {\any \tvcs \tpoly \ts} \tvbs
+      {[\cscm \is \ts \where{\tvcs \is \tvbs}]}
+   & \text{matching relation}
+ \end{array}
+\\
+\newcommand {\Crule}[2]{#1 & \eqdef & #2}
+\begin{array}{l@{\uad} c@{\uad} l}
+\\
+\Crule
+  {\cinfer {\expoly \e \tvs \ts} \t}
+  {\cexists {\tvs}
+    \cinfer \e \ts
+    \cand \cunif \t {\tpoly \ts}}
+\\
+\Crule
+  {\cinfer {\exinst \e \tvs \ts} \t}
+  {\cexists {\tvs}
+    \cinfer \e {\tpoly \ts}
+    \cand \ts \leq \t}
+\\
+\Crule
+  {\cinfer {\einst \e} \t}
+  {\cexists \tva
+    \cinfer \e \tva
+    \cand \cmatch \tva {\cbranch {\cpatpoly \cscm} \cscm \leq \t}}
+\\
+\Crule
+  {\cinfer {\epoly \e} \t}
+  {\clet \x \tv {\cinfer \e \tv}
+    {\cmatch \t {\cbranch {\cpatpoly \cscm} {\x \leq \cscm}}}}
+\end{array}
+\end{mathparfig}
+
+\subsection{Nominal records}
+
+Todo: extend the magic rule and the disambiguation rule, and also provide the unicity-in-env criterion definition. I propose to add those to the figure below.
+
+\begin{mathparfig}{fig/typing-records}{Typing and inference: nominal records}
+  \inferrule[Rcd-Assn]
+    {\G \th \e : \t \\
+     \G \th \el : \t \to \tp}
+    {\G \th \el = \e : \tp}
+
+  \inferrule[Rcd]
+    {\parens{\G \th \eli = \ei : \t}\iton \\
+     \G \th \bar \el \uni \t}
+    {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
+
+  \inferrule[Rcd-Proj]
+    {\G \th \e : \tp \\
+     \G \th \el : \t \to \tp \\
+     \G \th \el \uni \t }
+    {\G \th \efield \e \el : \t}
+
+  \inferrule[Lab-X]
+    {\Omega(\elab / \T) = \tfor \tvs \t \to \tvs \T }
+    {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \tys \T}
+
+  \inferrule[Lab-I]
+    {\Lshape \Lab \elab \T \\
+      \G \th \Lab[\elab / \T] : \t}
+    {\G \th \Lab[\elab] : \t}
+
+  \inferrule[Lab-!]
+    {\bar \el \uni \T \in \labenv}
+    {\G \th \bar \el \uni \tys \T}
+
+  \inferrule[Lab-?]
+    {\G \th \t}
+    {\G \th \bar \el \uni \t}
+\\
+  \newcommand{\Mrule}[5][]{{#2} \Matches {(#3)} \; #4 &\eqdef& {#5} & #1}
+ \begin{array}{rcl@{}l@{\qquad} r}
+   \cpat & ::= & \dots \mid \cpatrcd \ct & & \text{record patterns} \\
+   \c & ::= & \dots
+              \mid \labenv(\elab/\ct) \leq \ta \to \tb
+              \mid \labenv(\elab/\T) \leq \ta \to \tb
+            & & \text{record constraints} \\
+    \Mrule
+      {\cpatrcd \ct}
+      {\any \tvcs \tvcs \Tapp} \tvbs
+      {[\ct \is ~ \T]}
+   & \text{matching relation}
+ \end{array}
+\\
+\newcommand {\Crule}[2]{#1 & \eqdef & #2}
+\begin{array}{l@{\uad} c@{\uad} l}
+\Crule
+  {\cinferassn \el \e \t}
+  {\cexists \tv \cinfer \e \tv
+    \cand \cinferlab \el \tv \t}
+\\
+\Crule
+  {\cinferlab \elab \ta \tb}
+  {\cmatch \tb {\cbranch {\cpatrcd \ct} {\labenv(\elab/\ct) \leq \ta \to \tb}}}
+\\
+\Crule
+  {\cinferlab {\elab/\T} \ta \tb}
+  {\labenv(\elab/\T) \leq \ta \to \tb}
+\\
+\Crule
+  {\cinferlab {\elmagic \elab} \ta \tb}
+  {\ctrue}
+\\
+\Crule
+  {\cinferlab {\elannot \el \tvs \t} \ta \tb}
+  {\cexists \tvs \cinferlab \el \ta \tb \cand \cunif \tb \t}
+\\
+\Crule
+  {\cinferlabuni {\bar \el} \t}
+  {\begin{cases}
+    \cexists \tvs \cunif \t {\tvs \Tapp} &\text{if } \bar \el \uni \T \in \labenv \\
+    \ctrue &\text{otherwise}
+   \end{cases}}
+\end{array}
+\end{mathparfig}
 
 \end{document}
 
