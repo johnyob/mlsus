@@ -1607,12 +1607,23 @@ transitions are applicable, \ie $\c \cnsolve$, the constraint $\c$ is either in
 solved form---from which we can read off a most general solution---or the
 solver becomes stuck, indicating that $\c$ is unsatisfiable.
 
+\begin{definition}[Solved form $\hat\up$]
+  \label{def:solved-form}
+  A solved form is a constraint $\hat\up$ of the form $\cexists \tvs \cAnd
+\iton \ueqi$, where:
+\begin{enumerate*}
+  \item each $\ueqi$ contains at most one non-variable type,
+  \item head variables do not occur in multiple equations,
+  \item the constraint is acyclic.
+\end{enumerate*}
+\end{definition}
+
 \subsection{Unification}
 %
 Our constraints ultimately reduce to equations between types, which we solve
 using first-order unification. Like our solver, we specify unification as a
 non-deterministic rewriting relation between \emph{unification problems} $\upa
-\unif \upb$.
+\unif \upb$, that eventually reduces to a solved form $\hat\up$ or to $\cfalse$.
 
 \begin{mathparfig}[htpb!]
   {fig:unification-syntax-and-semantics}
@@ -1642,16 +1653,16 @@ non-deterministic rewriting relation between \emph{unification problems} $\upa
 
 \parcomment{Unification problems and multi-equations}
 
-Unification problems $\up$ are a restricted subset of constraints, extended
-with \emph{multi-equations} \citep{Pottier-Remy/emlti}---a multi-set of types
-considered equal. These generalize binary equalities: $\semenv$ satisfies a
-multi-equation $\ueq$ if all of its memebers are mapped to a single ground type
-$\gt$ (Rule \Rule{Multi-Unif}). Multi-equations are considered equal modulo
-permutation of their members.
+Unification problems $\up$
+(\cref{fig:unification-syntax-and-semantics}) are a restricted subset
+of constraints, extended with \emph{multi-equations}
+\citep{Pottier-Remy/emlti}---a multi-set of types considered
+equal. These generalize binary equalities: $\semenv$ satisfies
+a multi-equation $\ueq$ if all of its memebers are mapped to a single
+ground type $\gt$ (Rule \Rule{Multi-Unif}). Multi-equations are
+considered equal modulo permutation of their members.
 
-\parcomment{The algorithm}
-
-Our unification algorithm $\upa \to \upb$ is largely standard. For reasons of space we describe it in \cref{app:unification} (appendix).
+Our algorithm is largely standard. For reasons of space we describe it in \cref{app:unification} (appendix).
 
 \subsection{Solving rules}
 
@@ -1665,15 +1676,9 @@ commutativity of conjunction. $\C$ represents an arbitrary
 one-hole constraint context.
 
 % Solved forms
-A constraint $C$ is satisfiable if it can be rewritten into a \emph{solved
-form}. A solved form is a constraint $\hat\up$ of the form $\cexists \tvs \cAnd
-\iton \ueqi$, where:
-\begin{enumerate*}
-  \item each $\ueqi$ contains at most one non-variable type,
-  \item head variables do not occur in multiple equations,
-  \item the constraint is acyclic.
-\end{enumerate*}
-% Common rule descriptions
+A constraint $C$ is satisfiable if rewrites into a solved form
+$\hat\up$ (\cref{def:solved-form}). Otherwise it gets
+stuck.
 
 \paragraph{Basic rules}
 
