@@ -6346,6 +6346,25 @@ rules that are not inherently destructive.
 	\end{mathpar}
 	Hence $\uw {{\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}} > \uw {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}$.
 
+        \Xdidier{But I would rather present it as follows}
+	We have
+	\begin{mathpar}
+	  \begin{tabular}{RRCL}
+           (+)&
+	    \uw {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}} &=&
+	      \tw {\pshapp \tvs} + \tw {\pshapp \tvbs}  + \tw \ueq \\
+           (-)&
+	    \uw {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
+	      &=&
+	      \tw {\pshapp \tvs} + \tw \ueq + \tw \tvs + \tw \tvbs \Strut \\
+              \hline
+	       &&=&\Strut \tw {\pshapp \tvbs} - \tw \tvs - \tw \tvbs \\
+               &&=&  (\sw \sh  + 0 - 1) - 2 |\sh| \\
+               &&=&  (2 + 2|\sh|  - 1) - 2 |\sh| \Wide = \textbf {1}\\
+	  \end{tabular}
+	\end{mathpar}
+
+
 
       \proofcaserewrite
 	{U-Name}
@@ -6363,7 +6382,24 @@ rules that are not inherently destructive.
 	So it sufficies to show that $1 + \tw \ti < \iw \ti$. Given $\ti \notin \TyVars$, this is indeed the case.
 	So we are done.
 
-        \Xgabriel{I don't follow, for example if $\tau_i$ is a nullary shape $\shapp \eset$ I would expect $1 + \tw {\shapp \eset} = \iw {\shapp \eset}$.}
+        \Xgabriel{I don't follow, for example if $\tau_i$ is a nullary shape
+        $\shapp \eset$ I would expect $1 + \tw {\shapp \eset} = \iw {\shapp
+        \eset}$.}
+
+	We have
+	\begin{mathpar}
+	  \begin{tabular}{.R;;R;C;L.}
+          (+) &
+	    \uw {\cunif {\pshapp {\parens{\tys, \ti, \typs}}} \ueq}
+            &=& \sw \sh + \iw \tys + \iw \ti + \iw \typs - 1 + \uw \ueq \\
+          (-) &
+	    \uw {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
+            &=& \sw \sh + \iw \tys + 0 + \iw \typs - 1 + \uw \ueq + 1 + \tw \ti \\
+            \hline
+           &&=& \iw \tyi - \iw \tv - 1
+	  \end{tabular}
+	\end{mathpar}
+
     \end{proofcases}
   \end{proof}
 \end{lemma}
