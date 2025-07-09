@@ -2007,11 +2007,11 @@ There are three cases in which an instantiation constraint is eliminated:
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
   \rewrite[S-Inst-Poly]
-    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
-     \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+     \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
      \tvp \disjoint \c, \insts \C \inst \\
      \x \disjoint \bvs \C}
-    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
+    {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
   \rewrite[S-Inst-Mono]
     {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
@@ -4477,11 +4477,11 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
   \rewrite[S-Inst-Poly]
-    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
-     \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+     \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
      \tvp \disjoint \c, \insts \C \inst \\
      \x \disjoint \bvs \C}
-    {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
+    {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
   \rewrite[S-Inst-Mono]
     {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
@@ -5999,22 +5999,22 @@ we need something more powerful.
 
     \proofcaserewrite
       {S-Inst-Poly}
-      {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
-       \cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+      {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+       \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
        \tvp \disjoint \c, \insts \C \inst \\
        \x \disjoint \bvs \C}
-      {\cletr \x \tv \tvs {\ueqs \cand \c} {\C\where\ctrue}}
+      {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
 
 	\begin{llproof}
-	  \equivPf{\cfor \tvp \cexists {\tv, \tvs \setminus \tvp} \ueqs}{\ctrue}{Premise}
+	  \equivPf{\cfor \tvp \cexists {\tv, \tvs} \ueqs}{\ctrue}{Premise}
 	  \disjointPf{\tvp}{\c, \insts \C \inst}{Premise}
 	  \disjointPf{\x}{\bvs \C}{Premise}
 	  \decolumnizePf
 	  \sufficientPf{equivalence between}
 	    {\cpapp \x \tvp \tvc \inst \text{ and } \ctrue}
 	    {Lemma XXX}
-	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \ueqs \cand \c)}{Premise}
+	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs, \tvp} \ueqs \cand \c)}{Premise}
 	\end{llproof}
 	\begin{proofcases}
 	  \proofcase{$\implies$}
