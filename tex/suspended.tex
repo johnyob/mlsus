@@ -112,7 +112,7 @@ $   °\Ocamlcomment{\ocamlFlag {\MLF}1}°
 
 \parcomment {Annotations fixes all the issues (but they're problematic)}
 
-\subsection{Existing approaches}
+\subsection{Directional type inference}
 
 Each fragile constructs admits
 a robust counterpart where the type annotation is mandatory. While
@@ -138,84 +138,92 @@ used for disambiguation and enable the omission of some annotations.
 
 \paragraph{\Geninst-directional type inference}
 
-\ML languages typically enforce an ordering in the typechecking of let-bindings
-$\elet \x \ea \eb$, where (the polymorphic part of) the definition
-$\ea$ must be typed before the body $\eb$. \OCaml relies on this
-ordering to propagate type information in a principal way: if an
-expression has a polymorphic type, then this type can be used for
-type-directed disambiguation, whereas monomorphic type information
-cannot as it may depend on inference order in a fragile way. We call this
-\textbf{\geninst}-directional (read as ``\textbf{pi}-directional'')
-type inference, to mean that \textbf{p}olymorphic expressions must be
-typed before their \textbf{i}nstances.
+\parcomment{Introduce the order}
 
-This mechanism was introduced for semi-explicit first-class
-polymorphism by~\citet {Garrigue-Remy/poly-ml}, and later used
-by~\citet {LeBotlan-Remy/recasting-mlf} for empowering \MLF. It has
-also been reused for overloading of record fields and variant
-constructors in \OCaml, which we choose for illustration here as it is
-simpler to explain than others (which will be
- presented in~\cref{sec/constraints/polytypes}).
+Most \ML inference algorithms enforce a fixed order when typechecking
+let-bindings $\elet \x \ea \eb$: first typecheck the defintion $\ea$, then
+the body $\eb$. \OCaml leverages this ordering to resolve overloaded or
+ambiguous constructs in a \emph{principal} way: polymorphic types
+are treated as \emph{known} and may guide disambiguation, whereas monomorphic
+types are considred not-yet-known and cannot be relied on for disambiguation.
 
-The user may define two nominal record types with overlapping fields:
-\Xalistair{I'm pretty sure if we re-ordered these types, we'd avoid
-the annoying 'if you reorder the types then it fails' comments we have
-in various subsequent examples}\Xdidier{I think so too, but
-we would then need to change all the text. Also, these examples
-should be the one reused in next section.}
+\parcomment{What is it, and what does it solve}
+
+We call this \textbf{\geninst}-directional (read as
+``\textbf{pi}-directional'') type inference, to mean that \textbf{p}olymorphic
+expressions must be typed before their \textbf{i}nstances. This strategy
+ensures principality for fragile constructs, but can lead to counterintuitive
+behaviour.
+
+\parcomment{An instance of the problem (implementation directionality in inference)}
+
+To illustrate the problem, consider the following two record types,
+which define overlapping field names:
 \begin{program}[input]
-type 'a one = {x : 'a}
-type two = {x : int; y : int}
+type one = {x : int; y : int}
+type 'a two = {x : 'a}
 \end{program}
 In \OCaml, both definitions are in scope, and the compiler must
 statically disambiguate field usage. The expression \ocaml!{x = 1}! can
-only be a \code{int one}, and that \code{r.y} necessarily infers \code{two},
-but field accesses such as \code{r.x} must be disambiguated. Consider for
-example:
+only be \code{int two}, and \code{r.y} necessarily infers \code{one} for \code{r}.
+But field accesses such as \code{r.x} are ambiguous unless the type of \code{r} is
+\emph{known}. Consider:
 \begin{program}[input]
-let e_1 r = r.x                         °\ocamlflags 11°
-let e_2 = let r = {x = 1} in r.x        °\ocamlflags 00°
-let e_3 = (fun r -> r.x) {x = 1}        °\ocamlflags 10°
+let ex_1 r = r.x                         °\ocamlflags 21°
+let ex_2 = let r = {x = 1} in r.x        °\ocamlflags 00°
+let ex_3 = (fun r -> r.x) {x = 1}        °\ocamlflags 10°
 \end{program}
-To be able to disambiguate the projection \code{r.x}, the type of the
-\code{r} must be \emph{known} to be either an instance of either
-\ocaml{'a one} or \ocaml{two}. The definition \ocaml{e_1} is
-clearly ambiguous, as there is no clue to the type of \ocaml{r}, and
-its typechecking fails\footnote {In fact, \OCaml uses a default
+In \ocaml{ex_1}, the type of \code{r} is unconstrained, so disambiguation
+fails\footnote {In fact, \OCaml uses a default
 resolution strategy instead of failing when the type is ambiguous,
   which is to emit a warning and use the last definition in scope. To
   check these examples, you should use the options
   \texttt{-principal -w +41}, which enforce principality checks and enables
   the warning on default resolution.}.
 \relax
-By contrast, in both \ocaml{e_2} and \ocaml{e_3}, the only possible
-type for \ocaml{r} is \ocaml {'a one}. Yet, there is a subtle distinction: Indeed, the
-type of~\ocaml{e_2} is considered to be unambiguous, while the type of
-\ocaml{e_3} is ambiguous.
-%
-To understand why \ocaml{e_3} fails, consider the equivalent versions of
-\ocaml{e_3} where \texttt{@@} and \ocaml{|>} are the application and the
-reverse application functions:
-\Xalistair{I think this example misses the point a bit -- upon rereading it,
-it not clear what we're trying to say here. I think the reader gets lost---
-we're essentially showing pidirectional is weak since $\e_2$ and $\e_3$
-are morally the same, but $\e_2$ works and $\e_3$ doesn't.}
+At first glance, \code{ex_2} and \code{ex_3} appear equivalent: in both,
+the expression \code{r.x} can only refer to the field from type \code{'a two}.
+Yet \OCaml accepts \code{ex_2} and rejects \code{ex_3}.
+This is becuase the \code{let}-binding in \code{ex_2} allows \code{r} to be
+treated polymorphically, and thus its type is considred \emph{known}--enabling
+disambiguation. In \code{ex_3}, by contrast, \code{r} is monomorphic at the point of
+projection, and disambiguation is therefore forbidden.
+
+To emphasize that this behaviour is specification-drive and not an
+artifact of \OCaml's inference algorithm, consider two equivalent versions of
+\ocaml{ex_3}, where \texttt{@@} and \ocaml{|>} are the application and reverse application
+functions:
 \begin{program}[input]
-let e_3_2 = (fun r -> r.x) @@ {x = 1}   °\ocamlflags 10°
-let e_3_3 = {x = 1} |> (fun r -> r.x)   °\ocamlflags 10°
+let ex_3_2 = (fun r -> r.x) @@ {x = 1}   °\ocamlflags 10°
+let ex_3_3 = {x = 1} |> (fun r -> r.x)   °\ocamlflags 10°
 \end{program}
-\OCaml does not make any difference between \ocaml[indices]{e_3},
-\ocaml[indices]{e_3_2}, or \ocaml[indices]{e_3_3} and consider all
-subexpressions in an application, including the function and all arguments
-as being inferred simultaneously, until they are let-bound. More precisely,
-polymorphic types are considered to be known while monomorphic types are
-consider to be unknown---or, rather, not-yet-known. This criterion also
+While these terms are semantically equivalent, they highlight a potential hazard:
+their typability would vary under a directionally biased inference algorithm,
+depending on whether the function or argument is typed first.
+To avoid such implementation-dependent behaviour, \OCaml chooses to infer
+all subexpressions \emph{simultaneously}, until they are \code{let}-bound.
+
+Consequently, \OCaml does not make any difference between \ocaml[indices]{ex_3},
+\ocaml[indices]{ex_3_2}, or \ocaml[indices]{ex_3_3}; in all cases, disambiguation
+is disallowed and they are ill-typed.
+%
+This criterion also
 warns on the following example, where \code{r} has a monomorphic type:
 \begin{program}[input]
-let e_4 p r = if p then r.x else (r : two).x °\ocamlflags 20°
+let ex_4 p r = if p then r.x else (r : two).x °\ocamlflags 20°
 \end{program}
 Warning here is preferable to silently accepting or rejecting the program based
 on the inference order between the \code{if} branches.
+
+\Geninst-directional inference offers a way to specify and implement principal
+type inference for fragile features, aligning with the implicit inference order
+present in most \ML-like typecheckers.
+%
+This mechanism was originally proposed by~\citet {Garrigue-Remy/poly-ml} for
+semi-explicit first-clas polymorphism, and later used by~\citet
+{LeBotlan-Remy/recasting-mlf} for empowering \MLF. It has since been adopted in
+\OCaml for resolving overloading of record fields and variant constructors in
+\OCaml.
 
 \paragraph{Bidirectional type inference}
 
@@ -339,12 +347,7 @@ complete.
 
 \paragraph{Illustrative examples}
 
-\Xalistair{This paragraph was in the previous section. I felt it was
-more related to the benefit of omnidirectional inference as opposed
-existing approaches. I've called it Illustrative examples, but feel free to rename
-if you think of something better.}
-
-Examples \code{e_2} to \code{e_4} are all typable with omnidirectional
+Examples \code{ex_2} to \code{ex_4} are all typable with omnidirectional
 inference, as indicated by the green traffic light labelled \OML---the
 calculus formalized in this paper.
 
@@ -357,42 +360,41 @@ further examples that illustrate such failures:
 %
 \locallabelreset
 %
-\TODO{Rename these to ex}
 \begin{program}[input]
-let e_6 r = (r.x, r.y)                          °\ocamlflags 10°
-let e_7 r = let x = r.x in x + r.y              °\ocamlflags 10°
-let e_8 = let getx r = r.x in getx {x = 1}      °\ocamlflags 10°
-let e_9 r = (r.x : bool)                        °\ocamlflags 11°
-let e_1_0 r = r.x.x                              °\ocamlflags 11°
+let ex_6 r = (r.x, r.y)                          °\ocamlflags 10°
+let ex_7 r = let x = r.x in x + r.y              °\ocamlflags 10°
+let ex_8 = let getx r = r.x in getx {x = 1}      °\ocamlflags 10°
+let ex_9 r = (r.x : bool)                        °\ocamlflags 11°
+let ex_1_0 r = r.x.x                              °\ocamlflags 11°
 \end{program}
 All are arguably unambiguous; \OCaml accepts none of them\footnote{It
-accepts \ocaml{e_6} with a warning, and fails if we reverse the order of the
+accepts \ocaml{ex_6} with a warning, and fails if we reverse the order of the
 type declarations.}, \OML accepts the first three.
 
-In \ocaml{e_6}, \ocaml{r} can only be of type \ocaml{two}. Indeed,
+In \ocaml{ex_6}, \ocaml{r} can only be of type \ocaml{two}. Indeed,
 considering the second projection first, we should learn that
 \ocaml{r} is of type \ocaml{two} and since it is $\lambda$-bound, this
 should then make the first projection unambiguous. Disambiguating this example is a matter
 of solving the typing constraints in the right order.
 
-A similar failure occurs in \ocaml{e_7}, where the type of the
+A similar failure occurs in \ocaml{ex_7}, where the type of the
 $\lambda$-bound variable \code{r} is initially ambiguous and
 unknown. It is only upon typing the projection \code{r.y} that
 \code{r} is forced to have the type \ocaml{two}; this requires
 inferring the $\Let$-body to disambiguate the $\Let$-definition.
 %
-In \code{e_8}, disambiguation information flows from an instance to
+In \code{ex_8}, disambiguation information flows from an instance to
 back the definition, opposite to the \Geninst-order; we call this
 \emph{backpropagation}.
 
-The example \ocaml{e_9} can be disambiguated from the return type of the
+The example \ocaml{ex_9} can be disambiguated from the return type of the
 projection, rather than from its source. The typing rules for records that
 we present on this work restrict disambiguation to the source type only and
 rejects this example. But\Xdidier[we believe that]{Why not the affirmative?}
 other typing rules using omnidirectional type inference could support this
 example as well.
 
-Finally, \ocaml{e$_{10}$} is an example where none of the field
+Finally, \ocaml{ex_1_0} is an example where none of the field
 projections has enough type information to be disambiguated on its own, but the
 constraints they impose can be combined to deduce that the type of
 \ocaml{r} must be \ocaml{one}, as the \code{x} field of \code{two}
