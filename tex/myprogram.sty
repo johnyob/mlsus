@@ -155,7 +155,30 @@
 \lstdefinestyle{algo}
     {}
 
-\newcommand \ocamlcomment[1]{\hfill \ocamlcommentstyle (* #1 *)\space}
+\newcommand \ocamlFlag[2]
+  {\ifcase #2\relax
+     \smash{\fboxsep 1pt\colorbox{green!20}{#1}}\or
+     \smash{\fboxsep 1pt\colorbox{red!20}{#1}}\else
+   \fi}
+%% \newcommand \ocamlFlag[2]
+%%   {\ifcase #2\relax
+%%      \textcolor{green!50!black}{#1}\or
+%%      \textcolor{red}{#1}\else
+%%    \fi}
+%% \newcommand \ocamlflags[2]
+%%   {\hfill \ocamlFlag{\OCaml}{#1}\space\ocamlFlag{\OML}{#2}\space\strut}
+\newcommand \Ocamlcomment[1]
+  {\hfill #1 \space\strut}
+\newcommand \ocamlflags[2]
+  {\Ocamlcomment
+      {\ocamlFlag{\textsf{\footnotesize Caml}}{#1}\space
+       \ocamlFlag{\textsf{\footnotesize Omni}}{#2}}}
+%% \newcommand \ocamlflags[2]
+%%   {\Ocamlcomment
+%%       {\ocamlFlag{\ensuremath{\mathcal M}}{#1}\space
+%%        \ocamlFlag{\ensuremath{\Omega}}{#2}}}
+\newcommand \ocamlcomment[1]
+  {\Ocamlcomment{\ocamlcommentstyle (* #1 *)}\space\strut}
 
 \colorlet{input}{blue!7}
 \colorlet{error}{red!10}
