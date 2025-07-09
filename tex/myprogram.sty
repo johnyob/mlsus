@@ -177,7 +177,8 @@
 \newcommand \ocamlFlag[2]
   {\ifcase #2\relax
      \smash{\fboxsep 1pt\colorbox{green!20}{#1}}\or
-     \smash{\fboxsep 1pt\colorbox{red!20}{#1}}\else
+     \smash{\fboxsep 1pt\colorbox{red!20}{#1}}\or
+    \smash{\fboxsep 1pt\colorbox{orange!20}{#1}}\else
    \fi}
 %% \newcommand \ocamlFlag[2]
 %%   {\ifcase #2\relax
@@ -190,8 +191,8 @@
   {\hfill #1\space\strut}
 \newcommand \ocamlflags[2]
   {\Ocamlcomment
-      {\ocamlFlag{\textsf{\footnotesize Caml}}{#1}\space
-       \ocamlFlag{\textsf{\footnotesize Omni}}{#2}}}
+      {\ocamlFlag{\textsf{\footnotesize \OCaml}}{#1}\space
+       \ocamlFlag{\textsf{\footnotesize \OML}}{#2}}}
 %% \newcommand \ocamlflags[2]
 %%   {\Ocamlcomment
 %%       {\ocamlFlag{\ensuremath{\mathcal M}}{#1}\space
