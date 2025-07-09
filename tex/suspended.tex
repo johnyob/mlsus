@@ -1722,15 +1722,16 @@ using first-order unification. Like our solver, we specify unification as a
 non-deterministic rewriting relation between \emph{unification problems} $\upa
 \unif \upb$, that eventually reduces to a solved form $\hat\up$ or to $\cfalse$.
 
-\begin{mathparfig}[htpb!]
+\begin{mathparfig}[h]
   {fig:unification-syntax-and-semantics}
   {Syntax and semantics of unification problems.
    %Constraints are also extended with the administrative multi-equation construct.
   }
-\begin{minipage}[t]{0.45\textwidth}
+\begin{minipage}[c]{0.7\textwidth}
 \begin{bnfgrammar}
   \entry[Unification problems]{\up}{
     \ctrue \and \cfalse \and \upa \cand \upb \and \cexists \tv \up \and \ueq
+    \uad\strut
   } \\
   \entry[Multi-equations]{\ueq}{
     \eset \mid \cunif \t \ueq
@@ -1740,12 +1741,12 @@ non-deterministic rewriting relation between \emph{unification problems} $\upa
   }
 \end{bnfgrammar}
 \end{minipage}
-\hspace{0.3\textwidth}
-\begin{minipage}[t]{0.45\textwidth}
+\hfill
+\vcenter{\hbox{
   \infer[Multi-Unif]
     {\all {\t \in \ueq}\, \semenv(\t) = \gt}
     {\semenv \th \ueq}
-\end{minipage}
+}}
 \end{mathparfig}
 
 \parcomment{Unification problems and multi-equations}
@@ -1785,14 +1786,19 @@ stuck.
 current unification problem. The unification algorithm itself is treated as a
 black box by the solver, so the system could be extended with any
 equational theory of types implemented by the unifier.
-\begin{mathparfig}[htpb!]
+\begin{mathparfig}[t]
   {fig:constraint-let-regions}
   {Syntax and semantics of region-based $\Let$ constraints.}
-\begin{bnfgrammar}
- \entry[Constraints]{\c}{
-    \dots \and \cletr \x \tv \tvs \ca \cb
-  }
-\end{bnfgrammar}
+%% \begin{bnfgrammar}
+%%  \entry[Constraints]{\c}{
+%%     \dots \and \cletr \x \tv \tvs \ca \cb
+%%   }
+%% \end{bnfgrammar}
+\begin{tabular}{R;;C;;L}
+\c &::=& \dots \mid \cletr \x \tv \tvs \ca \cb \\
+\semenv(\cabsr \tv \tvs \c) &\eqdef& \set{\greg \tv {\semenv\where{\tv \is \gt, \tvs \is \gts}} \in \GroundRegion :
+    \semenv\where{\tv \is \gt, \tvs \is \gts} \th \c}
+\end{tabular}
 \\
   \infer[LetR]
     {\semenv \th \cexists {\tv, \tvs} \ca \\
@@ -1803,9 +1809,6 @@ equational theory of types implemented by the unifier.
     {\greg \tv \semenvp \in \semenv(\x) \\
      \semenv(\t) = \semenvp(\tv) }
     {\semenv \th \capp \x \t}
-\\
-  \semenv(\cabsr \tv \tvs \c) \uad\eqdef\uad \set{\greg \tv {\semenv\where{\tv \is \gt, \tvs \is \gts}} \in \GroundRegion :
-    \semenv\where{\tv \is \gt, \tvs \is \gts} \th \c}
 \end{mathparfig}
 
 \parcomment{Regional let constraints}
@@ -1846,7 +1849,7 @@ consists of a conjunction of solved multi-equations followed by
 a residual constraint---typically an application, let-binding, or
 suspended constraint.
 
-\begin{mathparfig}[htpb!]
+\begin{mathparfig}[t]
   {fig:solver-basic}
   {Basic rewriting rules $\ca \csolve \cb$}
   \rewrite[S-Unif]
@@ -1984,23 +1987,26 @@ commitment to certain quantifications (\eg $\tvb$). Such \emph{partially
 generalized} variables are treated as generalized, but can still be refined
 in future as suspended constraints are discharged.
 
-\begin{mathparfig}
+\begin{mathparfig}[t]
   {fig:constraint-partial-app}
   {The syntax and semantics of partial instantiations.}
+\begin{minipage}[b]{0.5\hsize}
+  \indent
   \begin{bnfgrammar}
     \entry[Constraints]{\c}{
       \dots
       \and \cexistsi \inst \x \c
       \and \cpinst \inst \tv \t
     } \\
-    \entry[Semantic environments]{\semenv}{
+    \entry[\hspace {-2em} Semantic environments]{\semenv}{
       \dots
       \and \semenv\where{\inst := \semenvp}
     }
   \end{bnfgrammar}
-\\
+\end{minipage}
+\hfill
 \infer[Exists-Inst]
-  {\greg \tv\semenvp \in \semenv(\x) \\
+  {\greg \tv\semenvp \in \semenv(\x) \\\\
    \semenv\where{\inst \is \semenvp} \th \c}
   {\semenv \th \cexistsi \inst \x \c}
 
@@ -2083,7 +2089,7 @@ There are three cases in which an instantiation constraint is eliminated:
 
 %% Uncomment to restore the old style
 %% \let \REWRITE \hrewrite
-\begin{mathparfig}[htpb!]
+\begin{mathparfig}[t]
   {fig:solver-schemes}
   {Select rewriting rules for let-bindings and applications.}
   \REWRITE[S-Exists-Lower]
