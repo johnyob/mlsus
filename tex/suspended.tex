@@ -6341,7 +6341,7 @@ rules that are not inherently destructive.
 	      &=&
 	      \sw \sh - 1 + \uw \ueq + 2 \times |\sh| \\
 	      &=&
-	      3 \times |\sh| + 1 + \uw \ueq
+	      \Xdidier[3]{4} \times |\sh| + 1 + \uw \ueq
 	  \end{tabular}
 	\end{mathpar}
 	Hence $\uw {{\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}} > \uw {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}$.
@@ -6368,12 +6368,58 @@ rules that are not inherently destructive.
   \end{proof}
 \end{lemma}
 
+\Xdidier {My comments}
+\begin{version}{\color{blue}\True}
+I read the proof in parallel with Gabriel.
+I think I understand Alistair's schema but with details missing.
+
+Case \Rule {U-Name} is indeed broken (it is an equality), but we should find
+another argument: we are dicreasing the sum of height of terms of
+muti-equations. The weight of higher terms should therefore couunt more
+the split into a small term and its projections, which is not the case.
+
+Case \Rule {Decomp} is correct modulo a typo.
+
+However, at the first reading, I don't really understand Gabriel's prause
+with discharging everywhere much better.
+
+I think I prefer the deconstructing intuition of Alistair, which could be made
+by defining a strict ordering in which constraints are deconstructed. For
+example, it is always progress to
+\begin{itemize}
+
+\item remove a match constraint (as we never dupplicate them)
+\item remove an $\x \t$ constraint, etc.
+\item reduce the size of a let body.
+\item remove part of a let body that does not contain an $x$
+\item move an $\exists \tv$ outside of anything
+\item \ldots
+
+\end{itemize}
+\end{version}
+
 
 \termination
 \begin{proof}
-  The ``discharge'' rules \Rule{S-Match-Type}, \Rule{S-Match-Var} and \Rule{S-BackProp} discharge suspended constraints, and they can make arbitrary sub-constraints appear in the non-suspended part of the constraint. On the other hand, they strictly decrease the number of occurrences of suspended match constraint (if we also count nested suspended constraints), and no rewriting rule introduces new suspended match constraints. So these discharge rules can only be applied finitely many times. To prove termination of constraint solving, it thus suffices to prove that that rewriting sequences that do not contain one of the discharge rules (those that occur in-between two discharge rules) are always finite.
+  The ``discharge'' rules \Rule{S-Match-Type}, \Rule{S-Match-Var} and
+  \Rule{S-BackProp} discharge suspended constraints, and they can make
+  arbitrary sub-constraints appear in the non-suspended part of the
+  constraint. On the other hand, they strictly decrease the number of
+  occurrences of suspended match constraint (if we also count nested
+  suspended constraints), and no rewriting rule introduces new suspended
+  match constraints. So these discharge rules can only be applied finitely
+  many times. To prove termination of constraint solving, it thus suffices
+  to prove that that rewriting sequences that do not contain one of the
+  discharge rules (those that occur in-between two discharge rules) are
+  always finite.
 
-  By a similar argument, the number of non-partial instantiations $\capp \x \t$ decreases strictly on \Rule{S-Let-AppR} when a partial instantiation starts, and is preserved by other non-discharge rules. The rule \Rule{S-Let-AppR} can thus only occur finitely many time in non-discharging sequences, and it suffices to prove that all rewriting sequences that are non-discharging and are not \Rule{S-Let-AppR} are finite.
+  By a similar argument, the number of non-partial instantiations $\capp \x
+  \t$ decreases strictly on \Rule{S-Let-AppR} when a partial instantiation
+  starts, and is preserved by other non-discharge rules. The rule
+  \Rule{S-Let-AppR} can thus only occur finitely many time in
+  non-discharging sequences, and it suffices to prove that all rewriting
+  sequences that are non-discharging and are not \Rule{S-Let-AppR} are
+  finite.
 
   The termination argument for this fragment follows similar lines to that of unification.
 
@@ -6388,7 +6434,15 @@ rules that are not inherently destructive.
   \newcommand{\eqs}[1]{\mathprefix{eqs}({#1})}
   \newcommand{\cw}[1]{\mathprefix{cw}{(#1)}}
 
-  We define a weight function that captures the contribution of types within a constraint $\c$ that is being partially instantiated. The difficulty is that $\c$ may be rewritten in parallel with its partial instantiations, and new equations may appear about the variables being instantiated. To define the weight of a variable $\tv$, we thus cannot consider only the equations $\tva = \t$ that currently exist in $\c$; instead we consider all equations that are \emph{entailed} by the erasure of $\c$, that is, all the equations that may appear in the solved part of $\c$ without using a discharging rules.
+  We define a weight function that captures the contribution of types within
+  a constraint $\c$ that is being partially instantiated. The difficulty is
+  that $\c$ may be rewritten in parallel with its partial instantiations,
+  and new equations may appear about the variables being instantiated. To
+  define the weight of a variable $\tv$, we thus cannot consider only the
+  equations $\tva = \t$ that currently exist in $\c$; instead we consider
+  all equations that are \emph{entailed} by the erasure of $\c$, that is,
+  all the equations that may appear in the solved part of $\c$ without using
+  a discharging rules.
 
   The type weight of a type $\t$ within a constraint $\c$, written $\tw \t \c$, is thus defined as:
   \begin{mathpar}
@@ -6399,11 +6453,15 @@ rules that are not inherently destructive.
   \end{mathpar}
 
   This weight is well-defined if $\cerase \c$ is satisfiable (and thus acyclic).
-  If $\cerase \c$ is unsatisfiable, then some destructive rule (\ie unification rules) must be applicable.\Xgabriel{This sounds fishy. A constraint could a priori have a finite reduction sequence to $\cfalse$, and \emph{also} an infinite sequence of partial instantiation rules.}
+  If $\cerase \c$ is unsatisfiable, then some destructive rule (\ie
+  unification rules) must be applicable.\Xgabriel{This sounds fishy. A
+  constraint could a priori have a finite reduction sequence to $\cfalse$,
+  and \emph{also} an infinite sequence of partial instantiation rules.}
 
   The weight of a partial instantiation $\cw {\cpapp \x \tv \t \inst}$ is defined as
   the sum of $\stw \t$ and $\tw \tv \c$, where $\x$ is bound to the abstraction $\cabsr \tv \tvs \c$.
-  The weight of other constraints is given using the measure $\mathprefix{uw}$ defined in the the
+  The weight of other constraints is given using the measure
+  $\mathprefix{uw}$ defined in the the
   proof of Lemma XXX.
 
   \begin{proofcases}
