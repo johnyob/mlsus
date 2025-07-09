@@ -6358,8 +6358,11 @@ rules that are not inherently destructive.
 
 \termination
 \begin{proof}
-  The termination argument for the constraint solver follows similar lines to
-  that of unification.
+  The ``discharge'' rules \Rule{S-Match-Type}, \Rule{S-Match-Var} and \Rule{S-BackProp} discharge suspended constraints, and they can make arbitrary sub-constraints appear in the non-suspended part of the constraint. On the other hand, they strictly decrease the number of occurrences of suspended match constraint (if we also count nested suspended constraints), and no rewriting rule introduces new suspended match constraints. So these discharge rules can only be applied finitely many time. To prove termination of constraint solving, it thus suffices to prove that that rewriting sequences that do not contain one of the discharge rules are always finite.
+
+  By a similar argument, the number of non-partial instantiations $\capp \x \t$ decreases strictly on \Rule{S-Let-AppR} when a partial instantiation starts, and is preserved by other non-discharge rule. The rule \Rule{S-Let-AppR} can thus only occur finitely many time in non-discharging sequences, and it suffices to prove that all rewriting sequences that are non-discharging and do not start new partial instances are finite.
+
+  The termination argument for this fragment follows similar lines to that of unification.
 
   The only rule of concern is \Rule{S-Inst-Copy}, which is not obviously destructive:
   it introduces new instantiation constraints and structurally increases the size of the
@@ -6425,12 +6428,8 @@ rules that are not inherently destructive.
 
   \end{proofcases}
 
-  Finally, the size weight (when defined) is preserved by all other rules, except the
-  \Rule{S-Match*} rules, which may increase the weight. However, these rules are destructive
-  (they eliminate a match constraint), and hence cannot be applied indefinitely.
-  Thus, termination follows from a lexicographical ordering of the number of match
-  constraints and the weight of constraints. THis order strictly decreases
-  across all rules of interest and is preserved by all obviously destructive rules.
+  Finally, we can measure whole constraints by the multiset of the weights of their partial instances. This order strictly decreases across all instantiation rules, and is preserved by all obviously destructive rules.
+
   Thus the constraint solver terminates.
 \end{proof}
 
