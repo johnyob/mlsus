@@ -919,6 +919,13 @@ $\tva$.
 \Xdidier
 {Can we do better than \SML with \OML? ---I think not. Then, we should
 say it explicitly!}
+\Xgabriel{I don't know where to find a specification of how SML does
+  overloading resolution -- Alistair said this was not terribly clear
+  in the SML specification either. My \emph{guess} would be that there
+  are examples that we support thanks to back-propagation, that are
+  rejected in SML. I haven't bothered yet to install a SML
+  implementation on my machine to find out, and my search for
+  web-based SML toplevels were terribly inconclusive.}
 
 \section{Semantics of constraints}
 \label{sec:semantics}
@@ -3431,7 +3438,7 @@ prior formulations \citep{Garrigue-Remy/poly-ml}.
 
     \rewrite[U-Name]
       {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
-      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq}}
+      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
 
     \rewrite[U-Decomp]
       {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
@@ -4455,8 +4462,8 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
       {\cunif \tv \ueq}
 
     \rewrite[U-Name]
-      {\cunif {\pshapp \tys[\ti]} \ueq \\ \tv \disjoint \tys, \ueq }
-      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \tys[\tv] } \ueq}}
+      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
+      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
 
     \rewrite[U-Decomp]
       {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
@@ -4651,9 +4658,6 @@ A context $\C$ proves a multi-equation $\ueq$, written $\ueq \in \C$,  if there 
 \end{definition}
 
 
-\newcommand{\cnmatches}[1]{\#\Match #1}
-\newcommand{\csize}[1]{|#1|}
-\newcommand{\cmeasure}[1]{{\| #1 \|}}
 
 \begin{definition}[Measure]
   For the relation $\semenv \th \c$, the following measure enables a useful
@@ -6288,9 +6292,15 @@ rules that are not inherently destructive.
 	\tw \tv &\eqdef& 1\\
 	\tw {\shapp \tys} &\eqdef& \iw {\shapp \tys} - 1\\[1ex]
 	\iw \tv &\eqdef& 0\\
-	\iw {\shapp \tys} &\eqdef& \sw \sh + \sum\iton \iw \ti
+	\iw {\shapp \tys} &\eqdef& \sw \sh + \iw \tys\\
+        \iw \tys & \eqdef & \sum\iton \iw \ti\\
+
       \end{tabular}
     \end{mathpar}
+    The helper $\iw \t$ computes the ``internal'' weight of $\t$; in
+    the common case of shallow types it is just the weight of its head
+    shape.
+
     We define the weight of a multi-equation as the sum of the weights of its
     members. The weight of a unification problem $\uw \up$ is defined
     as the sum of the weights of its multi-equations.
@@ -6327,19 +6337,21 @@ rules that are not inherently destructive.
 
       \proofcaserewrite
 	{U-Name}
-	{\cunif {\pshapp \parens{\ta, \ldots, \ti, \ldots, \t_n}} \ueq \\ \tv \disjoint \tys, \ueq \\ \ti \notin \TyVars }
-	{\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\ta, \ldots, \ti, \ldots, \t_n}} \ueq}}
+      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
+      {\cexists \tv {\cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq \cand \cunif \tv \ti}}
 
 	We have
 	\begin{mathpar}
 	  \begin{tabular}{RCL}
-	    \uw {\cunif {\pshapp {\parens{\ta, \ldots, \ti, \ldots, \t_n}}} \ueq} &=& \sw \sh + \sum_{j \neq i} \iw \tj + \iw \ti - 1 + \uw \ueq \\
-	    \uw {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\ta, \ldots, \tv, \ldots, \t_n}} \ueq}}
-	      &=& 1 + \tw \ti + \sw \sh + \sum_{j \neq i} \iw \tj - 1 + \uw \ueq
+	    \uw {\cunif {\pshapp {\parens{\tys, \ti, \typs}}} \ueq} &=& \sw \sh + \iw \tys + \iw \ti + \iw \typs - 1 + \uw \ueq \\
+	    \uw {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
+	      &=& \sw \sh + \iw \tys + 0 + \iw \typs - 1 + \uw \ueq + 1 + \tw \ti
 	  \end{tabular}
 	\end{mathpar}
 	So it sufficies to show that $1 + \tw \ti < \iw \ti$. Given $\ti \notin \TyVars$, this is indeed the case.
 	So we are done.
+
+        \Xgabriel{I don't follow, for example if $\tau_i$ is a nullary shape $\shapp \eset$ I would expect $1 + \tw {\shapp \eset} = \iw {\shapp \eset}$.}
     \end{proofcases}
   \end{proof}
 \end{lemma}

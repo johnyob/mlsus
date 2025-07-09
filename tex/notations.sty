@@ -309,6 +309,7 @@
 \newcommand{\eqdef}{\mathrel{\triangleq}}
 
 % Spaces
+
 \newcommand \uad [1][1ex]{\hskip #1}
 \newcommand \wide[2][\;]{#1 #2 #1}
 \newcommand \Wide[2][\uad]{#1 #2 #1}
@@ -317,3 +318,19 @@
 \newcommand \ehole {\square}
 \newcommand \wild {{\_}}
 %% \newcommand \ecast [3]{#1  : #2 \bowtie #3}
+
+%% Previously inlined, non-local commands
+%% Where non-local means used in other sections
+
+\newcommand{\entailsPf}[3]{\Pf{#1}{\centails}{#2}{#3}}
+\newcommand{\VdashPf}[3]{\Pf{#1}{\Vdash}{#2}{#3}}
+\newcommand{\ThTypPf}[4]{\Pf{#1}{\Th}{#2 : #3}{#4}}
+\newcommand{\thTypPf}[4]{\Pf{#1}{\th}{#2 : #3}{#4}}
+\newcommand{\UnifierPf}[3]{\Pf{#1}{\text{unifies}}{#2}{#3}}
+\newcommand{\eshapePf}[4]{\Pf{}{}{\eshape {#1} {#2} {#3}}{#4}}
+\newcommand{\simplePf}[2]{\Pf{#1}{}{\simple}{#2}}
+\newcommand{\nsimplePf}[2]{\Pf{}{\neg}{#1 \simple}{#2}}
+\newcommand{\shapePf}[4]{\Pf{}{}{\Cshape {#1} {#2} {#3}}{#4}}
+\newcommand{\cnmatches}[1]{\#\Match #1}
+\newcommand{\csize}[1]{|#1|}
+\newcommand{\cmeasure}[1]{{\| #1 \|}}

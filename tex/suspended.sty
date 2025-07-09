@@ -44,16 +44,3 @@
 \Crefformat{listing}{#2Example~#1#3}
 %% \crefformat{figure}{#2figure~#1#3}
 %% \Crefformat{Figure}{#2Figure~#1#3}
-
-%% Previously inlined, non-local commands
-%% Where non-local means used in other sections
-
-\newcommand{\entailsPf}[3]{\Pf{#1}{\centails}{#2}{#3}}
-\newcommand{\VdashPf}[3]{\Pf{#1}{\Vdash}{#2}{#3}}
-\newcommand{\ThTypPf}[4]{\Pf{#1}{\Th}{#2 : #3}{#4}}
-\newcommand{\thTypPf}[4]{\Pf{#1}{\th}{#2 : #3}{#4}}
-\newcommand{\UnifierPf}[3]{\Pf{#1}{\text{unifies}}{#2}{#3}}
-\newcommand{\eshapePf}[4]{\Pf{}{}{\eshape {#1} {#2} {#3}}{#4}}
-\newcommand{\simplePf}[2]{\Pf{#1}{}{\simple}{#2}}
-\newcommand{\nsimplePf}[2]{\Pf{}{\neg}{#1 \simple}{#2}}
-\newcommand{\shapePf}[4]{\Pf{}{}{\Cshape {#1} {#2} {#3}}{#4}}
