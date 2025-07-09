@@ -1572,9 +1572,17 @@ Constraint generation is sound and complete with respect to the typing judgment.
 That is to say, the term $\e$ is typable with $\t$ if and only if
 $\cinfer \e \tv$ is satisfiable when $\tv$ is $\t$.
 %
-\begin{theorem}{(Constraint generation is sound and complete)}
+\begin{theorem}[Constraint generation is sound and complete]
 $\th \e : \t$ iff\/
 $\cunif \tv \t \centails \csem {\e : \tv}$.
+\end{theorem}
+
+\begin{theorem}[Principal types]
+  For any closed term $\e$, there exists a principal type $\t$ such that
+  \begin{enumerate}[(\roman*)]
+    \item $\th \e : \t$.
+    \item For any other typing $\th \e : \tp$, then $\tp = \theta(\t)$ for some substitution $\theta$.
+  \end{enumerate}
 \end{theorem}
 
 It is also interesting to discuss the stability of typing by common program transformations.
