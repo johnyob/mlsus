@@ -195,7 +195,11 @@ type of~\ocaml{e_2} is considered to be unambiguous, while the type of
 %
 To understand why \ocaml{e_3} fails, consider the equivalent versions of
 \ocaml{e_3} where \texttt{@@} and \ocaml{|>} are the application and the
-reverse application functions.
+reverse application functions:
+\Xalistair{I think this example misses the point a bit -- upon rereading it,
+it not clear what we're trying to say here. I think the reader gets lost---
+we're essentially showing pidirectional is weak since $\e_2$ and $\e_3$
+are morally the same, but $\e_2$ works and $\e_3$ doesn't.}
 \begin{program}[input]
 let e_3_2 = (fun r -> r.x) @@ {x = 1}   °\ocamlflags 10°
 let e_3_3 = {x = 1} |> (fun r -> r.x)   °\ocamlflags 10°
@@ -235,7 +239,7 @@ only with respect to a specification that made non-principal choices to begin wi
 Bidirectional type inference has been largely used for languages with
 higher-rank polymorphism, dependent types, or subtyping.  Still, both \OCaml
 and \Haskell only use a limited form of bidirectional type checking with an
-underlying first-order unification-based type inference engine, which limits
+underlying first-order unification-based type inference engine, that limits
 the downsides of bidirectional type inference.
 
 
@@ -353,7 +357,7 @@ further examples that illustrate such failures:
 %
 \locallabelreset
 %
-
+\TODO{Rename these to ex}
 \begin{program}[input]
 let e_6 r = (r.x, r.y)                          °\ocamlflags 10°
 let e_7 r = let x = r.x in x + r.y              °\ocamlflags 10°
@@ -521,21 +525,20 @@ Our contributions are:
 \parcomment{Syntax!}
 
 The syntax of types and constraints is given
-in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are including, as
+in~\Cref{fig:constraint-syntax}. Monotypes (or just types) include, as
 usual, type variables $\tv$, the unit type $\tunit$, arrow types, but
-also\footnote {These are grayed, as they which will be introduced in the
+also\footnote{These are grayed, as they which will be introduced in the
 following subsections.}  structural tuples $\Pi\iton \ti$, nominal
 types\footnote {Type constructors are prefixed, except in \OCaml code, where
 they are postfixed.}  $\T \tys$, and polytypes $\tpoly \ts$.  Type schemes
 $\ts$ are of the form $\all \tvs \t$, they are equal up to the reordering of
-binders. We write $\TyVars$ the set of type variables.
+binders and removal of useless variables. We write $\TyVars$ the set of type variables.
 
 Building atop the constraint-based type inference framework of
 \citet{Pottier-Remy/emlti}, we adopt a constraint language that includes both
-term and type variables, described in~\Cref{fig:constraint-syntax}.
-
+term and type variables.
 %
-The constraint language contains tautological ($\ctrue$) and
+The language (in \cref{fig:constraint-syntax}) contains tautological ($\ctrue$) and
 unsatisfiable ($\cfalse$) constraints, conjunctions
 ($\ca \cand \cb$). The constraint form $(\cexists \tv \c)$ binds an
 existentially quantified type variable $\tv$ in $\c$, while the
@@ -561,12 +564,12 @@ applies the type $\t$ to the abstraction constraint bound to $x$.
 
 \parcomment {Suspended match constraints}
 
-Finally, we introduce \textit{suspended match constraints}.
+Finally, we introduce \textit{suspended match constraints} $(\cmatch \t \cbrs)$.
 %% \footnote
 %% {Previously dubbed `frozen constraints'.
 %% %in \citep{TODO} % this would be a de-anonymizing citation, silence it for now
 %% }
-$(\cmatch \t \cbrs)$. These constraints are \emph{suspended} until
+These constraints are \emph{suspended} until
 until the \textit{shape} of $\t$, such as its top-level constructor,
 is known. Then they are \emph{discharged}: a unique branch is selected
 and its associated constraint has to be solved. A match constraint
@@ -607,8 +610,9 @@ Throughout this paper, we will find it convenient to work with
 a \emph{hole}, analogous to evaluation contexts $\E$ used extensively in
 operational semantics. We write $\C\where{\c}$ to denote filling the hole of
 the context $\C$ with the constraint $\c$. Hole filling may capture
-variables.  Hence, we need explicit side-conditions when we mean to avoid
-capture of a particular variable.
+variables, so we frequently require explicit side conditions when
+variable capture must be avoided. We write $\bvs \C$ for the set of
+variables bound at the hole in $\C$.
 
 \paragraph{Suspended constraints in action}
 
@@ -627,11 +631,6 @@ form $\cinfer \e \tv$, which, given a term $e$ and expected type $\tv$,
 produces a constraint $\c$ which is satisfiable if and only if $\e$ is
 well-typed.
 %
-A formal account of the semantics of suspended constraints
-is given in \cref{sec:semantics}.
-The declarative typing rules for these features
-are sketched in \cref{sec:language} with
-details deferred to~\cref{sec/language/typing-rules}.
 
 \subsection{Semi-explicit first-class polymorphism}
 \label {sec/constraints/polytypes}
@@ -647,6 +646,9 @@ a monotype, thereby enabling impredicative polymorphism. Annotation variables
 may themselves be generalized, yielding type schemes such as
 $\tfor \av {\tapoly \ts \av}$.
 
+\Xalistair{I think we could make it clearer that this trick with annotation
+variables is \Geninst-directional inference. I don't think this is explicit
+in the current narrative. }
 \parcomment {Boxing}
 
 The introduction form for polytypes is a boxing operator $\expoly
@@ -687,12 +689,14 @@ prior to unboxing, rendering the term ill-typed.
 However, type annotations can be used to freshen annotation variables.
 We usually omit annotation variables in annotations, since we can
 implicitly introduce fresh ones in their place. For example,
-$\efun {\x : \tapoly \ts {}} {\einst \x}$ which is syntactic sugar
-for $\efun \x {\elet \x {(\x : \tapoly \ts {})} {\einst \x}}$, is
+$\efun {\x : \tapoly \ts {}} {\einst \x}$---which is syntactic sugar
+for $\efun \x {\elet \x {(\x : \tapoly \ts {})} {\einst \x}}$---is
 well-typed because the explicit annotation introduces a fresh
 variable annotation $\ava$, which can then be generalized, yielding
 $\tfor \ava {\tapoly \ts \ava}$.
 
+\Xalistair{Is it used for polymorphic nominal records? I was
+under the impression we didn't need \code{Tpoly} for this.}
 This is the type-level feature that supports polymorphic methods and
 polymorphic record fields in \OCaml. If a record type
 \ocaml[mathescape=true]{$\tv$ t} has been declared with a single polymorphic
@@ -792,38 +796,24 @@ polytype inference, \OCaml supplements \geninst-directionality with a limited,
 ad-hoc form of bidirectional type inference. This mechanism is folklore; no
 formal account has been given.
 
-\parcomment {Closed-world reasoning}
+\parcomment {Closed-world reasoning and default rules}
 
 
 Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to
 resolve ambiguities in record types. For instance:
-\begin{programsplit}[0.6\hsize]
 \begin{program}[input]
 let e_1_1 = {x = 42; y = 13} °\ocamlflags 00°
 \end{program}
-\programjoin
-\begin{program}[output]
-val e$_{11}$ : two
-\end{program}
-\end{programsplit}
 Here, \code{x} and \code{y} appear together only in the type \code{two},
 allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
 \code{two}.
-
-\parcomment {Default rules}
-
+%
 If local type information and closed-world reasoning are insufficient,
 \OCaml falls back to a syntactic default: it selects the most recently
 defined compatible type. For example:
-\begin{programsplit}[0.6\hsize]
 \begin{program}[input]
 let getx r = r.x         °\ocamlflags 01°
 \end{program}
-\programjoin
-\begin{program}[output]
-val getx : two -> int
-\end{program}
-\end{programsplit}
 The expression is compatiable with both \code{one} and \code{two},
 since each defines a field \code{x}. But \code{two} is chosen simply
 because it appears later in the source.
@@ -839,10 +829,6 @@ definitions of \code{one} and \code{two}:
 type two = {x : int; y : int}
 type 'a one = {x : 'a}
 let e_1_2 r = let x (* infers ['a one] *) = r.x in x + r.y °\ocamlflags 10°
-\end{program}
-\programjoin
-\begin{program}[error, style=message]
-Error: The expression has type "int one" There is no field "y" within "type one"
 \end{program}
 
 \parcomment {Record field disambiguation in suspended constraints}
@@ -861,8 +847,8 @@ projection $\efield \e \elab$, we generate the typing constraint:
   \cexists \tvb \cinfer \e \tvb
   \cand
   \cmatch \tvb
-      {\cbranch {(\Tapp \wild)}
-	{\parens {\labenv(\elab / \T) \leq \tva \to \tvb}}
+      {\cbranch {\cpatrcd \ct}
+	{\parens {\labenv(\elab / \ct) \leq \tva \to \tvb}}
       }
 \end{mathpar}
 This constraint suspends resolution of the return type $\alpha$ until the
@@ -878,6 +864,13 @@ on the domain and codomain of the field-access type.
 approach. Certain expressions, such as \code{e}$_{12}$ are well-typed under
 our account but rejected by \OCaml's current type checker.
 
+\parcomment {Constructor disambiguation in suspended constraints}
+
+Our approach also applies to overloaded datatype constructors. Since
+the formal treatment is analogous to that of record fields, we focus only
+on fields in this work. However, our prototype implementation of \OML
+supports both.
+
 \subsection{Tuple projections \`a la \SML}
 
 \SML supports positional projections from tuples using expressions of the form
@@ -892,13 +885,14 @@ has type $\tj$.
 \SML enforces an additional restriction: the tail $\varrho$ must be fully
 determined (\ie it cannot be a polymorphic row variable).  This ensures that
 the arity of the tuple is \emph{known} statically from the surrounding
-context, thereby avoiding the need for row polymorphism. The restriction is
-not reflected in the typing rules themselves, but is instead enforced within
-\SML's type inference algorithm.
+context, thereby avoiding the need for row polymorphism. However, this restriction is
+not expressed in the typing rules themselves, but is instead enforced within
+\SML's type inference algorithm, as an implementation detail rather than
+a principled part of the \SML specification.
 
 \parcomment {Tuple projection is statically overloaded}
 
-From a typing perspective, tuple projection in \SML behaves like a form
+From a typing perspective, tuple projection in \SML behave like a form
 of static overloading: the expression $\eproj \e j$ is valid only when $\e$ is
 known to be an $n$-ary tuple for some fixed $n \geq j$.
 
@@ -934,24 +928,32 @@ say it explicitly!}
 \Xdidier {Indeed, backpropagation might be a problem.
 I think Alistair had a clue.}
 
+\Xalistair{I tried with one called SOSML (online) and found
+the following is ill-typed}
+\begin{verbatim}
+fun proj2 (x) = #2 x
+val x = proj2 (1, 2);
+\end{verbatim}
+\Xalistair{Adding an annotation to the parameter works though}
 
 \section{Semantics of constraints}
 \label{sec:semantics}
 
-To implement a type-checker using constraint-based type inference it
+To implement a typechecker using constraint-based type inference, it
 suffices to generate constraints from terms and to solve them. To study the
-meta-theory of constraint generation and solving, we follow the standard
-approach of defining \emph{semantics} for our constraints, as declarative as
-possible. The existence of declarative semantics validates the design of the
+meta-theory of this approach, we follow the standard
+approach of assigning a \emph{semantics} for our constraints---as declaratively as
+possible. The existence of well-defined declarative semantics provides
+a foundation for reasoning about correctness and validates the design of the
 constraint language.
 
 
-In our work on suspended constraints, defining a satisfying semantics was
-the hardest problem: it needs to capture what it means for type information
-to be \emph{known}. Our semantics is declarative but not syntax-directed,
-harder to manipulate than standard constraint semantics. On the upside, the
-semantics directly suggest declarative typing rules for the surface
-language.
+In our work on suspended constraints, defining a satisfying semantics was the
+most challenging aspect. The key difficult lies in capturing what it means for
+type information to be \emph{known}. Our semantics is declarative, but not
+syntax-directed unlike the standard \ML constraints of
+\citet{Pottier-Remy/emlti}, making it harder to manipulate. On the upside, the
+semantics directly suggest declarative typing rules for the surface language.
 
 
 \parcomment {Judgement shape}
@@ -979,14 +981,15 @@ $\semenv(\t)$ for the ground type obtained by substitution.
 
 The judgment is defined in \cref{fig:constraint-semantics} for all
 constraint-formers except suspended constraints; its definition on this
-fragment is standard and somewhat tautological. $\ctrue$ is satisfied in any
-environment, $\cfalse$ in none. An environment $\semenv$ satisfies $\ca
-\cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying $\cexists \tv
-\c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint
-$\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv \is \gt}$. The unification $\t_1 = \t_2$ is satisfied when
-$\semenv(\t_1)$ and $\semenv(t_2)$ are equal.
+fragment is standard and somewhat tautological. The constraint $\ctrue$ is
+satisfied by any environment, and $\cfalse$ by none. An environment $\semenv$
+satisfies $\ca \cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying
+$\cexists \tv \c$ requires guessing a witness $\gt$ for $\tv$. For the
+universal constraint $\cfor \tv \c$, $\c$ must be satisfiable for any binding
+of $\tv$. The unification $\cunif \ta \tb$ is satisfied when $\semenv(\ta)$
+and $\semenv(\tb)$ are equal.
 
-The rule for $\clet \tv \ca \cb$ states that $\ca$ must satisfied under
+The rule for $\clet \x \tv \ca \cb$ states that $\ca$ must satisfied under
 \emph{some} instantiation of its bound variable, and that $\cb$ must be
 satisfiable when $\x$ is bound $\cabs \tv \ca$, or rather its semantic
 interpretation as a set of ground types.
@@ -1073,13 +1076,12 @@ that is, they have exactly the same set of solutions.
 \subsection{Shapes
 \label{sec/shapes}}
 
-We introduce \emph{canonical shapes} for use in the syntax of suspended
-constraints. It is a generalization of type constructors that is capable of
-copying with polytypes---a polytype $(\forall \tvb. \tvb \to (\tva_1 \to
-\tva_2))$ can be seen as a constructor-like structure $\any \tvc (\forall
-\tvb. \tvb \to \tvc)$ applied with the argument $(\tva_1 \to
-\tva_2)$. Canonical shapes $\sh$ are defined as a subset of shapes $\Sh$
-satisying some minimality properties.
+\parcomment {Why shapes?}
+
+We introduce \emph{shapes} as a generalization of type constructors for suspended
+match constraints. They provide a uniform treatment of both constructors and polytypes,
+and are useful in defining polytype unification (\cref{TODO}).
+
 
 \parcomment {Definition of shape}
 
@@ -1090,7 +1092,7 @@ shapes are closed and do not contain useless binders.  We consider shapes up
 to $\alpha$-conversion.  When $\t$ is a ground type, we omit the binder and
 write simply $\t$.
 %
-tWe write $\bot$ for the shape $\any \tvc \tvc$, which we call the
+We write $\bot$ for the shape $\any \tvc \tvc$, which we call the
 \emph{trivial} shape. We write $\Shapesz$ the
 set of non trivial shapes.
 %% and use letter $\Sh$ to range
@@ -1130,36 +1132,19 @@ Any non-variable type $\t$ has a non-trivial principal shape $\Sh$.
 \end{restatable}
 
 We can give an equivalent direct description of the set of principal shapes
-$\sh$: they are the $\any \tvcs \t$:
-\begin{itemize}
+$\sh$: they are precisely the shapes $\any \tvcs \t$ satisfying two conditions:
+\begin{enumerate*}
+  \item $\tvcs$ must be linear in $\t$ \ie each variable $\tvc$ in $\tvcs$
+    occurs exactly once in $\t$.
 
-\item
-  $\tvcs$ are the linear free variables of $\t$ \ie each type variable
-  $\tvc$ in $\tvcs$ occurs exactly once in $\t$
+  \item The type $\t$ must be shallow, meaning its structure is limited in
+    the following way. When $\t$ is not a polytype, all of its subterms must
+    be variables. Shapes of this form are $\tunit$, $\tvca \to \tvcb$, $\tProd \tvci$, or
+    $\T \tvcs$.
 
-\item
-  $\t$ is shallow, which means the following for our particular type formers:
-\begin{itemize}
-
-\item
-  When $\t$ is not a polytype, all subterms of $\t$ are variables.
-
-  Shapes of this form are $\tvca \to \tvcb$, $\Pi\iton \tvci$, or $\T
-  \tvcs$.
-
-\item
-  When $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, then the only subterms of
-  $\tsp$ that do not contain one of the $\tvs$
-  are variables in $\tvcs$.
-
-  \newcommand {\tsh}[1]
-    {\def \tsi {\all \tvb {\parens{\tvb \to #1}} \tprod \tvb}
-     \tpoly {\all \tva {\parens {\tpoly \tsi} \to \tva} \to \tva}}
-
-  For example, the polytype $\tsh {\tint \tlist}$ has principal
-  decomposition $\any \tvc {\tsh \tvc}$.
-\end{itemize}
-\end{itemize}
+    When $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, the only subterms
+    of $\tsp$ that do not contain one of the polymorphic variables $\tvs$ must be variables in $\tvcs$.
+\end{enumerate*}
 
 \parcomment {Define canonical shape}
 
@@ -1168,10 +1153,20 @@ free variables $\tvcs$ appear in the order in which the variables occur in
 $\t$. We write $\sh$ for canonical principal shapes.
 %
 Each non-variable type $\t$ has a unique canonical principal shape, which we
-write $\shape \t$. We write $\decomp \t$ for the decomposition of $\t$
-induced by its canonical principal shape. For example, $\shape {\Tapp \tys}$
-is $(\any \tvcs \Tapp \tvcs)$ and $\decomp {\tint \to \tbool}$ is the pair
-$((\any {\tvca, \tvcb} {\tvca \to \tvcb}), (\tint, \tbool))$.
+write $\shape \t$. For example, $\shape {\Tapp \tys}$
+is $(\any \tvcs \Tapp \tvcs)$.
+
+\parcomment {Poltypes are constructors}
+
+Polytypes are particularly interesting in this setting because
+they can be decomposed into shapes and treated analogously to type constructors.
+{
+\newcommand {\tsh}[1]%
+  {\def \tsi {\all \tvb {\parens{\tvb \to #1}} \tprod \tvb}
+  \tpoly {\all \tva {\parens {\tpoly \tsi} \to \tva} \to \tva}}%
+For instance, the polytype $\tsh {\tint \tlist}$ has the principal
+shape $\sh \is \any \tvc {\tsh \tvc}$. The original polytype can be represented
+as the shape application $\shapp (\tint \tlist)$.}
 
 \subsection{Suspended constraints}
 
@@ -1197,8 +1192,10 @@ any shape and binds nothing:
   Given a suspended constraint $(\cmatch \t \cbrs)$ and a canonical shape $\sh$, we introduce the syntactic sugar $(\cmatched \t \sh \cbrs)$ for the \emph{discharged constraint} that selects the branch in $\cbrs$ that matches $\sh$:
 \begin{mathpar}
   \cmatched \t \sh {\cbranch \cpats \cs} \uad\eqdef\uad
-    \cexists \tvs \cunif \t \shapp \tvs \cand \theta(\ci) \qquad \text{if }
-    \cmatches \cpati \sh \tvs \theta
+  \begin{cases}
+    \cexists \tvs \cunif \t \shapp \tvs \cand \theta(\ci) & \text{if } \cmatches \cpati \sh \tvs \theta\\
+    \cfalse & \text{otherwise}
+  \end{cases}
 \end{mathpar}
 The first conjunct ($\tau = \shapp \tvs$) ensures that $\sh$ is indeed
 the canonical shape of $\t$, and the second conjunct is $\ci$ under
@@ -1206,7 +1203,7 @@ the appropriate substitution. The syntax of suspended match
 constraints requires that branch patterns are non-overlapping, so the
 matching branch $\cbranch \cpati \ci$ is uniquely determined; but it
 may not exist as branches need not be exhaustive. The discharged
-constraint is only defined when a matching $\cpati$ exists.
+constraint is $\cfalse$ in this case.
 \end{definition}
 
 \paragraph {A natural attempt}
