@@ -200,15 +200,15 @@ To be able to disambiguate the projection \code{r.x}, the type of the
 \ocaml{'a one} or \ocaml{two}. The definition \ocaml[indices]{e_1} is
 clearly ambiguous since there is no clue on the type of \ocaml{r} and
 its typechecking fails.\footnote {In fact, \OCaml uses a default
-  resolution strategy instead of failing when the type is ambiguous,
+resolution strategy instead of failing when the type is ambiguous,
   which is to emit a warning and use the last definition in scope. To
   check these examples, you should use the options
   \texttt{-principal -w +41}, which enforce principality checks and enables
-  the warning on default resolution.}  By contrast, the only possible type
-  for \ocaml{r} is
-  \ocaml {'a one} in both \ocaml{e_2} and \ocaml {e_3} -- . Still, there is
-  a difference. Indeed, the type of~\ocaml{e_2} is considered to be
-  unambiguous, while the type of
+  the warning on default resolution.}
+\relax
+By contrast, the only possible type for \ocaml{r} is \ocaml {'a one} in both
+\ocaml{e_2} and \ocaml {e_3}.  Still, there is a difference. Indeed, the
+type of~\ocaml{e_2} is considered to be unambiguous, while the type of
 \ocaml{e_3} is ambiguous.
 %
 To understand why \ocaml{e_3} fails, consider the equivalent versions of
@@ -517,12 +517,13 @@ Our contributions are
 \parcomment{Syntax!}
 
 The syntax of types and constraints is given
-in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are as
-usual including: type variables $\tv$, the unit type $\tunit$, arrow
-types as usual---and also structural tuples $\Pi\iton \ti$, nominal
-types $\T \tys$ (type constructor before its arguments, except in \OCaml code), and polytypes $\tpoly \ts$, in gray, as they which
-will be introduced in the following subsections. Type schemes $\ts$
-are of the form $\all \tvs \t$, they are equal up to the reordering of
+in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are including, as
+usual, type variables $\tv$, the unit type $\tunit$, arrow types, but
+also\footnote {These are grayed, as they which will be introduced in the
+following subsections.}  structural tuples $\Pi\iton \ti$, nominal
+types\footnote {Type constructors are prefixed, except in \OCaml code, where
+they are postfixed.}  $\T \tys$, and polytypes $\tpoly \ts$.  Type schemes
+$\ts$ are of the form $\all \tvs \t$, they are equal up to the reordering of
 binders. We write $\TyVars$ the set of type variables.
 
 Building atop the constraint-based type inference framework of
@@ -544,7 +545,7 @@ constraint $\cexists \tvs \cunif \tp \t$.
 
 \parcomment{Constraint abstractions}
 
-Two constructs that deal with the introduction and elimination of
+Two constructs deal with the introduction and elimination of
 constraint abstractions. A constraint abstraction $\cabs \tv \c$ can
 simply be seen as a function which when applied to some type $\t$
 returns $\c \where {\tv \is \t}$. Constraint abstractions are
@@ -556,47 +557,54 @@ applies the type $\t$ to the abstraction constraint bound to $x$.
 
 \parcomment {Suspended match constraints}
 
-Finally, we introduce \textit{suspended match constraints}\footnote
-{Previously dubbed `frozen constraints'.
-%in \citep{TODO} % this would be a de-anonymizing citation, silence it for now
-}
+Finally, we introduce \textit{suspended match constraints}.
+%% \footnote
+%% {Previously dubbed `frozen constraints'.
+%% %in \citep{TODO} % this would be a de-anonymizing citation, silence it for now
+%% }
 $(\cmatch \t \cbrs)$. These constraints are \emph{suspended} until
 until the \textit{shape} of $\t$, such as its top-level constructor,
 is known. Then they are \emph{discharged}: a unique branch is selected
 and its associated constraint has to be solved. A match constraint
-that is never discharged is considered unsatisfiable·s.
+that is never discharged is considered unsatisfiable.
 
 More precisely:
 \begin{enumerate}
+
 \item
-  The matchee $\t$ is a type. The constraint remains suspended until the
-  shape of $\t$ is determined, that is, while $\t$ is a type variable.
-\item $\cbrs$ is a list of branches of the form $\cbranch \cpat \c$,
+  The matchee $\t$ is a type. The constraint remains suspended
+  while $\t$ is a type variable, that is,
+  until the shape of $\t$ is determined.
+
+\item
+  $\cbrs$ is a list of branches of the form $\cbranch \cpat \c$,
   where $\cpat$ is a shape pattern. For example, the pattern
-  $\tva \to \tvb$ matches function types, binding the argument and
-  return types to $\tva$ and $\tvb$ respectively. The constraint $\c$
+  $\tva \to \tvb$ matches function types, binding its domain and
+  codomain to $\tva$ and $\tvb$, respectively. The constraint $\c$
   is then solved in the extended context.
   %
   To ensure determinism, the set of patterns $\bar \cpat$ must be
-  \emph{shape-disjoint}---that is, no shape may be matched by more
+  \emph{disjoint}---that is, no shape may be matched by more
   than one pattern in the list.
+
 \end{enumerate}
 
-We keep the grammar of shapes and patterns abstract in this section,
-to explain the general framework of suspended constraints. Shapes are
-formalized in \cref{sec:semantics}. We then introduce specific shapes
-and patterns for specific language features in
-\cref{sec/constraint-gen}.
+We keep the grammar of shapes and patterns abstract in this section, to
+explain the general framework of suspended constraints. Shapes are
+formalized in \cref{sec:semantics}. \Xdidier [We then introduce specific
+shapes and patterns for specific language features in
+\cref{sec:constraint-gen}.]{That's no more the case. So where do we
+introduce shapes?}
 
 \parcomment {Constraint contexts}
 
 Throughout this paper, we will find it convenient to work with
 \emph{constraint contexts}. A constraint context is simply a constraint with
-a ``hole'', analogous to evaluation contexts $\E$ used extensively in
+a \emph{hole}, analogous to evaluation contexts $\E$ used extensively in
 operational semantics. We write $\C\where{\c}$ to denote filling the hole of
 the context $\C$ with the constraint $\c$. Hole filling may capture
-variables.  (Hence, we need explicit side-conditions when we mean to avoid
-capture of a particular variable.)
+variables.  Hence, we need explicit side-conditions when we mean to avoid
+capture of a particular variable.
 
 \paragraph{Suspended constraints in action}
 
@@ -613,9 +621,13 @@ We demonstrate how the typability of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
 form $\cinfer \e \tv$, which, given a term $e$ and expected type $\tv$,
 produces a constraint $\c$ which is satisfiable if and only if $\e$ is
-well-typed. A formal account of the semantics of suspended constraints and
-the declarative typing rules for these features is deferred to
-\cref{sec:semantics} and \cref{sec:language}, respectively.
+well-typed.
+%
+A formal account of the semantics of suspended constraints
+is given in \cref{sec:semantics}.
+The declarative typing rules for these features
+are sketched in \cref{sec:language} with
+details deferred to~\cref{sec/language/typing-rules}.
 
 \subsection{Semi-explicit first-class polymorphism}
 \label {sec/constraints/polytypes}
@@ -650,7 +662,7 @@ The annotation variable $\av$ can thus be generalized.  That is $\expoly \e
 Conversely, to instantiate a polytype expression, one must use an explicit
 unboxing operator $\einst \e$, which requires no accompanying type
 annotation.  However, the operator requires $e$ to have a polytype scheme of
-the form $\all \av \tapoly \ts \av$ and then assigns $\einst \e$ the type
+the form $\all \av \tapoly \ts \av$ and then assigns $\einst \e$ a type
 $\t$ that is an instance of $\ts$. If, by constrast, $\e$ has the type
 $\tapoly \ts \av$ for some non-generalizable annotation variable $\av$, then
 $\e$ is considered of a not-yet-known polytype, and therefore $\einst \e$ is
@@ -677,15 +689,22 @@ well-typed because the explicit annotation introduces a fresh
 variable annotation $\ava$, which can then be generalized, yielding
 $\tfor \ava {\tapoly \ts \ava}$.
 
-This is the type-level feature that supports polymorphic methods and polymorphic record fields in \OCaml. If a record type \ocaml[mathescape=true]{$\tv$ t} has a single polymorphic field \ocaml[mathescape=true]{f : $\sigma$}, then the record expression \ocaml[mathescape=true]!{f = $e$}! desugars into \ocaml[mathescape=true]!{f = $[e : \exists \tv. \ts]$}!, and the record projection \ocaml{r.f} desugars into $\einst {\mathtt{r.f}}$.
+This is the type-level feature that supports polymorphic methods and
+polymorphic record fields in \OCaml. If a record type
+\ocaml[mathescape=true]{$\tv$ t} has been declared with a single polymorphic
+field
+\ocaml[mathescape=true]{f} of type $\sigma$, then the record expression
+\ocaml[mathescape=true]!{f = $e$}! desugars into
+\ocaml[mathescape=true]!{f = $[e : \exists \tv. \ts]$}!,
+and the record projection \ocaml{r.f} desugars into $\einst {\mathtt{r.f}}$.
 
 \parcomment {Short commings of annotation variables}
 
 The very purpose of annotation variables is to distinguish \emph{known},
 polymorphic polytypes from \emph{not-yet-known}, monomorphic ones. However,
-they may be sometimes be unintuitive as some information that has just been
+this may sometimes be unintuitive as some type information that has just been
 inferred must still be considered as yet-unknown until its generalization.
-They are also sensitive to the placement of type annotation, an artifact of the
+This is also sensitive to the placement of type annotations, an artifact of the
 fixed directionality of generalization in \geninst-directional inference. For
 instance, the following two terms differ only in the position of the
 annotation, yet only the one on the left-hand side is well-typed.
@@ -711,15 +730,15 @@ instantiate it.  However, if the type of $\e$ is not yet known, \ie  it is a
 (possibly constrained) type variable $\tv$: then, we must defer until more
 information is available. We capture this behaviour with a suspended match constraint:
 \begin{mathpar}
-\cinfer {\einst \e} \tva \wide\eqdef
+\cinfer {\einst \e} \tva \Wide\eqdef
     \cexists \tvb \cinfer \e \tvb
 \cand
     \cmatch  \tvb {\parens {\cbranch {\tpoly s} s \leq \tva}}
 \end{mathpar}
-The match constraint is suspended until $\tvb$ is resolved to a polytype $\tpoly \ts$ matching the pattern
-$\tpoly s$, which binds the type scheme $\ts$ to the scheme variable $s$. The
-selected branch then performs the instantiation $\cleq s \tva$, that is
-$\cleq \ts \tva$.
+The match constraint is suspended until $\tvb$ is resolved to a polytype
+$\tpoly \ts$ matching the pattern $\tpoly s$, which binds the type scheme
+$\ts$ to the scheme variable $s$. The selected branch then performs the
+instantiation $\cleq s \tva$, that is $\cleq \ts \tva$.
 %
 % If $\tvb$ is already known to be a polytype, the constraint discharges
 % immediately and behaves like a standard instantiation constraint $\cleq \ts
@@ -1015,7 +1034,13 @@ that is, they have exactly the same set of solutions.
 \subsection{Shapes
 \label{sec/shapes}}
 
-We introduce \emph{canonical shapes} for use in the syntax of suspended constraints. It is a generalization of type constructors that is capable of copying with polytypes -- a polytype $(\forall \tvb. \tvb \to (\tva_1 \to \tva_2))$ can be seen as a constructor-like structure $\any \tvc (\forall \tvb. \tvb \to \tvc)$ applied with the argument $(\tva_1 \to \tva_2)$. Canoical shapes $\sh$ are defined as a subset of shapes $\Sh$ satisying some minimality properties.
+We introduce \emph{canonical shapes} for use in the syntax of suspended
+constraints. It is a generalization of type constructors that is capable of
+copying with polytypes---a polytype $(\forall \tvb. \tvb \to (\tva_1 \to
+\tva_2))$ can be seen as a constructor-like structure $\any \tvc (\forall
+\tvb. \tvb \to \tvc)$ applied with the argument $(\tva_1 \to
+\tva_2)$. Canoical shapes $\sh$ are defined as a subset of shapes $\Sh$
+satisying some minimality properties.
 
 \parcomment {Definition of shape}
 
