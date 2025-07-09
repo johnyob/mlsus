@@ -1903,14 +1903,14 @@ constraint---they are desugared into constraints already handled by the solver.
     {\C\where{\cmatched \tv {\shape \t} \cbrs}}
 \end{mathparfig}
 
-\parcomment{S-Susp-Use}
+\parcomment{S-Match-Type}
 
 \Rule{S-Match-Type} solves suspended match constraints whose scrutinee is a
 non-variable type $\t$ by rewriting them using the sugar $\cmatched \t {\shape \t}
 \cbrs$, introduced in \cref{sec:constraints}. If no branch matches $\shape \t$,
 the rule is stuck and the constraint is unsatisfiable.
 
-\parcomment {S-Susp-Ctx}
+\parcomment {S-Match-Var}
 
 \Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and
 the context $\C$ proves that $\tv$ is equal to some non-variable type
@@ -4523,11 +4523,11 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
      \x \disjoint \cc}
     {\cc \cand \Clet \x \tv \ca \cb}
 
-  \rewrite[S-Susp-Trivial]
+  \rewrite[S-Match-Type]
     {\cmatch \t \cbrs \\ \t \notin \TyVars}
     {\cmatched \t {\shape \t} \cbrs}
 
-  \rewrite[S-Susp-Ctx]
+  \rewrite[S-Match-Var]
     {\C\where{\cmatch \tv \cbrs} \\
      \cunif \tv {\cunif \t \ueq} \in \C}
     {\C\where{\cmatched \tv {\shape \t} \cbrs}}
@@ -5788,7 +5788,7 @@ generally in our system.
       \end{llproof}
 
     \proofcaserewrite
-      {S-Susp-Trivial}
+      {S-Match-Type}
       {\cmatch \t \cbrs \\ \t \notin \TyVars}
       {\cmatched \t {\shape \t} \cbrs}
 
@@ -5815,7 +5815,7 @@ generally in our system.
 	\end{proofcases}
 
     \proofcaserewrite
-      {S-Susp-Ctx}
+      {S-Match-Var}
       {\C\where{\cmatch \tv \cbrs} \\ \cunif \tv {\cunif \t \ueq} \in \C}
       {\C\where{\cmatched \tv {\shape \t} \cbrs}}
 
