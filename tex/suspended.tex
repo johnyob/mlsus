@@ -1967,6 +1967,7 @@ Partial instantiation constraints are reduced using the following rules:
     We write $\cpapp \x \tv \t \inst$ as a shorthand for $\cpinst \inst \tv \t$
     when $\inst$ is bound with $\exists \inst^\x$ in the context. To ensure
     termination, the abstraction must contain acyclic types.
+    \Xgabriel{This is confusing when trying to read the rules directly. Could you instead stick to the $\inst^\x$ notation throughout, so that we only see $\cpinst {\inst^\x} \tv t$?}
 
   \item \Rule{S-Inst-Unify} unifies two instantiations if they refer to the
     same source variable.
