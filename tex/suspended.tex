@@ -2027,7 +2027,7 @@ There are three cases in which an instantiation constraint is eliminated:
     {\c}
 
   \rewrite[S-Compress]
-    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} }
+    {\cletr \x \tv {\tvs} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} \\ \tvb \in \reg \tv \tvs }
     {\cletr \x \tv {\tvs, \tvb} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvc \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
 
   \rewrite[S-Exists-Lower]
@@ -2141,20 +2141,20 @@ universality.
 
 % Properties
 
-\begin{theorem}[Progress]
+\begin{restatable}[Progress]{theorem}{progress}
   For any constraint $\c$, then either
   \begin{enumerate}[(\roman*)]
     \item $\c$ is solved.
-    \item $\c$ is stuck: either $\cfalse$; $\hat\C\where{\capp \x \t}$ where $\x \disjoint \hat\C$; $\hat\C\where{\cpapp \x \ren \ueqs}$
-      where $\x \disjoint \hat\C$ or $\C\where\ctrue \ncentails \C\where{\ueqs\where\ren}$; $\hat\C\where{\cmatch \tv \cbrs}$ where $\nCshape {\hat\C} \tv \sh$
+    \item $\c$ is stuck: either $\cfalse$; $\hat\C\where{\capp \x \t}$ where $\x \disjoint \hat\C$; $\hat\C\where{\cpapp \x \tv \tvc \inst}$
+      where $\x \disjoint \hat\C$ and $\insts {\hat\C} \inst = \eset$; $\hat\C\where{\cmatch \tv \cbrs}$ where $\nCshape {\hat\C} \tv \sh$
       for any shape. Here $\hat\C$ is a \emph{solved} context \ie no other rewrites can be applied.
     \item $\c \csolve \cp$ for some $\cp$.
   \end{enumerate}
-\end{theorem}
+\end{restatable}
 
-\begin{theorem}[Termination]
+\begin{restatable}[Termination]{theorem}{termination}
   The constraint solver terminates on all inputs.
-\end{theorem}
+\end{restatable}
 
 \begin{restatable}[Preservation]{theorem}{preservation}
   If $\ca \csolve \cb$, then $\ca \cequiv \cb$.
@@ -4398,6 +4398,14 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\upa \\ \upa \unif \upb}
     {\upb}
 
+  \rewrite[S-True]
+    {C \cand \ctrue}
+    {C}
+
+  \rewrite[S-False]
+    {\C\where\cfalse \\ \C \neq \square}
+    {\cfalse}
+
   \rewrite[S-Let]
     {\clet \x \tv \ca \cb}
     {\cletr \x \tv \eset \ca \cb}
@@ -4511,6 +4519,10 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   \rewrite[S-Exists-Inst-Conj]
     {\cexistsi \inst \x \ca \cand \cb \\ \inst \disjoint \ca}
     {\ca \cand \cexistsi \inst \x \cb}
+
+  \rewrite[S-Exists-Inst-Let]
+    {\cletr \x \tv \tvs \ca {\cexistsi \inst \xp \cb} \\ \x \neq \xp}
+    {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
 
   \rewrite[S-Exists-Inst-Solve]
     {\cexistsi \inst \x \c \\ \inst \disjoint \c}
@@ -6018,6 +6030,142 @@ generally in our system.
   \begin{llproof}
     Equivalences are standard, see \citep{Pottier-Remy/emlti}.
   \end{llproof}
+  \end{proofcases}
+\end{proof}
+
+\subsection{Progress}
+
+\progress
+\begin{proof}
+  We proceed by induction on the structure of $\c$. We
+  focus on conjunctions and $\Let$ rules.
+
+  \begin{proofcases}
+    \proofcase{$\ca \cand \cb$}
+    We begin by inducting on $\ca$ and $\cb$. Then we consider cases:
+    \begin{proofcases}
+      \proofcase{$\ca$ (or $\cb$) take a step} Apply congruence rewriting rule.
+      \proofcase{$\ca$ (or $\cb$) is $\ctrue$} Apply \Rule{S-True}.
+      \proofcase{$\ca$ (or $\cb$) is $\cfalse$} Apply \Rule{S-False}.
+      \proofcase{$\ca$ (or $\cb$) begins with $\exists$} Apply \Rule{S-Exists-Conj}.
+      \proofcase{$\ca, \cb$ are solved}
+	We either apply the above $\exists$ case, or both $\ca$ and $\cb$ are solved
+	multi-equations $\ueqs_1, \ueqs_2$. We perform cases on this:
+	\begin{proofcases}
+	  \proofcase{$\ueqs_1$ and $\ueqs_2$ are mergable} Apply \Rule{U-Merge}.
+	  \proofcase{$\cyclic {\ueqs_1, \ueqs_2}$} Apply \Rule{U-Cycle}.
+	  \proofcase{Otherwise} The conjunction $\ueqs_1 \cand \ueqs_2$ is solved.
+	\end{proofcases}
+
+      \proofcase{$\ca$ and $\cb$ are stuck (and not $\cfalse$)}
+
+	\Wlog, consider cases $\ca$.
+	\begin{proofcases}
+	  \proofcase{$\hat\Ca\where{\capp \x \t}$}
+	    We have $\x \disjoint \bvs {\hat\Ca}$.
+	    $\hat\Ca\where{\capp \x \t} \cand \cb$ is stuck as we do not bind $\x$ in $\hat\Ca \cand \cb$.
+	  \proofcase{$\hat\Ca\where{\cpapp \x \tv \tvc \inst}$}
+	    We have $\x \disjoint \bvs {\hat \Ca}$ and $\tv \disjoint ~ \insts {\hat \Ca} \inst$.
+
+	    If $\tv \in \insts \cb \inst$ and $\inst \disjoint \bvs {\hat\ca}$, then apply \Rule{S-Inst-Unify}.
+	    It must be the case that we can apply \Rule{S-Inst-Unify}, otherwise, we could lift these instantiation
+	    constraints using \Rule{S-Exists-Lower} and \Rule{S-Let-ConjLeft}, contradicting that $\hat\Ca$ is stuck.
+
+	    Otherwise, $\x \disjoint \bvs {\hat \Ca \cand \cb}$, thus $\hat\Ca\where{\cpapp \x \tv \tvc \inst}$ is stuck.
+
+	  \proofcase{$\hat\Ca\where{\cmatch \tvp \cbrs}$}
+	    We have $\nCshape \Ca \tvp \sh$ for any $\sh$.
+
+	    If $\cunif \tvp {\cunif \t \ueq} \in \cb$ and $\t \notin \TyVars$. By the above logic, it must be at the root (otherwise $\cb$
+	    is not stuck). So we have $\cunif \tvp {\cunif \t \ueq} \in \hat \Ca \cand \cb$. Thus we can apply \Rule{S-Match-Type}.
+
+	    If $\cunif \tvc {\cunif \t \ueq} \in \cb$, $\t \notin \TyVars$, and $\hat\Ca$ contains $\cletr \x \tv \tvs {\hat\Cc\where{\cmatch \tvp \cbrs}} {\hat\C_4\where{\cpapp \x \tvp \tvc \inst}}$.
+	    Apply \Rule{S-BackProp}.
+
+	    Otherwise, we are stuck and $\nCshape {(\Ca \cand \cb)} \tvp \sh$ for any $\sh$.
+	\end{proofcases}
+
+    \end{proofcases}
+
+    \proofcase{$\cletr \x \tv \tvs \ca \cb$}
+    We begin by inducting on $\ca$ and $\cb$. Then we consider cases:
+    \begin{proofcases}
+      \proofcase{$\ca$ (or $\cb$) take a step} Apply congruence rewriting rule.
+      \proofcase{$\ca$ (or $\cb$) is $\cfalse$} Apply \Rule{S-False}.
+      \proofcase{$\ca$ begins with $\exists$} Apply \Rule{S-Let-ExistsLeft}
+      \proofcase{$\cb$ begins with $\exists$} Apply \Rule{S-Let-ExistsRight}
+      \proofcase{$\cb$ begins with $\cand$ with $\x \disjoint$ from conjunct} Apply \Rule{S-Let-ConjRight}.
+      \proofcase{$\ca$ begins with $\cand$ with $\tv, \tvs \disjoint$ from conjunct } Try apply \Rule{S-Let-ConjLeft}
+      \proofcase{$\cb$ begins with $\cexistsi \inst \xp {}$, $\x \neq \xp$} Apply \Rule{S-Exists-Inst-Let}
+      \proofcase{$\cb$ is solved}
+
+	Thus $\cb$ must be $\ctrue$ (due to above cases).
+	\begin{proofcases}
+	  \proofcase{$\ca$ is solved}
+	    Thus $\ca$ must be $\ueqs$. There are two cases:
+	    \begin{itemize}
+	      \proofcase{$\cexists {\tv, \tvs} \ueqs \cequiv \ctrue$} Apply \Rule{S-Let-Solve}.
+	      \proofcase{$\cexists {\tv, \tvs} \ueqs \cnequiv \ctrue$} It must be the case there is some $\tvb$ that dominates a $\tvp$ in $\tv, \tvs$ in $\ueqs$.
+		Hence $\cdetermines {\cexists {\tv, \tvs \setminus \tvp} \ueqs} \tvp$.
+		So we can apply \Rule{S-Exists-Lower}.
+	    \end{itemize}
+
+	  \proofcase{$\ca$ is stuck}
+	    The constraint $\cletr \x \tv \tvs \ca \cb$ remains stuck, since
+	    no additional term variable bindings occur for the scope of $\ca$,
+	    ruling out the instantiation cases. Additionally, we cannot apply
+	    backpropagation since $\cb$ is $\ctrue$.
+	\end{proofcases}
+
+      \proofcase{$\cb$ is stuck}
+	\begin{proofcases}
+	  \proofcase{$\hat\C\where{\capp \x \t}$} Apply \Rule{S-Let-AppR}.
+
+	  \proofcase{$\hat\C\where{\cpapp \x \tvp \tvc \inst}$}
+	    \begin{itemize}
+	      \proofcase{$\tvp \in \reg \tv \tvs$}
+
+		We can either apply \Rule{S-Inst-Copy} or \Rule{S-Compress}
+		if a multi-equation involving $\tvp$ occurs in $\ca$.
+
+		Otherwise, we consider cases where $\ca$ is solved or stuck.
+
+		If $\ca$ is solved, then it must be of the form $\ueqs$.
+		There are two cases:
+		\begin{itemize}
+		  \proofcase{$\cexists {\tv, \tvs} \ueqs \cequiv \ctrue$}
+		  As $\tvp$ does not appear in the head position of any multi-equation in $\ueqs$,
+		  it must be polymorphic. Thus $\cfor \tvp {\cexists {\tv, \tvs \setminus \tvp} \ueqs} \cequiv \ctrue$.
+		  So we can apply \Rule{S-Inst-Poly}.
+
+		  \proofcase{$\cexists {\tv, \tvs} \ueqs \cnequiv \ctrue$}
+		  Apply \Rule{S-Lower-Exists} (using the same logic as above).
+
+		\end{itemize}
+
+		If $\ca$ is stuck, then neither case regarding instantiations
+		in $\ca$ is fixed, so in these cases the constraint remains
+		stuck. If $\ca$ is stuck with $\hat\Cp\where{\cmatch \tvb
+		\cbrs'}$. Then either backpropagation (\Rule{S-BackProp})
+		applies with an equation in $\hat\C$, or the entire constraint
+		is stuck.
+
+		\proofcase{$\tvp \notin \reg \tv \tvs$} Apply \Rule{S-Inst-Mono}.
+
+
+
+
+	    \end{itemize}
+
+	  \proofcase{$\hat\C\where{\cmatch \tvp \cbrs}$}
+
+	  Either $\cb$ can progress with an instantiation constraint to discharge
+	  the match constraint or $\cletr \x \tv \tvs \ca \cb$ is stuck.
+	\end{proofcases}
+
+    \end{proofcases}
+
+
   \end{proofcases}
 \end{proof}
 
