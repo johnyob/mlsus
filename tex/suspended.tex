@@ -6371,9 +6371,9 @@ rules that are not inherently destructive.
 
 \termination
 \begin{proof}
-  The ``discharge'' rules \Rule{S-Match-Type}, \Rule{S-Match-Var} and \Rule{S-BackProp} discharge suspended constraints, and they can make arbitrary sub-constraints appear in the non-suspended part of the constraint. On the other hand, they strictly decrease the number of occurrences of suspended match constraint (if we also count nested suspended constraints), and no rewriting rule introduces new suspended match constraints. So these discharge rules can only be applied finitely many time. To prove termination of constraint solving, it thus suffices to prove that that rewriting sequences that do not contain one of the discharge rules are always finite.
+  The ``discharge'' rules \Rule{S-Match-Type}, \Rule{S-Match-Var} and \Rule{S-BackProp} discharge suspended constraints, and they can make arbitrary sub-constraints appear in the non-suspended part of the constraint. On the other hand, they strictly decrease the number of occurrences of suspended match constraint (if we also count nested suspended constraints), and no rewriting rule introduces new suspended match constraints. So these discharge rules can only be applied finitely many times. To prove termination of constraint solving, it thus suffices to prove that that rewriting sequences that do not contain one of the discharge rules (those that occur in-between two discharge rules) are always finite.
 
-  By a similar argument, the number of non-partial instantiations $\capp \x \t$ decreases strictly on \Rule{S-Let-AppR} when a partial instantiation starts, and is preserved by other non-discharge rule. The rule \Rule{S-Let-AppR} can thus only occur finitely many time in non-discharging sequences, and it suffices to prove that all rewriting sequences that are non-discharging and do not start new partial instances are finite.
+  By a similar argument, the number of non-partial instantiations $\capp \x \t$ decreases strictly on \Rule{S-Let-AppR} when a partial instantiation starts, and is preserved by other non-discharge rules. The rule \Rule{S-Let-AppR} can thus only occur finitely many time in non-discharging sequences, and it suffices to prove that all rewriting sequences that are non-discharging and are not \Rule{S-Let-AppR} are finite.
 
   The termination argument for this fragment follows similar lines to that of unification.
 
@@ -6388,21 +6388,18 @@ rules that are not inherently destructive.
   \newcommand{\eqs}[1]{\mathprefix{eqs}({#1})}
   \newcommand{\cw}[1]{\mathprefix{cw}{(#1)}}
 
-  We define a weight function that captures the contribution of types within constraints.
-  The type weight of a type $\t$ within a constraint $\c$, written $\tw \t \c$, is defined
-  as:
+  We define a weight function that captures the contribution of types within a constraint $\c$ that is being partially instantiated. The difficulty is that $\c$ may be rewritten in parallel with its partial instantiations, and new equations may appear about the variables being instantiated. To define the weight of a variable $\tv$, we thus cannot consider only the equations $\tva = \t$ that currently exist in $\c$; instead we consider all equations that are \emph{entailed} by the erasure of $\c$, that is, all the equations that may appear in the solved part of $\c$ without using a discharging rules.
+
+  The type weight of a type $\t$ within a constraint $\c$, written $\tw \t \c$, is thus defined as:
   \begin{mathpar}
     \begin{tabular}{RCL}
       \tw {\shapp \tys} \c &\eqdef& 2 \times \sw \sh + \sum \iton \tw \ti \c \\[1ex]
     \tw \tv \c &\eqdef& \sup \Braces {\tw \t \c : \cerase \c \centails \cunif \tv \t}
     \end{tabular}
   \end{mathpar}
-  Intuivitely this weight corresponds to the \emph{size} of the type.
-  Our conjecture is that \Rule{S-Inst-Copy} results on instantiations of types
-  with \emph{smaller} sizes.
 
-  This weight is well-defined whenever $\cerase \c$ is satisfiable (and thus acyclic).
-  If $\cerase \c$ is unsatisfiable, then some destructive rule (\ie unification rules) must be applicable.
+  This weight is well-defined if $\cerase \c$ is satisfiable (and thus acyclic).
+  If $\cerase \c$ is unsatisfiable, then some destructive rule (\ie unification rules) must be applicable.\Xgabriel{This sounds fishy. A constraint could a priori have a finite reduction sequence to $\cfalse$, and \emph{also} an infinite sequence of partial instantiation rules.}}
 
   The weight of a partial instantiation $\cw {\cpapp \x \tv \t \inst}$ is defined as
   the sum of $\stw \t$ and $\tw \tv \c$, where $\x$ is bound to the abstraction $\cabsr \tv \tvs \c$.
