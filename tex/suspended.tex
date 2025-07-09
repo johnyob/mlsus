@@ -6415,19 +6415,27 @@ Case \Rule {Decomp} is correct modulo a typo.
 However, at the first reading, I don't really understand Gabriel's prause
 with discharging everywhere much better.
 
-I think I prefer the deconstructing intuition of Alistair, which could be made
-by defining a strict ordering in which constraints are deconstructed. For
-example, it is always progress to
+I think I prefer Alistair's deconstructing intuition, which could be made
+precise by defining a strict ordering in which constraints are
+deconstructed.
+
+For example, we always progress, when while preserving the weight,
+we
 \begin{itemize}
 
-\item remove a match constraint (as we never dupplicate them)
-\item remove an $\x \t$ constraint, etc.
+\item remove a match constraint (as we never introduce them)
+\item remove an $\x\;\t$ constraint, as we never introduce them
 \item reduce the size of a let body.
 \item remove part of a let body that does not contain an $x$
-\item move an $\exists \tv$ outside of anything
+\item move an $\exists \tv$ outside of anything, as
+      we only introduce them when decreasing the weight (to be checked)
+\item moving $\forall$ inside $\exists$.
 \item \ldots
-
 \end{itemize}
+We just have to list all the rules, and check/add the somthing
+that deacreases in $\C$, while not increasing anything else
+and preserving the weight. (Which I quickly did on
+my ipad and it seems to work.)
 \end{version}
 
 
