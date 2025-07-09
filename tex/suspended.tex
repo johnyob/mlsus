@@ -160,7 +160,9 @@ simpler to explain than others (which will be
 The user may define two nominal record types with overlapping fields:
 \Xalistair{I'm pretty sure if we re-ordered these types, we'd avoid
 the annoying 'if you reorder the types then it fails' comments we have
-in various subsequent examples}
+in various subsequent examples}\Xdidier{I think so too, but
+we would then need to change all the text. Also, these examples
+should be the one reused in next section.}
 \begin{program}[input]
 type 'a one = {x : 'a}
 type two = {x : int; y : int}
@@ -200,20 +202,11 @@ let e_3_3 = {x = 1} |> (fun r -> r.x)   °\ocamlflags 10°
 \end{program}
 \OCaml does not make any difference between \ocaml[indices]{e_3},
 \ocaml[indices]{e_3_2}, or \ocaml[indices]{e_3_3} and consider all
-subexpressions in an application, including the function and all
-arguments as being inferred simultaneously, until they are
-let-bound. More precisely, polymorphic types\footnote{\Xgabriel{I
-    propose to remove this footnote which I find too technical and
-    I don't think is necessary or helpful to follow the
-    introduction.} Technically, all type nodes are annotated with
-  a special variable $\av$ called an annotation variable, so that we
-  may distinguish between the polymorphic binding
-  $\xa : \all \av \t^\av$ that binds $r$ to the known (raw) type $\t$
-  and the monomorphic binding $\xb : \t^\av$ that binds $\xa$ to the
-  unknown (raw) type $\t$.} are considered to be known while
-monomorphic types are consider to be unknown---or, rather,
-not-yet-known. This criterion also warns on the following example,
-where \code{r} has a monomorphic type:
+subexpressions in an application, including the function and all arguments
+as being inferred simultaneously, until they are let-bound. More precisely,
+polymorphic types are considered to be known while monomorphic types are
+consider to be unknown---or, rather, not-yet-known. This criterion also
+warns on the following example, where \code{r} has a monomorphic type:
 \begin{program}[input]
 let e_4 p r = if p then r.x else (r : two).x °\ocamlflags 20°
 \end{program}
@@ -938,6 +931,9 @@ say it explicitly!}
   rejected in SML. I haven't bothered yet to install a SML
   implementation on my machine to find out, and my search for
   web-based SML toplevels were terribly inconclusive.}
+\Xdidier {Indeed, backpropagation might be a problem.
+I think Alistair had a clue.}
+
 
 \section{Semantics of constraints}
 \label{sec:semantics}
