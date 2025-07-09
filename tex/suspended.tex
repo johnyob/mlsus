@@ -941,9 +941,6 @@ language.
 
 \parcomment {Judgement shape}
 
-%% Missing, to be removed when fixed.
-\newcommand{\glam}{\textbf{\textcolor{blue}{GLAM}}}
-
 The semantics of constraints follows the standard form of a satisfiability
 judgment $\semenv \th \c$. The semantic environment $\semenv$ contains a
 ``guess'' for each free variable of $\c$ (type and term variable), and
@@ -1664,6 +1661,7 @@ $\cunif \tv \t \centails \csem {\e : \tv}$.
 It is also interesting to discuss the stability of typing by common program transformations.
 
 \paragraph{Application equi-typability does hold}
+
 \newcommand {\eswap}{\mathprefix  {swap}}
 The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
 equitypable where $\eswap$ is
@@ -4806,9 +4804,6 @@ entailment in our system.
   \end{proof}
 \end{lemma}
 
-\newcommand{\simplePf}[2]{\Pf{#1}{}{\simple}{#2}}
-\newcommand{\nsimplePf}[2]{\Pf{}{\neg}{#1 \simple}{#2}}
-\newcommand{\shapePf}[4]{\Pf{}{}{\Cshape {#1} {#2} {#3}}{#4}}
 
 \begin{lemma}[Simple inversion]~
   \label{lem:simple-inversion}
@@ -5025,7 +5020,6 @@ entailment in our system.
   \end{proof}
 \end{lemma}
 
-\newcommand{\VdashPf}[3]{\Pf{#1}{\Vdash}{#2}{#3}}
 \begin{theorem}[Canonicalization]
   \label{thm:canonicalization}
   If $\semenv \th \c$, then $\semenv \Th \c$.
@@ -5300,7 +5294,6 @@ entailment in our system.
   \end{proof}
 \end{theorem}
 
-\newcommand{\entailsPf}[3]{\Pf{#1}{\centails}{#2}{#3}}
 \begin{lemma}[Inversion of suspension]
   \label{lem:susp-inversion}
   If $\semenv \th \C\where{\cmatch \t \cbrs}$ and $\Cshape \C \t \sh$,
@@ -6298,7 +6291,7 @@ rules that are not inherently destructive.
 	\iw {\shapp \tys} &\eqdef& \sw \sh + \sum\iton \iw \ti
       \end{tabular}
     \end{mathpar}
-    We define the weight of a multi-equation as the sum of its
+    We define the weight of a multi-equation as the sum of the weights of its
     members. The weight of a unification problem $\uw \up$ is defined
     as the sum of the weights of its multi-equations.
 
@@ -6564,10 +6557,6 @@ and $\sub(\tvs) = \tys$.
   \end{proof}
 \end{lemma}
 
-\newcommand{\ThTypPf}[4]{\Pf{#1}{\Th}{#2 : #3}{#4}}
-\newcommand{\thTypPf}[4]{\Pf{#1}{\th}{#2 : #3}{#4}}
-\newcommand{\UnifierPf}[3]{\Pf{#1}{\text{unifies}}{#2}{#3}}
-\newcommand{\eshapePf}[4]{\Pf{}{}{\eshape {#1} {#2} {#3}}{#4}}
 \begin{theorem}[Soundness and completeness]
   $\Th \e : \sub(\tv)$ if and only if $\sub$ is a unifier of $\csem {\e : \tv}$
   \begin{proof}
