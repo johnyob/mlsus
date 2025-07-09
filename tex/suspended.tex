@@ -497,8 +497,8 @@ The syntax of types and constraints is given
 in~\Cref{fig:constraint-syntax}. Monotypes (or just types) are as
 usual including: type variables $\tv$, the unit type $\tunit$, arrow
 types as usual---and also structural tuples $\Pi\iton \ti$, nominal
-types $\T \tys$, and polytypes $\tpoly \ts$, in gray, as they which
-will be introduced in the following subsections.  Type schemes $\ts$
+types $\T \tys$ (type constructor before its arguments, except in \OCaml code), and polytypes $\tpoly \ts$, in gray, as they which
+will be introduced in the following subsections. Type schemes $\ts$
 are of the form $\all \tvs \t$, they are equal up to the reordering of
 binders. We write $\TyVars$ the set of type variables.
 
@@ -534,7 +534,9 @@ applies the type $\t$ to the abstraction constraint bound to $x$.
 \parcomment {Suspended match constraints}
 
 Finally, we introduce \textit{suspended match constraints}\footnote
-{Previously dubbed `frozen constraints' in \citep{TODO}}
+{Previously dubbed `frozen constraints'.
+%in \citep{TODO} % this would be a de-anonymizing citation, silence it for now
+}
 $(\cmatch \t \cbrs)$. These constraints are \emph{suspended} until
 until the \textit{shape} of $\t$, such as its top-level constructor,
 is known. Then they are \emph{discharged}: a unique branch is selected
@@ -897,11 +899,10 @@ $\semenv(\t)$ for the ground type obtained by substitution.
 The judgment is defined in \cref{fig:constraint-semantics} for all
 constraint-formers except suspended constraints; its definition on this
 fragment is standard and somewhat tautological. $\ctrue$ is satisfied in any
-environment, and $\cfalse$ in none. An environment $\semenv$ satisfies $\ca
+environment, $\cfalse$ in none. An environment $\semenv$ satisfies $\ca
 \cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying $\cexists \tv
 \c$ requires guessing a witness $\gt$ for $\tv$. The universal constraint
-$\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv
-\is \gt}$. A unification constraint $\t_1 = \t_2$ is satisfied when
+$\cfor \tv \c$ requires $\c$ to be satisfiable for any binding $\where{\tv \is \gt}$. The unification $\t_1 = \t_2$ is satisfied when
 $\semenv(\t_1)$ and $\semenv(t_2)$ are equal.
 
 The rule for $\clet \tv \ca \cb$ states that $\ca$ must satisfied under
@@ -1085,10 +1086,6 @@ induced by its canonical principal shape. For example, $\shape {\Tapp \tys}$
 is $(\any \tvcs \Tapp \tvcs)$ and $\decomp {\tint \to \tbool}$ is the pair
 $((\any {\tvca, \tvcb} {\tvca \to \tvcb}), (\tint, \tbool))$.
 
-\TODO{We should explicitly point out that we use prefix notation for type constructors, except in
-OCaml examples.}
-
-
 \subsection{Suspended constraints}
 
 We have left the syntax of shape patterns deliberately abstract. We also
@@ -1199,8 +1196,7 @@ The semantics can \emph{guess} the type of $\tv$ and use it to unlock the match 
 
   \item This breaks the existence of principal solutions.
     Consider the function $\efun \x (\efield \x 2)$, which projects the second
-    component of a tuple. Under the natural semantics, the generated constraint
-    permits us to guess for $\x$ any tuple type of arity at least $2$; so there is no principal type for $\x$.
+    component of a tuple. The natural semantics lets us to guess for $\x$ any tuple type of arity at least $2$; so there is no principal type for $\x$.
 \end{enumerate*}
 
 \paragraph {Contextual semantics}
@@ -1422,14 +1418,14 @@ overloaded tuple projections \ala \SML. We can ask the user to provide the lengt
       {\G \th \exfield \e n j : \tj}
 \end{mathpar}
 
-On the other hand, the natural typing rule for the fragile construct $\efield e j$, where size is implicit, breaks principality.
+On the other hand, the natural typing rule for the fragile construct $\efield e j$ breaks principality:
 \begin{mathpar}
   \infer
     {\G \th \e : \Pi\iton \ti \and 1 \leq j \leq n}
     {\G \th \efield \e j : \tj}
 \end{mathpar}
 The term $\efield e \j$ admits many typings, as any tuple of at least size $j$ satisfies the premise.
-
+%
 This is the exact same issue we had with the naive semantics of suspended constraints, and in fact we solve it in the same way, with a unicity condition and a contextual rule that transforms the fragile, implicit construct into the robust, explicit construct:
 \begin{mathpar}
   \inferrule*
@@ -1508,8 +1504,7 @@ Our typing rules for implicit constructs follow the shape we described previousl
 
 In order to describe the judgments $\eshape \E \e \sh$ and $\Eshape \E \e \sh$,
 we introduce a \emph{typed hole} construct $\emagic \e$ that allows any
-well-typed expression $\e$ to be treated as if it had any type. That is the
-typing rule for holes is:
+well-typed expression $\e$ to be treated as if it had any type:
 \begin{mathpar}
   \inferrule[Magic]
     {\G \th \e : \t}
