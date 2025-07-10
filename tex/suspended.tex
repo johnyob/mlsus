@@ -157,8 +157,8 @@ behaviour.
 
 \parcomment{An instance of the problem (implementation directionality in inference)}
 
-To illustrate the problem, consider the following two record types,
-which define overlapping field names:
+To illustrate the problem, consider the following two record types
+with overlapping field names:
 \begin{program}[input]
 type one = {x : int; y : int}
 type 'a two = {x : 'a}
@@ -282,7 +282,7 @@ types (from acyclic graphs as naturally produced by unification to trees),
 which may increase the size of types and the cost of type inference. For
 that reason, the implementation of \OCaml cheats and is incomplete by
 default. The user must explicitly pass the \texttt{\small -principal} flag to
-require the more expensive computation of principal types when desired.
+require the more expensive computation when desired.
 
 \subsection{Omnidirectional type inference}
 
@@ -308,7 +308,7 @@ extensions:
 \item
   We introduce \emph{suspended match constraints} as a way to suspend
   ambiguity resolution until sufficient information has been found from
-  context so that they can be discharged and hopefully resolved.
+  context so that they can be discharged.
 
 \item
   We work with \emph{partial types schemes}, \ie with the ability to
@@ -336,13 +336,12 @@ a cost, which is that everything is hard:
   us from looking into suspended constraints.
 
 \item
-  Implementing partial types schemes (without duplicating constraint-solving
-  work) is also hard.
+  Implementing partial types schemes is also hard.
 
 \end{enumerate}
-In return, the declarative semantics of suspended constraints
-immediately suggests a systematic way to present user-facing typing rules
-for each fragile construct, for which the implementation is correct and
+In return, the techniques we developed for the semantics
+also help provide declarative typing rules for each fragile
+construct, for which the generated constraints are correct and
 complete.
 
 \paragraph{Illustrative examples}
@@ -411,7 +410,7 @@ NP-hard, even in the absence of let-polymorphism, as shown by an encoding of
 
 \subsubsection* {Plan}
 
-The rest of the paper is organized as follows:
+The paper is organized as follows:
 \begin{enumerate*}[label={}]
 
 \item
