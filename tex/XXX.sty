@@ -1,0 +1,67 @@
+%% Administrative definitions for Active-DVI, that need updating.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{XXX}
+         [2011/02/01 0.1.0 LaTeX todo lists]
+
+\def \XXXX@name {XXX}
+\def \XXX@year {2011}
+\def \XXX@version {0.1.0}
+
+%% End of administrative definitions that need updating.
+
+%% Preliminary declarations
+
+\RequirePackage{color}
+\RequirePackage{ifthen}
+
+%% Options
+
+\DeclareOption {ignore} {\XXX@ignoretrue}
+\DeclareOption {error}  {\XXX@errortrue}
+\DeclareOption {warning}{\XXX@warningtrue}
+
+%% Body
+
+\def \XXX@par {\par \medskip \noindent \ignorespaces}
+\newif \if@XXX
+\newif \ifXXX@ignore
+\newif \ifXXX@warning
+\newif \ifXXX@error
+\newcommand{\@@XXX}[5][]{%
+  \ifmmode \hbox \bgroup \let \XXX@end \egroup \else
+  \begingroup  \let \XXX@end \endgroup
+  \fi
+  \ifthenelse {\equal {}{#1}} {} {\csname XXX@#1true\endcsname}%
+  \ifXXX@error \PackageError {XXX}{#4[#3]#2}{}\fi
+  \ifXXX@warning \PackageWarning {XXX}{#4[#3]#2}{}\fi
+  \ifXXX@ignore \else
+     \ifhmode \@XXXtrue \fi
+        {\color{#5}\ifmmode \mathbf{#4} \else \bfseries {#4} \fi
+     [\space \ifthenelse {\equal{}{#2}} {} {{\em #2:} }#3\space 
+       \ifvmode \if@XXX \aftergroup \XXX@par\fi\fi]} 
+  \fi
+  \XXX@end
+}
+\newcommand {\newXXX}[4][]
+    {\newcommand {#2}[2][]{\@@XXX[#1]{##1}{##2}{#3}{#4}}}
+
+\newcommand {\XXF}[2][]{}
+\newcommand {\XFX}{\XXX}
+\newcommand {\XXX@True}[2]{#1}
+\newcommand {\XXX@False}[2]{#2}
+\newcommand {\Xxx}
+   {\ifXXX@ignore \let \XXX@do \XXX@False \else \let \XXX@do \XXX@True\fi
+    \XXX@do}
+
+\newXXX{\XXX}{XXX}{blue}
+%% \newXXX{\XDR}{XDR}{blue}
+%% \newXXX{\YYY}{YYY}{magenta}
+
+%%
+
+\ProcessOptions
+
+%% End
+
+\endinput

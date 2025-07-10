@@ -1,30 +1,36 @@
 \usepackage{ifthen}
 \usepackage{mycolors}
 
-% #1: part of the text that is being commented
-% #2: remark author name
-% #3: remark color
-% #4: remark content
-\newcommand {\XXX}[4]{%
-  \textcolor{#3}{\textbf{#2~}}%
-  {\ifthenelse{\equal{}{#1}}{}%
-    {\textcolor{#3}{\textbf{[}}#1\textcolor{#3}{\textbf{]}}}}%
-  \textcolor{#3}{\textbf{\{}#4\textbf{\}}}}
-\newcommand \NOXXX[4]{#1}
+\usepackage{XXX}
+%% % #1: part of the text that is being commented
+%% % #2: remark author name
+%% % #3: remark color
+%% % #4: remark content
+%% \newcommand {\XXX}[4]{%
+%%   \textcolor{#3}{\textbf{#2~}}%
+%%   {\ifthenelse{\equal{}{#1}}{}%
+%%     {\textcolor{#3}{\textbf{[}}#1\textcolor{#3}{\textbf{]}}}}%
+%%   \textcolor{#3}{\textbf{\{}#4\textbf{\}}}}
+%% \newcommand \NOXXX[4]{#1}
 
-% call \UNXXX in your document to hide comments
-\newcommand \UNXXX{\let \XXX \NOXXX}
+%% % call \UNXXX in your document to hide comments
+%% \newcommand \UNXXX{\let \XXX \NOXXX}
 
-%% Instantiations
+%% %% Instantiations
 
-%% Generic comment
-\newcommand{\TODO}[2][]{\XXX{#1}{XXX}{blue}{#2}}
+%% %% Generic comment
+%% \newcommand{\TODO}[2][]{\XXX{#1}{XXX}{blue}{#2}}
 
 %% Signed comments
-\newcommand{\Xgabriel}[2][]{\XXX{#1}{Gabriel}{purple!60!blue}{#2}}
-\newcommand{\Xalistair}[2][]{\XXX{#1}{Alistair}{orange}{#2}}
-\newcommand{\Xdidier}[2][]{\XXX{#1}{Didier}{darkgreen}{#2}}
-\newcommand{\Alt}[1]{{\color{red}#1}}
+%% \newcommand{\Xgabriel}[2][]{\XXX{#1}{Gabriel}{purple!60!blue}{#2}}
+%% \newcommand{\Xalistair}[2][]{\XXX{#1}{Alistair}{orange}{#2}}
+%% \newcommand{\Xdidier}[2][]{\XXX{#1}{Didier}{darkgreen}{#2}}
+%% \newcommand{\Alt}[1]{{\color{red}#1}}
+
+\newXXX {\TODO}{TODO}{blue}
+\newXXX {\Xgabriel}{Grabriel}{purple!60!blue}
+\newXXX {\Xalistair}{Alistair}{orange}
+\newXXX {\Xdidier}{Didier}{darkgreen}
 
 %% Uncomment this line to hide all comments.
 % \UNXXX{}
