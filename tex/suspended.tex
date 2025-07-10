@@ -953,19 +953,22 @@ most challenging aspect. The key difficulty lies in capturing what it means for
 type information to be \emph{known}. Our semantics is declarative, but not
 syntax-directed unlike the standard constraint semantics of
 ~\citet{Pottier-Remy/emlti}. This lack of syntax-directness complicates
-reasoning and proofs. On the upside, the semantics directly suggest declarative
-typing rules for the surface language.
+reasoning and proofs.
+\Xdidier[[On the upside, the semantics directly
+  suggest declarative typing rules for the surface language.]  {Repeating
+  line 170}
 
 
 \parcomment {Judgement shape}
 
 The semantics of constraints follows the standard form of a satisfiability
 judgment $\semenv \th \c$. The semantic environment $\semenv$ contains a
-``guess'' for each free variable of $\c$ (type and term variable), and
-$\semenv \th \c$ states that these guesses indeed satisfy $\c$. Let us write
-$\Ground$ for the set of \emph{ground} types, types without free
-variables.\footnote{Ground types are thus finite trees, assuming the
-existence
+``guess''\Xdidier{I would prefer to replace ``guess'' by ``assignment'' here
+and next occurrence} for each free variable of $\c$ (type and term
+variable), and $\semenv \th \c$ states that these guesses indeed satisfy
+$\c$. Let us write $\Ground$ for the set of \emph{ground} types, types
+without free variables.\footnote{Ground types are thus finite trees,
+assuming the existence
 %
 of some base types such as $\tint$. In \cref{sec/rec-types}, we
 discuss the alternative choice of regular trees for the set of ground
@@ -981,21 +984,22 @@ $\semenv(\t)$ for the ground type obtained by substitution.
 \parcomment {Definition exampled}
 
 The judgment is defined in \cref{fig:constraint-semantics} for all
-constraint-formers except suspended constraints; its definition on this
-fragment is standard and somewhat tautological. The constraint $\ctrue$ is
-satisfied by any environment, and $\cfalse$ by none. An environment $\semenv$
-satisfies $\ca \cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying
-$\cexists \tv \c$ requires guessing a witness $\gt$ for $\tv$. For the
-universal constraint $\cfor \tv \c$, $\c$ must be satisfiable for any binding
-of $\tv$. The unification $\cunif \ta \tb$ is satisfied when $\semenv(\ta)$
-and $\semenv(\tb)$ are equal.
+constraint-formers\Xdidier {Why a dash in constrain-formers?} except
+suspended constraints; its definition on this fragment is standard and
+somewhat tautological. The constraint $\ctrue$ is satisfied by any
+environment, and $\cfalse$ by none. An environment $\semenv$ satisfies $\ca
+\cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying $\cexists \tv
+\c$ requires finding a witness $\gt$ for $\tv$.  The universal constraint
+$\cfor \tv \c$ is satisfiable if $\c$ is satisfiable for any binding of
+$\tv$. The unification constraint $\cunif \ta \tb$ is satisfied when
+$\semenv(\ta)$ and $\semenv(\tb)$ are equal.
 
 The rule for $\clet \x \tv \ca \cb$ states that $\ca$ must satisfied under
 \emph{some} instantiation of its bound variable, and that $\cb$ must be
-satisfiable when $\x$ is bound $\cabs \tv \ca$, or rather its semantic
+satisfiable when $\x$ is bound to $\cabs \tv \ca$, or rather to its semantic
 interpretation as a set of ground types.
 
-An application constraints $\capp \x \t$ is interpreted by checking that $\t$
+An application constraint $\capp \x \t$ is interpreted by checking that $\t$
 belongs to the set of types mapped to $\x$ in $\semenv$, that is, $\semenv(\t)
 \in \semenv(\x)$. Note that when $\semenv(\x)$ is of the form
 $\semenvp(\cabs \tv \c)$, where $\semenvp$ is the environment at the binding
@@ -1003,6 +1007,7 @@ site of $\x$, then $\semenv(\t) \in \semenv(x)$ holds iff
 $\semenvp\where{\tv \is \semenv(\t)} \th \c$, which corresponds to the
 intuition that the application $\capp {(\cabs \tv \c)} \t$ should be
 equivalent to $\c \where {\tv \is \t}$.
+
 
 \begin{mathparfig}[t]%
   {fig:constraint-semantics}%
@@ -1055,17 +1060,20 @@ equivalent to $\c \where {\tv \is \t}$.
 \end{mathparfig}
 
 
-Closed constraints are either satisfiable in any semantic environment (\ie
-they are tautologies) or unsatisfiable. For example, the satisfiability of
-the constraint $\cexists \tv {\cunif \tv \tint}$ is established by the
-following derivation:
-\begin{mathline}
-  \infer*[Right=Exists]
+\begin{wraphbox}{0.2}{0.6}
+\begin{mathpar}[inline]
+\infer*[right=Exists]
     {\infer*[Right=Unif]
       {\infer*{}{\tint = \tint}}
       {\semenv\where{\tv \is \tint} \th \cunif \tv \tint}}
   {\semenv \th \cexists \tv \cunif \tv \tint}
-\end{mathline}
+\end{mathpar}
+\end{wraphbox}
+Closed constraints are either satisfiable in any semantic environment (\ie
+they are tautologies) or unsatisfiable. For example, the satisfiability of
+the constraint $\cexists \tv {\cunif \tv \tint}$ is established by the
+derivation on the right-hand side.
+
 
 % Equivalence and entailment
 
@@ -1079,9 +1087,12 @@ that is, they have exactly the same set of solutions.
 
 \parcomment {Why shapes?}
 
-We introduce \emph{shapes} as a generalization of type constructors for suspended
-match constraints. They provide a uniform treatment of both constructors and polytypes,
-and are useful in defining polytype unification (\cref{TODO}).
+We introduce \emph{shapes} as a generalization of type constructors for
+suspended match constraints. They provide a uniform treatment of both
+constructors and polytypes, and are useful in defining polytype
+unification.
+\Xdidier[\cref{TODO}]{What citation did you have in mind? Is it
+needed?}\Xdidier{We never clearly define unification on shapes.}
 
 
 \parcomment {Definition of shape}
@@ -1099,17 +1110,21 @@ set of non trivial shapes.
 %% and use letter $\Sh$ to range
 %% over non trivial shapes.
 
-Shapes are equipped with the standard instantiation ordering, defined by:
-\begin{mathpar}
+\begin{wraphbox}{}{}
+\begin{mathpar}[inline]
   \infer[Inst-Shape]
     {\bar \tvcs_2 \disjoint \any {\tvcs_1} \t}
     {\any {\tvcs_1} \t \preceq
      \any {\tvcs_2} \t \where {\tvcs_1 \is \tys_1}}
 \end{mathpar}
+\end{wraphbox}
+Shapes are equipped with the standard instantiation ordering,
+defined by rule \Rule{Inst-Shape}.
+%
 When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
 actually equal. The trivial shape $\bot$ is the most general shape.
-
+%
 If $\Sh$ is $\any \tvcs \t$, the shape application $\shapp[\Sh] \tys$ is
 defined as $\t \where {\tvcs \is \tys}$. We say that $\Sh$ is a shape of
 $\t$ when there exists $\tys$ such that $\t = \shapp[\Sh] \tys$; in this
@@ -1132,26 +1147,27 @@ $\t$ iff:
 Any non-variable type $\t$ has a non-trivial principal shape $\Sh$.
 \end{restatable}
 
-We can give an equivalent direct description of the set of principal shapes
-$\sh$: they are precisely the shapes $\any \tvcs \t$ satisfying two conditions:
+There is an equivalent direct description of principal shapes
+$\sh$. They are precisely the shapes $\any \tvcs \t$ satisfying two conditions:
 \begin{enumerate*}
-  \item $\tvcs$ must be linear in $\t$ \ie each variable $\tvc$ in $\tvcs$
+  \item
+    $\tvcs$ must be linear in $\t$ \ie each variable $\tvc$ in $\tvcs$
     occurs exactly once in $\t$.
 
-  \item The type $\t$ must be shallow, meaning its structure is limited in
-    the following way. When $\t$ is not a polytype, all of its subterms must
-    be variables. Shapes of this form are $\tunit$, $\tvca \to \tvcb$, $\tProd \tvci$, or
-    $\T \tvcs$.
-
+  \item
+    The type $\t$ must be shallow, meaning that its structure is limited in
+    the following way.  When $\t$ is not a polytype, all of its subterms must
+    be variables. Shapes of this form are $\tunit$, $\tvca \to \tvcb$, and
+    $\tProd \tvci$, or $\T \tvcs$.
     When $\t$ is a polytype $\tpoly {\all \tvs \tsp}$, the only subterms
     of $\tsp$ that do not contain one of the polymorphic variables $\tvs$ must be variables in $\tvcs$.
 \end{enumerate*}
 
 \parcomment {Define canonical shape}
 
-A principal shape $\any \tvcs \t$ is \emph{canonical} if the sequence of its
-free variables $\tvcs$ appear in the order in which the variables occur in
-$\t$. We write $\sh$ for canonical principal shapes.
+A principal shape $\any \tvcs \t$ is \emph{canonical} if its free variables
+appear in the sequence $\tvcs$ in the order in which they occur in $\t$.  We
+write $\sh$ for canonical principal shapes.
 %
 Each non-variable type $\t$ has a unique canonical principal shape, which we
 write $\shape \t$. For example, $\shape {\Tapp \tys}$
@@ -1159,15 +1175,16 @@ is $(\any \tvcs \Tapp \tvcs)$.
 
 \parcomment {Poltypes are constructors}
 
-Polytypes are particularly interesting in this setting because
-they can be decomposed into shapes and treated analogously to type constructors.
-{
+Polytypes are particularly interesting in this setting because they can be
+decomposed into shapes and treated analogously to type constructors.
+\begingroup
 \newcommand {\tsh}[1]%
-  {\def \tsi {\all \tvb {\parens{\tvb \to #1}} \tprod \tvb}
+  {\def \tsi {\all \tvb {{\parens{\tvb \to #1}}} \tprod \tvb}
   \tpoly {\all \tva {\parens {\tpoly \tsi} \to \tva} \to \tva}}%
 For instance, the polytype $\tsh {\tint \tlist}$ has the principal
-shape $\sh \is \any \tvc {\tsh \tvc}$. The original polytype can be represented
-as the shape application $\shapp (\tint \tlist)$.}
+shape $\sh \is \any \tvc {\tsh \tvc}$. The original polytype can thus
+be represented as the shape application $\shapp (\tint \tlist)$.
+\endgroup
 
 \subsection{Suspended constraints}
 
@@ -1201,13 +1218,13 @@ any shape and binds nothing:
     \cfalse & \text{otherwise}
   \end{cases}
 \end{mathpar}
-The first conjunct ($\tau = \shapp \tvs$) ensures that $\sh$ is indeed
-the canonical shape of $\t$, and the second conjunct is the selected branch
-constraint $\ci$ under the appropriate substitution. Since the syntax of suspended match
-constraints requires that branch patterns are non-overlapping, the
-matching branch $\cbranch \cpati \ci$ is uniquely determined; but it
-may not exist as branches need not be exhaustive, in which case the discharged
-constraint is $\cfalse$.
+The first conjunct ($\tau = \shapp \tvs$) ensures that $\sh$ is indeed the
+canonical shape of $\t$, and the second conjunct is the selected branch
+constraint $\ci$ under the appropriate substitution. Since the syntax of
+suspended match constraints requires that branch patterns are
+non-overlapping, the matching branch $\cbranch \cpati \ci$ is uniquely
+determined; but it may not exist as branches need not be exhaustive, in
+which case the discharged constraint is $\cfalse$.
 \end{definition}
 
 \paragraph {A natural attempt}
@@ -6457,7 +6474,7 @@ rules that are not inherently destructive.
 \end{lemma}
 
 \Xdidier {My comments}
-\begin{version}{\color{blue}\True}
+\begin{version}{\color{blue}\Xxx}
 I read the proof in parallel with Gabriel.
 I think I understand Alistair's schema but with details missing.
 
@@ -6522,7 +6539,8 @@ direction, but it should be clarified.
   sequences that are non-discharging and are not \Rule{S-Let-AppR} are
   finite.
 
-  The termination argument for this fragment follows similar lines to that of unification.
+  The termination argument for this fragment follows similar lines to that
+  of unification.
 
   The only rule of concern is \Rule{S-Inst-Copy}, which is not obviously destructive:
   it introduces new instantiation constraints and structurally increases the size of the
