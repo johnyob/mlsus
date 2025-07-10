@@ -5550,6 +5550,7 @@ generally in our system.
 \end{corollary}
 
 \begin{lemma}[Simple equivalence is contextual]
+  \label{lem:ctxt-equiv-simple}
   For simple constraints $\ca, \cb$. If $\ca \cequiv \cb$, then $\ca \cequivctx \cb$.
   \begin{proof}
     We proceed by induction on the number of suspended match constraints $n$ in $\C$.
@@ -5593,6 +5594,7 @@ generally in our system.
 \end{lemma}
 
 \begin{lemma}[Unification is simple]
+  \label{lem:unif-problem-simple}
   For all unification problems $\up$, $\up \simple$.
   \begin{proof}
     By induction on the structure of $\up$.
@@ -5616,6 +5618,7 @@ generally in our system.
 
 
 \begin{lemma}[Simple context equivalence]
+  \label{lem:simple-ctxt-equiv}
   For any two simple contexts $\Ca, \Cb$ and a match-closed guard $P$. If
   the two contexts $\Ca$ and $\Cb$ are equivalent under any simple constraints satisfying $P$,
   then $\Ca \cctxequiv^P \Cb$.
@@ -5692,6 +5695,7 @@ generally in our system.
 
 
 \begin{lemma}[Simple let equivalence]
+  \label{lem:simple-let-equiv}
   Given simple constraints $\ca, \cb$ and a simple context $\C$.
   Suppose that
     \begin{mathpar}
@@ -5722,7 +5726,7 @@ generally in our system.
       \proofcase{$n$ is 0}
 
 	Thus $\Cpp, \Cp, \cs$ are simple. Sufficies to show the equivalence on the $\Let$-constraint directly and use congruence
-	of equivalence for simple constraints (Lemma XXX) to establish the result.
+	of equivalence for simple constraints (\cref{lem:ctxt-equiv-simple}) to establish the result.
 
 	We proceed by induction on the structure of $\Cp$ with the statement ($\ddagger$):
 	\begin{mathpar}
@@ -5737,7 +5741,7 @@ generally in our system.
 
 	\begin{llproof}
 	  \vdashPf{\semenv}{\cletr \x \tv \tvs {\C\where{\cs}} {\Cp\where{\ca}}}{Premise}
-	  \vdashPf{\semenv}{\cexists {\tv, \tvs} \C\where{\cs}}{Lemma XXX}
+	  \vdashPf{\semenv}{\cexists {\tv, \tvs} \C\where{\cs}}{\cref{lem:simple-inversion}}
 	  \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \C\where{\cs})}}{\Cp\where{\ca}}{\ditto}
 	  \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \C\where{\cs})}}{\Cp\where{\cb}}{$\ddagger$}
 	  \vdashPf{\semenv}{\cletr \x \tv \tvs {\C\where{\cs}} {\Cp\where{\cb}}}{By \Rule{LetR}}
@@ -5752,7 +5756,7 @@ generally in our system.
       \proofcase{$n$ is $k + 1$}
 
       \begin{llproof}
-	Analogous to the inductive step in Lemma XXX.
+	Analogous to the inductive step in \cref{lem:simple-ctxt-equiv}.
       \end{llproof}
     \end{proofcases}
   \end{proof}
@@ -5760,6 +5764,7 @@ generally in our system.
 
 \newcommand{\disjointPf}[3]{\Pf{#1}{\disjoint}{#2}{#3}}
 \begin{lemma}
+  \label{lem:unicity-match-var}
   If $\cunif \tv {\cunif \t \ueq} \in \C$ and $\t \notin \TyVars$, then
   $\Cshape \C \tv {~\shape \t}$.
   \begin{proof}~
@@ -5774,15 +5779,16 @@ generally in our system.
       \vdashPf{\semenv}{\cerase{\Ca\where{\cunif \tv {\cunif {\shapp[\shape \t] \tys} \ueq} \cand \Cb\where{\cunif \tv \gt}}}}{Premise}
       \vdashPf{\semenva}{\cunif \tv {\cunif {\shapp[\shape \t] \tys} \ueq}}{Inversion of $\Ca$}
       \vdashPf{\semenvb}{\cunif \tv \gt}{Inversion of $\Cb$}
-      \eqPf{\gt}{\semenvb(\tv)}{Lemma XXX}
+      \eqPf{\gt}{\semenvb(\tv)}{\cref{lem:simple-inversion}}
       \continueeqPf{\semenva(\tv)}{$\tv \disjoint \bvs \Cb$}
-      \continueeqPf{\shapp[\shape \t] {\semenva(\tys)}}{Lemma XXX}
+      \continueeqPf{\shapp[\shape \t] {\semenva(\tys)}}{\cref{lem:simple-inversion}}
 \Hand \eqPf{\shape \gt}{\shape \t}{Applying shape to both sides}
     \end{llproof}
   \end{proof}
 \end{lemma}
 
 \begin{lemma}
+  \label{lem:unicity-back-prop}
   If $\cunif {\tvc} {\cunif \t \ueq} \in \C\where\Cb$ and $\t \notin \TyVars$,
   then
   \begin{mathpar}
@@ -5793,16 +5799,17 @@ generally in our system.
       {~\shape \t}
   \end{mathpar}
   \begin{proof}
-    Similar proof to Lemma XXX.
+    Similar proof to \cref{lem:unicity-match-type}.
   \end{proof}
 \end{lemma}
 
 
 \begin{lemma}[Unification preservation]
+  \label{lem:unification-preservation}
   If $\upa \unif \upb$, then $\upa \equiv \upb$
   \begin{proof}
     By induction on the given derivation $\upa \unif \upb$.
-    See \cite{Pottier-Remy/emlti} for more details.
+    See \citet{Pottier-Remy/emlti} for more details.
   \end{proof}
 \end{lemma}
 
@@ -5823,9 +5830,9 @@ generally in our system.
 
 	\begin{llproof}
 	  \unifPf{\upa}{\upb}{Premise}
-	  \equivPf{\upa}{\upb}{Theorem XXX}
-	  \simplePf{\upa, \upb}{Lemma XXX}
-\Hand 	  \equivctxPf{\upa}{\upb}{Lemma XXX}
+	  \equivPf{\upa}{\upb}{\cref{lem:unification-preservatoin}}
+	  \simplePf{\upa, \upb}{\cref{lem:unif-problem-simple}}
+\Hand 	  \equivctxPf{\upa}{\upb}{\cref{lem:equiv-ctxt-simple}}
 	\end{llproof}
 
     \proofcaserewrite
@@ -5836,7 +5843,7 @@ generally in our system.
 	\begin{llproof}
 	  \disjointPf{\tv}{\cb}{Premise}
 	  \decolumnizePf
-	  \sufficientPf{equivalence for simple constraints}{}{Lemma XXX}
+	  \sufficientPf{equivalence for simple constraints}{}{\cref{lem:simple-ctxt-equiv}}
 	  \supposePf{\ca, \cb \simple} {Premise}
 	\end{llproof}
 	\begin{proofcases}
@@ -5847,7 +5854,7 @@ generally in our system.
 	    \vdashPf{\semenv}{\parens {\cexists \tv \ca} \cand \cb}{Premise}
 	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca}{\cref{lem:simple-inversion}}
 	    \vdashPf{\semenv}{\cb}{\cref{lem:simple-inversion}}
-	    \vdashPf{\semenv\where{\tv \is \gt}}{\cb}{Lemma XXX}
+	    \vdashPf{\semenv\where{\tv \is \gt}}{\cb}{$\tv \disjoint \cb$}
 	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca \cand \cb}{By \Rule{Conj}}
 \Hand       \vdashPf{\semenv}{\cexists \tv \ca \cand \cb}{By \Rule{Exists}}
 	  \end{llproof}
@@ -5878,6 +5885,7 @@ generally in our system.
 	\begin{llproof}
 	    \notinPf{\t}{\TyVars}{Premise}
 	    \shapePf{\square}{\t}{~\shape \t}{By definition}
+	    \sufficientPf{equivalences between constraints}{}{\cref{lem:compose-unicity}}
 	\end{llproof}
 	\begin{proofcases}
 	  \proofcase{$\implies$}
@@ -5904,7 +5912,8 @@ generally in our system.
 
 	\begin{llproof}
 	  \inPf{\cunif \tv {\cunif \t \ueq}}{\C}{Premise}
-	  \shapePf{\C}{\tv}{~ \shape \t}{Lemma XXX}
+	  \shapePf{\C}{\tv}{~ \shape \t}{\cref{lem:unicity-match-var}}
+	  \sufficientPf{equivalences between constraints}{}{\cref{lem:compose-unicity}}
 	\end{llproof}
 
 	\begin{proofcases}
@@ -5936,7 +5945,7 @@ generally in our system.
 	  \disjointPf{\tvc}{\t}{Premise}
 	  \disjointPf{\x}{\bvs \C}{Premise}
 	  \decolumnizePf
-	  \sufficientPf{equivalence between}{\capp \x \t \text{ and } \cexistsi {\tvc, \inst} \x \cunif \tvc \t \cand \cpinst \inst \tv \tvc}{Lemma XXX}
+	  \sufficientPf{equivalence between}{\capp \x \t \text{ and } \cexistsi {\tvc, \inst} \x \cunif \tvc \t \cand \cpinst \inst \tv \tvc}{\cref{lem:simple-let-equiv}}
 	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv \tvs \ca)}{Premise}
 	\end{llproof}
 	\begin{proofcases}
@@ -5944,7 +5953,7 @@ generally in our system.
 
 	    \begin{llproof}
 	      \vdashPf{\semenvp}{\capp \x \t}{Premise}
-	      \inPf{\greg \tv {\semenva}}{\semenv(\x)}{Lemma XXX}
+	      \inPf{\greg \tv {\semenva}}{\semenv(\x)}{\cref{lem:simple-inversion}}
 	      \eqPf{\semenva(\tv)}{\semenvp(\t)}{\ditto}
 	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cpinst \inst \tv \tvc}{By \Rule{Partial-Inst}}
 	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cunif \tvc \t}{By \Rule{Unif}}
@@ -5975,7 +5984,7 @@ generally in our system.
 	  \disjointPf{\x}{\bvs \C}{Premise}
 	  \disjointPf{\tvbs'}{\tvp, \tvc, \tvbs}{Premise}
 	  \decolumnizePf
-	  \sufficientPf{equivalence between}{\cpapp \x \tvp \tvc \inst \text{ and } \cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}{Lemma XXX}
+	  \sufficientPf{equivalence between}{\cpapp \x \tvp \tvc \inst \text{ and } \cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}{\cref{lem:simple-let-equiv}}
 	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c)}{Premise}
 	\end{llproof}
 	\begin{proofcases}
@@ -5985,10 +5994,10 @@ generally in our system.
 	      \vdashPf{\semenvp} {\cpapp \x \tvp \tvc \inst}{Premise}
 	      \inPf{\greg \tv \semenva}{\semenv(\x)}{$\cexistsi \inst \x \in \C$}
 	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
-	      \eqPf{\semenvp(\tvc)}{\semenv(\inst)(\tvp)}{Lemma XXX}
+	      \eqPf{\semenvp(\tvc)}{\semenv(\inst)(\tvp)}{\cref{lem:simple-inversion}}
 	      \continueeqPf{\semenva(\tvp)}{Above}
 	      \vdashPf{\semenva}{\cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Above}
-	      \vdashPf{\semenva}{\cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Lemma XXX}
+	      \vdashPf{\semenva}{\cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{\cref{lem:simple-inversion}}
 	      \eqPf{\semenva(\tvp)}{\shapp {\semenva(\tvbs)}}{\ditto}
 	      \eqPf{\semenvp(\tvc)}{\shapp {\semenva(\tvbs)}}{Above}
 	      \vdashPf{\semenvp\where{\tvbs' \is \semenva(\tvbs)}}{\cunif \tvc {\shapp {\tvbs'}}}{By \Rule{Unif}}
@@ -6012,7 +6021,7 @@ generally in our system.
 
 	\sufficientPf{equivalence between}{{\cpinst \inst \tv \tvca \cand
 	\cpinst \inst \tv \tvcb} \text{ and } {\cpinst \inst \tv \tvca \cand
-	\cunif \tvca \tvcb} }{Lemma XXX}
+	\cunif \tvca \tvcb} }{\cref{lem:simple-ctxt-equiv}}
 
       \end{llproof}
 
@@ -6021,9 +6030,9 @@ generally in our system.
 
 	  \begin{llproof}
 	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}{Premise}
-	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca}{Lemma XXX}
-	    \vdashPf{\semenv}{\cpinst \inst \tv \tvcb}{Lemma XXX}
-	    \eqPf{\semenv(\tvca)}{\semenv(\inst)(\tv)}{Lemma XXX}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca}{\cref{lem:simple-inversion}}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvcb}{\ditto}
+	    \eqPf{\semenv(\tvca)}{\semenv(\inst)(\tv)}{\ditto}
 	    \eqPf{\semenv(\tvcb)}{\semenv(\inst)(\tv)}{\ditto}
 	    \eqPf{\semenv(\tvca)}{\semenv(\tvcb)}{Above}
 	    \vdashPf{\semenv}{\cunif \tvca \tvcb}{By \Rule{Unif}}
@@ -6053,7 +6062,7 @@ generally in our system.
 	  \decolumnizePf
 	  \sufficientPf{equivalence between}
 	    {\cpapp \x \tvp \tvc \inst \text{ and } \ctrue}
-	    {Lemma XXX}
+	    {\cref{lem:simple-let-equiv}}
 	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs, \tvp} \ueqs \cand \c)}{Premise}
 	\end{llproof}
 	\begin{proofcases}
@@ -6070,7 +6079,6 @@ generally in our system.
 	      \vdashPf{\semenvp}{\ctrue}{Premise}
 	      \inPf{\greg \tv {\semenva}}{\semenvp(\x)}{$\C = \Ca\where{\cexistsi \inst \x \Cb}$}
 	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
-	      \eqPf{\semenvp(\tvc)}{\semenva(\tvp)}{Lemma XXX}
 	      \casesPf{\semenva(\tvp)}
 	    \end{llproof}
 	    \begin{proofcases}
@@ -6087,7 +6095,7 @@ generally in our system.
 		\begin{llproof}
 		  \LetPf{\semenvb}{\semenva\where{\tvp \is \semenvp(\tvc)}}{}
 		  \vdashPf{\semenva}{\ueqs \cand \c}{By definition}
-		  \vdashPf{\semenva}{\ueqs}{Lemma XXX}
+		  \vdashPf{\semenva}{\ueqs}{\cref{lem:simple-inversion}}
 		  \vdashPf{\semenvb}{\ueqs}{$\tvp$ is polymorphic}
 		  \vdashPf{\semenvb}{\c}{$\tvp \disjoint \c$}
 		  \vdashPf{\semenvb}{\ueqs \cand \c}{By \Rule{Conj}}
@@ -6115,7 +6123,7 @@ generally in our system.
 	  \decolumnizePf
 	  \sufficientPf{equivalence between}
 	    {\cpapp \x \tvb \tvc \inst \text{ and } \cunif \tvb \tvc}
-	    {Lemma XXX}
+	    {\cref{lem:simple-let-equiv}}
 	  \supposePf{\semenvp(\x) = \semenv(\cabsr \tv {\tvs} \c)}{Premise}
 	\end{llproof}
 
@@ -6126,7 +6134,7 @@ generally in our system.
 	    \vdashPf{\semenvp}{\cpapp \x \tvb \tvc \inst}{Premise}
 	    \inPf{\greg \tv \semenva}{\semenv(\c)}{$\cexistsi \inst \x \in \C$}
 	    \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
-	    \eqPf{\semenvp(\tvc)}{\semenva(\tvb)}{Lemma XXX}
+	    \eqPf{\semenvp(\tvc)}{\semenva(\tvb)}{\cref{lem:simple-inversion}}
 	    \eqPf{\semenva(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \tv, \tvs$}
 	    \eqPf{\semenvp(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \bvs \C$}
 	    \eqPf{\semenvp(\tvc)}{\semenvp(\tvb)}{Above}
@@ -6150,7 +6158,7 @@ generally in our system.
 	  \disjointPf{\x}{\c}{Premise}
 	  \equivPf{\cexists {\tv, \tvs} \ueqs}{\ctrue}{}
 	  \decolumnizePf
-	  \sufficientPf{equivalence for simple constraints}{}{Lemma XXX}
+	  \sufficientPf{equivalence for simple constraints}{}{\cref{lem:simple-ctxt-equiv}}
 	  \supposePf{\c \simple} {Premise}
 	\end{llproof}
 	\begin{proofcases}
@@ -6174,6 +6182,7 @@ generally in our system.
 	    \end{llproof}
 	\end{proofcases}
 
+  \TODO{Proof case for \Rule{S-Exists-Lower}}
   \proofcaserewrite
     {S-BackProp}
     {\C\where
@@ -6185,13 +6194,15 @@ generally in our system.
     {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
 		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
 
-    \TODO{Lemma for this that determines unicity}
 
+    \begin{llproof}
+      Similar argument to \Rule{S-Match-Var}, using \cref{lem:unicity-back-prop}.
+    \end{llproof}
 
   \proofcase{\Rule{S-Compress}, \Rule{S-Gc}, \Rule{S-Exists-All}, \Rule{S-All-Escape}, \Rule{S-All-Rigid}, \Rule{S-All-Solve}}
 
   \begin{llproof}
-    Equivalences are standard, see \citep{Pottier-Remy/emlti}.
+    Equivalences are standard, see \citet{Pottier-Remy/emlti}.
   \end{llproof}
   \end{proofcases}
 \end{proof}
@@ -6206,7 +6217,7 @@ generally in our system.
     \item $\up \unif \upp$ for some $\upp$.
     \end{enumerate}
   \begin{proof}
-    This is a standard result. See \citep{Pottier-Rem/emlti}.
+    This is a standard result. See \citet{Pottier-Rem/emlti}.
   \end{proof}
 \end{lemma}
 
@@ -6215,7 +6226,7 @@ generally in our system.
 \begin{proof}
   We proceed by induction on the structure of $\c$. We
   focus on conjunctions and $\Let$ rules.
-
+  \TODO{Proof case for match constraints}
   \begin{proofcases}
     \proofcase{$\ca \cand \cb$}
     We begin by inducting on $\ca$ and $\cb$. Then we consider cases:
@@ -6357,6 +6368,7 @@ Consequently, to establish termination, it sufficies to consider only those
 rules that are not inherently destructive.
 
 \begin{lemma}[Unification termination]
+  \label{lem:unification-termination}
   The unifier terminates on all inputs.
   \begin{proof}
     \newcommand{\sw}[1]{\mathprefix{sw}{(#1)}}
@@ -6365,14 +6377,14 @@ rules that are not inherently destructive.
     \newcommand{\uw}[1]{\mathprefix{uw}{(#1)}}
 
     Let every shape $\sh$ have an integer \emph{weight}
-    defined by $\sw \sh \eqdef 2 + 2 \times |\sh|$, where $|\sh|$ is the
+    defined by $\sw \sh \eqdef 4 + 2 \times |\sh|$, where $|\sh|$ is the
     arity of the shape $\sh$.
     %
     The weight of a type $\tw \t$ is defined by:
     \begin{mathpar}
       \begin{tabular}{RCL}
 	\tw \tv &\eqdef& 1\\
-	\tw {\shapp \tys} &\eqdef& \iw {\shapp \tys} - 1\\[1ex]
+	\tw {\shapp \tys} &\eqdef& \iw {\shapp \tys} - 2\\[1ex]
 	\iw \tv &\eqdef& 0\\
 	\iw {\shapp \tys} &\eqdef& \sw \sh + \iw \tys\\
         \iw \tys & \eqdef & \sum\iton \iw \ti\\
@@ -6401,23 +6413,7 @@ rules that are not inherently destructive.
 	{\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
 	{\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
 
-	We have
-	\begin{mathpar}
-	  \begin{tabular}{RCL}
-	    \uw {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}} &=&
-	      2 \times (\sw \sh - 1) + \uw \ueq \\
-	      &=& 4 \times |\sh| + 2  + \uw \ueq \\[1ex]
-	    \uw {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
-	      &=&
-	      \sw \sh - 1 + \uw \ueq + 2 \times |\sh| \\
-	      &=&
-	      \Xdidier[3]{4} \times |\sh| + 1 + \uw \ueq
-	  \end{tabular}
-	\end{mathpar}
-	Hence $\uw {{\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}} > \uw {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}$.
-
-        \Xdidier{But I would rather present it as follows}
-	We have
+	We have:
 	\begin{mathpar}
 	  \begin{tabular}{RRCL}
            (+)&
@@ -6429,47 +6425,37 @@ rules that are not inherently destructive.
 	      \tw {\pshapp \tvs} + \tw \ueq + \tw \tvs + \tw \tvbs \Strut \\
               \hline
 	       &&=&\Strut \tw {\pshapp \tvbs} - \tw \tvs - \tw \tvbs \\
-               &&=&  (\sw \sh  + 0 - 1) - 2 |\sh| \\
-               &&=&  (2 + 2|\sh|  - 1) - 2 |\sh| \Wide = \textbf {1}\\
+               &&=&  (\sw \sh  + 0 - 2) - 2 |\sh| \\
+               &&=&  (2 + 2|\sh|) - 2 |\sh| \Wide = \textbf {2}\\
 	  \end{tabular}
 	\end{mathpar}
-
+	Hence $\uw {{\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}} > \uw {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}$.
 
 
       \proofcaserewrite
 	{U-Name}
-      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
+      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq \\ \ti \notin \TyVars }
       {\cexists \tv {\cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq \cand \cunif \tv \ti}}
 
-	We have
-	\begin{mathpar}
-	  \begin{tabular}{RCL}
-	    \uw {\cunif {\pshapp {\parens{\tys, \ti, \typs}}} \ueq} &=& \sw \sh + \iw \tys + \iw \ti + \iw \typs - 1 + \uw \ueq \\
-	    \uw {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
-	      &=& \sw \sh + \iw \tys + 0 + \iw \typs - 1 + \uw \ueq + 1 + \tw \ti
-	  \end{tabular}
-	\end{mathpar}
-	So it sufficies to show that $1 + \tw \ti < \iw \ti$. Given $\ti \notin \TyVars$, this is indeed the case.
-	So we are done.
-
-        \Xgabriel{I don't follow, for example if $\tau_i$ is a nullary shape
-        $\shapp \eset$ I would expect $1 + \tw {\shapp \eset} = \iw {\shapp
-        \eset}$.}
-
-	We have
+	Given $\ti \notin \TyVars$, by \cref{thm:principal-shapes},
+	$\ti = \shapp[\shp] \bar\typp$ for some shape $\shp$ and types $\bar\typp$.
+	So we have:
 	\begin{mathpar}
 	  \begin{tabular}{.R;;R;C;L.}
           (+) &
 	    \uw {\cunif {\pshapp {\parens{\tys, \ti, \typs}}} \ueq}
-            &=& \sw \sh + \iw \tys + \iw \ti + \iw \typs - 1 + \uw \ueq \\
+            &=& \sw \sh + \iw \tys + \iw \ti + \iw \typs - 2 + \uw \ueq \\
           (-) &
 	    \uw {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
-            &=& \sw \sh + \iw \tys + 0 + \iw \typs - 1 + \uw \ueq + 1 + \tw \ti \\
+            &=& \sw \sh + \iw \tys + 0 + \iw \typs - 2 + \uw \ueq + 1 + \tw \ti \\
             \hline
-           &&=& \iw \tyi - \iw \tv - 1
+           &&=& \iw \tyi - \iw \tv - \tw \ti - 1 \\
+	    &&=& \iw \tyi - 0 - (\iw \tyi - 2) - 1 \\
+	    &&=& \textbf{1}
 	  \end{tabular}
 	\end{mathpar}
 
+	Hence $\uw {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq } > \uw {\cexists \tv {\cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq \cand \cunif \tv \ti}}$.
     \end{proofcases}
   \end{proof}
 \end{lemma}
@@ -6577,12 +6563,21 @@ direction, but it should be clarified.
   unification rules) must be applicable.\Xgabriel{This sounds fishy. A
   constraint could a priori have a finite reduction sequence to $\cfalse$,
   and \emph{also} an infinite sequence of partial instantiation rules.}
+  \Xalistair{Agreed. This is something I realised after coming up with
+  semantic definition of height. I guess my point is in the solver, before
+  partially instantiating, we would check if the region is not obviously false.
+
+  My argument is along the lines of: if $\cerase \c$ is unsatisfiable, the
+  solver can eagerly detect this (EMLTI style) \emph{before} instantiating.
+  We could just add the condition that $\cerase \c$ is satisfiable (removing
+  $\neg \cyclic \c$ (which follows from this).
+  }
 
   The weight of a partial instantiation $\cw {\cpapp \x \tv \t \inst}$ is defined as
   the sum of $\stw \t$ and $\tw \tv \c$, where $\x$ is bound to the abstraction $\cabsr \tv \tvs \c$.
   The weight of other constraints is given using the measure
   $\mathprefix{uw}$ defined in the the
-  proof of Lemma XXX.
+  proof of \cref{lem:unification-termination}.
 
   \begin{proofcases}
     \proofcaserewrite
@@ -6622,6 +6617,74 @@ direction, but it should be clarified.
 \end{proof}
 
 \subsection{Correctness}
+
+\begin{lemma}
+  \label{lem:unsat-match}
+  $\C\where{\cmatch \t \cbrs}$ is unsatisfiable if $\nCshape \C \t \sh$ for any shape $\sh$.
+  \TODO{This lemma is wrong. We need a stronger condition on progress}
+\end{lemma}
+
+\begin{corollary}
+  For the closed-term-variable constraint $\c$, $\c$ is satisfiable if and only if
+  $\c \csolve^* \hat\c$ and $\hat\c$ is a solved form equivalence to $\c$.
+  \begin{proof}
+    We show each direction individually:
+    \begin{proofcases}
+      \proofcase{$\implies$}
+
+	By transfinite induction on the well-ordering of constraints whose
+	existence is shown in \cref{thm:termination}.
+
+	We have $\c$ is satisfiable.
+	By \cref{thm:progress}, we have three cases:
+	\begin{proofcases}
+	  \proofcase{$\c$ is solved}
+	  We have $\c \csolve^* \c$ and $\c \cequiv \c$ by reflexitivity.
+	  So we are done.
+
+	  \proofcase{$\c$ is stuck}
+	    Given $\c$ is a closed-term-variable constraint,
+	    it must be the case that either $\c$ is $\cfalse$
+	    \emph{or} $\hat\C\where{\cmatch \t \cbrs}$ and $\nCshape \C \t \sh$ for any shape $\sh$.
+
+	    If $\c$ is $\cfalse$, this contradicts our assumption that $\c$ is satisfiable.
+	    Similarly, by \cref{lem:unsat-match}, if $\c$ is $\hat\C\where{\cmatch \t \cbrs}$,
+	    then this also contradicts the satisfiability of $\c$.
+
+	  \proofcase{$\c \csolve \cp$}
+
+	  By \cref{thm:preservation}, we have $\c \cequiv \cp$, thus $\cp$ is satisfiable.
+	  So by induction, we have $\cp \csolve^* \hat \c$ and $\hat\c$
+	  is a solved form equivalent to $\cp$.
+	  By transitivity of equivalence, we therefore have $\hat\c \cequiv \c$, as
+	  required.
+
+	\end{proofcases}
+
+      \proofcase{$\impliedby$}
+
+      By induction on the rewriting $\c \csolve^* \hat\c$.
+      \begin{proofcases}
+	\proofcaserewrite
+	  {Zero-Step}
+	  {}
+	  {\hat\c \csolve^* \hat\c}
+
+	We have $\c = \hat\c$ by inversion. All solved forms are satisfiable, thus
+	$\c$ is satisfiable.
+
+	\proofcaserewrite
+	  {One-Step}
+	  {\c \csolve \cp \\ \cp \csolve^* \hat\c}
+	  {\c \csolve^* \hat\c}
+
+	  By induction, we have $\cp$ is satisfiable. By \cref{thm:preservation},
+	  $\c \cequiv \cp$, hence $\c$ is satisfiable.
+
+      \end{proofcases}
+    \end{proofcases}
+  \end{proof}
+\end{corollary}
 
 \clearpage
 \section{Properties of \OML}
