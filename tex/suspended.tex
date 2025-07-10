@@ -2282,7 +2282,7 @@ There are three cases in which an instantiation constraint is eliminated:
   {fig:solver-schemes}
   {Select rewriting rules for let-bindings and applications.}
   \rewrite[S-Exists-Lower]
-    {\cletr \x \tv {\tvas, \tvbs} \ca \cb}
+    {\cletr \x \tv {\tvas, \tvbs} \ca \cb\\}
     {\cdetermines {\cexists {\tv, \tvas} \ca} \tvbs}
     {\cexists \tvbs \cletr \x \tv \tvas \ca \cb}
 
@@ -2315,13 +2315,13 @@ There are three cases in which an instantiation constraint is eliminated:
     {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
   \rewrite[S-Inst-Mono]
-    {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} }
+    {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}}\\}
    {\tvb \disjoint \tv, \tvs \\
      \x, \tvb \disjoint \bvs \C}
     {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
   \rewrite[S-Let-Solve]
-    {\cletr \x \tv \tvs \ueqs \c}
+    {\cletr \x \tv \tvs \ueqs \c\\}
     {\cexists {\tv, \tvs} \ueqs \cequiv \ctrue \\
      \x \disjoint \c}
     {\c}
