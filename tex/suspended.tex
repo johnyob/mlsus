@@ -33,7 +33,7 @@ let-bound expressions before typechecking their use sites.
 This relies on two technical devices: \emph{suspended match constraints}, which
 suspend the resolution of some constraints until the context has more
 information about a type variable; and \emph{partial type schemes}, which allow
-taking instances of a partially solved type scheme containing suspended
+taking instances a of partially solved type scheme containing suspended
 constraints, with a
 mechanism to incrementally update instances as the scheme is refined.
 
@@ -2462,25 +2462,29 @@ determines the shape of $\tv$, contradicting $\tv$'s universality.
 \section{Implementation}
 \label{sec:implementation}
 
-We have a working prototype of a core \ML language with suspended
-match constraints and partial generalization, in which we have
-reproduced the various type-system features and examples presented in
-this work. This prototype is public and open-source (link omitted for anonymity).
+We have two working prototypes of a core \ML language with suspended match
+constraints and partial generalization, in which we have reproduced the
+various type-system features and examples presented in this work.  One is a
+direct implementation of type inference based on semi-unification. It is
+experimental and not released yet.  The other one, which we describe below,
+is closely following the constraint-based presentation of this work.  It is
+public and open-source (link omitted for anonymity).
+Its implementation is inspired by previous work such as
+Inferno~\citep {Pottier/inferno@icfp2014, Pottier/inferno@opam}.  It uses
+state-of-the-art implementation techniques for efficiency, such as a
+Union-Find data structure and the use of \emph{ranks} (or \emph{levels}) for
+efficient generalization. Let us discuss a few salient points.
 
-The implementation is inspired by previous work such as
-Inferno~\citep*{inferno}. It uses state-of-the-art implementation
-techniques for efficiency, such as a Union-Find data structure and the
-use of \emph{ranks} (or \emph{levels}) for efficient
-generalization. Let us discuss a few salient points.
+\paragraph{Unification and scheduling}
 
-\paragraph{Unification and scheduling} Each unsolved unification
-variable maintains a \emph{wait list} of suspended constraints that
-are blocked until the variable is unified with a concrete type. At
-this point the wait list is flushed: the suspended constraints are
+Each unsolved unification variable maintains a \emph{wait list} of suspended
+constraints that are blocked until the variable is unified with a concrete
+type. At this point the wait list is flushed: the suspended constraints are
 scheduled on the global constraint scheduler, which is responsible for
 eventually solving them.
 
 \paragraph{From a stack to a tree}
+
 % To implement generalization (the \Rule{S-Lower-Exists} rule)
 % efficiently, we follow the classic rank-based approach to
 % generalization. Each $\Let$ constraint and type variable is allocated
@@ -2494,9 +2498,11 @@ eventually solving them.
 % generalization at a given region consists precisely of those
 % whose rank remains equal to that of the region.
 
-Many standard \ML implementations, for example Inferno, represent the
-solver state as a linear \emph{stack} of inference regions, from the
-outermost variable scope to the current region being inferred. Unification maintains an integer \emph{rank} (or \emph{level}) for each variable, that index a region in the stack.
+Many standard \ML implementations, for example Inferno, represent the solver
+state as a linear \emph{stack} of inference regions, from the outermost
+variable scope to the current region being inferred. Unification maintains
+an integer \emph{rank} (or \emph{level}) for each variable, that index a
+region in the stack.
 %
 This choice does not work for partial generalization. If
 generalization at some region is suspended by a match constraint, the
@@ -2506,11 +2512,12 @@ $\Let$-region at the same rank that is unrelated -- neither an
 ancestor nor a descendant -- breaking the linear assumption of ranks.
 
 Our implementation must instead use a \emph{tree} of nested
-$\Let$-regions. Under this scheme, ranks no longer uniquely determine
-a variable's region. Instead, we interpret a rank relative to a path in the region tree from the root. When two variables are
-unified, they must always lie on some shared path---by scoping
-invariants---so computing their minimum rank (along this path)
-sufficies to determine the lowered region: we keep the efficient integer comparisons.
+$\Let$-regions. Under this scheme, ranks no longer uniquely determine a
+variable's region. Instead, we interpret a rank relative to a path in the
+region tree from the root. When two variables are unified, they must always
+lie on some shared path---by scoping invariants---so computing their minimum
+rank (along this path) sufficies to determine the lowered region: we keep
+the efficient integer comparisons.
 
 \paragraph{Partial generalization}
 
