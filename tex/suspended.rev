@@ -1,0 +1,64 @@
+Shapes are one of the following form:
+\begin{mathpar}
+\begin{bnfgrammar}[\def \and {\wide\mid}]
+\entry{\sh}{
+       \tunit
+  \and \tva \to \tvb
+  \and \Pi\iton \tvs
+  \and \tvs \F
+  \and \exi \tvs \tpoly \ts
+}
+\end{bnfgrammar}
+\end{mathpar}
+\Xalistair{This syntax is a bit odd for polytypes as no other shape quantifies
+over its monomorphic part}\Xdidier{Initially, shapes where just
+constructors for me---not shallow terms}\Xdidier{The syntax is not enough:
+we should ensure that all type variables are disjoint, so that shapes are
+equivalent to constructors..., even for polytypes thanks to the existence of
+a canonical representation.}\Xdidier {Shapes should be closed, or we should
+be clearer with $\alpha$-conversion.}
+
+The shape of a variable is undefined (as in \cref{fig:shape-fn-def-typing}).
+The shape of the unit type $\tunit$ is $\tunit$. Monotypes that contain
+nested types, such as the function type $\t \to \tp$, have the shape of
+their top-level type constructor with their children replaced by variables,
+\ie $\tva \to \tvb$.
+%
+The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
+$\tpoly \ts$ abstracted over the monomorphic parts. It is the minimal
+closed type expression $\exi \tvas {\tpoly {\all \tvbs \t}}$ (up to the
+ordering of variables) such that there exists types $\tys$ such that
+$\tfor \tvbs \t \where {\tvas \is \tys}$ is equal to $\ts$.
+%
+Closed, means that $\tvas$ is equal to the free type variables
+$\ftv \ts$ of $\ts$. The minimality condition is equivalent to the fact that
+any suffix of a non-variable node in $\t$ leads to a polymorphic type
+variable, \ie a variable in $\tvbs$.
+%
+When $\exi \tvs \tpoly \ts$ is a polytype skeleton, we write $\cpoly \tys
+\ts$ for the polytype $\tpoly \ts \where {\tvs \is \tys}$.
+
+\begin{mathparfig}[t]
+{fig:shape-fn-def-typing}
+{Definition of $\shape \t$, a partial function from types to
+shape-substitution pairs $\langle \sh, \theta \rangle$, extended for all
+types defined in the calculus}
+  \shape \tv \eqdef \bot
+
+  \shape 1 \eqdef 1
+
+  \shape {\t \to \tp} \eqdef
+      \angles {\tv \to \tv', \where {\tv \is \t, \tv' \is \tp}}
+
+  \shape {\Pi\iton \tys} \eqdef
+      \angles {\Pi\iton \tvs, \where {\tvs \is \tys}}
+
+  \shape {\tys \F} \eqdef
+      \angles {\tvs \F, \where {\tvs \is \tys}}
+
+  \shape {\tpoly \ts} \eqdef
+      \angles {\exi \tvs \tpoly \ts, \where {\tvs \is \tys}}
+\end{mathparfig}
+
+\Xalistair{I feel the definition for $\tpoly \ts$ is not formal enough}
+

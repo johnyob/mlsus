@@ -759,6 +759,7 @@ By waiting for the type of $e$ to be \emph{known}, we ensure principal types
 without annotation variables.
 
 \subsection{Static overloading of constuctors and record labels}
+\label{sec/constraints/overloading}
 
 % What do we mean by static overloading?
 
@@ -1111,7 +1112,7 @@ set of non trivial shapes.
 \end{mathpar}
 \end{wraphbox}
 Shapes are equipped with the standard instantiation ordering,
-defined by rule \Rule{Inst-Shape}.
+defined by \Rule{Inst-Shape}.
 %
 When writing $\Sh \preceq \Shp$, we say that $\Sh$ is more general than
 $\Shp$. When $\Sh$ and $\Shp$ are more general than one another, they are
@@ -1336,8 +1337,7 @@ $\Cshape \C \t \sh$ (defined below) ensures that $\sh$ is uniquely determined by
 \begin{array}{.l.}
 \Cshape \C \t \sh \eqdef
 \\[.6ex]\quad
-\forall \semenv, \gt.
-%% \\\qquad
+\forall \semenv, \gt. \uad
       \semenv \thsimple \cerase {\C\where{\cunif \t \gt}} \implies
          \shape \gt = \sh
 \end{array}
@@ -1865,7 +1865,7 @@ using first-order unification. Like our solver, we specify unification as a
 non-deterministic rewriting relation between \emph{unification problems} $\upa
 \unif \upb$, that eventually reduces to a solved form $\hat\up$ or to $\cfalse$.
 
-\begin{mathparfig}[t]
+\begin{mathparfig}[htpb!]
   {fig:unification-syntax-and-semantics}
   {Syntax and semantics of unification problems.
    %Constraints are also extended with the administrative multi-equation construct.
@@ -1900,10 +1900,15 @@ of constraints, extended with \emph{multi-equations}
 \citep*{Pottier-Remy/emlti}---a multi-set of types considered
 equal. These generalize binary equalities: $\semenv$ satisfies
 a multi-equation $\ueq$ if all of its memebers are mapped to a single
-ground type $\gt$ (Rule \Rule{Multi-Unif}). Multi-equations are
+ground type $\gt$ (\Rule{Multi-Unif}). Multi-equations are
 considered equal modulo permutation of their members.
 
-Our algorithm is largely standard. For reasons of space we describe it in \cref{app:unification} (appendix).
+Our algorithm is largely standard, with it main novelty being the use
+of \emph{canonical principal shapes} in place of type constructors. This
+uniform treatment of monotypes and polytypes simplifies unification and improves
+on the previous treatment of polytype unification \citep{Garrige-Remy/poly-ml}.
+For a detailed discussion of the unification rules, see
+\cref{app:unification} (appendix).
 
 \subsection{Solving rules}
 
@@ -1912,14 +1917,58 @@ Our algorithm is largely standard. For reasons of space we describe it in \cref{
 We now gradually introduce the rules of the constraint solver itself
 (\cref {fig:solver-basic,fig:solver-susp,fig:solver-schemes}).
 These rules define a non-deterministic rewriting
-system, operating modulo $\alpha$-equivalence, and associativity and
-commutativity of conjunction. $\C$ represents an arbitrary
-one-hole constraint context.
+system, operating modulo $\alpha$-equivalence, and the associativity and
+commutativity of conjunction. Rewriting takes place under an arbitrary
+one-hole constraint context $\C$.
 %
 % Solved forms
-A constraint $C$ is satisfiable if rewrites into a solved form
-$\hat\up$ (\cref{def:solved-form}). Otherwise it gets
+A constraint $\c$ is satisfiable if it rewrites to a solved form
+$\hat\up$ (\cref{def:solved-form}); otherwise it gets
 stuck.
+
+\begin{mathparfig}[htpb!]
+  {fig:solver-basic}
+  {Basic rewriting rules $\ca \csolve \cb$}
+  \rewrite[S-Unif]
+    {\upa}
+    {\upa \unif \upb}
+    {\upb}
+
+  \rewrite[S-False]
+    {\C\where\cfalse}
+    {\C \neq \square}
+    {\cfalse}
+
+  \rewrite[S-Let]
+    {\clet \x \tv \ca \cb}
+    {}
+    {\cletr \x \tv \eset \ca \cb}
+
+  \rewrite[S-Exists-Conj]
+    {(\cexists \alpha \ca) \cand \cb}
+    {\tv \disjoint \cb}
+    {\cexists \tv {\ca \cand \cb}}
+
+  \rewrite[S-Let-ExistsLeft]
+    {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb}
+    {\tvb \disjoint \tv, \tvs, \cb}
+    {\cletr \x \tv {\tvs, \tvb} \ca \cb}
+
+  \rewrite[S-Let-ExistsRight]
+    {\cletr \x \tv \tvs \ca {\cexists \tvb \cb}}
+    {\tvb \disjoint \tv, \tvs, \cb}
+    {\cexists \tvb {\clet \x \tvs \ca \cb}}
+
+  \rewrite[S-Let-ConjLeft]
+    {\cletr \x \tv \tvs {\ca \cand \cb} \cc}
+    {\ca \disjoint \tv, \tvs}
+    {\ca \cand \cletr \x \tv \tvs \cb \cc}
+
+  \rewrite[S-Let-ConjRight]
+    {\cletr \x \tv \tvs \ca (\cb \cand \cc)}
+    {\x \disjoint \cc}
+    {\cc \cand \Clet \x \tv \ca \cb}
+\end{mathparfig}
 
 \paragraph{Basic rules}
 
@@ -1929,16 +1978,16 @@ stuck.
 current unification problem. The unification algorithm itself is treated as a
 black box by the solver, so the system could be extended with any
 equational theory of types implemented by the unification algorithm.
-\begin{mathparfig}[t]
+\begin{mathparfig}[htpb!]
   {fig:constraint-let-regions}
   {Syntax and semantics of region-based $\Let$ constraints.}
-%% \begin{bnfgrammar}
-%%  \entry[Constraints]{\c}{
-%%     \dots \and \cletr \x \tv \tvs \ca \cb
-%%   }
-%% \end{bnfgrammar}
+ \begin{bnfgrammar}
+  \entry[Constraints]{\c}{
+     \dots \and \cletr \x \tv \tvs \ca \cb
+   }
+ \end{bnfgrammar}\\
 \begin{tabular}{R;;C;;L}
-\c &::=& \dots \mid \cletr \x \tv \tvs \ca \cb \\
+%%\c &::=& \ldots \mid \cletr \x \tv \tvs \ca \cb \\
 \semenv(\cabsr \tv \tvs \c) &\eqdef&
   \set{\greg \tv {\semenv\where{\tv \is \gt, \tvs \is \gts}}
        \in \GroundRegion : \semenv\where{\tv \is \gt, \tvs \is \gts} \th \c}
@@ -1992,61 +2041,18 @@ consists of a conjunction of solved multi-equations followed by
 a residual constraint---typically an application, let-binding, or
 suspended constraint.
 
-\begin{mathparfig}[t]
-  {fig:solver-basic}
-  {Basic rewriting rules $\ca \csolve \cb$}
-  \rewrite[S-Unif]
-    {\upa}
-    {\upa \unif \upb}
-    {\upb}
-
-  \rewrite[S-False]
-    {\C\where\cfalse}
-    {\C \neq \square}
-    {\cfalse}
-
-  \rewrite[S-Let]
-    {\clet \x \tv \ca \cb}
-    {}
-    {\cletr \x \tv \eset \ca \cb}
-
-  \rewrite[S-Exists-Conj]
-    {(\cexists \alpha \ca) \cand \cb}
-    {\tv \disjoint \cb}
-    {\cexists \tv {\ca \cand \cb}}
-
-  \rewrite[S-Let-ExistsLeft]
-    {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb}
-    {\tvb \disjoint \tv, \tvs, \cb}
-    {\cletr \x \tv {\tvs, \tvb} \ca \cb}
-
-  \rewrite[S-Let-ExistsRight]
-    {\cletr \x \tv \tvs \ca {\cexists \tvb \cb}}
-    {\tvb \disjoint \tv, \tvs, \cb}
-    {\cexists \tvb {\clet \x \tvs \ca \cb}}
-
-  \rewrite[S-Let-ConjLeft]
-    {\cletr \x \tv \tvs {\ca \cand \cb} \cc}
-    {\ca \disjoint \tv, \tvs}
-    {\ca \cand \cletr \x \tv \tvs \cb \cc}
-
-  \rewrite[S-Let-ConjRight]
-    {\cletr \x \tv \tvs \ca (\cb \cand \cc)}
-    {\x \disjoint \cc}
-    {\cc \cand \Clet \x \tv \ca \cb}
-\end{mathparfig}
-
 
 \parcomment{OmniML constraints do not need dedicated rules}
 
 \OML-specific constraints, such as the label and polytype instantiations from
-\cref{sec:constraint-gen}, require no special treatment in our solver. Once
-their pattern variables are substituted---after solving a match
-constraint---they are desugared into constraints already handled by the solver.
+\cref{sec/constraints/polytypes, sec/constraints/overloading}, require no
+special treatment in our solver. Once their pattern variables are
+substituted---after solving a match constraint---they are desugared into
+constraints already handled by the solver.
 
 \paragraph{Suspended match constraints}
 
-\begin{mathparfig}
+\begin{mathparfig}[htpb!]
   {fig:solver-susp}
   {Rewriting rules for suspended match constraints.}
   \rewrite[S-Match-Type]
@@ -2062,18 +2068,20 @@ constraint---they are desugared into constraints already handled by the solver.
 
 \parcomment{S-Match-Type}
 
-Rule \Rule{S-Match-Type} solves suspended match constraints whose scrutinee
-is a non-variable type $\t$ by rewriting them using the sugar $\cmatched \t
-{\shape \t}
-\cbrs$, introduced in \cref{sec:constraints}. If no branch matches $\shape \t$,
-the rule is stuck and the constraint is unsatisfiable.
+\Rule{S-Match-Type} solves suspended match constraints whose scrutinee is
+a non-variable type $\t$ by rewriting them using the sugar $(\cmatched \t
+{\shape \t} \cbrs)$, introduced in \cref{sec:constraints}.
 
 \parcomment {S-Match-Var}
 
-Rule \Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and
+\Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and
 the context $\C$ proves that $\tv$ is equal to some non-variable type
-$\t$, so we have the unicity property
+$\t$, which establishes the unicity property
 $\Cshape \C \t {~\shape \t}$.
+%
+To check whether a context $\C$ proves an equality---or more generally,
+a multi-equation $\ueq$---we search for a decomposition $\C = \Ca\where{\ueq \cand \Cb}$
+where $\fvs \ueq$ is disjoint from the binders of $\Cb$.
 
 \paragraph{Let constraints}
 
@@ -2089,7 +2097,7 @@ Application constraints can be solved by copying constraints:
     {\clet \x \tv \ca {\C\where{\cexists {\tv, \tvs} \cunif \tv \t \cand \ca}}}
 \end{mathpar}
 This resembles $\beta$-reduction, except that the original abstraction is
-retained. While correct for simple constraints, it may duplicate solving work
+retained. While correct for \emph{simple} constraints, it may duplicate solving work
 across applications of the same abstraction.
 %
 A more efficient approach first solves the abstraction once---\eg reducing it
@@ -2103,27 +2111,27 @@ the \mgu of $\ueqs$. This optimization underlies efficient implementations of
 
 \parcomment{Generalization with suspended constraints is hard}
 
-However, this approach does not extend to suspended constraints. To illustrate
-this, let us examine \ocaml{e_7} (from \cref{sec/introduction}):
+However, this approach \emph{does not} extend to suspended constraints. To illustrate
+this, let us examine \ocaml{ex_7} (from \cref{sec/introduction}):
 \begin{program}[input]
-  let e_7 r = let x = r.x in x + r.y °\ocamlflags30°
+  let ex_7 r = let x = r.x in x + r.y °\ocamlflags30°
 \end{program}
-The generated constraint\footnote{Simplified for readability.} is of the
-form:
+The generated typing constraint contains:
 \begin{mathpar}
   \cexists \tv
     \clet x \tvb
       {\cmatch \tvb {\cbranch {(\cpatrcd \ct)} {\C\where {\ct,\tva,\tvb}}}}
-      {\cinst x \tint \cand \cunif \tv {\mathsf{two}}}
+      {\cinst x \tint \cand \cunif \tv {\mathsf{one}}}
 \end{mathpar}
 where $\C\where{\ct,\tv,\tvb}$ is ${\Omega(\elab / t) \leq \tva \to \tvb}$.
 Here, $\tv$ stands for \code{r}'s type. The constraint remains suspended until
-\code{r.y} forces \code{r}'s type to be \code{two}. Cruicially, the variable
+\code{r.y} forces \code{r}'s type to be \code{one}. Cruicially, the variable
 $\tvb$ (introduced inside the abstraction for the type of \code{y}) is captured
 by the suspended match constraint that is not yet resolved at the point of
 solving the $\Let$ constraint that binds \code{x}.
 
 \parcomment {Partial type schemes}
+
 Nonetheless, to continue solving the let-body, we must assign a scheme to
 \code{x}. We na\"ively pick $\tfor \tvb \tvb$. This appears unsound, since
 $\tvb$ will later unify with $\tint$ once the match constraint is discharged.
@@ -2132,8 +2140,8 @@ But it would be incomplete to lower $\tvb$ as a monomorphic variable.
 This motivates, \emph{partial type schemes}, our second novel mechanism for
 omnidirectional inference. Partial type schemes are type schemes that delay
 commitment to certain quantifications (\eg $\tvb$). Such \emph{partially
-generalized} variables are treated as generalized, but can still be refined
-in future as suspended constraints are discharged.
+generalized} variables are treated as generalized, but can be incrementally
+refined in future as suspended constraints are discharged.
 
 \begin{mathparfig}[t]
   {fig:constraint-partial-app}
@@ -2146,7 +2154,7 @@ in future as suspended constraints are discharged.
       \and \cexistsi \inst \x \c
       \and \cpinst \inst \tv \t
     } \\
-    \entry[\hspace {-2em} Semantic environments]{\semenv}{
+    \entry[Semantic environments]{\semenv}{
       \dots
       \and \semenv\where{\inst := \semenvp}
     }
@@ -2317,17 +2325,17 @@ There are three cases in which an instantiation constraint is eliminated:
 
 \parcomment{Cleaning up partial applications and let constraints}
 
-Rule \Rule{S-Let-Solve} remove a $\Let$ constraint when the bound term
+\Rule{S-Let-Solve} remove a $\Let$ constraint when the bound term
 variable is
 unused and the abstraction is satisfiable. \Rule{S-Compress} determines that a
 regional variable $\tvb$ is an an alias for $\tvc$. We replace every free
-occurrence of $\tvb$ with $\tvc$--- \emph{including} the domains of any partial
+occurrence of $\tvb$ with $\tvc$---\emph{including} the domains of any partial
 instantiation constraints, written as the substitution $\where{\x.\tvb \is
 \tvc}$. We view this as an analogous copy rule for variables.
 
 \parcomment{Lowering}
 
-Rule \Rule{S-Exists-Lower} implements the non-trivial case of lowering
+\Rule{S-Exists-Lower} implements the non-trivial case of lowering
 existentials across $\Let$-binders. It identifies a subset of variables in
 the region of a $\Let$ constraint that are unified with variables from
 outside the region. Such variables are considered monomorphic and thus
@@ -2346,7 +2354,7 @@ $\tvbs$ are uniquely fixed by the solutions to other variables in $\c$.
   concide on $\tvbs$ as well.
   \begin{mathpar}
     \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
-      \semenv \th \cerase c
+      \semenv \th \cerase \c
       \wedge \semenvp \th \cerase \c
       \wedge \semenv =_{\setminus \tvbs} \semenvp
       \implies
@@ -2383,7 +2391,7 @@ reduces instantiation overhead.
 
 \paragraph{Backpropagation}
 
-Finally, Rule \Rule{S-BackProp} expresses \emph{backpropagation}, previously
+Finally, \Rule{S-BackProp} expresses \emph{backpropagation}, previously
 illustrated in \cref{ex:backprop}. In particular, the shape of a regional
 variable can sometimes be determined from its instantiations. If an abstraction
 contains a suspended match constraint on a regional variable $\tvp$, and the
@@ -2396,7 +2404,7 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
 
 \begin{restatable}[Progress]{theorem}{progress}
   \label{thm:progress}
-  For any constraint $\c$, then either
+  For any constraint $\c$, then either:
   \begin{enumerate}[(\roman*)]
     \item $\c$ is solved.
     \item $\c$ is stuck, that is:
@@ -2407,10 +2415,10 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
         $\hat\C\where{\capp \x \t}$ where $\x \disjoint \hat\C$;
       \item
         $\hat\C\where{\cpapp \x \tv \tvc \inst}$ where
-        $\x \disjoint \hat\C$ and $\insts {\hat\C} \inst = \eset$;
+        $\x \disjoint \hat\C$ and $\inst.\tv \disjoint \insts {\hat\C}$;
       \item
         for every match constraint $\hat\C\where{\cmatch \tv \cbrs}$ in
-        $\c$, $\Cshape {\hat\C} \tv$ does not hold.
+        $\c$, $\Cshape {\hat\C} \tv \sh$ does not hold for any $\sh$.
 
       \end{enumerate*}
      Here, $\hat\C$ is a \emph{solved} context \ie such that no other
@@ -4945,7 +4953,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   concide on $\tvbs$ as well.
   \begin{mathpar}
     \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
-      \semenv \th \cerase c
+      \semenv \th \cerase \c
       \wedge \semenvp \th \cerase \c
       \wedge \semenv =_{\setminus \tvbs} \semenvp
       \implies
@@ -5083,7 +5091,7 @@ soundness and completeness in \cref{TODO}.
     \relax  $\tpoly {\all \tvs {\tyz \where {\tvci \is \tyi''}\iton}}$, \ie
     \relax  $\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton$~\llabel E.
     %
-    By Rule \Rule {Inst-Shape}, we have
+    By \Rule {Inst-Shape}, we have
     \begin{mathpar}[inline]
     \any \tvcs  \tpoly {\all \tvs \tyz} \preceq
     \any \tvcps\tpoly {\all \tvs \tyz} \where {\tvci \is \tyi''}\iton,
@@ -6551,9 +6559,9 @@ generally in our system.
 
 	    $\hat\Ca\where{\capp \x \t} \cand \cb$ is stuck as we do not bind $\x$ in $\hat\Ca \cand \cb$.
 	  \proofcase{$\hat\Ca\where{\cpapp \x \tv \tvc \inst}$}
-	    We have $\x \disjoint \bvs {\hat \Ca}$ and $\tv \disjoint ~ \insts {\hat \Ca} \inst$.
+	    We have $\x \disjoint \bvs {\hat \Ca}$ and $\inst.\tv \disjoint \insts {\hat \Ca}$.
 
-	    If $\tv \in \insts \cb \inst$ and $\inst \disjoint \bvs {\hat\ca}$, then apply \Rule{S-Inst-Unify}.
+	    If $\inst.\tv \in \insts \cb$ and $\inst \disjoint \bvs {\hat\ca}$, then apply \Rule{S-Inst-Unify}.
 	    It must be the case that we can apply \Rule{S-Inst-Unify}, otherwise, we could lift these instantiation
 	    constraints using \Rule{S-Exists-Lower} and \Rule{S-Let-ConjLeft}, contradicting that $\hat\Ca$ is stuck.
 
@@ -6615,7 +6623,7 @@ generally in our system.
 
 	  Apply \Rule{S-Let-AppR}.
 
-	  \proofcase{$\hat\C\where{\cpapp \x \tvp \tvc \inst}$} We have $\x \disjoint \bvs {\hat\C}$
+	  \proofcase{$\hat\C\where{\cpapp \x \tvp \tvc \inst}$} We have $\x \disjoint \bvs {\hat\C}$ or $\inst.\tvp \disjoint \insts {\hat\C}$.
 	    \begin{itemize}
 		\proofcase{$\tvp \in \reg \tv \tvs$}
 

@@ -67,10 +67,10 @@
 % Partial applications
 
 \defmetavar{\inst}{i}
-\newcommand{\insts}[2]{\mathprefix{insts} (#1, #2)}
+\newcommand{\insts}[1]{\mathsf{insts}(#1)}
 \newcommand{\cexistsi}[3]{\cexists {#1^{#2}} #3}
-\newcommand{\cpinst}[3]{{#1} \where{{#2} := {#3}}}
-\newcommand{\cpapp}[4]{{#4}^{#1} \where{{#2} := {#3}}}
+\newcommand{\cpinst}[3]{{#1} \where{{#2} \rightsquigarrow{#3}}}
+\newcommand{\cpapp}[4]{{#4}^{#1} \where{{#2} \rightsquigarrow {#3}}}
 \defmetavar{\ren}{\rho}
 \newcommand{\renroot}[1]{\mathprefix{root}(#1)}
 \newcommand{\renreg}[1]{\mathprefix{reg}(#1)}
