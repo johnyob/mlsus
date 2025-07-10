@@ -2525,7 +2525,6 @@ Partial generalization arises when a region cannot be fully
 generalized due to suspended constraints that may still update
 its variables. To manage this, we classify type variables
 into four categories:
-
 \begin{itemize}
   %% \let \\ \relax
   \let \Item \item
@@ -2573,9 +2572,25 @@ generalizable. Conversely, if a partially generalized variable is lowered (\eg b
 \subsection{Other uses of suspended constraints}
 
 We applied omnidirectional type inference to three features that have
-already been used in some dialect of \ML, with specific typing rules we propose for each feature. Suspended match constraints can be used to encode other typing rules for those fragile features, and to support other features.
+already been used in some dialect of \ML, with specific typing rules we
+propose for each feature. Suspended match constraints is a framework that
+could be used to encode typing rules for other fragile features.
 
-\citet*{Leijen-Ye/prefix@pldi2025} propose a general mechanism for overloading identifiers, with an implicit form $\eover \x$ and an explicit form $\exover \M \x$ prefixed by a disambiguation name $\M$. We can extend our approach to typing rules for this construct:
+Our nomimal records use a restricted form of overloading.  We have also
+experimented a general form of overloading in one of our
+prototypes. Although, we have not formalized them yet, we beleive they fit
+well in our formalism. One possibility is to extend the framework we
+presented to to support patterns on arbitrary shapes (and not restricted to
+shallow shapes), as long as none is a prefix of another.  An alternative
+would be to encode matching on arbitrary shapes as a cascade of matching on
+shallow shapes.  This is left for future work.
+
+
+\begin{version}{}
+\citet*{Leijen-Ye/prefix@pldi2025} propose a general mechanism for
+overloading identifiers, with an implicit form $\eover \x$ and an explicit
+form $\exover \M \x$ prefixed by a disambiguation name $\M$. We can extend
+our approach to typing rules for this construct:
 \begin{mathpar}
 \infer [Over-X]{
     \exover \Mi \x : \t \in \G
@@ -2591,11 +2606,13 @@ already been used in some dialect of \ML, with specific typing rules we propose 
     \G \th \E \where {\eover \x} : \t
 }
 \end{mathpar}
-The third premise of \Rule {Over-I} asks that there is a unique
-explicit name $\exover \M \x$ that instantiates $\Sh$ in the
-context. The framework we presented for \OML does not immediately
-allow to implement these rules, as it only uses patterns that
-discriminate on minimal (shallow) shapes, but it can be extended to support patterns on arbitrary shapes (as long as none is a prefix of another).
+The third premise of \Rule {Over-I} asks that there is a unique explicit
+name $\exover \M \x$ that instantiates $\Sh$ in the context. The framework
+we presented for \OML does not immediately allow to implement these rules,
+as it only uses patterns that discriminate on minimal (shallow) shapes, but
+it can be extended to support patterns on arbitrary shapes (as long as none
+is a prefix of another).
+\end{version}
 
 \subsection{Default rules}
 
