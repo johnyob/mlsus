@@ -49,7 +49,7 @@ first-class polymorphism, and tuple projections \ala \SML.
 
 \parcomment {Introduction (ML, principality)}
 
-The Damas-Hindley-Milner (\HM) \cite{Damas-Milner/W@popl82} type system has
+The Damas-Hindley-Milner (\HM) \citep*{Damas-Milner/W@popl82} type system has
 long occupied a sweet spot in the design space of strongly typed programming
 languages, as it enjoys the \emph{principal types property}: every well-typed
 expression $\e$ has a most general type $\ts$ from which all other valid
@@ -99,7 +99,7 @@ direct or indirect algorithmic flavor in order to preserve
 principality and completeness.
 %
 Moreover, these (more or less) ad-hoc restrictions commonly reject examples
-whose type could easily be guessed. For instance, \MLF~\cite{LeBotlan-Remy/recasting-mlf} accepts
+whose type could easily be guessed. For instance, \MLF~\citep*{LeBotlan-Remy/recasting-mlf} accepts
 or rejects the following expression, depending on the position of the
 annotation (using a traffic-light scheme: green and red indicate typechecking success
 and failure; orange signals a warning):
@@ -122,7 +122,7 @@ annotations. Fragile constructs can be defined by elaboration into their
 robust counterpart.
 %
 % The elaboration determines which annotations can be
-% omitted and rebuilt from context, a point of view already taken by~\citet
+% omitted and rebuilt from context, a point of view already taken by~\citet*
 % {Pottier-Regis-Gianas/stratified@popl06} in their work on stratified type
 % inference.
 %
@@ -220,8 +220,7 @@ type inference for fragile features, aligning with the implicit inference order
 present in most \ML-like typecheckers.
 %
 This mechanism was originally proposed by~\citet*{Garrigue-Remy/poly-ml} for
-semi-explicit first-clas polymorphism, and used in \MLF~\citep*
-{LeBotlan-Remy/recasting-mlf}. It has since been adopted in
+semi-explicit first-clas polymorphism, and used in \MLF. It has since been adopted in
 \OCaml for resolving overloading of record fields and variant constructors in
 \OCaml, and more generally whenever the type-checker disambiguates on type information.
 
@@ -294,7 +293,7 @@ implementations choose to always infer the type of a let-binding
 first, to then turn it into a type scheme that is assigned to the
 let-bound variable to extend the typing environment in which the body
 is finally typed. The Hindley-Milner algorithm $\mathcal{J}$, one of
-its variant $\mathcal{W}$ or $\mathcal{M}$~\cite
+its variant $\mathcal{W}$ or $\mathcal{M}$~\citep*
 {Lee_Yi/algoM@toplas1998}, or more flexible constraint-based type
 inference implementations~\citep* {Remy/mleth,Remy/thesis,
 Odersky-Sulzmann-Wehr@tpos, Pottier-Remy/emlti} all follow this strategy, to
@@ -536,7 +535,7 @@ $\ts$ are of the form $\all \tvs \t$, they are equal up to the reordering of
 binders and removal of useless variables. We write $\TyVars$ the set of type variables.
 
 Building atop the constraint-based type inference framework of
-\citet{Pottier-Remy/emlti}, we adopt a constraint language that includes both
+\citet*{Pottier-Remy/emlti}, we adopt a constraint language that includes both
 term and type variables.
 %
 The language (in \cref{fig:constraint-syntax}) contains tautological ($\ctrue$) and
@@ -634,7 +633,7 @@ well-typed.
 \label {sec/constraints/polytypes}
 
 \parcomment {Intro (and annotations)}
-Semi-explicit first-class polymorphism \citep{Garrigue-Remy/poly-ml} uses
+Semi-explicit first-class polymorphism \citet*{Garrigue-Remy/poly-ml} uses
 \textit{annotated types} to track the origins of polymorphic types.
 %
 The type constructor $\tapoly \ts \av$ boxes a polymorphic type scheme
@@ -947,7 +946,7 @@ In our work on suspended constraints, defining a satisfying semantics was the
 most challenging aspect. The key difficulty lies in capturing what it means for
 type information to be \emph{known}. Our semantics is declarative, but not
 syntax-directed unlike the standard constraint semantics of
-~\citet{Pottier-Remy/emlti}. This lack of syntax-directness complicates
+\citet*{Pottier-Remy/emlti}. This lack of syntax-directness complicates
 reasoning and proofs. On the upside, the semantics directly
   suggest declarative typing rules for the surface language.
 \Xdidier{The last sentence repeats what is said on
@@ -1896,7 +1895,7 @@ non-deterministic rewriting relation between \emph{unification problems} $\upa
 Unification problems $\up$
 (\cref{fig:unification-syntax-and-semantics}) are a restricted subset
 of constraints, extended with \emph{multi-equations}
-\citep{Pottier-Remy/emlti}---a multi-set of types considered
+\citep*{Pottier-Remy/emlti}---a multi-set of types considered
 equal. These generalize binary equalities: $\semenv$ satisfies
 a multi-equation $\ueq$ if all of its memebers are mapped to a single
 ground type $\gt$ (Rule \Rule{Multi-Unif}). Multi-equations are
@@ -2090,7 +2089,7 @@ A more efficient approach first solves the abstraction once---\eg reducing it
 to $\cabsr \tv \tvs \ueqs$, where $\tvs$ are generalizable variables---and then
 reuses the result at each application site by only copying the solved
 constraint $\ueq$. This mirrors \ML generalization and instantiation, a
-connection formalized by \citep{Pottier-Remy/emlti}, where $\cabsr \tv \tvs
+connection formalized by \citet*{Pottier-Remy/emlti}, where $\cabsr \tv \tvs
 \ueqs$ corresponds to the type scheme $\tfor \tvs {\sub(\tv)}$ and $\sub$ is
 the \mgu of $\ueqs$. This optimization underlies efficient implementations of
 \HM inference, such as \OCaml's.
@@ -2374,16 +2373,17 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
 \Xalistair{We should drop this if we cannot fit the two rules of interest in the main paper. }
 \paragraph{Universal quantification}
 
-Universally quantified constraints are solved using \emph{unification under a
-mixed prefix}. Our rules (in \cref{TODO}) are entirely standard \citep{Pottier-Remy/emlti}
-and are rather analogous to that of $\Let$ constraints. There are two failure
-conditions: \Rule{S-All-Escape} detects that $\cfor \tvs \cexists \tvbs \c$ is
-false if a rigid variable $\tv$ is indirectly dominated by a free variable $\delta$.
-If so, the value of $\tv$ is determined by that of $\delta$---but, a universally
-quantified variable ranges over all values, resulting in a contradiction;
-\Rule{S-All-Rigid} occurs when $\tv$ is equated with a non-variable type.
-This similarly partially determines the shape of $\tv$, contradicting $\tv$'s
-universality.
+Universally quantified constraints are solved using \emph{unification
+  under a mixed prefix}. Our rules (in \cref{TODO}) are entirely
+standard \citep*{Pottier-Remy/emlti} and are rather analogous to that
+of $\Let$ constraints. There are two failure conditions:
+\Rule{S-All-Escape} detects that $\cfor \tvs \cexists \tvbs \c$ is
+false if a rigid variable $\tv$ is indirectly dominated by a free
+variable $\delta$.  If so, the value of $\tv$ is determined by that of
+$\delta$---but, a universally quantified variable ranges over all
+values, resulting in a contradiction; \Rule{S-All-Rigid} occurs when
+$\tv$ is equated with a non-variable type.  This similarly partially
+determines the shape of $\tv$, contradicting $\tv$'s universality.
 
 % Properties
 
@@ -2419,7 +2419,7 @@ reproduced the various type-system features and examples presented in
 this work. This prototype is public and open-source (link omitted for anonymity).
 
 The implementation is inspired by previous work such as
-Inferno~\citet*{inferno}. It uses state-of-the-art implementation
+Inferno~\citep*{inferno}. It uses state-of-the-art implementation
 techniques for efficiency, such as a Union-Find data structure and the
 use of \emph{ranks} (or \emph{levels}) for efficient
 generalization. Let us discuss a few salient points.
@@ -2627,12 +2627,12 @@ polymorphism~\citep*{dunfield-krishnaswami-bidirectional-poly} and we
 have not considered scaling our approach to those systems.
 
 \paragraph{Leijen et al. (TODO change paragraph naming)}
-Should we cite \cite{Leijen-Ye/prefix@pldi2025}?
+Should we cite \citet*{Leijen-Ye/prefix@pldi2025}?
 \Xdidier{I'm volunteering to write this, but we are not sure we have to}.
 
 \paragraph{\OutsideIn}
 
-\OutsideIn \citep{conf/icfp/SchrijversJSV09} is a type system for GADTs that
+\OutsideIn~\citep*{conf/icfp/SchrijversJSV09} is a type system for GADTs that
 introduces \emph{delayed implications} of the form $\where{\tvs}(\all \tvbs \ca
 \Rightarrow \cb)$. Constraint solving for delayed implications proceeds in two
 steps; solving simple constraints first and then solving delayed implications.
@@ -2646,7 +2646,7 @@ implication's conclusion $\cb$. This ensures information only flows
 from the outside into the implication's conclusion. They do not give
 a declarative semantics for delayed implication that their solver
 preserves. Moreover, later work on \OutsideIn argues
-\citep{Vytiniotis-Peyton-Jones-Schrijvers-Sulzmann/outsidein@jfp2011}
+\citep*{Vytiniotis-Peyton-Jones-Schrijvers-Sulzmann/outsidein@jfp2011}
 that delayed implication constraints make local let-generalization all
 but unmanagable, both in theory and implementation. Their proposed fix
 is to abondon local let-generalization altogether. We believe that we
@@ -3599,10 +3599,10 @@ The unification rules are listed in \cref{fig:omni-unification-algorithm}.
 Rewriting proceeds under an arbitrary context $\Up$, modulo $\alpha$-equivalence
 and associativity/commutativity of conjunctions.
 
-Our algorithm is largely standard \cite{Pottier-Remy/emlti} but replaces type
+Our algorithm is largely standard~\citep*{Pottier-Remy/emlti} but replaces type
 constructors with \emph{canonical principal shapes}, enabling a uniform
 treatment of monotypes and polytypes within unification compared to
-prior formulations \citep{Garrigue-Remy/poly-ml}.
+prior formulations~\citep*{Garrigue-Remy/poly-ml}.
 
 %
 
@@ -3690,7 +3690,7 @@ or datatype constructor is used to fold or unfold the recursive definition.
 
 \OCaml also allows equi-recursive types, which can be modeled by taking
 regular trees instead of tree for ground types.  Doing this change would
-preserve the main metatheoretical properties, as in~\cite
+preserve the main metatheoretical properties, as in~\citet*
 {Pottier-Remy/emlti}, as we never rely on finiteness of ground types.  This
 would allow type inference with equi-recursive types.
 
@@ -3710,7 +3710,7 @@ case---but this does not raise any issue.
 \Xdidier{There is an inline note here.}
 \begin{version}{}
 I did not see any difficult with equi-recursive types.
-I am not even sure we need to mention~\cite
+I am not even sure we need to mention~\citet*
 {Gauthier-Pottier/numbering@icfp04}.
 Ths provides a cannonical representation, generalizing de Bruin indicies so
 that second-order equality of terms amount to fisrt-order equality.
@@ -5939,7 +5939,7 @@ generally in our system.
   If $\upa \unif \upb$, then $\upa \equiv \upb$
   \begin{proof}
     By induction on the given derivation $\upa \unif \upb$.
-    See \citet{Pottier-Remy/emlti} for more details.
+    See \citet*{Pottier-Remy/emlti} for more details.
   \end{proof}
 \end{lemma}
 
@@ -6387,7 +6387,7 @@ generally in our system.
 
   \begin{llproof}
     Similar argument. Use \cref{lem:simple-ctxt-equiv}.
-    The simple equivalences are standard, see \citet{Pottier-Remy/emlti}.
+    The simple equivalences are standard, see \citet*{Pottier-Remy/emlti}.
   \end{llproof}
   \end{proofcases}
 \end{proof}
@@ -6402,7 +6402,7 @@ generally in our system.
     \item $\up \unif \upp$ for some $\upp$.
     \end{enumerate}
   \begin{proof}
-    This is a standard result. See \citet{Pottier-Remy/emlti}.
+    This is a standard result. See \citet*{Pottier-Remy/emlti}.
   \end{proof}
 \end{lemma}
 
@@ -7002,7 +7002,7 @@ and $\sub(\tvs) = \tys$.
   Then $\cabs \tv \c$ is equivalent to $\cabs \tv \sigma \leq \tv$ under $\sub$, where $\ts = \tfor \tvbs \subp(\tv)$ and
   $\tvbs = \fvs {\subp(\tv)} \setminus \rng \sub$.
   \begin{proof}
-    See \citep{Pottier-Remy/emlti}.
+    See \citet*{Pottier-Remy/emlti}.
   \end{proof}
 \end{lemma}
 
