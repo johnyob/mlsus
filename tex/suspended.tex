@@ -141,7 +141,7 @@ used for disambiguation and enable the omission of some annotations.
 \parcomment{Introduce the order}
 
 Most \ML inference algorithms enforce a fixed order when typechecking
-let-bindings $\elet \x \ea \eb$: first typecheck the defintion $\ea$, then
+let-bindings $\elet \x \ea \eb$: first typecheck the definition $\ea$, then
 the body $\eb$. \OCaml leverages this ordering to resolve overloaded or
 ambiguous constructs in a \emph{principal} way: polymorphic types
 are treated as \emph{known} and may guide disambiguation, whereas monomorphic
@@ -184,8 +184,8 @@ resolution strategy instead of failing when the type is ambiguous,
 At first glance, \code{ex_2} and \code{ex_3} appear equivalent: in both,
 the expression \code{r.x} can only refer to the field from type \code{'a two}.
 Yet \OCaml accepts \code{ex_2} and rejects \code{ex_3}.
-This is becuase the \code{let}-binding in \code{ex_2} allows \code{r} to be
-treated polymorphically, and thus its type is considred \emph{known}--enabling
+This is because the \code{let}-binding in \code{ex_2} allows \code{r} to be
+treated polymorphically, and thus its type is considered \emph{known}--enabling
 disambiguation. In \code{ex_3}, by contrast, \code{r} is monomorphic at the point of
 projection, and disambiguation is therefore forbidden.
 
@@ -219,11 +219,11 @@ on the inference order between the \code{if} branches.
 type inference for fragile features, aligning with the implicit inference order
 present in most \ML-like typecheckers.
 %
-This mechanism was originally proposed by~\citet {Garrigue-Remy/poly-ml} for
-semi-explicit first-clas polymorphism, and later used by~\citet
-{LeBotlan-Remy/recasting-mlf} for empowering \MLF. It has since been adopted in
+This mechanism was originally proposed by~\citet*{Garrigue-Remy/poly-ml} for
+semi-explicit first-clas polymorphism, and used in \MLF~\citep*
+{LeBotlan-Remy/recasting-mlf}. It has since been adopted in
 \OCaml for resolving overloading of record fields and variant constructors in
-\OCaml.
+\OCaml, and more generally whenever the type-checker disambiguates on type information.
 
 \paragraph{Bidirectional type inference}
 
