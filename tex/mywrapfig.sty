@@ -1,0 +1,36 @@
+\RequirePackage{wrapfig}
+\newbox \wraphbox@
+\newcommand {\wraphbox@vskip}[1]
+  {\@tempdima #1\baselineskip \vskip -\@tempdima}
+
+%% [#1] dimen: width of the hbox, which is computed by default
+%% {#2} float: factor of \baselineskip to remove at the top
+%% {#3} float: factor of \baselineskip to remove at the bottom
+
+\newenvironment{wraphbox}[3][]
+   {\ifthenelse{\equal{#3}{}}
+      {\def \wraphbox@below {}}
+      {\def \wraphbox@below {\wraphbox@vskip {#3}}}%
+   \global \setbox \wraphbox@ \vbox \bgroup
+      %% \vskip -1em
+      \hbox {}
+      \vskip -\baselineskip
+      \ifthenelse{\equal{#2}{}}{}{\wraphbox@vskip {#2}}%
+      %% \hrule
+      \ifthenelse{\equal{#1}{}}{\hbox}{\hbox to #1}
+      \bgroup \hfil \ignorespaces}
+   {\egroup
+      %% \hrule
+      \wraphbox@below
+      \vskip -\baselineskip
+      \hbox {}
+      \egroup
+    \aftergroup \wraphbox@do}
+
+\newcommand{\wraphbox@do}
+   {\begin{wrapfigure}{R}{\wd\wraphbox@}
+    %% \setbox \wraphbox@ \hbox {$\vcenter{\unvbox\wraphbox@}$}%
+    %% \message {** wraphbox [\the \wd\wraphbox@]
+    %%   (\the \ht\wraphbox@, \the \dp\wraphbox@)}%
+    \box\wraphbox@
+    \end{wrapfigure}}
