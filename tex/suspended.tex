@@ -1933,10 +1933,10 @@ Our algorithm is largely standard. For reasons of space we describe it in \cref{
 We now gradually introduce the rules of the constraint solver itself
 (\cref {fig:solver-basic,fig:solver-susp,fig:solver-schemes}).
 These rules define a non-deterministic rewriting
-system, operating modulo $\alpha$-equivalence and the associativity and
+system, operating modulo $\alpha$-equivalence, and associativity and
 commutativity of conjunction. $\C$ represents an arbitrary
 one-hole constraint context.
-
+%
 % Solved forms
 A constraint $C$ is satisfiable if rewrites into a solved form
 $\hat\up$ (\cref{def:solved-form}). Otherwise it gets
@@ -3783,6 +3783,8 @@ written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
 
 \subsection{Equi-recursive types}
 \label {sec/rec-types}
+
+\Xgabriel{If you decide to move this section back in, you should explain why we care about this feature.}
 
 For sake of simplicity, we have taken finite trees for ground types, that
 is, for the semantics of constraints.  Iso-recursive types can easily be
