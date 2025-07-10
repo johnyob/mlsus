@@ -2470,7 +2470,7 @@ experimental and not released yet.  The other one, which we describe below,
 is closely following the constraint-based presentation of this work.  It is
 public and open-source (link omitted for anonymity).
 Its implementation is inspired by previous work such as
-Inferno~\citep {Pottier/inferno@icfp2014, Pottier/inferno@opam}.  It uses
+\Inferno~\citep {Pottier/inferno@icfp2014, Pottier/inferno@opam}.  It uses
 state-of-the-art implementation techniques for efficiency, such as a
 Union-Find data structure and the use of \emph{ranks} (or \emph{levels}) for
 efficient generalization. Let us discuss a few salient points.
@@ -2498,7 +2498,7 @@ eventually solving them.
 % generalization at a given region consists precisely of those
 % whose rank remains equal to that of the region.
 
-Many standard \ML implementations, for example Inferno, represent the solver
+Many standard \ML implementations, for example \Inferno, represent the solver
 state as a linear \emph{stack} of inference regions, from the outermost
 variable scope to the current region being inferred. Unification maintains
 an integer \emph{rank} (or \emph{level}) for each variable, that index a
@@ -2527,21 +2527,25 @@ its variables. To manage this, we classify type variables
 into four categories:
 
 \begin{itemize}
-  \item[\textbf{I}] Variables are yet to be generalized. \\
+  %% \let \\ \relax
+  \let \Item \item
+  \renewcommand \item [1][]{\Item[(\textbf{#1})]}
+  \item[I] Variables are yet to be generalized. \\
     \emph{Introduced by applications or source types in constraints}
 
-  \item[\textbf{G}] Variables that are generalized. \\
+  \item[G] Variables that are generalized. \\
     \emph{Not accessible from any instance type. Treated polymorphically.}
 
-  \item[\textbf{PG}] Variables that are generalizable, but may be
+  \item[PG] Variables that are generalizable, but may be
     updated in the future. \\
-    \emph{Variables mentioned by suspended match constraint or partial applications.}
+    \emph{Variables mentioned by suspended match constraint or partial
+    applications.}
 
-  \item[\textbf{PI}] Variables that were previously partially generalized
+  \item[PI] Variables that were previously partially generalized
     but have since been updated.  \\
-    \emph{Awaiting re-generalization. Introduced by unification of partial generics.}
+    \emph{Awaiting re-generalization. Introduced by unification of partial
+    generics.}
 \end{itemize}
-
 At generalization time, we conservatively approximate whether a variable may be
 updated in the future using \emph{guards}. A guard is a mark on a variable that
 indicates the variable is captured by some suspended constraint that has not
