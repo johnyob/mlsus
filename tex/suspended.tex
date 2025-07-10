@@ -951,6 +951,7 @@ reasoning and proofs. On the upside, the semantics directly
   suggest declarative typing rules for the surface language.
 \Xdidier{The last sentence repeats what is said on
   line 170}\Xgabriel{I would prefer to keep the repetition, because otherwise we mention the downsides here without the benefit.}
+\Xalistair{Agree with Gabriel here.}
 
 \parcomment {Judgement shape}
 
@@ -1092,6 +1093,10 @@ suspended match constraints. They provide a uniform treatment of both
 constructors and polytypes, and are useful in defining polytype
 unification.
 \Xdidier{We never clearly define unification on shapes.}
+\Xalistair{Ah, a fatality of cutting. Perhaps
+we can add one line in section 5.1 to mention that
+we operate on shapes directly in unification.
+This sentence is here to motivate why shapes are useful. }
 
 
 \parcomment {Definition of shape}
@@ -1142,7 +1147,7 @@ $\t$ iff:
 \end{definition}
 
 \begin{restatable}[Principal shapes]{theorem}{principalShapes}
-  \label{th/shapes/principal}
+  \label{thm:principal-shapes}
 Any non-variable type $\t$ has a non-trivial principal shape $\Sh$.
 \end{restatable}
 
@@ -1355,8 +1360,8 @@ $\Cshape \C \t \sh$ (defined below) ensures that $\sh$ is uniquely determined by
 \end{definition}
 
 \begin{definition}[Unicity]
-  We define the unicity condition $\Cshape \C t \sh$, which states that $\t$
-  has a unique canonical shape $\sh$ within the context $\C$ as
+  We define the unicity condition $\Cshape \C \t \sh$, which states that $\t$
+  has a unique canonical shape $\sh$ within the context $\C$ as:
   \begin{mathpar}[inline]
     %% \Cshape \C \t \sh \Wide\eqdef
     \forall \semenv, \gt. \uad
@@ -1794,12 +1799,14 @@ That is to say, the term $\e$ is typable with $\t$ if and only if
 $\cinfer \e \tv$ is satisfiable when $\tv$ is $\t$.
 %
 \begin{theorem}[Constraint generation is sound and complete]
+  \label{thm:constraint-gen-is-sound-and-complete}
 Given a closed term $\e$ and type $\t$. Then for any $\tv \disjoint \t$,
 $\th \e : \t$ iff\/
 $\cunif \tv \t \centails \csem {\e : \tv}$.
 \end{theorem}
 
 \begin{theorem}[Principal types]
+  \label{thm:principal-types}
   For any well-typed closed term $\e$, there exists a type $\t$, which we call principal, such that:
   \begin{enumerate}[(\roman*)]
     \item $\th \e : \t$.
@@ -2380,21 +2387,25 @@ universality.
 % Properties
 
 \begin{restatable}[Progress]{theorem}{progress}
+  \label{thm:progress}
   For any constraint $\c$, then either
   \begin{enumerate}[(\roman*)]
     \item $\c$ is solved.
     \item $\c$ is stuck: either $\cfalse$; $\hat\C\where{\capp \x \t}$ where $\x \disjoint \hat\C$; $\hat\C\where{\cpapp \x \tv \tvc \inst}$
-      where $\x \disjoint \hat\C$ and $\insts {\hat\C} \inst = \eset$; $\hat\C\where{\cmatch \tv \cbrs}$ where $\nCshape {\hat\C} \tv \sh$
-      for any shape. Here $\hat\C$ is a \emph{solved} context \ie no other rewrites can be applied.
+      where $\x \disjoint \hat\C$ and $\insts {\hat\C} \inst = \eset$; for every match constraint $\hat\C\where{\cmatch \tv \cbrs}$ in $\c$,
+      $\nCshape {\hat\C} \tv$.
+      Here $\hat\C$ is a \emph{solved} context \ie no other rewrites can be applied.
     \item $\c \csolve \cp$ for some $\cp$.
   \end{enumerate}
 \end{restatable}
 
 \begin{restatable}[Termination]{theorem}{termination}
+  \label{thm:termination}
   The constraint solver terminates on all inputs.
 \end{restatable}
 
 \begin{restatable}[Preservation]{theorem}{preservation}
+  \label{thm:preservation}
   If $\ca \csolve \cb$, then $\ca \cequiv \cb$.
 \end{restatable}
 
@@ -4833,7 +4844,7 @@ A context $\C$ proves a multi-equation $\ueq$, written $\ueq \in \C$,  if there 
 \section{Properties of the constraint language}
 
 This appendix establishes key properties of the constraint language. The first
-is the principality of shapes \cref{th/shapes/principal}: any non-variable type
+is the principality of shapes \cref{thm:principal-shapes}: any non-variable type
 $\t$ admits a non-trivial principal shape $\sh$.
 
 The second is the canonicalization of satisfiability derivations $\semenv \th
@@ -4860,7 +4871,6 @@ soundness and completeness in \cref{TODO}.
 
     We may assume \Wlog that each variable of $\tvs$ occurs free in
     $\t$.
-    \Xalistair{We never say we equate type schemes up to dead generic variables.}
     %
     Let $(\pi_i)\iton$ be the sequence of shortest paths in $\t$ that cannot be
     extended to reach a (polymorphic) variable in $\tvas$, in lexicographic
@@ -5685,6 +5695,14 @@ generally in our system.
   \end{mathpar}
 \end{definition}
 
+\begin{lemma}[Determines is match-closed]
+  \label{lem:determines-is-match-closed}
+  $\cdetermines \c \tvbs$ is match-closed.
+  \begin{proof}
+    Follows from the definition of $\cdetermines \c \tvbs$ and \cref{lem:cong-simple}.
+  \end{proof}
+\end{lemma}
+
 
 \begin{lemma}[Simple context equivalence]
   \label{lem:simple-ctxt-equiv}
@@ -5868,7 +5886,7 @@ generally in our system.
       {~\shape \t}
   \end{mathpar}
   \begin{proof}
-    Similar proof to \cref{lem:unicity-match-type}.
+    Similar proof to \cref{lem:unicity-match-var}.
   \end{proof}
 \end{lemma}
 
@@ -5899,9 +5917,9 @@ generally in our system.
 
 	\begin{llproof}
 	  \unifPf{\upa}{\upb}{Premise}
-	  \equivPf{\upa}{\upb}{\cref{lem:unification-preservatoin}}
+	  \equivPf{\upa}{\upb}{\cref{lem:unification-preservation}}
 	  \simplePf{\upa, \upb}{\cref{lem:unif-problem-simple}}
-\Hand 	  \equivctxPf{\upa}{\upb}{\cref{lem:equiv-ctxt-simple}}
+\Hand 	  \equivctxPf{\upa}{\upb}{\cref{lem:ctxt-equiv-simple}}
 	\end{llproof}
 
     \proofcaserewrite
@@ -5935,12 +5953,13 @@ generally in our system.
 	\end{proofcases}
 
 
-      \proofcase{\Rule{S-Let}, \Rule{S-Exists-Exists-Inst},
-      \Rule{S-Exists-Inst-Conj}, \Rule{S-Let-ExistsLeft},
+      \proofcase{\Rule{S-Let}, \Rule{S-True}, \Rule{S-False},
+      \Rule{S-Let-ExistsLeft},
       \Rule{S-Let-Exists-InstLeft}, \Rule{S-Let-ExistsRight},
-      \Rule{S-Let-Exists-InstRIght}, \Rule{S-Let-ConjLet},
-      \Rule{S-Let-ConjRight}, \Rule{S-Inst-Name}, \Rule{S-Exists-Inst-Solve},
-      \Rule{S-All-Exists-Inst}, \Rule{S-All-Conj}}
+      \Rule{S-Let-Exists-InstRight}, \Rule{S-Let-ConjLeft},
+      \Rule{S-Let-ConjRight}, \Rule{S-Inst-Name}, \Rule{S-Exists-Exists-Inst},
+      \Rule{S-Exists-Inst-Conj}, \Rule{S-Exists-Inst-Let}, \Rule{S-Exists-Inst-Solve},
+      \Rule{S-All-Conj}}
 
       \begin{llproof}
 	Similar argument to the \Rule{S-Exists-Conj} case.
@@ -6251,17 +6270,70 @@ generally in our system.
 	    \end{llproof}
 	\end{proofcases}
 
-  \TODO{Proof case for \Rule{S-Exists-Lower}}
+  \proofcaserewrite{S-Exists-Lower}
+    {\cletr \x \tv {\tvas, \tvbs} \ca \cb \\
+     \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
+     }
+    {\cexists \tvbs \cletr \x \tv \tvas \ca \cb}
+
+    \begin{llproof}
+      \Pf{}{}{\cdetermines {\cexists {\tv, \tvas} \ca} \tvbs}{Premise}
+      \sufficientPf{equivalence for simple constraints}{}{\cref{lem:simple-ctxt-equiv} and \cref{lem:determines-is-match-closed}}
+      \supposePf{\ca, \cb \simple}{Premise}
+    \end{llproof}
+    \begin{proofcases}
+      \proofcase{$\implies$}
+
+      \begin{llproof}
+	\vdashPf{\semenv}{\cletr \x \tv {\tvas, \tvbs} \ca \cb}{Premise}
+	\vdashPf{\semenv}{\cexists {\tv, \tvas, \tvbs} \ca}{\cref{lem:simple-inversion}}
+	\vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv {\tvs, \tvbs} \ca)}}{\cb}{\ditto}
+	\vdashPf{\semenv\where{\tv \is \gt, \tvas \is \gts, \tvbs \is \bar\gtp}}{\ca}{\ditto}
+	\vdashPf{\semenv\where{\tvbs \is \bar\gtp}}{\cexists {\tv, \tvas} \ca}{By \Rule{Exists}}
+	\sufficientPf{}{\semenv\where{\x \is \semenv(\cabsr \tv {\tvs, \tvbs} \ca)} = \semenv\where{\tvbs \is \bar\gt'}(\cabsr \tv \tvs \ca)}{}
+      \end{llproof}
+      \begin{proofcases}
+
+      \proofcase{$\implies$}
+
+	\begin{llproof}
+	  \vdashPf{\semenv\where{\tv \is \gta, \tvs \is \bar\gta, \tvbs \is \bar\gtb}}{\ca}{Premise}
+	  \vdashPf{\semenv\where{\tvbs \is \bar\gtb}}{\cexists {\tv, \tvs} \ca}{By \Rule{Exists}}
+	  \eqPf{\bar\gtb}{\bar\gtp}{By definition of determines}
+\Hand	  \vdashPf{\semenv\where{\tvbs \is \bar\gtp, \tv \is \gta, \tvs \is \bar\gta}}{\ca}{Above}
+
+	\end{llproof}
+
+      \proofcase{$\impliedby$}
+
+      \begin{llproof}
+	Symmetric argument.
+      \end{llproof}
+
+
+      \end{proofcases}
+
+
+
+      \proofcase{$\impliedby$}
+
+      \begin{llproof}
+	Symmetric argument.
+      \end{llproof}
+
+    \end{proofcases}
+
+
   \proofcaserewrite
     {S-BackProp}
     {\C\where
-       {\cletr \x \tv \tvs {\Ca\where{\cmatch \tvp \cbrs}}
-                           {\Cb\where{\cpapp \x \ren \ueqs \tvc}}} \\
-     \tvp \in \dom \ren \\
-     \cunif {\ren(\tv')} {\cunif \t \ueq} \in \C\where\Cb \\
-     \x \disjoint \Cb}
-    {\C\where{\cletr \x \tv \tvs {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
-		      {\Cb\where{\cpapp \x \ren \ueqs \tvc}}}}
+       {\cletr \x \tv {\tvs} {\Ca\where{\cmatch \tvp \cbrs}}
+                           {\Cb\where{\cpapp \x \tvp \tvc \inst}}} \\
+    \tvp \in \reg \tv \tvs \\
+     \cunif {\tvc} {\cunif \t \ueq} \in \C\where\Cb \\
+     \x \disjoint \bvs \Cb}
+    {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
+		      {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
 
 
     \begin{llproof}
@@ -6271,7 +6343,8 @@ generally in our system.
   \proofcase{\Rule{S-Compress}, \Rule{S-Gc}, \Rule{S-Exists-All}, \Rule{S-All-Escape}, \Rule{S-All-Rigid}, \Rule{S-All-Solve}}
 
   \begin{llproof}
-    Equivalences are standard, see \citet{Pottier-Remy/emlti}.
+    Similar argument. Use \cref{lem:simple-ctxt-equiv}.
+    The simple equivalences are standard, see \citet{Pottier-Remy/emlti}.
   \end{llproof}
   \end{proofcases}
 \end{proof}
@@ -6286,7 +6359,7 @@ generally in our system.
     \item $\up \unif \upp$ for some $\upp$.
     \end{enumerate}
   \begin{proof}
-    This is a standard result. See \citet{Pottier-Rem/emlti}.
+    This is a standard result. See \citet{Pottier-Remy/emlti}.
   \end{proof}
 \end{lemma}
 
@@ -6294,9 +6367,22 @@ generally in our system.
 \progress
 \begin{proof}
   We proceed by induction on the structure of $\c$. We
-  focus on conjunctions and $\Let$ rules.
-  \TODO{Proof case for match constraints}
+  focus on suspended match constraints, conjunctions, and $\Let$ rules.
   \begin{proofcases}
+    \proofcase{$\cmatch \t \cbrs$}
+      We have two cases:
+      \begin{proofcases}
+	\proofcase{$\t$ is a non-variable type} Apply \Rule{S-Match-Type}.
+	\proofcase{$\t$ is a type variable $\tv$}
+
+	  We have $\nCshape \square \tv$. It sufficies
+	  that every match constraint in a context-reachable position
+	  $\hat\C\where{\cmatch \tvp \cbrs}$ satisfies $\nCshape {\hat\C} \tvp$.
+	  By the definition of constraint contexts, there is only one such
+	  $\hat\C$, namely $\square$, for which we already have $\nCshape \square \tv$.
+	  Hence $\cmatch \t \cbrs$ is stuck.
+      \end{proofcases}
+
     \proofcase{$\ca \cand \cb$}
     We begin by inducting on $\ca$ and $\cb$. Then we consider cases:
     \begin{proofcases}
@@ -6305,6 +6391,7 @@ generally in our system.
       \proofcase{$\ca$ (or $\cb$) is $\cfalse$} Apply \Rule{S-False}.
       \proofcase{$\ca$ (or $\cb$) begins with $\exists$} Apply \Rule{S-Exists-Conj}.
       \proofcase{$\ca, \cb$ are solved}
+
 	We either apply the above $\exists$ case, or both $\ca$ and $\cb$ are solved
 	multi-equations $\ueqs_1, \ueqs_2$. We perform cases on this:
 	\begin{proofcases}
@@ -6319,6 +6406,7 @@ generally in our system.
 	\begin{proofcases}
 	  \proofcase{$\hat\Ca\where{\capp \x \t}$}
 	    We have $\x \disjoint \bvs {\hat\Ca}$.
+
 	    $\hat\Ca\where{\capp \x \t} \cand \cb$ is stuck as we do not bind $\x$ in $\hat\Ca \cand \cb$.
 	  \proofcase{$\hat\Ca\where{\cpapp \x \tv \tvc \inst}$}
 	    We have $\x \disjoint \bvs {\hat \Ca}$ and $\tv \disjoint ~ \insts {\hat \Ca} \inst$.
@@ -6330,7 +6418,9 @@ generally in our system.
 	    Otherwise, $\x \disjoint \bvs {\hat \Ca \cand \cb}$, thus $\hat\Ca\where{\cpapp \x \tv \tvc \inst}$ is stuck.
 
 	  \proofcase{$\hat\Ca\where{\cmatch \tvp \cbrs}$}
-	    We have $\nCshape \Ca \tvp \sh$ for any $\sh$.
+	    We have $\nCshape \Ca \tvp$.
+
+	    Consider an match constraint $\cmatch \tvp \cbrs$ in $\ca$.
 
 	    If $\cunif \tvp {\cunif \t \ueq} \in \cb$ and $\t \notin \TyVars$. By the above logic, it must be at the root (otherwise $\cb$
 	    is not stuck). So we have $\cunif \tvp {\cunif \t \ueq} \in \hat \Ca \cand \cb$. Thus we can apply \Rule{S-Match-Type}.
@@ -6338,7 +6428,7 @@ generally in our system.
 	    If $\cunif \tvc {\cunif \t \ueq} \in \cb$, $\t \notin \TyVars$, and $\hat\Ca$ contains $\cletr \x \tv \tvs {\hat\Cc\where{\cmatch \tvp \cbrs}} {\hat\C_4\where{\cpapp \x \tvp \tvc \inst}}$.
 	    Apply \Rule{S-BackProp}.
 
-	    Otherwise, we are stuck and $\nCshape {(\Ca \cand \cb)} \tvp \sh$ for any $\sh$.
+	    Otherwise, we are stuck and $\nCshape {(\Ca \cand \cb)} \tvp$.
 	\end{proofcases}
 
     \end{proofcases}
@@ -6353,12 +6443,15 @@ generally in our system.
       \proofcase{$\cb$ begins with $\cand$ with $\x \disjoint$ from conjunct} Apply \Rule{S-Let-ConjRight}.
       \proofcase{$\ca$ begins with $\cand$ with $\tv, \tvs \disjoint$ from conjunct } Try apply \Rule{S-Let-ConjLeft}
       \proofcase{$\cb$ begins with $\cexistsi \inst \xp {}$, $\x \neq \xp$} Apply \Rule{S-Exists-Inst-Let}
+      \proofcase{$\tvp \in \tvs$ is determined by $\ca$} Apply \Rule{S-Exists-Lower}
       \proofcase{$\cb$ is solved}
 
 	Thus $\cb$ must be $\ctrue$ (due to above cases).
 	\begin{proofcases}
 	  \proofcase{$\ca$ is solved}
-	    Thus $\ca$ must be $\ueqs$. There are two cases:
+	    Thus $\ca$ must be $\ueqs$.
+
+	    There are two cases:
 	    \begin{itemize}
 	      \proofcase{$\cexists {\tv, \tvs} \ueqs \cequiv \ctrue$} Apply \Rule{S-Let-Solve}.
 	      \proofcase{$\cexists {\tv, \tvs} \ueqs \cnequiv \ctrue$} It must be the case there is some $\tvb$ that dominates a $\tvp$ in $\tv, \tvs$ in $\ueqs$.
@@ -6367,6 +6460,7 @@ generally in our system.
 	    \end{itemize}
 
 	  \proofcase{$\ca$ is stuck}
+
 	    The constraint $\cletr \x \tv \tvs \ca \cb$ remains stuck, since
 	    no additional term variable bindings occur for the scope of $\ca$,
 	    ruling out the instantiation cases. Additionally, we cannot apply
@@ -6375,11 +6469,13 @@ generally in our system.
 
       \proofcase{$\cb$ is stuck}
 	\begin{proofcases}
-	  \proofcase{$\hat\C\where{\capp \x \t}$} Apply \Rule{S-Let-AppR}.
+	  \proofcase{$\hat\C\where{\capp \x \t}$} We have $\x \disjoint \bvs {\hat\C}$.
 
-	  \proofcase{$\hat\C\where{\cpapp \x \tvp \tvc \inst}$}
+	  Apply \Rule{S-Let-AppR}.
+
+	  \proofcase{$\hat\C\where{\cpapp \x \tvp \tvc \inst}$} We have $\x \disjoint \bvs {\hat\C}$
 	    \begin{itemize}
-	      \proofcase{$\tvp \in \reg \tv \tvs$}
+		\proofcase{$\tvp \in \reg \tv \tvs$}
 
 		We can either apply \Rule{S-Inst-Copy} or \Rule{S-Compress}
 		if a multi-equation involving $\tvp$ occurs in $\ca$.
@@ -6413,9 +6509,9 @@ generally in our system.
 
 	    \end{itemize}
 
-	  \proofcase{$\hat\C\where{\cmatch \tvp \cbrs}$}
+	  \proofcase{For any $\hat\C\where{\cmatch \tvp \cbrs}$} We have $\nCshape {\hat\C} \tvp$.
 
-	  Either $\cb$ can progress with an instantiation constraint to discharge
+	  Either $\cletr \x \tv \tvs \ca \cb$ can progress with an instantiation constraint (in the above case) to discharge
 	  the match constraint or $\cletr \x \tv \tvs \ca \cb$ is stuck.
 	\end{proofcases}
 
@@ -6689,8 +6785,11 @@ direction, but it should be clarified.
 
 \begin{lemma}
   \label{lem:unsat-match}
-  $\C\where{\cmatch \t \cbrs}$ is unsatisfiable if $\nCshape \C \t \sh$ for any shape $\sh$.
-  \TODO{This lemma is wrong. We need a stronger condition on progress}
+  Given non-simple $\c$ constraint. If every match constraint $\C\where{\cmatch \t \cbrs} = \c$
+  satisfies $\nCshape \C \t$, then $\c$ is unsatisfiable.
+  \begin{proof}
+    By contradiction, inverting on the canonical derivation of $\c$.
+  \end{proof}
 \end{lemma}
 
 \begin{corollary}
