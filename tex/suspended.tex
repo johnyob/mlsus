@@ -694,6 +694,12 @@ $\tfor \ava {\tapoly \ts \ava}$.
 \Xalistair{Is it used for polymorphic nominal records? I was
 under the impression we didn't need \code{Tpoly} for this.}
 \Xgabriel{We don't need Tpoly, only to check via levels that the type is generalizable.}
+\Xalistair{Generalizable, as in the polymorphic variables of the
+record field $\tvs$ are universally quantified? If so, we don't
+need semi-explicit first-class polymorphism for this, a simple $\cfor \tvs \c$
+constraint will do. If you mean that the record type must be generalizable
+for disambiguation, then this is static overloading not semi-explicit
+first-class poly}
 This is the type-level feature that supports polymorphic methods and
 polymorphic record fields in \OCaml. If a record type
 \ocaml[mathescape=true]{$\tv$ t} has been declared with a single polymorphic
