@@ -157,8 +157,8 @@ behaviour.
 
 \parcomment{An instance of the problem (implementation directionality in inference)}
 
-To illustrate the problem, consider the following two record types,
-which define overlapping field names:
+To illustrate the problem, consider the following two record types
+with overlapping field names:
 \begin{program}[input]
 type one = {x : int; y : int}
 type 'a two = {x : 'a}
@@ -282,7 +282,7 @@ types (from acyclic graphs as naturally produced by unification to trees),
 which may increase the size of types and the cost of type inference. For
 that reason, the implementation of \OCaml cheats and is incomplete by
 default. The user must explicitly pass the \texttt{\small -principal} flag to
-require the more expensive computation of principal types when desired.
+require the more expensive computation when desired.
 
 \subsection{Omnidirectional type inference}
 
@@ -308,7 +308,7 @@ extensions:
 \item
   We introduce \emph{suspended match constraints} as a way to suspend
   ambiguity resolution until sufficient information has been found from
-  context so that they can be discharged and hopefully resolved.
+  context so that they can be discharged.
 
 \item
   We work with \emph{partial types schemes}, \ie with the ability to
@@ -336,13 +336,12 @@ a cost, which is that everything is hard:
   us from looking into suspended constraints.
 
 \item
-  Implementing partial types schemes (without duplicating constraint-solving
-  work) is also hard.
+  Implementing partial types schemes is also hard.
 
 \end{enumerate}
-In return, the declarative semantics of suspended constraints
-immediately suggests a systematic way to present user-facing typing rules
-for each fragile construct, for which the implementation is correct and
+In return, the techniques we developed for the semantics
+also help provide declarative typing rules for each fragile
+construct, for which the generated constraints are correct and
 complete.
 
 \paragraph{Illustrative examples}
@@ -387,12 +386,12 @@ In \code{ex_8}, disambiguation information flows from an instance to
 back the definition, opposite to the \Geninst-order; we call this
 \emph{backpropagation}.
 
-The example \ocaml{ex_9} can be disambiguated from the return type of the
-projection, rather than from its source. The typing rules for records that
-we present on this work restrict disambiguation to the source type only and
-rejects this example. But\Xdidier[we believe that]{Why not the affirmative?}
-other typing rules using omnidirectional type inference could support this
-example as well.
+The example \ocaml{ex_9} can be disambiguated from the return type of
+the projection, rather than from its source. The typing rules for
+records that we present on this work restrict disambiguation to the
+source type only and rejects this example. But other typing rules
+using omnidirectional type inference could support this example as
+well.
 
 Finally, \ocaml{ex_1_0} is an example where none of the field
 projections has enough type information to be disambiguated on its own, but the
@@ -411,7 +410,7 @@ NP-hard, even in the absence of let-polymorphism, as shown by an encoding of
 
 \subsubsection* {Plan}
 
-The rest of the paper is organized as follows:
+The paper is organized as follows:
 \begin{enumerate*}[label={}]
 
 \item
@@ -598,12 +597,9 @@ More precisely:
 
 \end{enumerate}
 
-We keep the grammar of shapes and patterns abstract in this section, to
-explain the general framework of suspended constraints. Shapes are
-formalized in \cref{sec:semantics}. \Xdidier [We then introduce specific
-shapes and patterns for specific language features in
-\cref{sec:constraint-gen}.]{That's no more the case. So where do we
-introduce shapes?}
+We keep the grammar of shapes and patterns abstract in this section,
+to explain the general framework of suspended constraints. Shapes are
+formalized in \cref{sec:semantics}.
 
 \parcomment {Constraint contexts}
 
@@ -697,6 +693,7 @@ $\tfor \ava {\tapoly \ts \ava}$.
 
 \Xalistair{Is it used for polymorphic nominal records? I was
 under the impression we didn't need \code{Tpoly} for this.}
+\Xgabriel{We don't need Tpoly, only to check via levels that the type is generalizable.}
 This is the type-level feature that supports polymorphic methods and
 polymorphic record fields in \OCaml. If a record type
 \ocaml[mathescape=true]{$\tv$ t} has been declared with a single polymorphic
@@ -953,22 +950,20 @@ most challenging aspect. The key difficulty lies in capturing what it means for
 type information to be \emph{known}. Our semantics is declarative, but not
 syntax-directed unlike the standard constraint semantics of
 ~\citet{Pottier-Remy/emlti}. This lack of syntax-directness complicates
-reasoning and proofs.
-\Xdidier[[On the upside, the semantics directly
-  suggest declarative typing rules for the surface language.]  {Repeating
-  line 170}
-
+reasoning and proofs. On the upside, the semantics directly
+  suggest declarative typing rules for the surface language.
+\Xdidier{The last sentence repeats what is said on
+  line 170}\Xgabriel{I would prefer to keep the repetition, because otherwise we mention the downsides here without the benefit.}
 
 \parcomment {Judgement shape}
 
-The semantics of constraints follows the standard form of a satisfiability
-judgment $\semenv \th \c$. The semantic environment $\semenv$ contains a
-``guess''\Xdidier{I would prefer to replace ``guess'' by ``assignment'' here
-and next occurrence} for each free variable of $\c$ (type and term
-variable), and $\semenv \th \c$ states that these guesses indeed satisfy
-$\c$. Let us write $\Ground$ for the set of \emph{ground} types, types
-without free variables.\footnote{Ground types are thus finite trees,
-assuming the existence
+The semantics of constraints follows the standard form of
+a satisfiability judgment $\semenv \th \c$. The semantic environment
+$\semenv$ contains a ground assignment for each free variable of $\c$
+(type and term variable), and $\semenv \th \c$ states that these
+assignments indeed satisfy $\c$. Let us write $\Ground$ for the set of
+\emph{ground} types, types without free variables.\footnote{Ground
+  types are thus finite trees, assuming the existence
 %
 of some base types such as $\tint$. In \cref{sec/rec-types}, we
 discuss the alternative choice of regular trees for the set of ground
@@ -984,14 +979,14 @@ $\semenv(\t)$ for the ground type obtained by substitution.
 \parcomment {Definition exampled}
 
 The judgment is defined in \cref{fig:constraint-semantics} for all
-constraint-formers\Xdidier {Why a dash in constrain-formers?} except
-suspended constraints; its definition on this fragment is standard and
-somewhat tautological. The constraint $\ctrue$ is satisfied by any
-environment, and $\cfalse$ by none. An environment $\semenv$ satisfies $\ca
-\cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying $\cexists \tv
-\c$ requires finding a witness $\gt$ for $\tv$.  The universal constraint
-$\cfor \tv \c$ is satisfiable if $\c$ is satisfiable for any binding of
-$\tv$. The unification constraint $\cunif \ta \tb$ is satisfied when
+constraint formers except suspended constraints; its definition on
+this fragment is standard and somewhat tautological. The constraint
+$\ctrue$ is satisfied by any environment, and $\cfalse$ by none. An
+environment $\semenv$ satisfies $\ca \cand \cb$ if it satisfies both
+$\ca$ and $\cb$. Satisfying $\cexists \tv \c$ requires finding
+a witness $\gt$ for $\tv$.  The universal constraint $\cfor \tv \c$ is
+satisfiable if $\c$ is satisfiable for any binding of $\tv$. The
+unification constraint $\cunif \ta \tb$ is satisfied when
 $\semenv(\ta)$ and $\semenv(\tb)$ are equal.
 
 The rule for $\clet \x \tv \ca \cb$ states that $\ca$ must satisfied under
@@ -1099,8 +1094,7 @@ We introduce \emph{shapes} as a generalization of type constructors for
 suspended match constraints. They provide a uniform treatment of both
 constructors and polytypes, and are useful in defining polytype
 unification.
-\Xdidier[\cref{TODO}]{What citation did you have in mind? Is it
-needed?}\Xdidier{We never clearly define unification on shapes.}
+\Xdidier{We never clearly define unification on shapes.}
 
 
 \parcomment {Definition of shape}
@@ -2142,7 +2136,6 @@ Partial instantiation constraints are reduced using the following rules:
     We write $\cpapp \x \tv \t \inst$ as a shorthand for $\cpinst \inst \tv \t$
     when $\inst$ is bound with $\exists \inst^\x$ in the context. To ensure
     termination, the abstraction must contain acyclic types.
-    \Xgabriel{This is confusing when trying to read the rules directly. Could you instead stick to the $\inst^\x$ notation throughout, so that we only see $\cpinst {\inst^\x} \tv t$?}
 
   \item \Rule{S-Inst-Unify} unifies two instantiations if they refer to the
     same source variable.
