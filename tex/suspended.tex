@@ -2653,16 +2653,18 @@ and other examples that favor the other.
 
 
 \paragraph{Principality tracking in \OCaml}
+
 \citet*{Garrigue-Remy/poly-ml} introduced an approach to principality
 tracking for polytypes, that has since be extended to other features
 of the \OCaml language: whenever the type-checker wants to know if
 a type is known in a robust way, it checks whether the type is
-generalizable. We compare this approach to ours in
+generalizable. We compared their approach to ours in
 \cref{sec/constraints/polytypes}.
 
-\paragraph{Qualified types} Qualified
-types~\citep*{jones-qualified-types}, most well-known via their usage
-in Haskell type-classes, are related to our suspended match
+\paragraph{Qualified types}
+
+Qualified types~\citep*{jones-qualified-types}, most well-known via their
+usage in Haskell type-classes, are related to our suspended match
 constraints as they represent constraints on types or type
 variables. At generalization time, the constraints on generalizable
 variables are kept as part of the generalized type scheme, and they
@@ -2676,20 +2678,24 @@ generalization to express features that require a unique resolution of
 the constraint, typically for static overloading.
 
 \paragraph{Suspended constraints in dependent-type systems}
-Suspending the constraints that cannot be solved yet is not a novel
-idea, it is a standard approach to implement unification
-dependently-typed systems. This goes back to Huet's algorithm for
-higher-order unification~\citep*{huet-unif}, where flexible-flexible
-pairs are delayed until at least one side becomes rigid. The
-contributions of our work are the combination with implicit
-generalization, which is typically absent from those systems, and the
-design of declarative semantics to establish principality.
 
-\paragraph{Bidirectional type inference} At the level of simply-typed
+Suspending the constraints that cannot be solved yet is not a novel idea, it
+is a standard approach to implement unification dependently-typed
+systems. This goes back to Huet's algorithm for higher-order
+unification~\citep*{huet-unif} and pattern
+unification~\citep*{Miller/pattern-unif@iclp91} where flexible-flexible
+pairs are delayed until at least one side becomes rigid. The contributions
+of our work are the combination with implicit generalization, which is
+typically absent from those systems, and the design of declarative semantics
+to establish principality.
+
+\paragraph{Bidirectional type inference}
+
+At the level of simply-typed
 terms or \ML, we believe that omni-directional inference works better
 than bidirectional type inference: it can type more programs than
 a given fixed bidirectional system, and has a more declarative
-specification -- we would say that it is ``more principal''. In fact
+specification---we would say that it is ``more principal''.  In fact,
 a direct inspiration for the present work was a user complaint in
 \citet*{rossberg-wasm} on the type-based disambiguation of \OCaml: its
 bidirectional logic propagates type information from patterns to
@@ -2701,11 +2707,11 @@ implementation would sometimes prefer the other direction.
 On the other hand, bidirectional typing is known to scale to powerful
 systems such as fully-implicit predicative
 polymorphism~\citep*{dunfield-krishnaswami-bidirectional-poly} and we
-have not considered scaling our approach to those systems.
+have not considered scaling our approach to those systems yet.
 
-\paragraph{Leijen et al. (TODO change paragraph naming)}
-Should we cite \citet*{Leijen-Ye/prefix@pldi2025}?
-\Xdidier{I'm volunteering to write this, but we are not sure we have to}.
+%% \paragraph{Leijen et al. (TODO change paragraph naming)}
+%% Should we cite \citet*{Leijen-Ye/prefix@pldi2025}?
+%% \Xdidier{I'm volunteering to write this, but we are not sure we have to}.
 
 \paragraph{\OutsideIn}
 
@@ -2734,6 +2740,9 @@ original motivations.
 
 % \begin{acks}
 % \end{acks}
+
+\section*{Conclusion}
+
 
 \Xgabriel{No conclusion? I'm fine with this, and it takes less space than having a conclusion.}
 
