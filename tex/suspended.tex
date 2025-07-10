@@ -925,6 +925,65 @@ field or constructor names, especially when some field projections or
 data constructors need non-uniform typing rules, such polymorphic
 fields or GADT constructors.
 
+
+\begin{mathparfig}[htpb!]%
+  {fig:constraint-semantics}%
+  {Semantics of constraints (without suspended constraints).}
+  \begin{bnfgrammar}
+     \entry[Semantic environments]{\semenv}
+     {\emptyset \and \semenv\where{\tv \is \gt} \and
+      \semenv\where{\x \is \gabs}}
+   \end{bnfgrammar}
+   \par
+  \infer[True]
+    {}
+    {\semenv \th \ctrue}
+
+  \infer[Conj]
+    {\semenv \th \ca \\
+     \semenv \th \cb}
+    {\semenv \th \ca \cand \cb}
+
+  \infer[Exists]
+    {\semenv\where{\tv \is \gt} \th \c}
+    {\semenv \th \cexists \tv \c}
+
+  \infer[Forall]
+    {\forall \gt, ~ \semenv\where{\tv \is \gt} \th \c}
+    {\semenv \th \tfor \tv \c}
+
+  \infer[Unif]
+    {\semenv(\ta) = \semenv(\tb)}
+    {\semenv \th \cunif \ta \tb}
+
+  \infer[Let]
+    {\semenv \th \exists \tv. \ca \\
+     \semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb}
+    {\semenv \th \clet \x \tv \ca \cb}
+
+  \infer[App]
+    {\semenv(\t) \in \semenv(\x)}
+    {\semenv \th \capp x \t}
+
+  \let \Eqdef\eqdef \def \eqdef {&\Eqdef&}
+  \begin{tabular}[c]{.R.C;.L.}
+  %%\semenv &::=&
+  %%  \emptyset \mid
+  %%  \semenv\where{\tv \is \gt} \mid
+  %%  \semenv\where{\x \is \gabs}
+  %%\\
+  \semenv(\cabs \tv \c) \eqdef
+    \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
+  \\
+  \ca \centails \cb \eqdef
+    \forall \semenv,\ \semenv \th \ca \implies \semenv \th \cb
+  \\
+  \ca \cequiv \cb   \eqdef
+    (\ca \centails \cb) \wide\wedge   (\ca \centails \cb)
+  %% \forall \semenv,\ \semenv \th \ca \iff \semenv \th \cb
+  \end{tabular}
+\end{mathparfig}
+
 \section{Semantics of constraints}
 \label{sec:semantics}
 
@@ -997,65 +1056,6 @@ intuition that the application $\capp {(\cabs \tv \c)} \t$ should be
 equivalent to $\c \where {\tv \is \t}$.
 
 
-\begin{mathparfig}[t]%
-  {fig:constraint-semantics}%
-  {Semantics of constraints (without suspended constraints).}
-  %% \begin{bnfgrammar}
-  %%   \entry[Semantic environments]{\semenv}
-  %%   {\emptyset \and \semenv\where{\tv \is \gt} \and
-  %%    \semenv\where{\x \is \gabs}}
-  %% \end{bnfgrammar}
-  %% \par
-  \infer[True]
-    {}
-    {\semenv \th \ctrue}
-
-  \infer[Conj]
-    {\semenv \th \ca \\
-     \semenv \th \cb}
-    {\semenv \th \ca \cand \cb}
-
-  \infer[Exists]
-    {\semenv\where{\tv \is \gt} \th \c}
-    {\semenv \th \cexists \tv \c}
-
-  \infer[Forall]
-    {\forall \gt, ~ \semenv\where{\tv \is \gt} \th \c}
-    {\semenv \th \tfor \tv \c}
-
-  \infer[Unif]
-    {\semenv(\ta) = \semenv(\tb)}
-    {\semenv \th \cunif \ta \tb}
-
-  \infer[Let]
-    {\semenv \th \exists \tv. \ca \\
-     \semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb}
-    {\semenv \th \clet \x \tv \ca \cb}
-
-  \infer[App]
-    {\semenv(\t) \in \semenv(\x)}
-    {\semenv \th \capp x \t}
-
-  \let \Eqdef\eqdef \def \eqdef {&\Eqdef&}
-  \begin{tabular}[c]{.R.C;.L.}
-  \semenv &::=&
-    \emptyset \mid
-    \semenv\where{\tv \is \gt} \mid
-    \semenv\where{\x \is \gabs}
-  \\
-  \semenv(\cabs \tv \c) \eqdef
-    \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
-  \\
-  \ca \centails \cb \eqdef
-    \forall \semenv,\ \semenv \th \ca \implies \semenv \th \cb
-  \\
-  \ca \cequiv \cb   \eqdef
-    (\ca \centails \cb) \wide\wedge   (\ca \centails \cb)
-  %% \forall \semenv,\ \semenv \th \ca \iff \semenv \th \cb
-  \end{tabular}
-\end{mathparfig}
-
-
 \begin{wraphbox}{0.2}{0.6}
 \begin{mathpar}[inline]
 \infer*[right=Exists]
@@ -1086,13 +1086,7 @@ that is, they have exactly the same set of solutions.
 We introduce \emph{shapes} as a generalization of type constructors for
 suspended match constraints. They provide a uniform treatment of both
 constructors and polytypes, and are useful in defining polytype
-unification.
-\Xdidier{We never clearly define unification on shapes.}
-\Xalistair{Ah, a fatality of cutting. Perhaps
-we can add one line in section 5.1 to mention that
-we operate on shapes directly in unification.
-This sentence is here to motivate why shapes are useful. }
-
+unification (\Cref{sec:implementation}).
 
 \parcomment {Definition of shape}
 
@@ -1189,9 +1183,10 @@ be represented as the shape application $\shapp (\tint \tlist)$.
 
 We have left the syntax of shape patterns deliberately abstract. We also
 assume a matching relation
-\begin{mathline}
+% mathpar instead of mathline since spacing was odd. If spacing is fixed, use mathline
+\begin{mathpar}
   \cmatches \cpat \sh \tvcs \theta
-\end{mathline}
+\end{mathpar}
 This partial function matches a pattern $\cpat$ against a principal
 shape $\sh$ opened with shape names $\tvcs$ (which must have the same
 arity as $\sh$), yielding a substitution $\theta$. The substitution
@@ -1200,10 +1195,9 @@ occurrences of the shape variables $\tvcs$.
 %
 For our examples we define the trivial pattern $\cpatwild$ which matches
 any shape and binds nothing:
-\begin{mathline}
+\begin{mathpar}
   \cmatches[\eqdef] \cpatwild \sh \tvcs \eset
-\end{mathline}
-
+\end{mathpar}
 
 \begin{definition}[Discharged match constraint]
   Given a suspended constraint $(\cmatch \t \cbrs)$ and a canonical shape
@@ -1228,16 +1222,14 @@ which case the discharged constraint is $\cfalse$.
 
 \paragraph {A natural attempt}
 
-\begin{wraphbox}{}{}
-\begin{mathpar}[inline]
-\infer[Susp-Nat]
-  {\sh = \shape {\semenv(\t)} \\\\ \semenv \th \cmatched \t \sh \cbrs}
-  {\semenv \th \cmatch \t \cbrs}
-\end{mathpar}
-\end{wraphbox}
 To provide semantics for our suspended constraints, a first idea
 is to propose the following rule---henceforth referred to as the
 \emph{natural semantics} of suspended constraints.
+\begin{mathpar}
+  \infer[Susp-Nat]
+  {\sh = \shape {\semenv(\t)} \\\\ \semenv \th \cmatched \t \sh \cbrs}
+  {\semenv \th \cmatch \t \cbrs}
+\end{mathpar}
 %
 This rule states that a suspended constraint is satisfied by $\semenv$ whenever
 the corresponding discharged constraint holds for the canonical shape $\sh$ of
@@ -1245,45 +1237,13 @@ $\t$ in the semantic environment $\semenv$. If $\sh$ matches no branch in
 $\cbrs$, then the discharged constraint is not defined, so this rule cannot be
 applied and the suspended constraint is unsatisfiable.
 
-% Consider the constraint $\cexists \tv \cunif \tv \tint \cand \cmatch \tv
-% {\cbranch \cpatwild \ctrue}$. This is satisfiable, as intended, under the current
-% semantics, as shown by the derivation:
-% \begin{mathline}
-% \def \cmatchex {\cmatch \tv {\cbranch \cpatwild \ctrue}}
-% \def \semenvex {\semenv\where{\tv \is \tint}}
-%     \infer*[Right=Conj]
-%     {
-%      \infer*[Left=Unif]
-%       {\tint = \tint}
-%       % -------------------------------
-%       {\semenvex \th \cunif \tv \tint}
-%      \\
-%      \infer*[Right=Susp-Nat]
-%       {
-% 	\cmatches \cpatwild \tint \eset \eset
-% 	\\
-% 	\infer*[Right=True]
-% 	  { }
-% 	  % ---------------------
-% 	  {\semenvex \th \ctrue}
-%       }
-%       % ------------------------
-%       {\semenvex \th \cmatchex}
-%     \hspace{-2em}
-% }{% ---------------------
-%     \infer*[Right=Exists]
-%       {\semenvex \th \cunif \tv \tint \cand \cmatchex}
-%     % ------------------------------------------------------------
-%       {\semenv \th \cexists \tv \cunif \tv \tint \cand \cmatchex}
-% }
-% \end{mathline}
-
 \parcomment {The problem}
 
 This semantics rule is nicely declarative, but unfortunately accepts too
 many constraints. For example, $\cexists \tv \cmatch \tv {\cbranch
 \cpatwild {\cunif \tv \tint}}$ is satisfiable under this natural
 semantics:
+
 \begin{mathpar}
 \def \cmatchex {\cmatch \tv {\cbranch \cpatwild {\cunif \tv \tint}}}
 \def \semenvex {\semenv\where{\tv \is \tint}}
@@ -1365,7 +1325,7 @@ $\Cshape \C \t \sh$ (defined below) ensures that $\sh$ is uniquely determined by
   \end{mathpar}.
 \end{definition}
 
-\begin{mathparfig}[t]
+\begin{mathparfig}[htpb!]
   {fig:contextual-semantics}
   {Semantics of suspended constraints.}
 \infer[Susp-Ctx]
@@ -1624,64 +1584,71 @@ hence \code{ex_7} is accepted by our semantics.
 
 \parcomment {We need a spec, but this itself is hard}
 
-To show that the type-inference constraints we generate are correct,
-we must first define a surface language and its type
-system. Surprisingly, identifying an appropriate declarative type
-system to use as a specification is itself an interesting problem!
+To prove correctness of constraint generation, we must first define a surface
+language and its type system. Surprisingly, identifying an appropriate
+declarative type system to use as a specification is itself an interesting
+problem! In particular, na\"ve specifications often fail to ensure principal types.
 
 \parcomment {Why do naive approaches not guarantee principal types.}
 
-\begin{wraphbox}[11em]{}{}
-\mprset{sep=1em}
-\begin{mathpar}[inline]
-   \inferrule*
-      {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n }
-      {\G \th \exfield \e n j : \tj}
-\end{mathpar}
-\end{wraphbox}
-Na\"ive specifications, though accessible, often lack principal types. Take
-overloaded tuple projections \ala \SML. We can ask the user to provide the
+%\begin{wraphbox}[11em]{}{}
+%\mprset{sep=1em}
+%\begin{mathpar}[inline]
+%   \inferrule*
+%      {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n }
+%      {\G \th \exfield \e n j : \tj}
+%\end{mathpar}
+%\end{wraphbox}
+Take overloaded tuple projections \ala \SML. We can ask the user to provide the
 length of the tuple explicitly, via an annotated syntax $\exfield \e n j$,
-which has a simple typing rule:
+which has a simple typing rule (\Rule{Proj-X}).
+\begin{mathpar}
+  \infer[Proj-X]
+    {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n}
+    {\G \th \exproj \e j n : \tj }
 
-\begin{wraphbox}[11em]{}{}
-\mprset{sep=1em}
-\begin{mathpar}[inline]
-  \infer
+  \infer[Proj-I-Nat]
     {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n}
     {\G \th \efield \e j : \tj}
 \end{mathpar}
-\end{wraphbox}
-On the other hand, the natural typing rule for the fragile construct
-$\efield e j$ breaks principality:
 %
-The term $\efield \e j$ admits many typings, as any tuple of at least size
-$j$ satisfies the premise.
-
-\begin{wraphbox}[11em]{}{}
-\mprset{sep=1em}
-\begin{mathpar}[inline]
-\infer
-  {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\\\
-   \G \th E[\exfield \e n j] : \t}
+%\begin{wraphbox}[11em]{}{}
+%\mprset{sep=1em}
+%\begin{mathpar}[inline]
+%  \infer
+%    {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n}
+%    {\G \th \efield \e j : \tj}
+%\end{mathpar}
+%\end{wraphbox}
+%
+On the other hand, the natural typing rule for the fragile construct $\eproj e
+j$ breaks principality (\Rule{Proj-I-Nat}). The term $\eproj \e j$ admits
+infinitely many typings for $\e$, provided the tuple is of sufficient length.
+%
+%\begin{wraphbox}[11em]{}{}
+%\mprset{sep=1em}
+%\begin{mathpar}[inline]
+%\infer
+%  {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\\\
+%   \G \th E[\exfield \e n j] : \t}
+%  {\G \th \E[\efield \e j] : \t}
+%\end{mathpar}
+%\hfil
+%\end{wraphbox}
+This is the exact same issue we had with the na\"ive semantics of suspended
+constraints, and in fact we solve it in the same way, with a unicity
+condition and a contextual rule (\Rule{Proj-I}) that transforms the fragile, implicit
+construct into the robust, explicit counterpart:
+\begin{mathpar}
+  \infer[Proj-I]
+  {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
+   \G \th \E[\exfield \e n j] : \t}
   {\G \th \E[\efield \e j] : \t}
 \end{mathpar}
-\hfil
-\end{wraphbox}
-This is the exact same issue we had with the naive semantics of suspended
-constraints, and in fact we solve it in the same way, with a unicity
-condition and a contextual rule that transforms the fragile, implicit
-construct into the robust, explicit construct:
-
-We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton
-\tvcs}$, which is the counterpart of our unicity condition $\Cshape \C \t
-\sh$ in the type system. We formally introduce it in the rest of this
-section; in fact the different fragile features need slightly different
-formulations of the unicity condition.
 
 \subsection{Syntax}
 
-\begin{bnffig}[t]{fig/syntax}{Syntax of \OML}
+\begin{bnffig}[t]{fig/syntax}{Syntax of \OML.}
 \entry[Terms]{\e}{
   x \and
   () \and
@@ -1723,37 +1690,49 @@ formulations of the unicity condition.
 \end{bnffig}
 
 In \cref {fig/syntax}, we give the grammar for our calculus. Terms include
-all of the \ML calculus: variables~$x$, the unit literal $\eunit$,
-lambda-abstractions $\efun x e$, applications $\eapp \ea \eb$,
+all of the \ML calculus: variables~$\x$, the unit literal $\eunit$,
+lambda-abstractions $\efun \x \e$, applications $\eapp \ea \eb$,
 annotations $\eannot \e \tvs \t$ and let-bindings $\elet x \ea \eb$.
 Our extensions include:
 \begin{enumerate}
 \item
-  Constructor and record label disambiguation, modelled using record
+  Overloaded variant constructors and record labels, modelled using record
   literals $\erecord { \ela = \ea; \ldots; \el_n = \en }$ and field
-  projections $\efield \e l$.
-
+  projections $\efield \e l$. Variant constructors are not treated formally in \OML, but
+    behave analogously in practice.
 \item
   Tuples $(\ea, \ldots, \en)$ with implicit projections
-  $\efield \e j$ and explicit projections $\exfield \e j n$.
+  $\efield \e j$ and explicit projections $\exproj \e j n$.
 
 \item
   For semi-explicit first-class polymorphism, we have implicit and explicit
-  boxing $\epoly \e$ and $\expoly \e \tvs \ts$, and implicit and explicit
-  unboxing $\einst \e$ and $\exinst \e \tvs \ts$.
+    introduction and elimination forms: boxing $\epoly \e$ and $\expoly
+    \e \tvs \ts$, and unboxing $\einst \e$ and $\exinst \e \tvs \ts$.
 
 \end{enumerate}
-We use the metavariables $\e^i$ or $\el^i$ to range over the
-fragile/implicit constructions, and $\e^x$ or $\el^x$ to range over their
+We use the metavariable $\e^i$ to range over the
+fragile/implicit constructions, and $\e^x$ to range over their
 explicit counterpart.
 
-\subsection{Unicity conditions in typing rules}
+\subsection{Typing rules and unicity}
 
-Our typing rules for implicit constructs are inspired by the semantics: a
-contextual rule with a unicity condition, and an elaboration into an
-explicit rule. Our unicity conditions in typing rules request that the
-annotating shape is fully determined from the context, and from the type of
-either the context hole or the expression.
+We have detailed typing rules for the full \OML calculus, but unfortunately
+they do not fit in the margins of the 25 pages of this document. We moved them
+all, along with detailed examples, in Appendix \cref{app:oml-calculus}.
+
+Our typing rules $\G \th \e : \ts$ are mostly standard, except for
+the rules governing implicit (or fragile) constructs $\e^i$. These
+rules are inspired by our contextual constraint semantics (\Cref{sec:semantics}):
+each is a contextual typing rule paired with a unicity condition and
+an elaboration into an explicit form.
+
+The unicity condition requires that the shape $\sh$ is fully determined by the
+surrounding term context $\E$, including any subexpressions (\eg $\e$ in
+$\eproj \e j$). They are analogous to the unicity condition $\Cshape \C \t \sh$
+for constraints, though the analogy is not exact. Different fragile features
+require slightly different formulations, depending on whether they infer a
+unique shape for a subexpression $\eshape \E \e \sh$ or for the expected type
+of the context $\Eshape \E \e \sh$.
 
 \begin{wraphbox}{}{}
 \begin{mathpar}[inline]
@@ -1762,64 +1741,58 @@ either the context hole or the expression.
     {\G \th \emagic \e : \tp}
 \end{mathpar}
 \end{wraphbox}
-In order to define the unicity conditions, we introduce a \emph{typed hole}
-construct $\emagic \e$ that allows any well-typed expression $\e$ to be
-treated as if it had any type:
+In order to define the unicity conditions, we introduce \emph{typed holes}
+$\emagic \e$, which allow any well-typed term $\e$ to be treated as
+if it had any type (via \Rule{Magic}). Types holes are forbidden in
+the source language---they are a device soley used to define unicity conditions.
 %
-Typed holes are not allowed in source terms and are just a device for
-the definition of unicity conditions. We also introduce an erasure
-function $\eerase \e$, the term counterpart of constraint erasure
+We also introduce an erasure function $\eerase \e$, the term counterpart of constraint erasure
 $\cerase \c$, which erases all not-yet-elaborated implicit constructs
-$\e^i$ in $\e$. They are replaced by their subterms placed into magic
-casts, so that they must remain typeable but do not influence the output
-type. For example $\eerase {\efield \e j}$ is $\emagic {\cerase \e}$;
-the full definition is given in Appendix \cref{appendix:figures}.
+$\e^i$ in $\e$ with typed holes around their subterms. This ensures the
+subterms---such as type annotations---remain present, so that any constraints
+they introduce can still contribute to unicity.
+For example, $\eerase {\efield \e j}$ is $\emagic {\cerase \e}$.
+The full definition is given in Appendix \cref{appendix:figures}.
 
-We can now state that a shape is uniquely determined by the type of a
-context or an expression:
+We can now formalize the two unicity conditions:
 \begin{mathpar}
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
-\eshape E \e \sh \Eqdef
+\eshape \E \e \sh \Eqdef
   \forall \G, \t, \gt, \uad
   \G \th \eerase {\E \where {\emagic {\eannot \e {} \gt }}} : \t
       \wide\implies \shape \gt = \sh
 \\[1ex]
-\Eshape E \e \sh \Eqdef
+\Eshape \E \e \sh \Eqdef
   \forall \G, \t, \gt, \uad
       \G \th \eerase {\E\where{\eannot {\emagic \e} {} \gt}} : \t
       \wide\implies \shape \gt = \sh
 \end{tabular}}
 \end{mathpar}
-These states that the shape $\sh$ of expression $\e$ in context $\E$ is
-determined by the expression $\e$, for $\eshape E \e \sh$, or by the context
-$E$, for $\Eshape E \e \sh$.
+We use the unicity condition
+$\eshape \E \e \sh$ when we disambiguate using the type of a subterm,
+as in overloaded tuple projections, record projections, and polytype
+unboxing. Conversely, we use $\Eshape \E \e \sh$ for polytype boxing and
+overloaded records, where we disambiguate them using the expected type of
+the context.
 
-\subsection{Typing rules and constraint generation}
 
-We have detailed typing rules and a definition of constraint
-generation for the full \OML calculus, but unfortunately they do not
-fit in the margins of the 25 pages of this document. We moved them
-all, along with detailed examples, in appendix
-\cref{app:oml-calculus}.
 
-Our typing judgment $\G \th \e : \t$ are mostly standard, except for
-the typing rules for implicit fragile constructs which use unicity
-conditions as explained above. We use the unicity condition
-$\eshape E \e \sh$ for constructs that we disambiguate using the type
-of their subterms, such as overloaded tuple and record projections or
-polytype unboxing, and $\Eshape E \e \sh$ for constructs that we
-disambiguate using the type of the context, such as polytype boxing,
-or overloaded variant constructors if we described them.
+\subsection{Constraint generation}
+
+\Xalistair{This subsection isn't really saying anything new. The reader should know this by
+now. I suggest we cut this section (maybe reminding the reader of the
+constraint generation function in the next subsection). }
 
 Our constraint generation is defined as follows. Given a term $\e$ and
-its expected type $\t$, which may contain some free type variables, we
-define a constraint $\cinfer e \t$ that is satisfiable if and only if
-the term is well-typed for some instantiation of those free type
-variables. The constraint generation for implicit constructs use
+its expected type $\tv$, we
+define a constraint $\cinfer \e \tv$ that is satisfiable if and only if
+the term is well-typed for some instantiation of $\tv$.
+The constraint generation for implicit constructs use
 suspended match constraints, with a language of patterns that is
 specific to each feature. The generated constraints are very simple,
-as suspended match constraints are doing all the work..
+as suspended match constraints are doing all the work.
+
 
 \subsection{Metatheory}
 \label{sec:constraint-prop}
@@ -1852,7 +1825,7 @@ transformations.
 
 \paragraph{Application equi-typability does hold}
 
-\newcommand {\eswap}{\mathprefix  {swap}}
+\newcommand {\eswap}{\mathprefix{swap}}}
 The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
 equitypable where $\eswap$ is
 $\efun f {\efun \xa {\efun \xb {\eappp f \xb \ea}}}$. We also have
@@ -1865,6 +1838,10 @@ bidirectional types inference breaks application
 equitypability. Both \Geninst-directional and omnidirectional
 type inference preserve it.
 
+\Xalistair{I'm pretty sure we have factorization with this statement
+ (since it suggests the overloaded constructs in $\e_0$ are resolved by $\e_0$
+ alone). I think if we remove $\G \th \e_0 : \ts$, then we have the argument
+ we want. }
 \paragraph{Factorization does not hold} If $\G \th \e \where {\x \is {\e_0}}
 : \t$ and $\G \th \ez : \ts$, we do not necessarily have $\G \th \elet \x
 \ez \e : \t$. This is not a defect of our system, but a general property of
@@ -1874,11 +1851,12 @@ $\e_0$, and if they are incompatible the factored form may not typecheck.
 
 \paragraph{Inlining does not hold} If $\G \th \elet \x \ez \e : \t$, we do
 not necessarily have $\G \th \e \where {\x \is {\e_0}} : \t$. This is
-specific to our support for \emph{back-propagation}: the $\Let$-form will
+specific to our support for \emph{backpropagation}: the $\Let$-form will
 use information from all occurences of $\x$ in $\e$ to resolve fragile
 constructs in $e_0$, but in the inlined form each copy of $\e$ must resolve
 its implicit constructs independently, and it has access to less information to
-establish unicity.
+establish unicity. As a result, the implicit \OML calculus does not preserve typability
+in its operational semantics.
 
 \section{Solving constraints}
 \label{sec:solving}

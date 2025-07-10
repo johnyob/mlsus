@@ -214,7 +214,7 @@
 \newcommand{\eunit}{()}
 \newcommand{\efun}[2]{\lambda #1. \, #2}
 \newcommand{\eapp}[2]{#1 \; #2}
-\newcommand{\eappp}[2]{\mathprefix{\eapp{#1}{#2}}}
+\newcommand{\eappp}[3]{\eapp{\eapp{#1}{#2}}{#3}}
 \newcommand{\eApp}{\mathbin{@}}
 \newcommand{\ePipe}{\mathbin{\triangleright}}
 \newcommand{\elet}[3]{\Let #1 = #2 \In #3}
