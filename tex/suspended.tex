@@ -3164,15 +3164,15 @@ write $\elab / {\T} \in \labenv$ if such a declaration of $\elab$ exists for the
 record type $\T$. This membership relation extends to explicitly annotated and
 casted labels:
 \begin{mathpar}
-  \infer[Lab-$\in$X]
+  \infer[Lab-inX]
     {\elab / {\T} \in \labenv}
     {(\elab / \T) / {\T} \in \labenv}
 
-  \infer[Lab-$\in$Magic]
+  \infer[Lab-inMagic]
     {\elab / {\T} \in \labenv}
     {\elmagic \elab / {\T} \in \labenv}
 
-  \infer[Lab-$\in$Annot]
+  \infer[Lab-inAnnot]
     {\el / {\T} \in \labenv}
     {\elannot \el \tvs \t / {\t} \in \labenv}
 \end{mathpar}
@@ -4286,19 +4286,19 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 \begin{judgboxmathpar}
   {\bar \el \uni \t}
   {The set of labels $\bar\el$ infer the possibly unique type $\t$.}
-  \infer[Lab-$\in$I]
+  \infer[Lab-inI]
     {\elab : \tfor \tvs \t \to \T \tvs \in \labenv}
     {\elab / {\T} \in \labenv}
 
-  \infer[Lab-$\in$X]
+  \infer[Lab-inX]
     {\elab / {\T} \in \labenv}
     {(\elab / \T) / {\T} \in \labenv}
 
-  \infer[Lab-$\in$Magic]
+  \infer[Lab-inMagic]
     {\elab / {\T} \in \labenv}
     {\elmagic \elab / {\T} \in \labenv}
 
-  \infer[Lab-$\in$Annot]
+  \infer[Lab-inAnnot]
     {\el / {\T} \in \labenv}
     {\elannot \el \tvs \t / {\T} \in \labenv}
 

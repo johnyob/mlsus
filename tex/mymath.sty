@@ -7,11 +7,17 @@
 
 \newcommand{\mathparinit}{%
 % spacing below and above mathpar blocks
-\abovedisplayskip .5em
-\belowdisplayskip .5em
+\abovedisplayskip .5em plus .1em minus .1ex
+\belowdisplayskip \abovedisplayskip
 }
 \newcommand{\Rule}[1]{\hyperlink{#1}{\TirName {#1}}}
-\renewcommand{\DefTirName}[1]{\hypertarget{#1}{\TirName {#1}}}
+\renewcommand{\DefTirName}[1]
+   {\expandafter \ifx \csname Rule@#1\endcsname \relax
+      \message {Def-#1}%
+      \expandafter \global \expandafter \let \csname Rule@#1\endcsname \empty
+      \hypertarget{#1}{\TirName {#1}}\else
+      \message {Not-Def-#1}%
+      \hyperlink{#1}{\TirName {#1}}\fi}
 
 %% \newcommand \oldrewrite[3][]
 %%    {\inferrule*[fraction={{}{-}{\smash\to}},lab=#1]{#2}{#3}}
@@ -20,8 +26,10 @@
 \newcommand \hrewrite[4][]
    {\begingroup
       \def \mpr@preitem{\color{gray}}\mprset{sep=1.5em}%
-      \inferrule*[fraction={{-}{-}{\smash\to}},lab=#1]
-       {\color{black}#2\\#3 }{\color{black}#4}%
+      \mprset{fraction={{-}{-}{\smash\to}}}
+      %% \inferrule[fraction={{-}{-}{\smash\to}},lab=#1]
+      \infer[#1]
+      {\color{black}#2\\#3 }{\color{black}#4}%
     \endgroup}
 
 %% Exchange the coments below to recover the old style
