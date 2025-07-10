@@ -2039,40 +2039,43 @@ suspended constraint.
   {fig:solver-basic}
   {Basic rewriting rules $\ca \csolve \cb$}
   \rewrite[S-Unif]
-    {\upa \quad \upa \unif \upb}
+    {\upa}
+    {\upa \unif \upb}
     {\upb}
 
   \rewrite[S-False]
-    {\C\where\cfalse \quad \C \neq \square}
+    {\C\where\cfalse}
+    {\C \neq \square}
     {\cfalse}
 
   \rewrite[S-Let]
     {\clet \x \tv \ca \cb}
+    {}
     {\cletr \x \tv \eset \ca \cb}
 
   \rewrite[S-Exists-Conj]
-    {(\cexists \alpha \ca) \cand \cb \quad
-     \tv \disjoint \cb}
+    {(\cexists \alpha \ca) \cand \cb}
+    {\tv \disjoint \cb}
     {\cexists \tv {\ca \cand \cb}}
-  \\
+
   \rewrite[S-Let-ExistsLeft]
-    {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
-     \tvb \disjoint \tv, \tvs, \cb}
+    {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb}
+    {\tvb \disjoint \tv, \tvs, \cb}
     {\cletr \x \tv {\tvs, \tvb} \ca \cb}
 
   \rewrite[S-Let-ExistsRight]
-    {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
-     \tvb \disjoint \tv, \tvs, \cb}
+    {\cletr \x \tv \tvs \ca {\cexists \tvb \cb}}
+    {\tvb \disjoint \tv, \tvs, \cb}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
-  \\
+
   \rewrite[S-Let-ConjLeft]
-    {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
-     \ca \disjoint \tv, \tvs}
+    {\cletr \x \tv \tvs {\ca \cand \cb} \cc}
+    {\ca \disjoint \tv, \tvs}
     {\ca \cand \cletr \x \tv \tvs \cb \cc}
 
   \rewrite[S-Let-ConjRight]
-    {\cletr \x \tv \tvs \ca (\cb \cand \cc) \\
-     \x \disjoint \cc}
+    {\cletr \x \tv \tvs \ca (\cb \cand \cc)}
+    {\x \disjoint \cc}
     {\cc \cand \Clet \x \tv \ca \cb}
 \end{mathparfig}
 
@@ -2090,13 +2093,13 @@ constraint---they are desugared into constraints already handled by the solver.
   {fig:solver-susp}
   {Rewriting rules for suspended match constraints.}
   \rewrite[S-Match-Type]
-    {\cmatch \t \cbrs \\
-     \t \notin \TyVars }
+    {\cmatch \t \cbrs}
+    {\t \notin \TyVars }
     {\cmatched \t {\shape \t} \cbrs}
 
   \rewrite[S-Match-Var]
-    {\C\where{\cmatch \tv \cbrs} \\
-     \cunif \tv {\cunif \t \ueq} \in \C}
+    {\C\where{\cmatch \tv \cbrs}}
+    {\cunif \tv {\cunif \t \ueq} \in \C}
     {\C\where{\cmatched \tv {\shape \t} \cbrs}}
 \end{mathparfig}
 
@@ -2123,7 +2126,8 @@ $\Cshape \C \t {~\shape \t}$.
 Application constraints can be solved by copying constraints:
 \begin{mathpar}
   \rewrite[S-Let-App-Beta]
-    {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}} \\ \tv, \tvs \disjoint \t \\ x \disjoint \bvs \C}
+    {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}}}
+    {\tv, \tvs \disjoint \t \\ x \disjoint \bvs \C}
     {\clet \x \tv \ca {\C\where{\cexists {\tv, \tvs} \cunif \tv \t \cand \ca}}}
 \end{mathpar}
 This resembles $\beta$-reduction, except that the original abstraction is
@@ -2273,22 +2277,22 @@ There are three cases in which an instantiation constraint is eliminated:
 
 
 %% Uncomment to restore the old style
-%% \let \REWRITE \hrewrite
+%% \let \rewrite \hrewrite
 \begin{mathparfig}[t]
   {fig:solver-schemes}
   {Select rewriting rules for let-bindings and applications.}
-  \REWRITE[S-Exists-Lower]
+  \rewrite[S-Exists-Lower]
     {\cletr \x \tv {\tvas, \tvbs} \ca \cb}
     {\cdetermines {\cexists {\tv, \tvas} \ca} \tvbs}
     {\cexists \tvbs \cletr \x \tv \tvas \ca \cb}
 
-  \REWRITE[S-Let-AppR]
+  \rewrite[S-Let-AppR]
     {\cletr \x \tv \tvs \c {\C\where{\capp \x \t}}}
     {\tvc \disjoint \t \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv \tvs \c {\C\where{\cexistsi {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}}}
 
-  \REWRITE[S-Inst-Copy]
+  \rewrite[S-Inst-Copy]
     {\cletr \x \tv \tvs {\c}
       \C\where{\cpapp \x \tvp \tvc \inst}}
      {\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
@@ -2298,36 +2302,36 @@ There are three cases in which an instantiation constraint is eliminated:
     {\cletr \x \tv \tvs {\c}
       \C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
 
-  \REWRITE[S-Inst-Unify]
+  \rewrite[S-Inst-Unify]
     {\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}
     {}
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
-  \REWRITE[S-Inst-Poly]
+  \rewrite[S-Inst-Poly]
     {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}}}
     {\cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
      \tvp \disjoint \c, \insts \C \inst \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
-  \REWRITE[S-Inst-Mono]
+  \rewrite[S-Inst-Mono]
     {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} }
    {\tvb \disjoint \tv, \tvs \\
      \x, \tvb \disjoint \bvs \C}
     {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
-  \REWRITE[S-Let-Solve]
+  \rewrite[S-Let-Solve]
     {\cletr \x \tv \tvs \ueqs \c}
     {\cexists {\tv, \tvs} \ueqs \cequiv \ctrue \\
      \x \disjoint \c}
     {\c}
 
-  \REWRITE[S-Compress]
+  \rewrite[S-Compress]
     {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb}}
     {\tvb \neq \tvc}
     {\cletr \x \tv {\tvs} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvb \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
 
-  \REWRITE[S-BackProp]
+  \rewrite[S-BackProp]
     {\C\where
        {\cletr \x \tv {\tvs} {\Ca\where{\cmatch \tvp \cbrs}}
                            {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
@@ -3658,44 +3662,50 @@ prior formulations~\citep*{Garrigue-Remy/poly-ml}.
   {Unification algorithm as a series of rewriting rules
    $\upa \unif \upb$. All shapes are principal.}
    \rewrite[U-Exists]
-      {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
+      {(\cexists \alpha \upa) \cand \upb }{ \tv \disjoint \upb}
       {\cexists \tv {\upa \cand \upb}}
 
     \rewrite[U-Cycle]
-      {\up \\ \cyclic \up}
+      {\up }{ \cyclic \up}
       {\cfalse}
 
     \rewrite[U-True]
       {\up \cand \ctrue}
+      {}
       {\up}
 
     \rewrite[U-False]
-      {\Up\where\cfalse \\ \Up \neq \square}
+      {\Up\where\cfalse }{ \Up \neq \square}
       {\cfalse}
 
     \rewrite[U-Merge]
       {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
+      {}
       {\cunif \tv {\cunif \ueqa \ueqb}}
 
     \rewrite[U-Stutter]
       {\cunif \tv {\cunif \tv \ueq}}
+      {}
       {\cunif \tv \ueq}
 
     \rewrite[U-Name]
-      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
+      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq }
+      { \tv \disjoint \tys, \typs, \ueq \\ \ti \notin \TyVars}
       {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
 
     \rewrite[U-Decomp]
       {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
+      {}
       {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
 
     \rewrite[U-Clash]
-      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }\\
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }}{
        \sh \neq \shp}
       {\cfalse}
 
     \rewrite[U-Trivial]
-      {\ueq \\ |\ueq| \leq 1}
+      {\ueq }
+      {|\ueq| \leq 1}
       {\ctrue}
 \end{mathparfig}
 
@@ -4680,50 +4690,59 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 \end{judgboxmathpar}
 
 \TODO{@Didier are you able to fix the odd spacing going on here? I'm at a loss of
-      why mathpar is adding this space}
+      why mathpar is adding this space}\Xdidier{Where exactly?}
 
 \begin{judgboxmathpar}
   {\up \unif \upp}
   {The unifier rewrites $\up$ to $\upp$.}
    \rewrite[U-Exists]
-      {(\cexists \alpha \upa) \cand \upb \\ \tv \disjoint \upb}
+      {(\cexists \alpha \upa) \cand \upb }{ \tv \disjoint \upb}
       {\cexists \tv {\upa \cand \upb}}
 
     \rewrite[U-Cycle]
-      {\up \\ \cyclic \up}
+      {\up }{ \cyclic \up}
       {\cfalse}
 
     \rewrite[U-True]
       {\up \cand \ctrue}
+      {}
       {\up}
 
     \rewrite[U-False]
-      {\Up\where{\cfalse} \\ \Up \neq \square}
+      {\Up\where{\cfalse}}
+      { \Up \neq \square}
       {\cfalse}
 
     \rewrite[U-Merge]
       {\cunif \tv \ueqa \cand \cunif \tv \ueqb}
+      {}
       {\cunif \tv {\cunif \ueqa \ueqb}}
 
     \rewrite[U-Stutter]
       {\cunif \tv {\cunif \tv \ueq}}
+      {}
       {\cunif \tv \ueq}
 
     \rewrite[U-Name]
-      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq \\ \tv \disjoint \tys, \typs, \ueq }
-      {\cexists \tv {\cunif \tv \ti \cand \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
+      {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq }
+      {\tv \disjoint \tys, \typs, \ueq }
+      {\cexists \tv
+        {\cunif \tv \ti \cand
+         \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
 
     \rewrite[U-Decomp]
       {\cunif {\pshapp \tvs} {\cunif {\pshapp \tvbs} \ueq}}
+      {}
       {\cunif {\pshapp \tvs} \ueq \cand \cunif \tvs \tvbs}
 
     \rewrite[U-Clash]
-      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }\\
+      {\cunif {\pshapp \tvs} {\cunif {\pshapp[\shp]\tvbs } \ueq }}{
        \sh \neq \shp}
       {\cfalse}
 
     \rewrite[U-Trivial]
-      {\ueq \\ |\ueq| \leq 1}
+      {\ueq}
+      {|\ueq| \leq 1}
       {\ctrue}
 \end{judgboxmathpar}
 
@@ -4732,157 +4751,181 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   {The constraint solver rewrites $\c$ to $\cp$.}
 
   \rewrite[S-Unif]
-    {\upa \\ \upa \unif \upb}
+    {\upa}
+    {\upa \unif \upb}
     {\upb}
 
   \rewrite[S-True]
     {C \cand \ctrue}
+    {}
     {C}
 
   \rewrite[S-False]
-    {\C\where\cfalse \\ \C \neq \square}
+    {\C\where\cfalse}
+    {\C \neq \square}
     {\cfalse}
 
   \rewrite[S-Let]
     {\clet \x \tv \ca \cb}
+    {}
     {\cletr \x \tv \eset \ca \cb}
 
   \rewrite[S-Exists-Conj]
-    {(\cexists \alpha \ca) \cand \cb \\
+    {(\cexists \alpha \ca) \cand \cb }{
      \tv \disjoint \cb}
     {\cexists \tv {\ca \cand \cb}}
 
   \rewrite[S-Let-ExistsLeft]
-    {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb \\
+    {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb }{
      \tvb \disjoint \tv, \tvs}
     {\cletr \x \tv {\tvs, \tvb} \ca \cb}
 
   \rewrite[S-Let-ExistsRight]
-    {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} \\
+    {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} }{
      \tvb \disjoint \tv, \tvs, \cb}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
 
   \rewrite[S-Let-ConjLeft]
-    {\cletr \x \tv \tvs {\ca \cand \cb} \cc \\
+    {\cletr \x \tv \tvs {\ca \cand \cb} \cc }{
      \ca \disjoint \tv, \tvs}
     {\ca \cand \cletr \x \tv \tvs \cb \cc}
 
   \rewrite[S-Let-ConjRight]
-    {\cletr \x \tv \tvs \ca (\cb \cand \cc) \\
+    {\cletr \x \tv \tvs \ca (\cb \cand \cc) }{
      \x \disjoint \cc}
     {\cc \cand \Clet \x \tv \ca \cb}
 
   \rewrite[S-Match-Type]
-    {\cmatch \t \cbrs \\ \t \notin \TyVars}
+    {\cmatch \t \cbrs }{ \t \notin \TyVars}
     {\cmatched \t {\shape \t} \cbrs}
 
   \rewrite[S-Match-Var]
-    {\C\where{\cmatch \tv \cbrs} \\
+    {\C\where{\cmatch \tv \cbrs} }{
      \cunif \tv {\cunif \t \ueq} \in \C}
     {\C\where{\cmatched \tv {\shape \t} \cbrs}}
 
    \rewrite[S-Inst-Name]
     {\cpinst \inst \tv \t}
+    {}
     {\cexists \tvc \cunif \tvc \t \cand \cpinst \inst \tv \tvc}
 
   \rewrite[S-Let-AppR]
-    {\cletr \x \tv \tvs \c {\C\where{\capp \x \t}} \\
-     \tvc \disjoint \t \\
-     \x \disjoint \bvs \C}
-    {\cletr \x \tv \tvs \c {\C\where{\cexistsi {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}}}
+    {\cletr \x \tv \tvs \c {\C\where{\capp \x \t}}}
+    {\tvc \disjoint \t \\ \x \disjoint \bvs \C}
+    {\cletr \x \tv \tvs \c {\C\where{\cexistsi
+      {\tvc, \inst} \x {\cunif \tvc \t \cand \cpinst \inst \tv \tvc}}}}
 
   \rewrite[S-Inst-Copy]
-    {\cletr \x \tv \tvs {\c}
-      \C\where{\cpapp \x \tvp \tvc \inst}\\
-      \c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
-      \tvp \in \reg \tv \tvs \\
-      \neg \cyclic {\c} \\
+    {\cletr \x \tv \tvs {\c} \C\where{\cpapp \x \tvp \tvc \inst}}
+    {\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
+     \tvp \in \reg \tv \tvs \\\\
+     \neg \cyclic {\c} \\
      \tvbs' \disjoint \tvp, \tvc, \tvbs \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv \tvs {\c}
-      \C\where{\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}
+      \C\where{\cexists {\tvbs'}
+         {\cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}}}
 
   \rewrite[S-Inst-Unify]
     {\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}
+    {}
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
   \rewrite[S-Inst-Poly]
-    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
-     \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
+    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c}
+        {\C\where{\cpapp \x \tvp \tvc \inst}}}
+    {\cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\\\
      \tvp \disjoint \c, \insts \C \inst \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
 
   \rewrite[S-Inst-Mono]
-    {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
-     \tvb \disjoint \tv, \tvs \\
-     \x, \tvb \disjoint \bvs \C}
+    {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}}}
+    {\tvb \disjoint \tv, \tvs \\ \x, \tvb \disjoint \bvs \C}
     {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
   \rewrite[S-Let-Solve]
-    {\cletr \x \tv \tvs \ueqs \c \\
-     \cexists {\tv, \tvs} \ueqs \cequiv \ctrue \\
-     \x \disjoint \c}
+    {\cletr \x \tv \tvs \ueqs \c}
+    {\cexists {\tv, \tvs} \ueqs \cequiv \ctrue \\ \x \disjoint \c}
     {\c}
 
   \rewrite[S-Compress]
-    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb} \\ \tvb \neq \tvc}
-    {\cletr \x \tv {\tvs} {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvb \is \tvc}}} {\cb\where{\x.\tvb \is \tvc}}}
+    {\cletr \x \tv {\tvs, \tvb}
+       {\ca \cand \cunif \tvb {\cunif \tvc \ueq}} {\cb}}
+    {\tvb \neq \tvc}
+    {\cletr \x \tv {\tvs}
+       {\ca\where{\tvb \is \tvc} \cand \cunif \tvc {\ueq\where{\tvb \is \tvc}}}
+       {\cb\where{\x.\tvb \is \tvc}}}
 
   \rewrite[S-Gc]
-    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb \ueq} \cb \\ \tvb \disjoint \ca, \ueq, \cb}
+    {\cletr \x \tv {\tvs, \tvb} {\ca \cand \cunif \tvb \ueq} \cb}
+    {\tvb \disjoint \ca, \ueq, \cb}
     {\cletr \x \tv {\tvs} {\ca \cand \ueq} \cb}
 
   \rewrite[S-Exists-Lower]
-    {\cletr \x \tv {\tvas, \tvbs} \ca \cb \\
-     \cdetermines {\cexists {\tv, \tvas} \ca} \tvbs \\
-     }
+    {\cletr \x \tv {\tvas, \tvbs} \ca \cb}
+    {\cdetermines {\cexists {\tv, \tvas} \ca} \tvbs}
     {\cexists \tvbs \cletr \x \tv \tvas \ca \cb}
 
   \rewrite[S-BackProp]
     {\C\where
-       {\cletr \x \tv {\tvs} {\Ca\where{\cmatch \tvp \cbrs}}
-                           {\Cb\where{\cpapp \x \tvp \tvc \inst}}} \\
-    \tvp \in \reg \tv \tvs \\
+       {\cletr \x \tv {\tvs}
+          {\Ca\where{\cmatch \tvp \cbrs}}
+          {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
+    {\tvp \in \reg \tv \tvs \\
      \cunif {\tvc} {\cunif \t \ueq} \in \C\where\Cb \\
      \x \disjoint \bvs \Cb}
-    {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
-		      {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
+    {\C\where
+       {\cletr \x \tv {\tvs}
+           {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
+	   {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
 
   \rewrite[S-Exists-Exists-Inst]
     {\cexistsi \inst \x \cexists \tv \c}
+    {}
     {\cexists \tv \cexistsi \inst \x \c}
 
   \rewrite[S-Exists-Inst-Conj]
-    {\cexistsi \inst \x \ca \cand \cb \\ \inst \disjoint \ca}
+    {\cexistsi \inst \x \ca \cand \cb}
+    {\inst \disjoint \ca}
     {\ca \cand \cexistsi \inst \x \cb}
 
   \rewrite[S-Exists-Inst-Let]
-    {\cletr \x \tv \tvs \ca {\cexistsi \inst \xp \cb} \\ \x \neq \xp}
+    {\cletr \x \tv \tvs \ca {\cexistsi \inst \xp \cb}}
+    {\x \neq \xp}
     {\cexistsi \inst \xp \cletr \x \tv \tvs \ca \cb}
 
   \rewrite[S-Exists-Inst-Solve]
-    {\cexistsi \inst \x \c \\ \inst \disjoint \c}
+    {\cexistsi \inst \x \c}
+    {\inst \disjoint \c}
     {\c}
 
   \rewrite[S-All-Conj]
-    {\cfor \tvs {\cexists \tvbs {\ca \cand \cb}} \\ \tvs, \tvbs \disjoint \ca}
+    {\cfor \tvs {\cexists \tvbs {\ca \cand \cb}}}
+    {\tvs, \tvbs \disjoint \ca}
     {\ca \cand \cfor \tvs {\cexists \tvbs \cb}}
 
   \rewrite[S-Exists-All]
-    {\cfor \tvs {\cexists {\tvbs, \tvcs} \c} \\ \cdetermines {\cexists {\tvs, \tvbs} \c} \tvcs}
+    {\cfor \tvs {\cexists {\tvbs, \tvcs} \c}}
+    {\cdetermines {\cexists {\tvs, \tvbs} \c} \tvcs}
     {\cexists \tvcs \cfor \tvs {\cexists \tvbs \c}}
 
   \rewrite[S-All-Escape]
-    {\cfor {\tvs, \tv} {\cexists \tvbs {\c \cand \ueqs}} \\ \tv \prec_{\ueqs}^* \tvc \\ \tvc \disjoint \tv, \tvbs \\  \tv \disjoint \tvbs}
+    {\cfor {\tvs, \tv} {\cexists \tvbs {\c \cand \ueqs}}}
+    {\tv \prec_{\ueqs}^* \tvc \\
+     \tvc \disjoint \tv, \tvbs \\
+     \tv \disjoint \tvbs}
     {\cfalse}
 
   \rewrite[S-All-Rigid]
-    {\cfor {\tvs, \tv} {\cexists \tvbs \C \cand \cunif \tv {\cunif \t \ueq}} \\ \t \notin \TyVars \\ \tv \disjoint \tvbs}
+    {\cfor {\tvs, \tv}
+      {\cexists \tvbs \C \cand \cunif \tv {\cunif \t \ueq}}}
+    {\t \notin \TyVars \\ \tv \disjoint \tvbs}
     {\cfalse}
 
   \rewrite[S-All-Solve]
-    {\cfor \tvs \cexists \tvbs \ueqs \\ \cexists \tvbs \ueqs \cequiv \ctrue}
+    {\cfor \tvs \cexists \tvbs \ueqs}
+    {\cexists \tvbs \ueqs \cequiv \ctrue}
     {\ctrue}
 \end{judgboxmathpar}
 

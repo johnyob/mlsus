@@ -13,15 +13,16 @@
 \newcommand{\Rule}[1]{\hyperlink{#1}{\TirName {#1}}}
 \renewcommand{\DefTirName}[1]{\hypertarget{#1}{\TirName {#1}}}
 
-\newcommand \rewrite[3][]
-   {\inferrule*[fraction={{}{-}{\smash\to}},lab=#1]{#2}{#3}}
-   %% {\inferrule*[fraction={==\Rightarrow},lab=#1]{#2}{#3}}
+%% \newcommand \oldrewrite[3][]
+%%    {\inferrule*[fraction={{}{-}{\smash\to}},lab=#1]{#2}{#3}}
+%% {\inferrule*[fraction={==\Rightarrow},lab=#1]{#2}{#3}}
 
 \newcommand \hrewrite[4][]
    {\inferrule*[fraction={{-}{-}{\smash\to}},lab=#1]{#2 \\ #3}{#4}}
 
-\newcommand {\Rewrite}{\hrewrite}
-\newcommand {\REWRITE}[4][]{\vrewrite[#1]{#3}{#2}{#4}}
+%% Exchange the coments below to recover the old style
+%% \newcommand {\rewrite}{\hrewrite}
+\newcommand {\rewrite}[4][]{\vrewrite[#1]{#3}{#2}{#4}}
 
 \newtheorem*{notation}{Notation}
 \newtheorem{fact}{Fact}
