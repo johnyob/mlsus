@@ -885,13 +885,13 @@ labels, so \ocaml{(#$j$ e)} desugars into a structural record field access
 $\varrho$ is a row describing the remaining tuple fields, then $\eproj \e j$
 has type $\tj$.
 
-\SML enforces an additional restriction: the tail $\varrho$ must be fully
-determined (\ie it cannot be a polymorphic row variable).  This ensures that
-the arity of the tuple is \emph{known} statically from the surrounding
-context, thereby avoiding the need for row polymorphism. However, this restriction is
-not expressed in the typing rules themselves, but is instead enforced within
-\SML's type inference algorithm, as an implementation detail rather than
-a principled part of the \SML specification.
+\SML enforces an additional restriction: the tail $\varrho$ must be
+fully determined (\ie it cannot be a polymorphic row variable).  This
+ensures that the arity of the tuple is \emph{known} statically from
+the surrounding context, thereby avoiding the need for row
+polymorphism. However, this restriction is not expressed in the typing
+rules themselves, it is specified in terms of the
+type-inference process.
 
 \parcomment {Tuple projection is statically overloaded}
 
@@ -918,26 +918,17 @@ of sufficient arity. The pattern $\cpatprod
 $j$-th component to $\tvc$, which is then unified with the expected result type
 $\tva$.
 
-\Xdidier
-{Can we do better than \SML with \OML? ---I think not. Then, we should
-say it explicitly!}
-\Xgabriel{I don't know where to find a specification of how SML does
-  overloading resolution -- Alistair said this was not terribly clear
-  in the SML specification either. My \emph{guess} would be that there
-  are examples that we support thanks to back-propagation, that are
-  rejected in SML. I haven't bothered yet to install a SML
-  implementation on my machine to find out, and my search for
-  web-based SML toplevels were terribly inconclusive.}
-\Xdidier {Indeed, backpropagation might be a problem.
-I think Alistair had a clue.}
-
-\Xalistair{I tried with one called SOSML (online) and found
-the following is ill-typed}
-\begin{verbatim}
-fun proj2 (x) = #2 x
-val x = proj2 (1, 2);
-\end{verbatim}
-\Xalistair{Adding an annotation to the parameter works though}
+\paragraph{Comparison to \SML} Our understanding is that \SML
+type-checkers implement row-polymorphic records under the hood, but
+they never generalize row variables and fail if a declaration contains
+an undetermined row variable. This is a nice approach and we
+conjecture that it accepts the same programs as our implementation of
+overloaded tuples using suspended constraints. On the other hand, it
+only works for features for which we know of a structural-type
+presentation enjoying good type-inference properties. It would not
+work when disambiguating nominal record fields that may have
+a polymorphic type (using polytypes as we present in this paper), or
+variant constructors that may be GADTs.
 
 \section{Semantics of constraints}
 \label{sec:semantics}
@@ -2470,7 +2461,8 @@ construct, but also have a fallback mechanism to make a default,
 non-principal choice when no type information is available. \OCaml
 uses such a fallback when a field name cannot be disambiguated, it
 selects the last declaration of a record type with this field in the
-lexical scope.
+lexical scope. \SML has an overloading mechanism for numeric literals
+that provides default types for each literal form~\citep*[Section 5.8]{rossberg-hamlet}.
 
 To support this specification we considered
 adding \emph{default rules} for suspended match constraints, that
