@@ -951,22 +951,20 @@ most challenging aspect. The key difficulty lies in capturing what it means for
 type information to be \emph{known}. Our semantics is declarative, but not
 syntax-directed unlike the standard constraint semantics of
 ~\citet{Pottier-Remy/emlti}. This lack of syntax-directness complicates
-reasoning and proofs.
-\Xdidier[[On the upside, the semantics directly
-  suggest declarative typing rules for the surface language.]  {Repeating
-  line 170}
-
+reasoning and proofs. On the upside, the semantics directly
+  suggest declarative typing rules for the surface language.
+\Xdidier{The last sentence repeats what is said on
+  line 170}\Xgabriel{I would prefer to keep the repetition, because otherwise we mention the downsides here without the benefit.}
 
 \parcomment {Judgement shape}
 
-The semantics of constraints follows the standard form of a satisfiability
-judgment $\semenv \th \c$. The semantic environment $\semenv$ contains a
-``guess''\Xdidier{I would prefer to replace ``guess'' by ``assignment'' here
-and next occurrence} for each free variable of $\c$ (type and term
-variable), and $\semenv \th \c$ states that these guesses indeed satisfy
-$\c$. Let us write $\Ground$ for the set of \emph{ground} types, types
-without free variables.\footnote{Ground types are thus finite trees,
-assuming the existence
+The semantics of constraints follows the standard form of
+a satisfiability judgment $\semenv \th \c$. The semantic environment
+$\semenv$ contains a ground assignment for each free variable of $\c$
+(type and term variable), and $\semenv \th \c$ states that these
+assignments indeed satisfy $\c$. Let us write $\Ground$ for the set of
+\emph{ground} types, types without free variables.\footnote{Ground
+  types are thus finite trees, assuming the existence
 %
 of some base types such as $\tint$. In \cref{sec/rec-types}, we
 discuss the alternative choice of regular trees for the set of ground
@@ -982,14 +980,14 @@ $\semenv(\t)$ for the ground type obtained by substitution.
 \parcomment {Definition exampled}
 
 The judgment is defined in \cref{fig:constraint-semantics} for all
-constraint-formers\Xdidier {Why a dash in constrain-formers?} except
-suspended constraints; its definition on this fragment is standard and
-somewhat tautological. The constraint $\ctrue$ is satisfied by any
-environment, and $\cfalse$ by none. An environment $\semenv$ satisfies $\ca
-\cand \cb$ if it satisfies both $\ca$ and $\cb$. Satisfying $\cexists \tv
-\c$ requires finding a witness $\gt$ for $\tv$.  The universal constraint
-$\cfor \tv \c$ is satisfiable if $\c$ is satisfiable for any binding of
-$\tv$. The unification constraint $\cunif \ta \tb$ is satisfied when
+constraint formers except suspended constraints; its definition on
+this fragment is standard and somewhat tautological. The constraint
+$\ctrue$ is satisfied by any environment, and $\cfalse$ by none. An
+environment $\semenv$ satisfies $\ca \cand \cb$ if it satisfies both
+$\ca$ and $\cb$. Satisfying $\cexists \tv \c$ requires finding
+a witness $\gt$ for $\tv$.  The universal constraint $\cfor \tv \c$ is
+satisfiable if $\c$ is satisfiable for any binding of $\tv$. The
+unification constraint $\cunif \ta \tb$ is satisfied when
 $\semenv(\ta)$ and $\semenv(\tb)$ are equal.
 
 The rule for $\clet \x \tv \ca \cb$ states that $\ca$ must satisfied under
@@ -1089,8 +1087,7 @@ We introduce \emph{shapes} as a generalization of type constructors for
 suspended match constraints. They provide a uniform treatment of both
 constructors and polytypes, and are useful in defining polytype
 unification.
-\Xdidier[\cref{TODO}]{What citation did you have in mind? Is it
-needed?}\Xdidier{We never clearly define unification on shapes.}
+\Xdidier{We never clearly define unification on shapes.}
 
 
 \parcomment {Definition of shape}
