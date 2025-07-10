@@ -1,12 +1,15 @@
-PRJ = suspended
+PRJ = suspended suspended.final
 
 LATEXMK = latexmk -bibtex -pdf -outdir=_build -auxdir=_build
 
 SOURCES=$(shell find . -name '*.tex' -or -name '*.bib' -or -name '*.sty')
 
-all: $(addsuffix .pdf,${PRJ})
+draft: suspended.pdf
 
 final: suspended.final.pdf
+
+all: $(addsuffix .pdf,${PRJ})
+
 
 .PRECIOUS: %.pdf
 
@@ -24,7 +27,7 @@ final: suspended.final.pdf
 clean:
 	rm -rf _build
 
-vacuum: clean
+cleaner vacuum: clean
 	rm -f suspended.pdf
 
 clean-alistair: vacuum

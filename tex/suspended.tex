@@ -1231,15 +1231,17 @@ which case the discharged constraint is $\cfalse$.
 
 \paragraph {A natural attempt}
 
-To provide semantics for our suspended constraints, a first idea
-is to propose the following rule---henceforth referred to as the
-\emph{natural semantics} of suspended constraints:
-\begin{mathpar}
+\begin{wraphbox}{}{}
+\begin{mathpar}[inline]
 \infer[Susp-Nat]
-  {\sh = \shape {\semenv(\t)} \and \semenv \th \cmatched \t \sh \cbrs}
+  {\sh = \shape {\semenv(\t)} \\\\ \semenv \th \cmatched \t \sh \cbrs}
   {\semenv \th \cmatch \t \cbrs}
 \end{mathpar}
-
+\end{wraphbox}
+To provide semantics for our suspended constraints, a first idea
+is to propose the following rule---henceforth referred to as the
+\emph{natural semantics} of suspended constraints.
+%
 This rule states that a suspended constraint is satisfied by $\semenv$ whenever
 the corresponding discharged constraint holds for the canonical shape $\sh$ of
 $\t$ in the semantic environment $\semenv$. If $\sh$ matches no branch in
@@ -1281,9 +1283,10 @@ applied and the suspended constraint is unsatisfiable.
 
 \parcomment {The problem}
 
-This semantics rule is nicely declarative, but unfortunately accepts to too
-many constraints. Consider for example: $\cexists \tv \cmatch \tv {\cbranch
-\cpatwild {\cunif \tv \tint}}$, which is satisfiable under this natural semantics:
+This semantics rule is nicely declarative, but unfortunately accepts too
+many constraints. For example, $\cexists \tv \cmatch \tv {\cbranch
+\cpatwild {\cunif \tv \tint}}$ is satisfiable under this natural
+semantics:
 \begin{mathpar}
 \def \cmatchex {\cmatch \tv {\cbranch \cpatwild {\cunif \tv \tint}}}
 \def \semenvex {\semenv\where{\tv \is \tint}}
@@ -1302,41 +1305,48 @@ many constraints. Consider for example: $\cexists \tv \cmatch \tv {\cbranch
   {\semenv \th \cexists \tv \cmatchex}
 }
 \end{mathpar}
-
 The semantics can \emph{guess} the type of $\tv$ and use it to unlock the match
 constraint, rather than requiring it to be \emph{known} from the surrounding
 context. One could call the guess of $\cunif \tva \tint$ an ``out of thin air''
 behavior. This does not match the intended meaning of suspended match
 constraints, and raises several problems:
 \begin{enumerate*}
-  \item A reasonable solver---one that avoids guessing or backtracking---cannot
-    be complete with respect to this semantics.
+  \item a reasonable solver---one that avoids guessing or backtracking---cannot
+    be complete with respect to this semantics;
 
-  \item This breaks the existence of principal solutions.
+  \item this breaks the existence of principal solutions.
     Consider the function $\efun \x (\efield \x 2)$, which projects the second
-    component of a tuple. The natural semantics lets us to guess for $\x$ any tuple type of arity at least $2$; so there is no principal type for $\x$.
+    component of a tuple. The natural semantics lets us guess for $\x$ any
+    tuple type of arity at least $2$; so there is no principal type
+    for~$\x$.
 \end{enumerate*}
 
 \paragraph {Contextual semantics}
 
-To rule out guessing, we instead adopt a \emph{contextual} semantics: a match
-constraint is satisfiable only if the shape of the type is determined by the
-surrounding context. The corresponding rule for suspended constraints is the
-only non-syntax-directed rule in our semantics:
-\begin{mathpar}
+\begin{version}{}
+\begin{wraphbox}{}{}
+\begin{mathpar}[inline]
   \infer[Susp-Ctx]
-    {\Cshape \C \t \sh \\
+    {\Cshape \C \t \sh \\\\
       \semenv \th \C \where {\cmatched \t \sh \cbrs}
     }
     {\semenv \th \C \where {\cmatch \t \cbrs}}
 \end{mathpar}
+\end{wraphbox}
+\end{version}
+To rule out guessing, we instead adopt a \emph{contextual} semantics: a
+match constraint is satisfiable only if the shape of the type is determined
+by the surrounding context. The corresponding rule for suspended
+constraints, \Rule {Susp-Ctx} in \cref {fig:contextual-semantics}, is the
+only non-syntax-directed rule in our semantics.
+%
 In this rule, the shape $\sh$ is not guessed from $\semenv$, but it must be
 recovered from the constraint context $\C$. The \emph{unicity} condition
 $\Cshape \C \t \sh$ (defined below) ensures that $\sh$ is uniquely determined by $\C$.
 
 \begin{definition}[Erasure]
   The erasure $\cerase \c$ of a constraint $\c$ is defined as the constraint
-  obtained by suspended match constraints in $\c$ with $\ctrue$.
+  obtained by replacing suspended match constraints in $\c$ with $\ctrue$.
 \end{definition}
 
 \begin{definition}[Simple constraints]
@@ -1348,12 +1358,34 @@ $\Cshape \C \t \sh$ (defined below) ensures that $\sh$ is uniquely determined by
 \end{definition}
 
 \begin{definition}[Unicity]
-  We define the unicity condition $\Cshape \C t \sh$, which states that $\t$ has a unique canonical shape $\sh$ within the context $\C$.
-  \begin{mathpar}
-    \Cshape \C \t \sh \Wide\eqdef \forall \semenv, \gt. \uad
-      \semenv \thsimple \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
-  \end{mathpar}
+  We define the unicity condition $\Cshape \C t \sh$, which states that $\t$
+  has a unique canonical shape $\sh$ within the context $\C$ as
+  \begin{mathpar}[inline]
+    %% \Cshape \C \t \sh \Wide\eqdef
+    \forall \semenv, \gt. \uad
+      \semenv \thsimple \cerase {\C\where{\cunif \t \gt}} \implies
+          \shape \gt = \sh
+  \end{mathpar}.
 \end{definition}
+
+\begin{mathparfig}[t]
+  {fig:contextual-semantics}
+  {Semantics of suspended constraints.}
+\infer[Susp-Ctx]
+    {\Cshape \C \t \sh \and
+      \semenv \th \C\where{\cmatched \t \sh \cbrs}
+    }
+    {\semenv \th \C\where{\cmatch \t \cbrs}}
+\hfill
+\begin{array}{.l.}
+\Cshape \C \t \sh \eqdef
+\\[.6ex]\quad
+\forall \semenv, \gt.
+%% \\\qquad
+      \semenv \thsimple \cerase {\C\where{\cunif \t \gt}} \implies
+         \shape \gt = \sh
+\end{array}
+\end{mathparfig}
 
 The use of erasure $\cerase {\C\where{\cunif \t \gt}}$ in the definition of
 $\Cshape \C \t \sh$ ensures that the unicity of $\sh$ is determined only by the
@@ -1367,31 +1399,15 @@ The erasure $\cerase{\C\where{\cunif \t \gt}}$ is simple, so the use of
 $\thsimple$ avoids well-foundedness issues that would arise from
 a negative occurrence of $(\th)$ in a premise of \Rule{Susp-Ctx}.
 %
-Note that, if $\t$ is not a variable, then $\Cshape \square \t \sh$
-holds trivially for $\sh = \shape \t$. Likewise, if $\C$ is unsatisfiable,
+Note that, when $\t$ is not a variable, then $\Cshape \square \t \sh$
+holds trivially for $\sh = \shape \t$. Likewise, when $\C$ is unsatisfiable,
 then $\Cshape \C \tv \sh$ holds vacuously for any $\sh$. The interesting cases
 arise when $\t$ is a type variable and $\C$ is satisfiable.
 
 We summarize the definition of the unicity condition and \Rule{Susp-Ctx} in
 \cref{fig:contextual-semantics}. Together with the rules of
 \cref{fig:constraint-semantics}, this forms the complete semantics of our
-consstraint language.
-
-\begin{mathparfig}[htpb!]
-  {fig:contextual-semantics}
-  {Semantics of suspended constraints.}
-\begin{array}{l}
-\Cshape \C \t \sh \eqdef \forall \semenv, \gt. \\
-\qquad
-      \semenv \thsimple \cerase {\C\where{\cunif \t \gt}} \implies \shape \gt = \sh
-\end{array}
-
-  \infer[Susp-Ctx]
-    {\Cshape \C \t \sh \\
-      \semenv \th \C\where{\cmatched \t \sh \cbrs}
-    }
-    {\semenv \th \C\where{\cmatch \t \cbrs}}
-\end{mathparfig}
+constraint language.
 
 
 \parcomment {Examples}
@@ -1405,15 +1421,16 @@ Consider the two examples from above:
 
   \cexists \tv \cmatch \tv {\cbranch \cpatwild {\cunif \tv \tint}}
 \end{mathpar}
-
-In the first example, we apply the contextual rule with the context $\C \is
-  \cexists \tv \cunif \tv \tint \cand \square$. Any solution $\semenv$ of this context
-   necessarily satisfies $\cunif \tv \tint$, so we have $\Cshape \C
-  \tv \tint$ and the suspended constraint can be discharged.
-
-In constrast, the second example has no contextual information around the
-  suspended constraint: $\C \is \square$. So any solution $\semenv$ satisfies
-  it, allowing $\semenv(\tv)$ to have an arbitrary shape (\eg $\tint$, $\tbool$,
+In the first example, we apply the contextual rule with the context
+\relax $\C \is \cexists \tv \cunif \tv \tint \cand \square$.
+Any solution $\semenv$ of this context necessarily satisfies
+\relax $\cunif \tv \tint$, so we have
+\relax $\Cshape \C \tv \tint$ and the suspended constraint can be discharged.
+%
+By constrast, the second example has no contextual information around the
+suspended constraint: $\C \is \square$. So any solution $\semenv$ satisfies
+it, allowing $\semenv(\tv)$ to have an arbitrary shape (\eg $\tint$,
+$\tbool$,
   \etc). As a result, the uniqueness condition $\Cshape \C \tv \sh$ never holds
   and the constraint is unsatisfiable as intended.
 
@@ -1422,37 +1439,69 @@ In constrast, the second example has no contextual information around the
 Consider the more intricate example:
 \begin{mathpar}
   \cexists {\tva \tvb}
-  \Parens{\begin{array}{l}
-    \quad \cmatch \tva {\cbranch \cpatwild {\cunif \tvb \tbool}} \\
-    {} \cand \cmatch \tvb {\cbranch \cpatwild \ctrue} \\
-    {} \cand \cunif \tva \tint
-  \end{array}}
+  {\def \EX
+     {\cmatch \tva {\cbranch \cpatwild {\cunif \tvb \tbool}} \and
+      \cmatch \tvb {\cbranch \cpatwild \ctrue} \and
+      \cunif \tva \tint}
+    \False%\True
+      {\def \and{\\{}\cand}\Parens
+         {\begin{array}{;l}
+            \quad \EX
+          \end{array}}}
+      {\def \and{)\wide\wedge(}\parens{\EX}}
+  }
 \end{mathpar}
-
 Suppose we attempt to apply \Rule{Susp-Ctx} to the match on $\tvb$ first.
-We want to show $\Cshape \C \tvb \tbool$ for the
-context $\C \is \cmatch \tv {(\cbranch \cpatwild {\cunif \tvb \tbool})} \cand
-\square \cand \cunif \tva \tint$. Its erasure is $\cerase \C = \ctrue \cand \square \cand \cunif \tva \tint$.
-  In this constraint $\tvb$ is unconstrained, so for example $\cerase {{\C\where{\cunif \tvb \tint}}}$ and $\cerase {\C\where{\cunif \tvb \tbool}}$ are both satisfiable:
-  unicity does not hold and \Rule{Susp-Ctx} cannot be applied.
+We want to show $\Cshape \C \tvb \tbool$ for the context
+$\C$ equal to
+\begin{mathpar}[inline]
+  \cmatch \tv {(\cbranch \cpatwild {\cunif \tvb \tbool})} \cand
+  \square \cand
+  \cunif \tva \tint
+\end{mathpar}.
+Its erasure is
+\relax $\cerase \C = \ctrue \cand \square \cand \cunif \tva \tint$.
+In this constraint $\tvb$ is unconstrained, so for example
+\relax $\cerase {{\C\where{\cunif \tvb \tint}}}$ and
+\relax $\cerase {\C\where{\cunif \tvb \tbool}}$
+are both satisfiable: unicity does not hold and \Rule{Susp-Ctx} cannot be
+applied.
 
 Now consider instead applying \Rule{Susp-Ctx} to the match on $\tva$
 first. To do so, we must show that $\tva$ has a uniquely determined shape in
-the context $\C \is \square \cand \cmatch \tvb {\cbranch \cpatwild \ctrue}
-\cand \cunif \tva \tint$. Its erasure is $\cerase \C =
-\square \cand \ctrue \cand \cunif \tva \tint$. Since $\tva$ is unified with
-$\tint$ in the erasure, we have $\Cshape \C \tva \tint$.
+the context $\C$ equal to
+\begin{mathpar}[inline]
+  \square \cand
+  \cmatch \tvb {\cbranch \cpatwild \ctrue} \cand
+  \cunif \tva \tint
+\end{mathpar}.
+Its erasure $\cerase \C$ is
+\relax $\square \cand \ctrue \cand \cunif \tva \tint$.
+Since $\tva$ is unified with $\tint$ in the erasure, we have $\Cshape \C
+\tva \tint$.
 %
-We may now discharge the match on $\tva$, rewriting it as $(\cmatched \tva \tint {\cbranch \cpatwild {\cunif \tvb \tbool}})$---that
-is, $(\tva = \tint \cand \cunif \tvb \tbool)$. Substituting back, we are left to satisfy the constraint $\C \where {\tva = \tint \cand \cunif \tvb \tbool}$, that is,
-$(\cunif \tva \tint \cand \cunif \tvb \tbool \cand \cmatch \tvb
-{\cbranch \cpatwild \ctrue} \cand \cunif \tva \tint)$. At this point, we can
-safely apply \Rule{Susp-Ctx} to the remaining match constraint on $\tvb$.
-The unicity condition now holds, as the erasure of the context includes the
+We may now discharge the match on $\tva$, rewriting it as
+\begin{mathpar}[inline]
+(\cmatched \tva \tint {\cbranch \cpatwild {\cunif \tvb \tbool}})
+\end{mathpar},
+that is, $(\tva = \tint \cand \cunif \tvb \tbool)$. Substituting back, we
+are left to satisfy the constraint $\C \where {\tva = \tint \cand \cunif
+\tvb \tbool}$, that is,
+\begin{mathpar}[inline]
+\parens {
+  \cunif \tva \tint \cand \cunif \tvb \tbool \cand
+  \cmatch \tvb {\cbranch \cpatwild \ctrue} \cand
+  \cunif \tva \tint
+}
+\end{mathpar}.
+
+At this point, we can safely
+apply \Rule{Susp-Ctx} to the remaining match constraint on $\tvb$.  The
+unicity condition now holds, as the erasure of the context includes the
 discharged constraint $\cunif \tvb \tbool$, allowing us to eliminate the
 final match constraint.
 
-This demonstrates that suspended match constraints must be resolved in a
+This demonstrates that suspended match coxnstraints must be resolved in a
 dependency-respecting order: attempting to resolve a match
 constraint too early may result in unsatisfiability.
 \end{example}
@@ -1462,10 +1511,16 @@ Let us consider a constraint with a cyclic dependency between match
 constraints:
 \begin{mathpar}
   \cexists {\tva \tvb}
-  \left(\begin{array}{l}
-    \quad \cmatch \tva {\cbranch \cpatwild {\cunif \tvb \tbool}} \\
-    {} \cand \cmatch \tvb {\cbranch \cpatwild {\cunif \tva \tint}}
-  \end{array}\right)
+  {\def \EX
+     {\cmatch \tva {\cbranch \cpatwild {\cunif \tvb \tbool}} \and
+      \cmatch \tvb {\cbranch \cpatwild {\cunif \tva \tint}}}
+    \False%\True
+      {\def \and{\\{}\cand}\Parens
+         {\begin{array}{;l}
+            \quad \EX
+          \end{array}}}
+      {\def \and{)\wide\wedge(}\parens{\EX}}
+  }
 \end{mathpar}
 This constraint can be proved satisfiable under the ``natural semantics'' introduced
 earlier: by guessing the assignment $\tva \is \tint, \tvb \is
@@ -1473,10 +1528,12 @@ earlier: by guessing the assignment $\tva \is \tint, \tvb \is
 and the contextual semantics reject it.
 
 Without loss of generality, suppose we attempt to apply \Rule{Susp-Ctx} on
-$\tva$ first. We must show $\Cshape \C \tva \tint$ where $\C \is  \square
-\cand \cmatch \tvb {\cbranch \cpatwild {\cunif \tva \tint}}$ But the erasure
-$\cerase \C = \square \cand \ctrue$ imposes no constraint on $\tva$, so
-unicity fails, and \Rule{Susp-Ctx} cannot be applied.
+$\tva$ first. We must show $\Cshape \C \tva \tint$ where $\C$ is
+\begin{mathpar}[inline]
+    \square \cand \cmatch \tvb {\cbranch \cpatwild {\cunif \tva \tint}}
+\end{mathpar}
+But the erasure $\cerase \C$ is $\square \cand \ctrue$ imposes no constraint
+on $\tva$, so unicity fails, and \Rule{Susp-Ctx} cannot be applied.
 \end{example}
 
 \begin{example}
@@ -1484,19 +1541,24 @@ Considering the example \code{ex_7} from \cref{sec/introduction}:
 \begin{program}[input]
 let ex_7 r = let x = r.x in x + r.y °\ocamlflags 10°
 \end{program}
-The constraint generated when typing \code{ex_7} contains the following, where $\tv$ stands for the type of \code{r}:
+The typing constraint generated for \code{ex_7} contains the following, where $\tv$ stands for the type of \code{r}:
 \begin{mathpar}
   \cexists \tv
     \clet x \tvb
       {(\cmatch \tva \dots)}
       {\cinst x \tint \cand \cunif \tv {\mathsf{one}}}
 \end{mathpar}
-The suspended constraint can be discharged under our semantics, as intended. We apply the
-\Rule{Susp-Ctx} rule with context $\C \is \clet \x \tvb \square \capp \x
-\tint \cand \cunif \tv {\mathsf{one}}$. Although the context includes a
-\code{let}-binding --- which in practice involves \code{let}-generalization --- we
-can still deduce $\Cshape \C \tv {\mathsf{one}}$, since the erased context $\cerase \C$ contains the unification $\cunif \tv
-{\mathsf{one}}$.
+The suspended constraint can be discharged under our semantics, as
+intended. We apply the \Rule{Susp-Ctx} rule with context
+$\C$ equal to
+\begin{mathpar}[inline]
+  \clet \x \tvb \square \capp \x \tint \cand
+  \cunif \tv {\mathsf{one}}
+\end{mathpar}.
+Although the context includes a \code{let}-binding---which in practice
+involves \code{let}-generalization---we can still deduce $\Cshape \C \tv
+{\mathsf{one}}$, since the erased context $\cerase \C$ contains the
+unification $\cunif \tv {\mathsf{one}}$.
 
 This example illustrates that our formulation of suspended constraints
 interacts nicely with \code{let}-polymorphism. Although the two features are
@@ -1510,10 +1572,9 @@ A subtle yet crucial feature of our semantics is its support for
 \begin{program}[input]
 let ex_8 = let getx r = r.x in getx { x = 1 }  °\ocamlflags 10°
 \end{program}
-
-As in the previous example the type of \code{r} cannot be disambiguated in the
+As in the previous example, the type of \code{r} cannot be disambiguated in the
 \code{let}-definition alone. In the previous example, this type was unified
-to a known shape in the \code{let}-body. Here this is more subtle: an
+to a known shape in the \code{let}-body. Here, this is more subtle: an
 \emph{instance} of the type scheme is taken, which is only well-typed if
 \code{r} has a variable type or a type of the form
 \ocaml{'a two}. The projection \code{r.x} would be
@@ -1537,17 +1598,27 @@ The constraint generated when typing
 With the context $\C$ equal to $\clet {getx}
 \tvd {\cexists {\tvb, \tvc} \cunif \tvd {\tvb \to \tvc} \cand \square}
 {\capp {getx} {(\tint \ \mathsf{two} \to \tv)}}$, we can show the unicity predicate $\Cshape \C \tvb \sh$ for the shape $\sh = (\any \tvc {\tvc~\mathsf{two}})$.
-That is:
-\begin{mathpar}
-  \all {\semenv, \gt} \uad
-    \semenv \th \cerase {\C\where{\cunif \tvb \gt}} \implies \shape \gt = \sh
-\end{mathpar}
-For any $\semenv, \gt$, the erasure $\cerase {\C \where {\cunif \tvb \gt}}$ is
-$\clet {getx}
+%% That is:
+%% \begin{mathpar}
+%%   \all {\semenv, \gt} \uad
+%%     \semenv \th \cerase {\C\where{\cunif \tvb \gt}} \implies \shape \gt = \sh
+%% \end{mathpar}
+For any $\semenv, \gt$, the erasure $\cerase {\C \where {\cunif \tvb \gt}}$
+is
+\begin{mathpar}[inline]
+\clet {getx}
 \tvd {\cexists {\tvb, \tvc} \cunif \tvd {\tvb \to \tvc} \cand \cunif \tvb \gt}
-{\capp {getx} {(\tint \ \mathsf{two} \to \tv)}}$. Since $getx$ is bound to the constraint abstraction $\cabs \tvd \exists \tvc.\uad \cunif \delta {(\gt \to \gamma)}$,
-  the instantiation $\capp {getx} (\tint \ \mathsf{two} \to \tv)$ can only be satisfied when $\gt = \tint\ \mathsf{two}$. This proves unicity, hence \code{ex_7} is accepted by our semantics.
+{\capp {getx} {(\tint \ \mathsf{two} \to \tv)}}
+\end{mathpar}.
+Since $getx$ is bound to the constraint abstraction
+\relax $\cabs \tvd \exists \tvc.\uad \cunif \delta {(\gt \to \gamma)}$,
+the instantiation
+\relax $\capp {getx} (\tint \ \mathsf{two} \to \tv)$
+can only be satisfied when
+\relax $\gt = \tint\ \mathsf{two}$. This proves unicity,
+hence \code{ex_7} is accepted by our semantics.
 \end{example}
+
 
 \section{The \OML calculus}
 \label{sec:language}
