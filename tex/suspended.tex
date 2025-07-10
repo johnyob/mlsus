@@ -1631,57 +1631,76 @@ system to use as a specification is itself an interesting problem!
 
 \parcomment {Why do naive approaches not guarantee principal types.}
 
-Na\"ive specifications, though accessible, often lack principal types. Take
-overloaded tuple projections \ala \SML. We can ask the user to provide the
-length of the tuple explicitly, via an annotated syntax $\exfield \e n j$,
-which has a simple typing rule:
-\begin{mathpar}
+\begin{wraphbox}[11em]{}{}
+\mprset{sep=1em}
+\begin{mathpar}[inline]
    \inferrule*
       {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n }
       {\G \th \exfield \e n j : \tj}
 \end{mathpar}
+\end{wraphbox}
+Na\"ive specifications, though accessible, often lack principal types. Take
+overloaded tuple projections \ala \SML. We can ask the user to provide the
+length of the tuple explicitly, via an annotated syntax $\exfield \e n j$,
+which has a simple typing rule:
 
-On the other hand, the natural typing rule for the fragile construct $\efield e j$ breaks principality:
-\begin{mathpar}
+\begin{wraphbox}[11em]{}{}
+\mprset{sep=1em}
+\begin{mathpar}[inline]
   \infer
-    {\G \th \e : \Pi\iton \ti \and 1 \leq j \leq n}
+    {\G \th \e : \Pi\iton \ti \\ 1 \leq j \leq n}
     {\G \th \efield \e j : \tj}
 \end{mathpar}
+\end{wraphbox}
+On the other hand, the natural typing rule for the fragile construct
+$\efield e j$ breaks principality:
+%
 The term $\efield \e j$ admits many typings, as any tuple of at least size
 $j$ satisfies the premise.
-%
-This is the exact same issue we had with the naive semantics of suspended constraints, and in fact we solve it in the same way, with a unicity condition and a contextual rule that transforms the fragile, implicit construct into the robust, explicit construct:
-\begin{mathpar}
-  \inferrule*
-    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\ \G \th E[\exfield \e n j] : \t}
-    {\G \th \E[\efield \e j] : \t}
+
+\begin{wraphbox}[11em]{}{}
+\mprset{sep=1em}
+\begin{mathpar}[inline]
+\infer
+  {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\\\
+   \G \th E[\exfield \e n j] : \t}
+  {\G \th \E[\efield \e j] : \t}
 \end{mathpar}
+\hfil
+\end{wraphbox}
+This is the exact same issue we had with the naive semantics of suspended
+constraints, and in fact we solve it in the same way, with a unicity
+condition and a contextual rule that transforms the fragile, implicit
+construct into the robust, explicit construct:
+
 
 We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton \tvcs}$, which is the counterpart of our unicity condition $\Cshape \C \t \sh$ in the type system. We formally introduce it in the rest of this section; in fact the different fragile features need slightly different formulations of the unicity condition.
 
 \subsection{Syntax}
 
-\begin{bnffig}{fig/syntax}{Syntax of \OML}
+\begin{bnffig}[t]{fig/syntax}{Syntax of \OML}
 \entry[Terms]{\e}{
   x \and
   () \and
   \efun x e \and
   \eapp \ea \eb \and
   \elet x \ea \eb \and
-  \eannot \e \tvs \t \andcr
+  \eannot \e \tvs \t \and%\andcr
   \erecord {\overline{\el = \e} } \and
-  \efield e \el \andcr
+  \efield e \el \andcr%\and
    (\ea, \ldots, \en) \and
    \efield e j \and
-   \exfield e n j \andcr
+   \exfield e n j \and%\andcr
    \epoly e \and
    \expoly e \tvs \ts \and
    \einst e \and
    \exinst e \tvs \ts
-}\\
-\entry[Labels]{l}{
-  \elab \and \elab / \T
-}\\[1ex]
+}
+%% \\
+%% \entry[Labels]{l}{
+%%   \elab \and \elab / \T
+%% }
+\\[1ex]
 \entry[Types]{\t}{
    \tv \and
    1 \and
@@ -1729,15 +1748,18 @@ contextual rule with a unicity condition, and an elaboration into an
 explicit rule. Our unicity conditions in typing rules request that the
 annotating shape is fully determined from the context, and from the type of
 either the context hole or the expression.
-%
-In order to define the unicity conditions, we introduce a \emph{typed
-  hole} construct $\emagic \e$ that allows any well-typed expression
-$\e$ to be treated as if it had any type:
-\begin{mathpar}
+
+\begin{wraphbox}{}{}
+\begin{mathpar}[inline]
   \inferrule[Magic]
     {\G \th \e : \t}
     {\G \th \emagic \e : \tp}
 \end{mathpar}
+\end{wraphbox}
+In order to define the unicity conditions, we introduce a \emph{typed hole}
+construct $\emagic \e$ that allows any well-typed expression $\e$ to be
+treated as if it had any type:
+%
 Typed holes are not allowed in source terms and are just a device for
 the definition of unicity conditions. We also introduce an erasure
 function $\eerase \e$, the term counterpart of constraint erasure
@@ -1808,9 +1830,9 @@ $\cunif \tv \t \centails \csem {\e : \tv}$.
 \end{theorem}
 
 \begin{theorem}[Principal types]
-<<<<<<< HEAD
-For any well-typed closed term $\e$, there exists a type $\t$, which we
-call principal, such that:
+\label{thm:principal-types}
+For any well-typed closed term $\e$, there exists a type $\t$, which we call
+principal, such that:
 \begin{enumerate*}[(\roman*)]
 \item
   $\th \e : \t$.
@@ -1818,16 +1840,7 @@ call principal, such that:
   For any other typing $\th \e : \tp$, then $\tp = \theta(\t)$ for some
   substitution $\theta$.
 \end{enumerate*}
-=======
-  \label{thm:principal-types}
-  For any well-typed closed term $\e$, there exists a type $\t$, which we call principal, such that:
-  \begin{enumerate}[(\roman*)]
-    \item $\th \e : \t$.
-    \item For any other typing $\th \e : \tp$, then $\tp = \theta(\t)$ for some substitution $\theta$.
-  \end{enumerate}
->>>>>>> 419ee4f7dcf88ae76cbb17a30b95b5c3bd3f2c66
 \end{theorem}
-
 It is also interesting to discuss the stability of typing by common program
 transformations.
 
