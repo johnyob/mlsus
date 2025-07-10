@@ -6,6 +6,8 @@ SOURCES=$(shell find . -name '*.tex' -or -name '*.bib' -or -name '*.sty')
 
 all: $(addsuffix .pdf,${PRJ})
 
+final: suspended.final.pdf
+
 .PRECIOUS: %.pdf
 
 %.pdf: %.tex ${SOURCES}

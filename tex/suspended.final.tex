@@ -1,0 +1,18 @@
+%%%%
+%%%%  make final:
+%%%%
+%%%%     Version de soumission
+%%%%      - pas de commentaires (XXX, \Not\Public, ...)
+%%%%      - pas d'appendices
+%%%%
+\newcommand \Draft {\False}
+\newcommand{\Final}{\True}
+\newcommand \Long {\False}
+\message {*** FINAL ***}
+\PassOptionsToPackage{ignore}{XXX}
+\newcommand \OPTIONS {%
+screen%
+%, review%
+%, draft%
+}
+\input suspended.tex
