@@ -2665,6 +2665,43 @@ original motivations.
 \newpage
 \appendix
 
+\section*{Organization of our appendices}
+\label{app:outline}
+
+\paragraph{Content appendices.} These appendices are intended to be
+readable prose in the style of the rest of the paper.
+
+\begin{itemize}
+\item \cref{app:oml-calculus} presents and explains the typing rules for \OML;
+  this is the long version of \cref{sec:language}.
+\item \cref{app:unification} presents a relatively standard part of our constraint solver (\cref{sec:solving}),
+  namely the unification rules.
+\item \cref{app:more-discussion} contains topics of discussion that we
+  did not have the space to include in \cref{sec:discussion}.
+\end{itemize}
+
+\paragraph{Reference appendix}
+\begin{itemize}
+\item \cref{app:full-reference} gives a full reference for all
+  definitions, grammars and figures in the paper, including all cases
+  (even those omitted from the main paper for reasons of space).
+\end{itemize}
+
+\paragraph{Proof appendices} These appendices contain proofs for the
+formal claims in the article. They are typically written tersely.
+\begin{itemize}
+\item \cref{app:proofs-constraints} proves properties of the
+  constraint language and its semantics. The main result is
+  canonicalization, which morally establishes that uses of the
+  contextual rule \Rule{Susp-Ctx} can be ``permuted down'' in the
+  proof until they are all at the bottom of the derivation, followed
+  by a proof on a simple constraint.
+\item \cref{app:proofs-solving} proves the correctness of the
+  constraint solver with respect to the semantics.
+\item \cref{app:proofs-typing} proves the properties about the \OML
+  type system, in particular the correctness of constraint generation.
+\end{itemize}
+
 \section{The \OML calculus: typing rules and constraint generation}
 \label{app:oml-calculus}
 
@@ -3640,6 +3677,7 @@ occurs in a type assigned to $\tvb$ in $\up$. A unification problem is cyclic,
 written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
 
 \section{More discussion}
+\label{app:more-discussion}
 
 \subsection{Equi-recursive types}
 \label {sec/rec-types}
@@ -3681,11 +3719,12 @@ The canonical representation useing shapes is simiular.
 \Xdidier {Should we give the change in unification rules?}
 \end{version}
 
-\section{Figures}
+\clearpage
+\section{Full technical reference}
 \label{appendix:figures}
+\label{app:full-reference}
 
-This section contains supplementary material to the main paper, including a
-list of figures and definitions. Some of them are repeated from the main paper.
+This section repeats all the technical definitions mentioned in the paper, including the cases, rules, and definitions that were omitted from the main paper to save space. It can serve as a useful cheatsheet to understand a definition in full, or when studying the meta-theory of the system.
 
 \begin{bnffig}[htpb!]%
   {fig:all--syntax}%
@@ -4841,7 +4880,9 @@ A context $\C$ proves a multi-equation $\ueq$, written $\ueq \in \C$,  if there 
 \end{definition}
 
 
+\clearpage
 \section{Properties of the constraint language}
+\label{app:proofs-constraints}
 
 This appendix establishes key properties of the constraint language. The first
 is the principality of shapes \cref{thm:principal-shapes}: any non-variable type
@@ -5577,6 +5618,7 @@ entailment in our system.
 
 \clearpage
 \section{Properties of the constraint solver}
+\label{app:proofs-solving}
 
 The primary requirement of our constraint solver is correctness:
 a constraint $\c$ is satisfiable if and only if the solver terminates with a solution.
@@ -6856,6 +6898,7 @@ direction, but it should be clarified.
 
 \clearpage
 \section{Properties of \OML}
+\label{app:proofs-typing}
 
 \subsection{Simple syntax-directed system}
 As a first step towards proving soundness and completeness of constraint generaztion,
@@ -7088,390 +7131,6 @@ and $\sub(\tvs) = \tys$.
   \end{proof}
 \end{theorem}
 
-
-\section{Examples of suspended match constraints}
-
-\Xgabriel{We have a problem in this definition, due to the fact that $\phi$ also contains polymorphic schemes, which are not necessarily the same as the one at the point where we use the \Rule{Susp-Ctx} rule. For example when the current environment $\phi$ has $x : \forall \alpha. \tint$, one would expect that $\phi \vdash \capp x \alpha \cand \cmatch \alpha \dots$ is satisfiable as $\capp x \alpha$ is morally equivalent to $\alpha = \tint$, but technically it is not because we can pick $\phi' := [x := \forall \alpha. \tbool]$.}
-\Xalistair{Actually it's okay if this example fails, the ``fix'' is to use a wider $\C$ that contains the $\mathsf{let}~ x$ definition as part of the constraint.}
-\Xgabriel{This example/discussion should go in the Unicity Testsuite Appendix.}
-
-%
-%\section{Well-foundedness of satisfiability}
-
-%\section{Well-foundedness of \OML typing rules}
-%
-%\Xalistair{The same problem of well-foundedness comes up
-%with the \OML typing rules. Should we have a separate
-%section? Or deal with it in the above section (A single
-%section for well-foundedness concerns)}
-%
-%\section{Ordered substitutions and unifiers}
-%
-%An ordered substitution $\sub$ is a refinement on substitutions, which
-%defines the scope of existential variables in solutions and controls the free
-%variables of their solutions.
-%
-%\begin{mathpar}
-%  \begin{bnfgrammar}
-%    \entry[Ordered substitution]{\sub}{
-%      \cdot
-%      \and \sub, \tv
-%      \and \sub, \tv := \t
-%      \and \sub, \x := \cabs \tv \c
-%    }
-%  \end{bnfgrammar}
-%\end{mathpar
-%Like typing contexts $\G$, substitutions $\sub$ are ordered and contain
-%delcarations of polymorphic variables ($\tv$), they also provide term variable
-%bindings ($\x \is \cabs \tv \c$). Unlike typing contexts, ordered substitutions
-%$\sub$ also contain declarations of existential (flexible) type variables with
-%solutions ($\tv \is \t$). We write $\dom \sub$ for the sequence of type
-%variables and term variables defined in $\sub$.
-%
-%The well-formedness of substitutions $\sub$, written $\th \sub$ and defined
-%below, enforces an order: if $\sub = \sub_L, \tv \is \t, \sub_R$, the solution
-%$\t$ must be well-formed under $\sub_L$.
-%
-%\begin{mathpar}
-%  \infer[Sub-Emp-Wf]
-%    {}
-%    {\th \eset}
-%
-%  \infer[Sub-TyVar-Wf]
-%    {\th \sub}
-%    {\th \sub, \tv}
-%
-%  \infer[Sub-TyAssn-Wf]
-%    {\th \sub \\ \sub \th \t}
-%    {\th \sub, \tv \is \t}
-%
-%  \infer[Sub-Var-Wf]
-%    {\th \sub \\ \dom \sub \th \cabs \tv \c}
-%    {\th \sub, \x \is \cabs \tv \c}
-%\\
-%  \infer[S-Var-Wf]
-%    {\tv \in \dom \sub}
-%    {\sub \th \tv}
-%
-%  \infer[S-Unit-Wf]
-%    {}
-%    {\sub \th \tunit}
-%
-%  \inferrule[S-Arr-Wf]
-%    {\sub \th \t \\ \sub \th \tp}
-%    {\sub \th \t \to \tp}
-%
-%  \inferrule[S-Prod-Wf]
-%    {(\sub \th \ti)\iton}
-%    {\sub \th \Pi\iton \ti}
-%
-%  \inferrule[S-Rcd-Wf]
-%    {(\sub \th \ti)\iton \\
-%     \T \in \dom \Omega}
-%    {\sub \th \T \tys}
-%
-%  \inferrule[S-Poly-Wf]
-%    {\sub \th \ts}
-%    {\sub \th \tpoly \ts}
-%
-%  \inferrule[S-Forall-Wf]
-%    {\sub, \tv \th \ts}
-%    {\sub \th \tfor \tv \ts}
-%
-%\end{mathpar}
-%Ordered substitutions $\sub$ can be viewed as parallel substitutions on types,
-%substitutiong solved existential variables. We write $\sub(\t)$ for $\sub$
-%applied as a substitution to type $\t$:
-%\begin{mathpar}
-%  \begin{tabular}{RCLL}
-%    \sub(\tv) &\eqdef&
-%      \begin{cases}
-%	\theta(\t) &\text{if } \tv \is \t \in \theta \\
-%	\tv &\text{otherwise}
-%      \end{cases}\\
-%    \sub(\tunit) &\eqdef& \tunit \\
-%    \sub(\t \to \tp) &\eqdef& \sub(\t) \to \sub(\tp) \\
-%    \sub(\Pi\iton \ti) &\eqdef& \Pi\iton \sub(\ti) \\
-%    \sub(\Tapp \tys) &\eqdef&  \Tapp {\sub(\tys)} \\
-%    \sub(\tpoly \ts) &\eqdef& \tpoly {\sub(\ts)} \\
-%    \sub(\tfor \tv \ts) &\eqdef& \tfor \tv \sub(\ts) &\text{if } \tv \disjoint
-%    \sub
-%  \end{tabular}
-%\end{mathpar}
-%
-%We can interpret $\sub$ as a set of semantic environments, written $\csem
-%\sub$.
-%\TODO{Semantic environments should not be ordered}
-%\begin{mathpar}
-%  \begin{tabular}{RCL}
-%      \csem \cdot &\eqdef& \set {\cdot} \\
-%      \csem {\sub, \tv} &\eqdef& \set{\semenv[\tv \is \gt] : \semenv \in \csem
-%      \sub} \\
-%      \csem {\sub, \tv \is \t} &\eqdef& \set{\semenv[\tv \is \semenv(\t)] :
-%	\semenv \in \csem \sub} \\
-%      \csem {\sub, \x \is \cabs \tv \c} &\eqdef& \set{\semenv[\x \is
-%      \semenv(\cabs \tv \c)] : \semenv \in \csem \sub}
-%  \end{tabular}
-%\end{mathpar}
-%
-%We say that $\sub$ is a \emph{unifier} of $\c$ iff $\all {\semenv } \semenv
-%\in \csem \sub \implies \semenv \th \c$.
-%
-%\begin{lemma}
-%  If $\sub$ is unifier of $\cexists \tv \c$, there exists type $\t$ such that
-%  $\sub \th \t$ and $\sub, \tv \is \t$ is a unifier of $\c$. Conversely,
-%  if $\sub, \tv \is \t$ is a unifier of $\c$, then $\sub$ is a unifier of
-%  $\cexists \tv \c$.
-%
-%
-%\end{lemma}
-%
-%\TODO{Add some more stuff on ordered substitutions and unifiers (probably on
-%an as need basis)}
-%
-%\section{Proofs for \cref{sec:constraint-gen}}
-%
-%In this appendix, we give the details for proving the soundness and completeness
-%of the constraint generator, that is $\G \th \e : \ts$ if and only if
-%$\cdot \th \cinfer {\G \th \e} \ts$. We begin by reformulating this statement using
-%unifiers.
-%%
-%We write $\csem \G$ for the set of semantic environments induced by $\G$:
-%\begin{mathpar}
-%  \begin{tabular}{RCL}
-%    \csem \cdot &\eqdef& \set \cdot \\
-%    \csem {\G, \tv} &\eqdef& \set{\semenv[\tv \is \gt] : \semenv \in \csem \G} \\
-%    \csem {\G, \x : \ts} &\eqdef& \set{\semenv[\x \is \semenv(\cabs \tv \ts \leq \tv)] : \semenv \in \csem \G}
-%  \end{tabular}
-%\end{mathpar}
-%
-%\begin{lemma}
-%  $\cdot \th \csem{\G \th \e : \ts}$ if and only if $\csem \G \Vdash \cinfer \e \ts$
-%  \begin{proof}
-%    Induction on $\G$.
-%  \end{proof}
-%\end{lemma}
-%
-%We also relate $\G$ and ordered substitutions with the translation $\pparens \G$:
-%\begin{mathpar}
-%  \begin{tabular}{RCL}
-%    \pparens \cdot &\eqdef& \cdot \\
-%    \pparens {\G, \tv} &\eqdef& \pparens \G, \tv \\
-%    \pparens {\G, \x : \ts} &\eqdef& \pparens \G, \x \is \cabs \tv \ts \leq \tv
-%  \end{tabular}
-%\end{mathpar}
-%
-%\begin{lemma}
-%  $\csem \G = \csem {\pparens \G}$.
-%  \begin{proof}
-%    Induction on $\G$.
-%  \end{proof}
-%\end{lemma}
-%
-%We can now reformulate soundness and completeness as:
-%$\G \th \e : \ts$ if and only if $\pparens \G$ is a
-%unifier of $\cinfer \e \ts$.
-%
-%
-%
-%\begin{lemma}[X-soundness and completeness]
-%  For the explicit term $\e$, we have
-%  $\G \th \e : \ts$ if and only if $\pparens \G$ is a unifier of $\cinfer \e \ts$.
-%  \begin{proof}
-%    Structural induction on $\e$.
-%  \end{proof}
-%\end{lemma}
-%
-%\pagebreak
-%\section{Unicity properties}
-%
-%\newcommand{\cscmmatch}[2]{\angles{#1}#2}
-%\newcommand{\cscmmatchsub}[3]{\angles{#1 \is #2}#3}
-%\newcommand{\Csshape}[4]{{#1}\where{\cscmmatch{#2}{#3} \uni #4}}
-%\newcommand{\Cscshape}[7]{{#1}\where{\cscmmatch{#2}{#3} \uni {#4} \mid \csmatch{#5}{#6} \uni {#7}}}
-%\newcommand{\cbrsp}{\cbrs'}
-%
-%In this section, we give details of the unicity predicate along with our main result: \emph{inversion of suspension}.
-%We recall the following definition of unicity:
-%
-%\begin{definition}[Unicity]
-%  The type variable $\tv$ has a uniquely known principal shape $\sh$ in the context $\C$,
-%  written $\Cshape \C \tv \sh$ (or $\Csshape \C \tv \cbrs \sh$), iff for all assignments
-%  $\semenv$ and ground types $\gt$, then $\C\where{\cunif \tv \gt}$ implies that the
-%  principal shape of $\gt$ is equal to $\sh$:
-%  \begin{mathpar}
-%    \Csshape \C \tv \cbrs \sh \uad\eqdef\uad \all {\semenv, \gt} \; \semenv \th \C\where{\cunif \tv \gt} \implies \shape \gt = \sh
-%  \end{mathpar}
-%\end{definition}
-%
-%We introduce the notation $\Csshape \C \tv \cbrs \sh$ to be more consistent with our later notation on
-%\emph{joint} and \emph{conditional} unicity.
-%
-%\begin{lemma}
-%  If $\Csshape \Cb \tv \cbrs \sh$, then $\Csshape {\parens {\Ca\where\Cb}} \tv \cbrs \sh$.
-%  \begin{proof}
-%    Induction on $\Ca$.
-%  \end{proof}
-%\end{lemma}
-%
-%\begin{definition}[Conditional unicity] For two type variables $\tv, \tvp$, $\tv$ has the conditionally
-%  known shape $\sh$ given that $\tvp$ has the shape $\shp$
-%  within the match $\cscmmatch \tvp \cbrsp$, written
-%  $\Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp$, is defined as:
-%  \begin{mathpar}
-%    \Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp \uad\eqdef\uad \Csshape {\parens{\C\where{\square, \cscmmatchsub \tvp \shp \cbrsp}}} \tv \cbrs \sh
-%  \end{mathpar}
-%
-%  Here $\C$ is a two-hole context and $\C\where{\square, \cscmmatchsub \tvp \shp \cbrsp}$ is a one-hole context used in
-%  the unicity predicate.
-%\end{definition}
-%
-%
-%\begin{theorem}[Bayes' theorem]
-%  \begin{mathpar}
-%    \Cscshape \C \tv \cbrs \sh \tvp \cbrsp \shp \wedge \Csshape {\parens{\C\where{\cscmmatch \tv \cbrs, \square}}} \tvp \cbrsp \shp \\
-%    \iff \\
-%    \Cscshape \C \tvp \cbrsp \shp \tv \cbrs \sh \wedge \Csshape {\parens{\C\where{\square, \cscmmatch \tvp \cbrsp}}} \tv \cbrs \sh
-%  \end{mathpar}
-%  \begin{proof}
-%    ??
-%  \end{proof}
-%\end{theorem}
-%
-%
-%\begin{theorem}[Inversion of suspension]
-%  $\semenv \th \C\where{\cmatch \tv \cbrs}$ if and only if
-%  $\Cshape \C \tv {\any \tvcs \t}$ and $\semenv \th \C\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$ for some $\tvcs, \t$.
-%  \begin{proof}
-%    The backwards direction is trivial, using \Rule{Susp-Ctx}.
-%    We now consider the forwards direction, by induction on the given derivation.
-%
-%    \proofcase{\Rule{True}, \Rule{Multi-Unif}, \Rule{App}, \Rule{Susp-Use}, \Rule{AppR}, \Rule{Papp}} Impossible.
-%
-%    \proofcase{\Rule{Conj}}
-%      \begin{mathpar}
-%	\infer[Conj]
-%	  {\semenv \th \ca \\ \semenv \th \cb}
-%	  {\semenv \th \ca \cand \cb}
-%      \end{mathpar}
-%      We have $\C\where{\cmatch \tv \cbrs} = \ca \cand \cb$. Consider
-%      cases on $\C$:
-%      \begin{proofcases}
-%	\item \proofcase{$\C = \Cp \cand \cb$}
-%	  So we have $\semenv \th \Cp\where{\cmatch \tv \cbrs}$.
-%	  By induction, we have $\Cshape \Cp \tv {\any \tvcs \t}$ and
-%	  $\semenv \th \Cp\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}$.
-%	  By Lemma ??, we have $\Cshape {\parens {\Cp \cand \cb}} \tv {\any \tvcs \t}$.
-%	  By \Rule{Conj}, we have
-%	  \begin{mathpar}
-%	    \infer[Conj]
-%	      {\semenv \th \Cp\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs} \\
-%	       \semenv \th \cb}
-%	      {\semenv \th \parens{\Cp \cand \cb}\where{\cexists \tvcs \cunif \tv \tvcs \cand \cmatch \t \cbrs}}
-%	  \end{mathpar}
-%	\item \proofcase{$\C = \ca \cand \Cp$}
-%	  Symmetric.
-%      \end{proofcases}
-%
-%    \proofcase{\Rule{Let}}
-%      \begin{mathpar}
-%	\infer[Let]
-%	  {\semenv \th \cexists \tvb \ca \\
-%	   \semenv, \x \is \semenv(\cabs \tvb \ca) \th \cb}
-%	  {\semenv \th \clet \x \tvb \ca \cb}
-%      \end{mathpar}
-%      We have $\C\where{\cmatch \tv \cbrs} = \clet \x \tv \ca \cb$.
-%      Consider cases on $\C$:
-%      \begin{proofcases}
-%	\item \proofcase{$\C = \clet \x \tvb \Cp \cb$}
-%	  So we have $\semenv \th \cexists \tvb \Cp\where{\cmatch \tv \cbrs}$ (1)
-%	  and $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) \th \cb$ (2).
-%
-%	  By induction (1), we have $\cexists \tvb \Cshape \Cp \tv {\any \tvcs \t}$ and $\semenv \th \cexists \tvb
-%	  \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$. By Lemma ??, we have $\Cshape \Cp \tv {\any \tvcs \t}$.
-%
-%	  We now claim that $\semenv(\cabs \tvb \Cp\where{\cmatch \tv \cbrs}) = \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs})$.
-%	  That is $\semenv, \tvb \is \gt \th \Cp\where{\cmatch \tv \cbrs} \iff \semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$.
-%	  This follows directly from induction, as we have $\Cshape \Cp \tv {\any \tvcs \t}$.
-%
-%	  So we have $\semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \cb$ from (2).
-%	  Applying Lemma ??, we have $\Cshape {\parens {\clet \x \tvb \Cp \cb}} \tv {\any \tvcs \t}$, and applying the \Rule{Let} rule
-%	  gives us:
-%	  \begin{mathpar}
-%	    \infer[Let]
-%	      {\semenv \th \cexists \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} \\
-%	       \semenv, \x \is \semenv(\cabs \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}) \th \cb}
-%	      {\semenv \th \parens {\clet \x \tvb \Cp \cb} \where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs} }
-%	  \end{mathpar}
-%
-%
-%
-%
-%	\item \proofcase{$\C = \clet \x \tvb \ca \Cp$}
-%	  Similiar to the \Rule{Conj} case.
-%
-%      \end{proofcases}
-%
-%
-%    \proofcase{\Rule{Exists}}
-%      \begin{mathpar}
-%	\infer[Exists]
-%	  {\semenv, \tvb \is \gt \th \c}
-%	  {\semenv \th \cexists \tvb \c}
-%      \end{mathpar}
-%
-%      We have $\C\where{\cmatch \tv \cbrs} = \cexists \tvb \c$.
-%      Hence $\C = \cexists \tvb \Cp$ and $\Cp\where{\cmatch \tv \cbrs} = \c$.
-%
-%      By induction, we have $\Cshape \Cp \tv {\any \tvcs \t}$
-%      and $\semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}$.
-%
-%      By Lemma ??, we have $\Cshape {\parens {\cexists \tvb \Cp}} \tv {\any \tvcs \t}$.
-%      Applying \Rule{Exists} gives us:
-%      \begin{mathpar}
-%	\infer[Exists]
-%	  {\semenv, \tvb \is \gt \th \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}}
-%	  {\semenv \th \cexists \tvb \Cp\where{\cexists \tvcs \cunif \tv \t \cand \cmatch \t \cbrs}}
-%      \end{mathpar}
-%
-%
-%    \proofcase{\Rule{Forall}} Similiar to the \Rule{Exists} case.
-%
-%    \proofcase{\Rule{Susp-Ctx}}
-%      \begin{mathpar}
-%	\infer[Susp-Ctx]
-%	  {\Cshape \Cp \tvp {\any \tvcs' \typ} \\
-%	   \semenv \th \Cp\where{\cexists {\tvcs'} \cunif \tvp \typ \cand \cmatch \typ \cbrs'}}
-%	  {\semenv \th \Cp\where{\cmatch \tvp \cbrs'}}
-%      \end{mathpar}
-%
-%      Consider whether $\C = \Cp$:
-%      \begin{proofcases}
-%	\item \proofcase{$\C = \Cp$} Trivial
-%	\item \proofcase{$\C \neq \Cp$}
-%	  Bayes' theorem + induction
-%      \end{proofcases}
-%  \end{proof}
-%\end{theorem}
-%
-%%
-%%We write $\e^i$ for an \emph{implicit} term, which is either: $\eproj \e j$, $\einst \e$, $\epoly \e$.
-%%Let us define $x(\e^i, \sh)$ for the explicit elaboration of an implicit term $\e^i$ using the
-%%shape $\sh$:
-%%\begin{align*}
-%%  x(\eproj \e j, \any \tvcs \Pi\iton \tvcs) &= \eproj[n] \e j \\
-%%  x(\einst \e, \any \tvcs \tpoly \ts) &= \exinst \e \tvcs \ts \\
-%%  x(\epoly \e, \any \tvcs \tpoly \ts) &= \expoly \e \tvcs \ts
-%%\end{align*}
-%%
-%%\begin{theorem}
-%%  $\G \th \E\where{\e^i} : \ts$ if and only if
-%%  $\E\where{\e \mathop{\triangleleft\triangleright} \sh}$ and $\G \th \E\where{x(\e^i, \sh)} : \ts$ where
-%%  $\decomp {\e^i} = \e, \triangleleft\triangleright$
-%%  \begin{proof}
-%%    \TODO{Unable to prove the hard cases yet (\eg \Rule{Proj-I}) --- this theorem is quite strong, }
-%%  \end{proof}
-%%\end{theorem}
 
 
 \clearpage
