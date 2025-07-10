@@ -1835,7 +1835,7 @@ $\th \e : \t$ iff\/
 $\cunif \tv \t \centails \csem {\e : \tv}$.
 \end{theorem}
 
-\begin{theorem}[Principal types]
+\begin{restatable}[Principal types]{theorem}{principalTypes}
 \label{thm:principal-types}
 For any well-typed closed term $\e$, there exists a type $\t$, which we call
 principal, such that:
@@ -1846,7 +1846,7 @@ principal, such that:
   For any other typing $\th \e : \tp$, then $\tp = \theta(\t)$ for some
   substitution $\theta$.
 \end{enumerate*}
-\end{theorem}
+\end{restatable}
 It is also interesting to discuss the stability of typing by common program
 transformations.
 
@@ -7018,18 +7018,36 @@ direction, but it should be clarified.
 \section{Properties of \OML}
 \label{app:proofs-typing}
 
+% What we do
+This section states and proves the two central metatheoretic properties of \OML. The first
+is the \emph{soundness and completeness} of the constraint generator $\cinfer \e \tv$ with
+respect to the \OML typing rules. The second is the existence of \emph{principal types},
+which follows as a consequence of soundness and completeness: every closed well-typed term $\e$
+admits a most general type.
+
+% Closed terms
+Throughout this section, we restrict our attention to \emph{closed terms}. This is because the
+typing context $\G$ can contain bindings to terms whose type is ``guessed''. When we
+generate constraints for a term $\e$ under a context $\G$, we encode the type schemes in
+$\G$ as part of the constraint itself using $\Let$-constraints. However, these schemes are treated as
+known within the constraint! As a result, we assume terms are closed from the outside to avoid
+$\G$ leaking any guessed type information.
+
 \subsection{Simple syntax-directed system}
-As a first step towards proving soundness and completeness of constraint generaztion,
-we first present a variant of the \OML type system. For this system, the
-syntax tree completely determines the derivation tree provided the term $\e$ is \emph{simple}.
+
+As a first step towards proving soundness and completeness of constraint
+generaztion, we first present a variant of the \OML type system for \emph{simple terms}. For this
+system, the syntax tree completely determines the derivation tree.
 
 We use the standard technique of removing the \Rule{Inst} and \Rule{Gen} rules,
-and always apply instantiations in \Rule{Var} and always generalize at let-bindings.
-We can show that this system is sound and complete with respect to the declarative rules.
+and always apply instantiations in \Rule{Var} (\Rule{Var-SD}) and always
+generalize at let-bindings (\Rule{Let-SD}). We can show that this system is
+sound and complete with respect to the declarative rules.
 
 \begin{theorem}[Soundness of the syntax directed rules]
   \label{thm:soundness-sd}
-  If $\G \th_s \e : \t$ then we also have $\G \th_{simple} \e : \t$
+  Given the simple term $\e$.
+  If $\G \thsimplesd \e : \t$ then we also have $\G \thsimple \e : \t$
   \begin{proof}
     Induction on the given derivation.
   \end{proof}
@@ -7037,7 +7055,8 @@ We can show that this system is sound and complete with respect to the declarati
 
 \begin{theorem}[Completeness of the syntax directed rules]
   \label{thm:completeness-sd}
-  If $\G \th_{simple} \e : \ts$, then $\G \th_s \e : \t$ for any instance $\t$ of $\ts$.
+  Given the simple term $\e$.
+  If $\G \thsimple \e : \ts$, then $\G \thsimple \e : \t$ for any instance $\t$ of $\ts$.
   \begin{proof}
     Induction on the given derivation.
   \end{proof}
@@ -7046,7 +7065,24 @@ We can show that this system is sound and complete with respect to the declarati
 The simple syntax-directed system has an inversion lemma:
 \begin{lemma}[Simple inversion]
   \label{lem:simple-inversion-sd}
-  \TODO{THis}
+  ~
+  \begin{enumerate}[(\roman*)]
+    \item If $\G \thsimplesd \x : \t$, then $\x : \tfor \tvs \tp \in \G$ and $\t = \tp\where{\tvs \is \tys}$.
+    \item If $\G \thsimplesd \efun \x \e : \t$, then $\G, \x : \ta \thsimplesd \e : \tb$ and $\t = \ta \to \tb$.
+    \item If $\G \thsimplesd \eapp \ea \eb : \t$, then $\G \thsimplesd \ea : \tp \to \t$ and $\G \thsimplesd \eb : \tp$.
+    \item If $\G \thsimplesd \eunit : \t$, then $\t = \tunit$.
+    \item If $\G \thsimplesd \elet \x \ea \eb : \t$, then $\G \thsimplesd \ea : \tp$, $\tvs \disjoint \G$, and $\G, \x : \tfor \tvs \tp \thsimplesd \eb : \t$.
+    \item If $\G \thsimplesd \eannot \e \tvs \tp : \t$, then $\G \thsimplesd \e : \tp\where{\tvs \is \tys}$ and $\t = \tp\where{\tvs \is \tys}$.
+    \item If $\G \thsimplesd \erecord {\overline{\el = \e}} : \t$, then $\G \thsimplesd \eli = \ei : \t$ for $1 \leq i \leq n$ and $\bar\el \uni \t$.
+    \item If $\G \thsimplesd \el = \e : \t$, then $\G \thsimplesd \e : \tp$ and $\el : \tp \to \t$.
+    \item If $\G \thsimplesd \efield \e \el : \t$, then $\G \thsimplesd \e : \tp$, $\el : \tp \to \t$ and $\el \uni \t$.
+    \item If $\G \thsimplesd \etuple {\ea, \ldots, \en} : \t$, then $\G \thsimplesd \ei : \ti$ for all $1 \leq i \leq n$ and $\t = \tProd \ti$.
+    \item If $\G \thsimplesd \exproj \e j n : \t$, then $\G \thsimplesd \e : \tProd \ti$ and $\t = \tj$, with $n \geq j$.
+    \item If $\G \thsimplesd \expoly \e \tvs {\tfor \tvbs \tp} : \t$, then $\G \thsimplesd \e : \t\where{\tvs \is \tys}$, $\tvbs \disjoint \G$ and
+      $\t = \tpoly {\tfor \tvbs \tp}\where{\tvs \is \tys}$.
+    \item If $\G \thsimplesd \exinst \e \tvs \ts : \t$, then $\G \thsimplesd \e : \tpoly \ts\where{\tvs \is \tys}$ and $\ts \leq \t$.
+    \item If $\G \thsimplesd \emagic \e : \t$, then $\G \thsimplesd \e : \tp$.
+  \end{enumerate}
 \end{lemma}
 
 \subsection{Canonicalization of typability}
@@ -7073,9 +7109,27 @@ Our system satisfies a similar canonicalization theorem to constraint satisfiabi
   \end{proof}
 \end{lemma}
 
+\newcommand{\enimplicit}[1]{{\#\mathprefix[\mathsf]{implicit} {#1}}}
 \begin{theorem}[Canonicalization]
   \label{thm:canonicalization-typing}
   If $\th \e : \ts$, then $\Th \e : \t$ for any instance $\t$ of $\ts$.
+  \begin{proof}
+    By induction on the following measure of $\e$:
+    \begin{mathpar}
+      \| \e \| \uad\eqdef\uad \angles {\enimplicit \e, |\e|}
+    \end{mathpar}
+    where $\angles \ldots$ denotes a lexicographically ordered pair, and
+  \begin{enumerate}
+
+    \item $\enimplicit \e$ is the number of implicit constructs in $\e$ \ie overloaded tuple projections $\eproj \e j$,
+      field projections $\efield \e \elab$, records $\erecord {\overline{\elab = \e}}$, polytype instantiations $\einst \e$
+      and polytype boxing $\epoly \e$.
+
+    \item the last component $|\e|$ is a structural measure of terms \ie a
+      application $\eapp \ea \eb$ is larger than the two terms $\ea, \eb$.
+  \end{enumerate}
+  This measure is analogous to the measure $\cmeasure \c$ for constraints.
+  \end{proof}
 \end{theorem}
 
 \subsection{Unifiers}
@@ -7099,6 +7153,7 @@ and $\sub(\tvs) = \tys$.
 \end{definition}
 
 \begin{lemma}[Simple inversion of unifiers]
+  \label{lem:unifier-simple-inversion}
   ~
   \begin{itemize}
     \item If $\sub$ is a unifier of $\cunif \ta \tb$, then $\sub(\ta) = \sub(\tb)$.
@@ -7112,34 +7167,57 @@ and $\sub(\tvs) = \tys$.
 \end{lemma}
 
 \begin{lemma}
+  \label{lem:unifier-abs-equiv}
   If $\sub$ unifies $\cexists \tv \c$, then there exists a unifier $\subp$ that extends $\sub$ with $\tv$,
   where $\subp$ is most general unifier of $\exists \sub \cand \c$.
 
 
   Then $\cabs \tv \c$ is equivalent to $\cabs \tv \sigma \leq \tv$ under $\sub$, where $\ts = \tfor \tvbs \subp(\tv)$ and
-  $\tvbs = \fvs {\subp(\tv)} \setminus \rng \sub$.
+  $\tvbs = \fvs {\subp(\tv)} \setminus \rng \sub$. We write this equivalent constraint abstraction as $\csem {\cabs \tv \c}_\sub$.
   \begin{proof}
     See \citet*{Pottier-Remy/emlti}.
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}[Let inversion of unifiers]
+  For simple $\ca, \cb$.
+  If $\sub$ unifies $\clet \x \tv \ca \cb$, then
+  $\sub$ unifies $\cexists \tv \ca$ and
+  $\sub$ unifies $\cletin \x {\csem {\cabs \tv \ca}_\sub} \cb$
+  \begin{proof}
+    Follows from \cref{lem:unifier-abs-equiv} and \cref{lem:simple-inversion}.
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}
+  \label{lem:mgus}
+  For two substitutions $\sub$, $\subp$. If $\exists \sub \centails \exists \subp$, there exists
+  $\subpp$ such that $\sub = \subpp \compose \subp$.
+  \begin{proof}
+    Standard result, follows from definition of $\exists \sub$.
   \end{proof}
 \end{lemma}
 
 \subsection{Soundness and completeness of constraint generation}
 
 \begin{lemma}
-  For any term context $\E$, term $\e$, $\ctxinfer \E \ta \tb \where{\cinfer \e \ta} = \cinfer {\E\where{\e}} \tb$.
+  \label{lem:ctxt-gen-correctness}
+  For any term context $\E$, term $\e$, $\ctxinfer \E \tv \tvb \where{\cinfer \e \tv} = \cinfer {\E\where{\e}} \tvb$.
   \begin{proof}
     By induction on the structure of $\E$.
   \end{proof}
 \end{lemma}
 
 \begin{lemma}
-  For any term $\e$, $\cerase {\cinfer \e \t} = \cinfer {\eerase \e} \t$.
+  \label{lem:erasure-constraint-gen}
+  For any term $\e$, $\cerase {\cinfer \e \tv} = \cinfer {\eerase \e} \tv$.
   \begin{proof}
     By induction on $\e$.
   \end{proof}
 \end{lemma}
 
 \begin{lemma}[Simple soundness and completeness]
+  \label{lem:simple-soundness-completeness}
   For simple terms $\e$.
   $\sub(\G) \thsimplesd \e : \sub(\t)$ if and only if $\sub$ is a unifier of $\csem {\G \th \e : \t}$.
   \begin{proof}
@@ -7148,6 +7226,7 @@ and $\sub(\tvs) = \tys$.
 \end{lemma}
 
 \begin{theorem}[Soundness and completeness]
+  \label{thm:soundness-and-completeness}
   $\Th \e : \sub(\tv)$ if and only if $\sub$ is a unifier of $\csem {\e : \tv}$
   \begin{proof}
     By induction on the number $n$ of implicit terms in $\e$.
@@ -7156,7 +7235,7 @@ and $\sub(\tvs) = \tys$.
 
 	\begin{llproof}
 	  \simplePf{\e}{Premise}
-	  \iffPf{\eset\thsimplesd \e : \sub(\tv)}{\sub \text{ unifies } \csem {\e : \tv}}{Lemma XXX}
+	  \iffPf{\eset\thsimplesd \e : \sub(\tv)}{\sub \text{ unifies } \csem {\e : \tv}}{\cref{lem:simple-soundness-completeness}}
 	  \iffPf{\eset \thsimplesd \e : \sub(\tv)}{\Th \e : \sub(\tv)}{When $\e \simple$}
 \Hand	  \iffPf{\Th \e : \sub(\tv)}{\sub \text{ unifies } \csem {\e : \tv}}{Above}
 	\end{llproof}
@@ -7177,7 +7256,7 @@ and $\sub(\tvs) = \tys$.
 		\ThTypPf{\sub(\G)}{\E\where{\exproj \e j n}}{\sub(\tv)}{Premise}
 		\UnifierPf{\sub}{\csem {\G \th \E\where{\exproj \e j n} : \tv}}{By \ih}
 		\eqPf{\csem {\G \th \E\where{\exproj \e j n } : \tv}}{\cletG {\cinfer {\E\where{\exproj \e j n}} \tv}}{By definition}
-		\continueeqPf{\cletG {\ctxinfer \E \tvb \tv}\where{\cinfer {\exproj \e j n} \tvb}}{Lemma XXX}
+		\continueeqPf{\cletG {\ctxinfer \E \tvb \tv}\where{\cinfer {\exproj \e j n} \tvb}}{\cref{lem:ctxt-gen-correctness}}
 		\equivPf{\cinfer {\exproj \e j n} \tvb}{\cexists {\tvaa \tvcs} {\cinfer \e \tvaa \cand \cunif \tvaa {\Pi\iton \tvcs} \cand \cunif \tvb \tvc_j}}{By definition}
 		\continueequivPf{\cexists {\tvaa} \cinfer \e \tvaa \cand \cmatched \tvaa {\any \tvcs \Pi\iton \tvcs}{\cbranch {\cpatprod \tvc j} {\cunif \tvb \tvc}}}{\ditto}
 		\UnifierPf{\sub}{\cletG \ctxinfer \E \tvb \tv \where{\cexists \tvaa \cinfer \e \tvaa \cand \ldots}}{Above}
@@ -7185,22 +7264,22 @@ and $\sub(\tvs) = \tys$.
 		\LetPf{\C}{\cletG \ctxinfer\E \tvb \tv \where{\cexists \tvaa \cinfer \e \tvaa \cand \square}}{}
 		\vdashPf{\semenv}{\cerase{\C\where{\cunif \tvaa \gt}}}{Premise}
 		\eqPf{\cexists \tvaa \cinfer \e \tvaa \cand \cunif \tvaa \gt}{\cexists \tvaa \cinfer {\eannot \e {} \gt} \tvaa}{By definition}
+		\decolumnizePf
 		\continueeqPf{\cinfer {\emagic {\eannot \e {} \gt}} \tvb}{\ditto}
 		\eqPf{\cerase {\C\where{\cunif \tvaa \gt}}}{\cerase {\cletG \ctxinfer \E \tvb \tv \where{\cinfer {\emagic {\eannot \e {} \gt}} \tvb}}}{\ditto}
-		\continueeqPf{\cerase {\cletG \cinfer {\E\where{\emagic {\eannot \e {} \gt}}} \tv}}{Lemma XXX}
+		\continueeqPf{\cerase {\cletG \cinfer {\E\where{\emagic {\eannot \e {} \gt}}} \tv}}{\cref{lem:ctxt-gen-correctness}}
 		\continueeqPf{\cletG \cerase {\cinfer {\E\where{\emagic {\eannot \e {} \gt}}} \tv}}{By definition}
-		\continueeqPf{\cletG \cinfer {\eerase {\E\where{\emagic {\eannot \e {} \gt}}}} \tv}{Lemma XXX}
+		\continueeqPf{\cletG \cinfer {\eerase {\E\where{\emagic {\eannot \e {} \gt}}}} \tv}{\cref{lem:erasure-constraint-gen}}
 		\UnifierPf{\semenv}{\cletG \cinfer {\eerase {\E\where{\emagic {\eannot \e {} \gt}}}} \tv}{Above}
 		\ThTypPf{}{\eerase {\E\where{\emagic {\eannot \e {} \gt}}}}{\semenv(\tv)}{By \ih}
-		\thTypPf{\eset}{\eerase {\E\where{\emagic {\eannot \e {} \gt}}}}{\semenv(\tv)}{Lemma XXX}
+		\thTypPf{\eset}{\eerase {\E\where{\emagic {\eannot \e {} \gt}}}}{\semenv(\tv)}{\cref{lem:decanonicalization-typing}}
 		\eqPf{\shape \gt}{\any \tvcs \Pi\iton \tvcs}{$\implies$E}
 		\shapePf \C \tvaa {\any \tvcs \Pi\iton \tvcs}{Above}
 		\UnifierPf{\sub}{\C\where{\cmatch \tvaa {\cbranch {\cpatprod \tvc j} {\cunif \tvb \tvc}}}}{By \Rule{Susp-Ctx}}
 		\eqPf{\cinfer {\eproj \e j} \tvb}{\cexists \tvaa \cinfer \e \tvaa \cand \cmatchdots \tvaa}{By definition}
-		\eqPf{\C\where{\cmatchdots \tvaa}}{\cletG \ctxinfer \E \tvb \tv\where{\cexists \tvaa \cinfer \e \tvaa \cand \cmatchdots \tvaa}}{\ditto}
+		\eqPf{\C\where{\cmatchdots \tvaa}}{\cletG \ctxinfer \E \tvb \tv\where{\cexists \tvaa \cinfer \e \tvaa \cand \ldots}}{\ditto}
 		\continueeqPf{\cletG \ctxinfer \E \tvb \tv \where{\cinfer {\eproj \e j} \tvb}}{Above}
-		\continueeqPf{\cletG \cinfer {\E\where{\eproj \e j}} \tv}{Lemma XXX}
-		\decolumnizePf
+		\continueeqPf{\cletG \cinfer {\E\where{\eproj \e j}} \tv}{\cref{lem:ctxt-gen-correctness}}
 		\continueeqPf{\csem {\E\where{\eproj \e j} : \tv}}{}
 \Hand  		\UnifierPf{\sub}{\csem {\E\where{\eproj \e j} : \tv}}{}
 	      \end{llproof}
@@ -7216,7 +7295,7 @@ and $\sub(\tvs) = \tys$.
 
 	  \begin{proofcases}
 	    \proofcasederivation
-	      {Lemma XXX}
+	      {Can-Susp-Ctx}
 	      {\Cshape \C \tvaa {\any \tvcs \Pi\iton \tvcs} \\
 	       \sub \text{ unifies } \C\where{\cmatched \tvaa {\any \tvcs \Pi\iton \tvcs} {\ldots}}}
 	      {\sub \text{ unifies } \underbrace{\C\where{\cmatch \tvaa {\cbranch {\cpatprod \tvc j} {\cunif \tvb \tvc}}}}_{\cinfer \e \tv}}
@@ -7229,7 +7308,7 @@ and $\sub(\tvs) = \tys$.
 		\ThTypPf{}{\E\where{\exproj \e j n}}{\sub(\tv)}{By \ih}
 		\thTypPf{\Gp}{\E\where{\emagic {\eannot \e {} \gt}}}{\tp}{Premise}
 		\eqPf{\Gp}{\eset}{$\E\where{\emagic {\eannot \e {} \gt}}$ is closed}
-		\ThTypPf{}{\E\where{\emagic {\eannot \e {} \gt}}}{\tp}{Lemma XXX}
+		\ThTypPf{}{\E\where{\emagic {\eannot \e {} \gt}}}{\tp}{\cref{lem:decanonicalization-typing}}
 		\UnifierPf{\where{\tv \is \tp}}{\csem {\E\where{\emagic {\eannot \e {} \gt}} : \tv}}{By \ih}
 		\vdashPf{\semenv\where{\tv \is \semenv(\tp)}}{\cinfer {\E\where{\emagic {\eannot \e {} \gt}}} \tv}{By definition}
 		\shapePf{\C}{\tvaa}{\any \tvcs \Pi\iton \tvcs}{Premise}
@@ -7248,6 +7327,39 @@ and $\sub(\tvs) = \tys$.
     \end{proofcases}
   \end{proof}
 \end{theorem}
+
+\subsection{Principal types}
+
+\principalTypes
+\begin{proof}
+
+Let $\e$ be an arbitrary closed well-typed term; that is, there exists a type
+  $\t$ such that $\th \e : \t$.
+  By \cref{thm:soundness-and-completeness}, the constraint $\cinfer \e \tv$ is satisfiable
+  (specifically under the unifier $\cunif \tv \t$). By \cref{thm:correctness}, there
+  exists a solved constraint $\hat\c$ such that $\hat\c \cequiv \cinfer \e \tv$.
+  From $\hat\c$, we extract a unifier $\sub$. Since $\hat\c \cequiv \exists \sub$,
+  it follows that $\sub$ is \emph{most general}.
+
+  We claim that $\sub(\tv)$ is the principal type of $\e$. This amounts to showing:
+  \begin{enumerate}[(\roman*)]
+    \item
+      \label{proof:principal-types:1}
+      $\th \e : \sub(\tv)$
+    \item
+      \label{proof:principal-types:2}
+      For any other typing $\th \e : \tp$, then $\tp = \theta(\sub(\tv))$ for some $\theta$.
+  \end{enumerate}
+  Since $\sub$ is a unifier of $\cinfer \e \tv$, it follows immediately from
+  \cref{thm:soundness-and-completeness} that $\th \e : \sub(\tv)$, proving \ref{proof:principal-types:1}.
+  For \ref{proof:principal-types:2}, suppose $\th \e : \tp$ for some $\tp$. Then by
+  \cref{thm:soundness-and-completeness} again, there exists a unifier $\subp$ of $\cinfer \e \tv$
+  such that $\subp(\tv) = \tp$. Since $\sub$ is most general, we have $\exists \subp \centails \exists \sub$,
+  and by \cref{lem:mgus}, this implies the existence of a substitution $\subpp$ such that
+  $\subp = \subpp \compose \sub$.
+  Hence, $\tp = \subp(\tv) = \subpp(\sub(\tv))$, witnessing that $\tp$ is an instance of $\sub(\tv)$, as
+  required \ref{proof:principal-types:2}.
+\end{proof}
 
 
 
