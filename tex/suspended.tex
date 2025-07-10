@@ -1012,11 +1012,12 @@ equivalent to $\c \where {\tv \is \t}$.
 \begin{mathparfig}[t]%
   {fig:constraint-semantics}%
   {Semantics of constraints (without suspended constraints).}
-  \begin{bnfgrammar}
-    \entry[Semantic environments]{\semenv}
-    {\emptyset \and \semenv\where{\tv \is \gt} \and \semenv\where{\x \is \gabs}}
-  \end{bnfgrammar}
-
+  %% \begin{bnfgrammar}
+  %%   \entry[Semantic environments]{\semenv}
+  %%   {\emptyset \and \semenv\where{\tv \is \gt} \and
+  %%    \semenv\where{\x \is \gabs}}
+  %% \end{bnfgrammar}
+  %% \par
   \infer[True]
     {}
     {\semenv \th \ctrue}
@@ -1048,15 +1049,22 @@ equivalent to $\c \where {\tv \is \t}$.
     {\semenv \th \capp x \t}
 
   \let \Eqdef\eqdef \def \eqdef {&\Eqdef&}
-  \begin{array}{.r;;c;;l.}
-  \semenv(\cabs \tv \c) \eqdef \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
+  \begin{tabular}[c]{.R.C;.L.}
+  \semenv &::=&
+    \emptyset \mid
+    \semenv\where{\tv \is \gt} \mid
+    \semenv\where{\x \is \gabs}
   \\
-  \ca \centails \cb \eqdef \forall \semenv,\ \semenv \th \ca \implies \semenv \th \cb
+  \semenv(\cabs \tv \c) \eqdef
+    \set {\gt \in \Ground : \semenv\where{\tv \is \gt} \th \c}
+  \\
+  \ca \centails \cb \eqdef
+    \forall \semenv,\ \semenv \th \ca \implies \semenv \th \cb
   \\
   \ca \cequiv \cb   \eqdef
-  (\ca \centails \cb) \wide\wedge   (\ca \centails \cb)
+    (\ca \centails \cb) \wide\wedge   (\ca \centails \cb)
   %% \forall \semenv,\ \semenv \th \ca \iff \semenv \th \cb
-  \end{array}
+  \end{tabular}
 \end{mathparfig}
 
 
