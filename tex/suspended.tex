@@ -1227,7 +1227,7 @@ is to propose the following rule---henceforth referred to as the
 \emph{natural semantics} of suspended constraints.
 \begin{mathpar}
   \infer[Susp-Nat]
-  {\sh = \shape {\semenv(\t)} \\\\ \semenv \th \cmatched \t \sh \cbrs}
+  {\sh = \shape {\semenv(\t)} \\ \semenv \th \cmatched \t \sh \cbrs}
   {\semenv \th \cmatch \t \cbrs}
 \end{mathpar}
 %
@@ -4734,8 +4734,6 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\Th \Lab[\elab] : \t}
 \end{judgboxmathpar}
 
-\TODO{@Didier are you able to fix the odd spacing going on here? I'm at a loss of
-      why mathpar is adding this space}\Xdidier{Where exactly?}
 
 \label {app/rules/unif}
 \begin{judgboxmathpar}
@@ -4791,6 +4789,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
       {|\ueq| \leq 1}
       {\ctrue}
 \end{judgboxmathpar}
+
 
 \begin{judgboxmathpar}
   {\c \csolve \cp}

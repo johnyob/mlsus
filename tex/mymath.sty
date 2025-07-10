@@ -60,8 +60,9 @@
 % TODO: Figure out how to reference judgments
 \newenvironment{judgboxmathpar}[2]
   {\judgbox{#1}{#2}
-   \abovedisplayskip 10pt
-   \belowdisplayskip 10pt
+   \abovedisplayskip 10pt plus 1ex
+   \belowdisplayskip 10pt plus 1ex
+   \mprset{lineskip=1.2em plus 0.4em}
    \begin{mathparpagebreakable}}
   {\end{mathparpagebreakable}\ignorespacesafterend}
 
