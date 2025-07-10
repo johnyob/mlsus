@@ -1673,8 +1673,11 @@ constraints, and in fact we solve it in the same way, with a unicity
 condition and a contextual rule that transforms the fragile, implicit
 construct into the robust, explicit construct:
 
-
-We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton \tvcs}$, which is the counterpart of our unicity condition $\Cshape \C \t \sh$ in the type system. We formally introduce it in the rest of this section; in fact the different fragile features need slightly different formulations of the unicity condition.
+We have to specify the condition $\eshape \E \e {\any \tvcs \Pi\iton
+\tvcs}$, which is the counterpart of our unicity condition $\Cshape \C \t
+\sh$ in the type system. We formally introduce it in the rest of this
+section; in fact the different fragile features need slightly different
+formulations of the unicity condition.
 
 \subsection{Syntax}
 
@@ -1735,11 +1738,14 @@ Our extensions include:
   $\efield \e j$ and explicit projections $\exfield \e j n$.
 
 \item
-  For semi-explicit first-class polymorphism, we have implicit and explicit boxing $\epoly \e$ and $\expoly \e \tvs \ts$, and implicit and explicit unboxing $\einst \e$ and $\exinst \e \tvs \ts$.
+  For semi-explicit first-class polymorphism, we have implicit and explicit
+  boxing $\epoly \e$ and $\expoly \e \tvs \ts$, and implicit and explicit
+  unboxing $\einst \e$ and $\exinst \e \tvs \ts$.
 
 \end{enumerate}
-We use the metavariables $\e^i$ or $\el^i$ to range over the fragile/implicit constructions, and $\e^x$ or $\el^x$ to range over their explicit counterpart.
-
+We use the metavariables $\e^i$ or $\el^i$ to range over the
+fragile/implicit constructions, and $\e^x$ or $\el^x$ to range over their
+explicit counterpart.
 
 \subsection{Unicity conditions in typing rules}
 
