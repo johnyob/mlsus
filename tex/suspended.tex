@@ -6492,6 +6492,11 @@ We just have to list all the rules, and check/add the somthing
 that deacreases in $\C$, while not increasing anything else
 and preserving the weight. (Which I quickly did on
 my ipad and it seems to work.)
+
+Also, the notation $\x \in \C$ has a local definition. It should be the $\C$
+of the binding occurrence. Then extrusion of type variables/monomorphization
+modifies the scope hence the meeaning of $\x \in \C$, hopefull in the right
+direction, but it should be clarified.
 \end{version}
 \Xgabriel{The argument on ``deconstruction'' and the handling of discharging rules are orthogonal. The weights on partial instantiations given by Alistair are not preserved by discharging rules, so the argument using those weights must necessarily be restricted to discharge-free sequences. My prose explains why we can do this restriction, in a more modular way than building a complex lexicographic ordering at the end of the proof.}
 
