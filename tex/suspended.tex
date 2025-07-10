@@ -924,11 +924,12 @@ they never generalize row variables and fail if a declaration contains
 an undetermined row variable. This is a nice approach and we
 conjecture that it accepts the same programs as our implementation of
 overloaded tuples using suspended constraints. On the other hand, it
-only works for features for which we know of a structural-type
-presentation enjoying good type-inference properties. It would not
-work when disambiguating nominal record fields that may have
-a polymorphic type (using polytypes as we present in this paper), or
-variant constructors that may be GADTs.
+only works for structural types for which we know of a row-based
+presentation enjoying good type-inference properties. It cannot be
+applied to disambiguate between nominal records or variants that share
+field or constructor names, especially when some field projections or
+data constructors need non-uniform typing rules, such polymorphic
+fields or GADT constructors.
 
 \section{Semantics of constraints}
 \label{sec:semantics}
