@@ -667,9 +667,10 @@ the form $\tfor \av {\tapoly \ts \av}$ and then assigns $\einst \e$ a type
 $\t$ that is an instance of $\ts$. If, by constrast, $\e$ has the type
 $\tapoly \ts \av$ for some non-generalizable annotation variable $\av$, then
 $\e$ is considered of a not-yet-known polytype, and therefore $\einst \e$ is
-ill-typed. This mechanism precisely realises \geninst-directionality: it is precisely
-the polymorphism of $\av$ that ensures that the polytype is indeed \emph{known}
-and not being inferred.
+ill-typed. This mechanism precisely captures \geninst-directionality: it is
+the polymorphism of $\av$ that ensures that marks the type as \emph{known},
+rather than still being inferred---the very purpose of annotation variables
+is to make this distinction explicit.
 
 \parcomment {Example ill-typed term}
 
@@ -693,14 +694,12 @@ $\tfor \ava {\tapoly \ts \ava}$.
 
 \parcomment {Shortcomings of annotation variables}
 
-The very purpose of annotation variables is to distinguish \emph{known},
-polymorphic polytypes from \emph{not-yet-known}, monomorphic ones. However,
-this may sometimes be unintuitive as some type information that has just been
-inferred must still be considered as yet-unknown until its generalization.
-This is also sensitive to the placement of type annotations, an artifact of the
-fixed directionality of generalization in \geninst-directional inference. For
-instance, the following two terms differ only in the position of the
-annotation, yet only the one on the left-hand side is well-typed.
+This behaviour can be counterintuitive: type information that has
+just been inferred must still be considered as yet-unknown until its
+generalization. It also makes the system sensitive to the placement of type annotations, an
+artifact of the fixed directionality of generalization in \geninst-directional
+inference. For instance, the following two terms differ only in the position of
+the annotation, yet only the one on the left-hand side is well-typed.
 \begin{mathpar}
  \efun f {\eapp {\einst {(f : \tpoly {\tfor \tv {\tv \to \tv}})}} f}
 
