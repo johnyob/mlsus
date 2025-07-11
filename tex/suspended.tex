@@ -5131,10 +5131,11 @@ suspended constraints, until eventually we reach a simple constraint $\c$.
 Below we prove that any semantic derivation $\semenv \th \c$ can be turned into
 a canonical semantic derivation $\semenv \Th \c$.
 
-We can think of this result as controlling the amount of non-syntax-directedness
-in our rules: we need some of it, but it suffices to have it only at the
-outside, and it contains a more standard derivation that is easy to reason
-about.
+We can think of this result as controlling the amount of
+non-syntax-directedness in our rules: we fundamentally need
+a non-syntax-directed (contextual) rule, but it suffices to have it
+only at the outside, and inside it contains a more standard derivation
+that is easy to reason about.
 
 \paragraph{Inversion} When $\c$ is simple, a derivation of $\semenv \th \c$
 does not use the contextual rule (it is a derivation in $\semenv \thsimple
