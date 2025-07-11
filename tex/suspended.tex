@@ -146,15 +146,15 @@ let-bindings $\elet \x \ea \eb$: first typecheck the definition $\ea$, then
 the body $\eb$. \OCaml leverages this ordering to resolve overloaded or
 ambiguous constructs in a \emph{principal} way: polymorphic types
 are treated as \emph{known} and may guide disambiguation, whereas monomorphic
-types are considred not-yet-known and cannot be relied on for disambiguation.
+types are considered not-yet-known and cannot be relied on for disambiguation.
 
 \parcomment{What is it, and what does it solve}
 
 We call this \textbf{\geninst}-directional (read as
 ``\textbf{pi}-directional'') type inference, to mean that \textbf{p}olymorphic
 expressions must be typed before their \textbf{i}nstances. This strategy
-ensures principality for fragile constructs, but can lead to counterintuitive
-behaviour.
+ensures principality for fragile constructs, but can lead to counter-intuitive
+behavior.
 
 \parcomment{An instance of the problem (implementation directionality in inference)}
 
@@ -190,7 +190,7 @@ treated polymorphically, and thus its type is considered \emph{known}--enabling
 disambiguation. In \code{ex_3}, by contrast, \code{r} is monomorphic at the point of
 projection, and disambiguation is therefore forbidden.
 
-To emphasize that this behaviour is specification-drive and not an
+To emphasize that this behavior is specification-drive and not an
 artifact of \OCaml's inference algorithm, consider two equivalent versions of
 \ocaml{ex_3}, where \texttt{@@} and \ocaml{|>} are the application and reverse application
 functions:
@@ -201,7 +201,7 @@ let ex_3_3 = {x = 1} |> (fun r -> r.x)   °\ocamlflags 10°
 While these terms are semantically equivalent, they highlight a potential hazard:
 their typability would vary under a directionally biased inference algorithm,
 depending on whether the function or argument is typed first.
-To avoid such implementation-dependent behaviour, \OCaml chooses to infer
+To avoid such implementation-dependent behavior, \OCaml chooses to infer
 all subexpressions \emph{simultaneously}, until they are \code{let}-bound.
 
 Consequently, \OCaml does not make any difference between \ocaml[indices]{ex_3},
@@ -242,7 +242,7 @@ This is not the only possible choice: bidirectional type inference is a
 framework that must be instantiated by assigning modes---checking or
 inference---to each language construct. There usually is no optimal assignment
 of modes: for any choice of modes, some programs will typecheck successfully,
-while others will fail unncessarily. Yet the typing rules must irrevocably
+while others will fail unnecessarily. Yet the typing rules must irrevocably
 commit to a fixed set of modes. After which, principal types often exist, but
 only with respect to a specification that made non-principal choices to begin with.
 
@@ -346,12 +346,12 @@ complete.
 \paragraph{Illustrative examples}
 
 Examples \code{ex_2} to \code{ex_4} are all typable with omnidirectional
-inference, as indicated by the green traffic light labelled \OML---the
+inference, as indicated by the green traffic light labeled \OML---the
 calculus formalized in this paper.
 
 %
 In contrast, both bidirectional and \Geninst-directional inference
-rely on specifications that include choicses that are subjective
+rely on specifications that include choices that are subjective
 and somewhat arbitrary. As a result, they reject programs
 that have a unique well-typed solution. We now turn to
 further examples that illustrate such failures:
@@ -659,13 +659,13 @@ The annotation variable $\av$ can thus be generalized.  That is $\expoly \e
 \tvs \ts$ can also be assigned the type scheme $\all \av {\tapoly {\ts
 \where {\tvs \is \tys}} \av}$.
 
-\parcomment {Unboxing (principality restriction and geninst-directionality)}
+\parcomment {Unboxing (principality restriction and \geninst-directionality)}
 
 Conversely, to instantiate a polytype expression, one must use an explicit
 unboxing operator $\einst \e$, which requires no accompanying type
 annotation. However, the operator requires $\e$ to have a polytype scheme of
 the form $\tfor \av {\tapoly \ts \av}$ and then assigns $\einst \e$ a type
-$\t$ that is an instance of $\ts$. If, by constrast, $\e$ has the type
+$\t$ that is an instance of $\ts$. If, by contrast, $\e$ has the type
 $\tapoly \ts \av$ for some non-generalizable annotation variable $\av$, then
 $\e$ is considered of a not-yet-known polytype, and therefore $\einst \e$ is
 ill-typed. This mechanism precisely captures \geninst-directionality: it is
@@ -695,7 +695,7 @@ $\tfor \ava {\tapoly \ts \ava}$.
 
 \parcomment {Shortcomings of annotation variables}
 
-This behaviour can be counterintuitive: type information that has
+This behavior can be counter-intuitive: type information that has
 just been inferred must still be considered as yet-unknown until its
 generalization. It also makes the system sensitive to the placement of type annotations, an
 artifact of the fixed directionality of generalization in \geninst-directional
@@ -724,7 +724,7 @@ when typechecking $\einst e$. If $\e$ is already known to have the type
 $[\ts]$, then we can simply
 instantiate it.  However, if the type of $\e$ is not yet known---\ie  it is a
 (possibly constrained) type variable $\tv$---then we must defer until more
-information is available. We capture this behaviour with a suspended match
+information is available. We capture this behavior with a suspended match
 constraint:
 \begin{mathpar}
 \cinfer {\einst \e} \tva \Wide\eqdef
@@ -744,7 +744,7 @@ instantiation $\cleq s \tva$, that is $\cleq \ts \tva$.
 By waiting for the type of $e$ to be \emph{known}, we ensure principal types
 without annotation variables.
 
-\subsection{Static overloading of constuctors and record labels}
+\subsection{Static overloading of constructors and record labels}
 \label{sec:constraints:overloading}
 
 % What do we mean by static overloading?
@@ -764,7 +764,7 @@ like Rust and Haskell primarily employ dynamic overloading via traits and
 type classes, respectively, which can incur runtime overhead unless
 optimized away by monomorphization and aggressive inlining.
 
-\parcomment {OCaml and OCaml's approach (PI-directionality)}
+\parcomment {\OCaml and \OCaml's approach (PI-directionality)}
 
 As noted in the introduction, \OCaml supports a limited yet useful form of
 static overloading for record labels and datatype constructors. When
@@ -800,10 +800,10 @@ defined compatible type. For example:
 \begin{program}[input]
 let getx r = r.x         °\ocamlflags 21°
 \end{program}
-The expression is compatiable with both \code{one} and \code{two},
+The expression is compatible with both \code{one} and \code{two},
 since each defines a field \code{x}. But \code{two} is chosen simply
 because it appears later in the source.
-We do not treat this behaviour as principal; accordingly, we provide
+We do not treat this behavior as principal; accordingly, we provide
 no formalization of such ``default'' rules, though their implementation is
 discussed further in \cref{sec:discussion}.
 %
@@ -992,7 +992,7 @@ syntax-directed unlike the standard constraint semantics of
 reasoning and proofs. On the upside, the semantics directly
   suggest declarative typing rules for the surface language.
 
-\parcomment {Judgement shape}
+\parcomment {Judgment shape}
 
 The semantics of constraints follows the standard form of
 a satisfiability judgment $\semenv \th \c$. The semantic environment
@@ -1109,7 +1109,7 @@ $\t$ when there exists $\tys$ such that $\t = \shapp[\Sh] \tys$; in this
 case we write that the pair $(\Sh, \tys)$ is a decomposition of $\t$.
 
 \begin{definition}
-A non-trival shape $\Sh \in \Shapesz$ is the principal shape of the type
+A non-trivial shape $\Sh \in \Shapesz$ is the principal shape of the type
 $\t$ iff:
 \begin{enumerate}
   \item
@@ -1151,7 +1151,7 @@ Each non-variable type $\t$ has a unique canonical principal shape, which we
 write $\shape \t$. For example, $\shape {\Tapp \tys}$
 is $(\any \tvcs \Tapp \tvcs)$.
 
-\parcomment {Poltypes are constructors}
+\parcomment {Polytypes are constructors}
 
 Polytypes are particularly interesting in this setting because they can be
 decomposed into shapes and treated analogously to type constructors.
@@ -1368,7 +1368,7 @@ Any solution $\semenv$ of this context necessarily satisfies
 \relax $\cunif \tv \tint$, so we have
 \relax $\Cshape \C \tv \tint$ and the suspended constraint can be discharged.
 %
-By constrast, the second example has no contextual information around the
+By contrast, the second example has no contextual information around the
 suspended constraint: $\C \is \square$. So any solution $\semenv$ satisfies
 it, allowing $\semenv(\tv)$ to have an arbitrary shape (\eg $\tint$,
 $\tbool$,
@@ -1442,7 +1442,7 @@ unicity condition now holds, as the erasure of the context includes the
 discharged constraint $\cunif \tvb \tbool$, allowing us to eliminate the
 final match constraint.
 
-This demonstrates that suspended match coxnstraints must be resolved in a
+This demonstrates that suspended match constraints must be resolved in a
 dependency-respecting order: attempting to resolve a match
 constraint too early may result in unsatisfiability.
 \end{example}
@@ -1571,7 +1571,7 @@ hence \code{ex_7} is accepted by our semantics.
 To prove correctness of constraint generation, we must first define a surface
 language and its type system. Surprisingly, identifying an appropriate
 declarative type system to use as a specification is itself an interesting
-problem! In particular, na\"ve specifications often fail to ensure principal types.
+problem! In particular, na\"ive specifications often fail to ensure principal types.
 
 \parcomment {Why do naive approaches not guarantee principal types.}
 
@@ -1680,7 +1680,7 @@ annotations $\eannot \e \tvs \t$ and let-bindings $\elet x \ea \eb$.
 Our extensions include:
 \begin{enumerate}
 \item
-  Overloaded variant constructors and record labels, modelled using record
+  Overloaded variant constructors and record labels, modeled using record
   literals $\erecord { \ela = \ea; \ldots; \el_n = \en }$ and field
   projections $\efield \e l$. Variant constructors are not treated formally in \OML, but
     behave analogously in practice.
@@ -1728,7 +1728,7 @@ of the context $\Eshape \E \e \sh$.
 In order to define the unicity conditions, we introduce \emph{typed holes}
 $\emagic \e$, which allow any well-typed term $\e$ to be treated as
 if it had any type (via \Rule{Magic}). Types holes are forbidden in
-the source language---they are a device soley used to define unicity conditions.
+the source language---they are a device solely used to define unicity conditions.
 %
 We also introduce an erasure function $\eerase \e$, the term counterpart of constraint erasure
 $\cerase \c$, which erases all not-yet-elaborated implicit constructs
@@ -1853,7 +1853,7 @@ $\e_0$, and if they are incompatible the factored form may not typecheck.
 \paragraph{Inlining does not hold} If $\G \th \elet \x \ez \e : \t$, we do
 not necessarily have $\G \th \e \where {\x \is {\e_0}} : \t$. This is
 specific to our support for \emph{backpropagation}: the $\Let$-form will
-use information from all occurences of $\x$ in $\e$ to resolve fragile
+use information from all occurrences of $\x$ in $\e$ to resolve fragile
 constructs in $e_0$, but in the inlined form each copy of $\e$ must resolve
 its implicit constructs independently, and it has access to less information to
 establish unicity. As a result, the implicit \OML calculus does not preserve typability
@@ -1921,14 +1921,14 @@ Unification problems $\up$
 of constraints, extended with \emph{multi-equations}
 \citep*{Pottier-Remy/emlti}---a multi-set of types considered
 equal. These generalize binary equalities: $\semenv$ satisfies
-a multi-equation $\ueq$ if all of its memebers are mapped to a single
+a multi-equation $\ueq$ if all of its members are mapped to a single
 ground type $\gt$ (\Rule{Multi-Unif}). Multi-equations are
 considered equal modulo permutation of their members.
 
 Our algorithm is largely standard, with it main novelty being the use
 of \emph{canonical principal shapes} in place of type constructors. This
 uniform treatment of monotypes and polytypes simplifies unification and improves
-on the previous treatment of polytype unification \citep{Garrige-Remy/poly-ml}.
+on the previous treatment of polytype unification \citep{Garrigue-Remy/poly-ml}.
 For a detailed discussion of the unification rules, see
 \cref{app:unification} (appendix).
 
@@ -2047,7 +2047,7 @@ generalize ordinary constraint abstractions, as captured by the equivalence:
   \clet \x \tv \ca \cb \Wide\cequiv \cletr \x \tv \eset \ca \cb
 \end{mathline}
 
-\parcomment{Explaination of rules}
+\parcomment{Explanation of rules}
 
 Rule \Rule{S-Let} rewrites let constraints into regional form.
 %
@@ -2064,7 +2064,7 @@ a residual constraint---typically an application, let-binding, or
 suspended constraint.
 
 
-\parcomment{OmniML constraints do not need dedicated rules}
+\parcomment{\OML constraints do not need dedicated rules}
 
 \OML-specific constraints, such as the label and polytype instantiations from
 \cref{sec/constraints/polytypes} and \cref{sec:constraints:overloading}, require no
@@ -2147,7 +2147,7 @@ The generated typing constraint contains:
 \end{mathpar}
 where $\C\where{\ct,\tv,\tvb}$ is ${\Omega(\elab / t) \leq \tva \to \tvb}$.
 Here, $\tv$ stands for \code{r}'s type. The constraint remains suspended until
-\code{r.y} forces \code{r}'s type to be \code{one}. Cruicially, the variable
+\code{r.y} forces \code{r}'s type to be \code{one}. Crucially, the variable
 $\tvb$ (introduced inside the abstraction for the type of \code{y}) is captured
 by the suspended match constraint that is not yet resolved at the point of
 solving the $\Let$ constraint that binds \code{x}.
@@ -2222,7 +2222,7 @@ sites.
 \parcomment{Semantics of partial applications}
 
 The semantics of the existential constraint $\cexistsi \inst \x \c$
-(\Rule{Exists-Inst}) introduces the fresh instantation~$\inst$ by ``guessing''
+(\Rule{Exists-Inst}) introduces the fresh instantiation~$\inst$ by ``guessing''
 a region $\semenvp$ that satisfies the regional constraint abstraction bound to
 $\x$.
 %
@@ -2375,7 +2375,7 @@ $\tvbs$ are uniquely fixed by the solutions to other variables in $\c$.
 \begin{definition}
   $\cdetermines \c \tvbs$ if and only if every ground assignments
   $\semenv$ and $\semenvp$ that satisfy (the erasure of) $\c$ and coincide outside of $\tvb$
-  concide on $\tvbs$ as well.
+  coincide on $\tvbs$ as well.
   \begin{mathpar}
     \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
       \semenv \th \cerase \c
@@ -2520,7 +2520,7 @@ $\Let$-regions. Under this scheme, ranks no longer uniquely determine a
 variable's region. Instead, we interpret a rank relative to a path in the
 region tree from the root. When two variables are unified, they must always
 lie on some shared path---by scoping invariants---so computing their minimum
-rank (along this path) sufficies to determine the lowered region: we keep
+rank (along this path) suffices to determine the lowered region: we keep
 the efficient integer comparisons of generalization.
 
 \paragraph{Partial generalization}
@@ -2589,7 +2589,7 @@ checks whether the type is generalizable. We compared their approach to ours in
 \paragraph{Bidirectional type inference}
 
 At the level of simply-typed
-terms or \ML, we believe that omni-directional inference works better
+terms or \ML, we believe that omnidirectional inference works better
 than bidirectional type inference: it can type more programs than
 a given fixed bidirectional system, and has a more declarative
 specification---we would say that it is ``more principal''.  In fact,
@@ -2643,7 +2643,7 @@ of a declarative constraint semantics used establish principality.
 introduces \emph{delayed implications} of the form $\where{\tvs}(\all \tvbs \ca
 \Rightarrow \cb)$. Constraint solving for delayed implications proceeds in two
 steps; solving simple constraints first and then solving delayed implications.
-The deferall ensures that inference for GADT match branches occurs when more is
+The deferral ensures that inference for GADT match branches occurs when more is
 known about the scrutinee and expected return type from the context.
 %
 To ensure principality, \OutsideIn enforces an algorithmic
@@ -2655,8 +2655,8 @@ a declarative semantics for delayed implication that their solver
 preserves. Moreover, later work on \OutsideIn argues
 \citep*{Vytiniotis-Peyton-Jones-Schrijvers-Sulzmann/outsidein@jfp2011}
 that delayed implication constraints make local let-generalization all
-but unmanagable, both in theory and implementation. Their proposed fix
-is to abondon local let-generalization altogether. We believe that we
+but unmanageable, both in theory and implementation. Their proposed fix
+is to abandon local let-generalization altogether. We believe that we
 have solved the troubling interactions between let-generalization and
 suspended constraints in this work, and would be interested in
 studying applications to GADT typing, which was also one of our
@@ -2676,7 +2676,7 @@ Central to our approach is a new declarative account of when type inference is
 
 Our constraint solver is omnidirectional: constraints may be solved in any
 order, made possible by our introduction of \emph{partial type schemes}.
-We formalized the solver as a non-determinstic, terminating rewrite system,
+We formalized the solver as a non-deterministic, terminating rewrite system,
 and implemented an efficient prototype to demonstrate its practicality.
 
 Through three instantiations of our framework---static overloading
@@ -2700,12 +2700,12 @@ explicit form $\exover \M \x$, where $\M$ is a disambiguating module or
 namespace.
 %
 Although implemented in a prototype, we have not yet identified a satisfactory
-typing behaviour or formalisation for this feature. Nevertheless, we conjecture
+typing behavior or formalization for this feature. Nevertheless, we conjecture
 that they should typable with our framework.
 
 Modular implicits \citep*{White-Bour-Yallop/Modular_Implicits/ml2014} are a
 proposed extension to \OCaml's module system, intended to support ad-hoc
-polymorphism through type-directed implicit paramters. We believe
+polymorphism through type-directed implicit parameters. We believe
 omnidirectional type inference could serve as a principled, constraint-based
 approach foundation for resolving implicits in the presence of
 let-generalization.
@@ -2777,7 +2777,7 @@ our approach into \OCaml's typechecker.
 In this work, for the sake of simplicity, we treat ground types as finite
 trees. Supporting equi-recursive types amounts to using regular trees instead
 \citep*{Pottier-Remy/emlti}. Our prototype already supports them,
-but the formalisation of our solver relies on acyclicity to prove termination.
+but the formalization of our solver relies on acyclicity to prove termination.
 Extending it to accommodate cycles remains an open question.
 
 Shapes may also be equi-recursive, though only minimal shapes of polytypes
@@ -2838,7 +2838,7 @@ formal claims in the article. They are typically written tersely.
 
 As usual, the main typing judgment $\G \th \e : \ts$ states that in context
 $\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
-{fig/typing}.  They use auxiliary typing judgemnents $\G \th \elab = \e : \t$
+{fig/typing}.  They use auxiliary typing judgments $\G \th \elab = \e : \t$
 and $\G \th \el : \t \to \tp$ for the typing of record assignments and
 label instantiations respectively.
 
@@ -3111,7 +3111,7 @@ within the context as opposed to the inferred type of $\e$.
 We adopt a similar non-compositional approach for elaborating overloaded
 labels, whether in record projection ($\efield e \elab$) or record
 construction ($\erecord {\overline{\elab = \e}}$), although the definitions
-are slighly more involved.  Here, a one-hole label context $\Lab$ provides the
+are slightly more involved.  Here, a one-hole label context $\Lab$ provides the
 surrounding context in which a label $\elab$ may appear:
 \begin{mathpar}
 \begin{bnfgrammar}
@@ -3132,7 +3132,7 @@ environment $\labenv$. \Rule{Lab-I} handles unannotated labels by elaborating
 $\elab$ to $\elab / \T$ if the context $\Lab$ uniquely infers the record type
 $\T$ for $\elab$ and the resulting elaboration is well-typed.
 
-The unicity of the inferred record type is captured by the judgement $\Lshape
+The unicity of the inferred record type is captured by the judgment $\Lshape
 \Lab \elab \T$. The definition fits into the framework we established for
 expressions above by introducing analogous annotation and hole constructs for
 labels.
@@ -3171,7 +3171,7 @@ $\labenv$ to resolve overloaded labels:
 \item
   in a record projection $\efield \e \elab$, if the label $\elab$ is not
   overloaded, then the global record typing context $\labenv$ assigns a
-  unqiue record type $\T$ to $\elab$;
+  unique record type $\T$ to $\elab$;
 
 \item
   in a record expression $\erecord {\ela = \ea; \ldots; \el_n =
@@ -3180,7 +3180,7 @@ $\labenv$ to resolve overloaded labels:
   we can assign this type to the record expression.
 \end{enumerate*}
 
-We formalize this with the judgement $\G \th \bar \el \uni \t$, which
+We formalize this with the judgment $\G \th \bar \el \uni \t$, which
 either:
 \begin{enumerate*}
   \item enforces $\t$ to be of the form $\T \tys$ if the labels $\bar \el$
@@ -3422,7 +3422,7 @@ we may pick a fresh type variable $\tv$ for $\t$.
 
 Thus far, our formal presentation of constraint patterns has remained
 abstract, deliberately leaving the syntax and semantics of patterns unspecified to
-accommodate a range of language features. We now concretize this by specifying
+accommodate a range of language features. We now concertize this by specifying
 the patterns used in \OML (See \cref{fig:patterns-oml}), and introducing the
 corresponding constraints for the variables they bind.
 %
@@ -3672,7 +3672,7 @@ interpretation is the set of all types that $\e$ admits.
 
 % New constraint gen cases
 % Annotations, tuples
-Annotations bind their flexible variables and enforce the equility of
+Annotations bind their flexible variables and enforce the equality of
 the annotated type $\tp$ and the expected type $\t$. Tuples introduce
 fresh variables for each component and unify their product with $\t$.
 Explicit projections ensure $\e$ has a tuple type $\Pi\iton \tvbs$
@@ -3701,8 +3701,8 @@ constraining $\e$ to this type, and use the auxiliary function $\cinferlab \el
 \t$ checks whether a label sequence $\bar \el$ uniquely determines a record
 type, unifying $\t$ with $\Tapp \tvs$ if so, or leaving it unconstrained if
 ambiguous. This function enables closed-world reasoning for both projections
-and constructions, and corresponds to the judgement $\G \th \bar \el \uni \t$
-judgement defined in \cref{sec/language/typing-rules}.
+and constructions, and corresponds to the judgment $\G \th \bar \el \uni \t$
+judgment defined in \cref{sec/language/typing-rules}.
 
 Record construction checks label uniqueness and generates a per-field
 constraint $\eli = \ei$, introducing a fresh variable $\tv$ for each
@@ -3715,7 +3715,7 @@ looked up in $\labenv$ and instantiated. Explicit instantiations bypass
 suspension and directly instantiate the label's type.
 
 % Other cases
-The remaining (greyed) cases \TODO{Make the cases grey} correspond to internal
+The remaining (grayed) cases \TODO{Make the cases gray} correspond to internal
 constructs used in \OML's typing rules and are included for completeness.
 
 % Soundness/completeness of constraint gen
@@ -3788,7 +3788,7 @@ prior formulations~\citep*{Garrigue-Remy/poly-ml}.
 \end{mathparfig}
 
 
-\parcomment{Explaination of the rules}
+\parcomment{Explanation of the rules}
 
 We briefly summarize the role of each rule. \Rule{U-Exists} lifts existential
 quantifiers, enabling applications of \Rule{U-Merge} and \Rule{U-Cycle} since
@@ -4080,7 +4080,7 @@ definition in full, or when studying the meta-theory of the system.
 \end{judgboxmathpar}
 
 \begin{definition}
-A non-trival shape $\Sh \in \Shapesz$ is the principal shape of the type
+A non-trivial shape $\Sh \in \Shapesz$ is the principal shape of the type
 $\t$ iff:
 \begin{enumerate}
   \item
@@ -4972,7 +4972,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 \begin{definition}
   $\cdetermines \c \tvbs$ if and only if every ground assignments
   $\semenv$ and $\semenvp$ that satisfy (the erasure of) $\c$ and coincide outside of $\tvb$
-  concide on $\tvbs$ as well.
+  coincide on $\tvbs$ as well.
   \begin{mathpar}
     \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
       \semenv \th \cerase \c
@@ -5020,7 +5020,7 @@ $\t$ admits a non-trivial principal shape $\sh$.
 
 The second is the canonicalization of satisfiability derivations $\semenv \th
 \c$, which enables a simple induction principal for reasoning about unicity.
-This canonical form for derivations is a cruicial tool in our proof of
+This canonical form for derivations is a crucial tool in our proof of
 soundness and completeness in \cref{app:proofs-typing}.
 
 \subsection{Principality of shapes}
@@ -5083,16 +5083,16 @@ soundness and completeness in \cref{app:proofs-typing}.
     order.
     \relax
     Now that never term contains useless variables, \lref P implies that the
-    sequences $\tvas$ and $\tvbs$ can be put in one-to-one correspondances.
+    sequences $\tvas$ and $\tvbs$ can be put in one-to-one correspondences.
     Besides, since they all ordered in the order of appearance in terms, they
-    the correspondance respects the ordering. Hence, the subsitution $\where
+    the correspondence respects the ordering. Hence, the substitution $\where
     {\tvbs \is \tvas}$ is a renaming. Therefore, we can assume \Wlog that
     $\tvbs$ is $\tvas$,
     \relax
     That is, \lref P becomes that $\tpoly {\all \tvs \t}$ is equal to $\tpoly
-    {\all \tvs \typ \where {\tvcps \is \typs}}$, which given that they $\tvs$
-    apprear in the same order in both terms, implies that $\t$ is equal to $\typ
-    \where {\tvcps \is
+    {\all \tvs \typ \where {\tvcps \is \typs}}$, which given that variables
+    $\tvs$ appear in the same order in both terms, implies that $\t$ is
+    equal to $\typ \where {\tvcps \is
     \typs}$~\llabel T.
 
     \relax
@@ -5128,7 +5128,7 @@ soundness and completeness in \cref{app:proofs-typing}.
 This section aims at proving the canonicalization of satisfiability, that is,
 for any $\semenv \th \c$, there is a canonical derivation $\semenv \Th \c$.
 %
-We begin by proving some auxillary lemmas regarding inversion and
+We begin by proving some auxiliary lemmas regarding inversion and
 entailment in our system.
 
 \begin{lemma}
@@ -5646,7 +5646,7 @@ entailment in our system.
     However, this does not compromise the well-foundedness of induction, as the
     application of \cref{lem:susp-inversion} (via
     \cref{corollary:matched-abstractions}) within the proof of
-    \cref{thm:canonicalization} is restricted to strictly smaller constriaints.
+    \cref{thm:canonicalization} is restricted to strictly smaller constraints.
 
     \begin{proofcases}
       \proofcasederivation
@@ -5762,7 +5762,7 @@ follows as a corollary of these results.
 This section details the proof of \emph{preservation} for the solver: if $\ca
 \csolve \cb$, then $\ca \cequiv \cb$.
 %
-Since rewriting may occur under arbitrary contexts, it sufficies to check for
+Since rewriting may occur under arbitrary contexts, it suffices to check for
 each rule, that the equivalence $\ca \cequiv \cb$ holds under all contexts
 $\C$.
 
@@ -5776,7 +5776,7 @@ $\C\where{\cmatch \tv \cbrs} \cnequiv \C\where\cfalse$ for $\C \is \square
 
 As a result, we must prove \emph{contextual equivalence} for each rewriting
 rule explicitly. This is both non-trivial and tedious. To simplify the task, we
-first present a series of auxillary lemmas that recover contextual equivalence
+first present a series of auxiliary lemmas that recover contextual equivalence
 for many common cases.
 %
 Whenever possible, we prefer to work with equivalences on \emph{simple}
@@ -5984,7 +5984,7 @@ generally in our system.
     \begin{proofcases}
       \proofcase{$n$ is 0}
 
-	Thus $\Cpp, \Cp, \cs$ are simple. Sufficies to show the equivalence on the $\Let$-constraint directly and use congruence
+	Thus $\Cpp, \Cp, \cs$ are simple. It suffices to show the equivalence on the $\Let$-constraint directly and use congruence
 	of equivalence for simple constraints (\cref{lem:ctxt-equiv-simple}) to establish the result.
 
 	We proceed by induction on the structure of $\Cp$ with the statement ($\ddagger$):
@@ -6078,7 +6078,7 @@ generally in our system.
 \newcommand{\ctxequivPf}[3]{\Pf{#1}{\cctxequiv}{#2}{#3}}
 \begin{proof}
   We proceed by induction on the given derivation.
-  It sufficies to show that for each individual rule $R$ ($\ca \csolve_R \cb$),
+  It suffices to show that for each individual rule $R$ ($\ca \csolve_R \cb$),
   that $\ca \cequivctx \cb$.
 
   \begin{proofcases}
@@ -6550,7 +6550,7 @@ generally in our system.
 	\proofcase{$\t$ is a non-variable type} Apply \Rule{S-Match-Type}.
 	\proofcase{$\t$ is a type variable $\tv$}
 
-	  We have $\nCshape \square \tv$. It sufficies
+	  We have $\nCshape \square \tv$. It suffices
 	  that every match constraint in a context-reachable position
 	  $\hat\C\where{\cmatch \tvp \cbrs}$ satisfies $\nCshape {\hat\C} \tvp$.
 	  By the definition of constraint contexts, there is only one such
@@ -6704,7 +6704,7 @@ Most rewrite rules, in both unification and constraint solving, are
 \emph{destructive}---that is, they eliminate or modify the structure of a
 constraint in a way that prevents the rule from begin applied again.
 %
-Consequently, to establish termination, it sufficies to consider only those
+Consequently, to establish termination, it suffices to consider only those
 rules that are not inherently destructive.
 
 \begin{lemma}[Unification termination]
@@ -6806,13 +6806,13 @@ I read the proof in parallel with Gabriel.
 I think I understand Alistair's schema but with details missing.
 
 Case \Rule {U-Name} is indeed broken (it is an equality), but we should find
-another argument: we are dicreasing the sum of height of terms of
-muti-equations. The weight of higher terms should therefore couunt more
+another argument: we are decreasing the sum of height of terms of
+multi-equations. The weight of higher terms should therefore count more
 the split into a small term and its projections, which is not the case.
 
 Case \Rule {Decomp} is correct modulo a typo.
 
-However, at the first reading, I don't really understand Gabriel's prause
+However, at the first reading, I don't really understand Gabriel's prose
 with discharging everywhere much better.
 
 I think I prefer Alistair's deconstructing intuition, which could be made
@@ -6832,14 +6832,13 @@ we
 \item moving $\forall$ inside $\exists$.
 \item \ldots
 \end{itemize}
-We just have to list all the rules, and check/add the somthing
-that deacreases in $\C$, while not increasing anything else
-and preserving the weight. (Which I quickly did on
-my ipad and it seems to work.)
+We just have to list all the rules, and check/add the something
+that decreases in $\C$, while not increasing anything else
+and preserving the weights.
 
 Also, the notation $\x \in \C$ has a local definition. It should be the $\C$
 of the binding occurrence. Then extrusion of type variables/monomorphization
-modifies the scope hence the meeaning of $\x \in \C$, hopefull in the right
+modifies the scope hence the meaning of $\x \in \C$, hopefully in the right
 direction, but it should be clarified.
 \end{version}
 \Xgabriel{The argument on ``deconstruction'' and the handling of discharging rules are orthogonal. The weights on partial instantiations given by Alistair are not preserved by discharging rules, so the argument using those weights must necessarily be restricted to discharge-free sequences. My prose explains why we can do this restriction, in a more modular way than building a complex lexicographic ordering at the end of the proof.}
@@ -6903,7 +6902,7 @@ direction, but it should be clarified.
   unification rules) must be applicable.\Xgabriel{This sounds fishy. A
   constraint could a priori have a finite reduction sequence to $\cfalse$,
   and \emph{also} an infinite sequence of partial instantiation rules.}
-  \Xalistair{Agreed. This is something I realised after coming up with
+  \Xalistair{Agreed. This is something I realized after coming up with
   semantic definition of height. I guess my point is in the solver, before
   partially instantiating, we would check if the region is not obviously false.
 
@@ -6945,7 +6944,7 @@ direction, but it should be clarified.
 	  1 + \sw \sh + \sum\iton \tw \tvbi \c + |\tvbs'|
 	\end{tabular}
       \end{mathpar}
-      To esnure a strict decrease, it suffices to show that $\sw \sh > |\tvbs'|$.
+      To ensure a strict decrease, it suffices to show that $\sw \sh > |\tvbs'|$.
       Given that $|\tvbs'| = |\sh|$, and by the definition of $\sw \sh$, this inequality holds.
       Therefore, the weight strictly decreases under \Rule{S-Inst-Copy}.
 
@@ -7052,7 +7051,7 @@ $\G$ leaking any guessed type information.
 \subsection{Simple syntax-directed system}
 
 As a first step towards proving soundness and completeness of constraint
-generaztion, we first present a variant of the \OML type system for \emph{simple terms}. For this
+generation, we first present a variant of the \OML type system for \emph{simple terms}. For this
 system, the syntax tree completely determines the derivation tree.
 
 We use the standard technique of removing the \Rule{Inst} and \Rule{Gen} rules,
@@ -7603,7 +7602,7 @@ TODO: a figure with the magic rule and the two unicity criterion (not for labels
 
 \subsection{Nominal records}
 
-Todo: extend the magic rule and the disambiguation rule, and also provide the unicity-in-env criterion definition. I propose to add those to the figure below.
+TODO: extend the magic rule and the disambiguation rule, and also provide the unicity-in-env criterion definition. I propose to add those to the figure below.
 
 \begin{mathparfig}{fig/typing-records}{Typing and inference: nominal records}
   \inferrule[Rcd-Assn]
@@ -7692,8 +7691,29 @@ Todo: extend the magic rule and the disambiguation rule, and also provide the un
 % LocalWords:  GADTs typechecked codomain typechecking subexpressions Bodin
 % LocalWords:  monomorphic subexpression Dunfield Riboulet jfla subtyping
 % LocalWords:  greek Chargueraud typable monotype polytype Garrigue Remy th
-% LocalWords:  impredicative polytypes minimality RCL ary Proj toplevel
-% LocalWords:  typability backpropagation arity Compositionality equi
+% LocalWords:  impredicative polytypes minimality RCL ary Proj toplevel mlf
+% LocalWords:  typability backpropagation arity Compositionality equi Damas
 % LocalWords:  equitypable compositionality inlined equitypability nullary
-% LocalWords:  metatheoretical finiteness nonvariable mydesc Inlining
-% LocalWords:  unicity inlining
+% LocalWords:  metatheoretical finiteness nonvariable mydesc Inlining Yi na
+% LocalWords:  unicity inlining typedness pincipality scrutinee equalities
+% LocalWords:  declaratively LeBotlan directionality polymorphically mleth
+% LocalWords:  directionally typecheckers typechecker disambiguates unshare
+% LocalWords:  typechecks acyclic emlti Disambiguating disambiguated GADT
+% LocalWords:  prototyped instantiation Monotypes postfixed unsatisfiable
+% LocalWords:  satisfiable matchee datatypes arbritraty generalizable Unif
+% LocalWords:  monomorphization desugars Forall satisfiability formers iff
+% LocalWords:  equirecursive principalShapes subterms Susp Ctx foundedness
+% LocalWords:  unsatisfiability getx olymorphic nstances ive typings LetR
+% LocalWords:  metavariable subterm Metatheory principalTypes monotypes Rcd
+% LocalWords:  ExistsLeft ExistsRight ConjLeft ConjRight equational AppR Wf
+% LocalWords:  existentials instantiations desugared susp ively renamings
+% LocalWords:  quantifications subcomponents BackProp Tarjan's invariants
+% LocalWords:  rossberg wasm WebAssembly dunfield krishnaswami jones Huet's
+% LocalWords:  huet unif conf Vytiniotis Peyton Schrijvers Sulzmann Leijen
+% LocalWords:  disambiguating namespace implicits Bour Yallop Didier Annot
+% LocalWords:  acyclicity canonicalization aaa formedness unannotated inX
+% LocalWords:  casted inMagic inAnnot unsubstituted oml RCLL Scm LCL Decomp
+% LocalWords:  mutli cheatsheet inI ProjX PolyX UseX unifier Gc Defn sw iw
+% LocalWords:  InstLeft InstRight mergable tw uw RRCL eqs priori multiset
+% LocalWords:  reflexitivity metatheoretic lexicographically Unifiers TODO
+% LocalWords:  rcl env
