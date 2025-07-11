@@ -6704,6 +6704,28 @@ rules that are not inherently destructive.
   destructive: it introduces new instantiation constraints
   and structurally increases the size of the constraint.
 
+  Intuitively, \Rule{S-Inst-Copy} should not endanger termination
+  because the amount of copying it can perform for a given
+  instantiation is bounded by the size of the types in the constraint
+  $\c$ it is copying from. ($\c$ could have cyclic equations with
+  infinite unfoldings, but \Rule{S-Inst-Copy} forbids copying in that
+  case.) The difficulty is that rewrites to $\c$ can be interleaved
+  with instantiation rules, so that the equations that are being
+  copied can grow strictly during instantiation.
+
+  To control this, we perform a structural induction: to prove that
+  $(\cletr \x \tv \tvs \ca \cb)$ does not contain infinite
+  non-discharging non-instance-starting rewrite rules, we can assume
+  that the result holds for the strictly smaller constraint $\ca$, and
+  then prove termination of the partial instantiations of $\x$ in
+  $\cb$. (The notion of structural size used here is preserved by
+  non-discharging rewrite rules, as they do not affect the
+  $\Let$-structure of the constraint.)
+
+  Assuming that $\ca$ has no infinite rewriting sequence, it suffices
+  to prove that only finitely many rewrites in the rest of the
+  constraint (namely $\cb$) can occur between each rewrite of $\ca$.
+
   \newcommand{\sw}[1]{\mathprefix{sw}{(#1)}}
   \newcommand{\iw}[1]{\mathprefix{iw}{(#1)}}
   \newcommand{\stw}[1]{\mathprefix{tw}{(#1)}}
@@ -6711,41 +6733,23 @@ rules that are not inherently destructive.
   \newcommand{\eqs}[1]{\mathprefix{eqs}({#1})}
   \newcommand{\cw}[1]{\mathprefix{cw}{(#1)}}
 
-  We define a weight function that captures the contribution of types within
-  a constraint $\c$ that is being partially instantiated. The difficulty is
-  that $\c$ may be rewritten in parallel with its partial instantiations,
-  and new equations may appear about the variables being instantiated. To
-  define the weight of a variable $\tv$, we thus cannot consider only the
-  equations $\tva = \t$ that currently exist in $\c$; instead we consider
-  all equations that are \emph{entailed} by the erasure of $\c$, that is,
-  all the equations that may appear in the solved part of $\c$ without using
-  a discharging rules.
-
-  The type weight of a type $\t$ within a constraint $\c$, written $\tw \t \c$, is thus defined as:
+  We define a weight that captures the contribution of types
+  within $\ca$ to the partial instances in $\cb$:
   \begin{mathpar}
     \begin{tabular}{RCL}
-      \tw {\shapp \tys} \c &\eqdef& 2 \times \sw \sh + \sum \iton \tw \ti \c \\[1ex]
-    \tw \tv \c &\eqdef& \sup \Braces {\tw \t \c : \cerase \c \centails \cunif \tv \t}
+      \stw {\shapp \tys} &\eqdef& 2 \times \sw \sh + \sum \iton \stw \ti \\[1ex]
+      \stw \tv &\eqdef&
+      \left\{
+        \begin{array}{ll}
+        \sup \Braces {\stw \t : \cunif \tv \t \in \ca } & \text{if $\ca$ is acyclic} \\
+        0 & \text{otherwise}
+        \end{array}
+      \right.
     \end{tabular}
   \end{mathpar}
 
-  This weight is well-defined if $\cerase \c$ is satisfiable (and thus acyclic).
-  If $\cerase \c$ is unsatisfiable, then some destructive rule (\ie
-  unification rules) must be applicable.\Xgabriel{This sounds fishy. A
-  constraint could a priori have a finite reduction sequence to $\cfalse$,
-  and \emph{also} an infinite sequence of partial instantiation rules.}
-  \Xalistair{Agreed. This is something I realized after coming up with
-  semantic definition of height. I guess my point is in the solver, before
-  partially instantiating, we would check if the region is not obviously false.
-
-  My argument is along the lines of: if $\cerase \c$ is unsatisfiable, the
-  solver can eagerly detect this (EMLTI style) \emph{before} instantiating.
-  We could just add the condition that $\cerase \c$ is satisfiable (removing
-  $\neg \cyclic \c$ (which follows from this).
-  }
-
   The weight of a partial instantiation $\cw {\cpapp \x \tv \t \inst}$ is defined as
-  the sum of $\stw \t$ and $\tw \tv \c$, where $\x$ is bound to the abstraction $\cabsr \tv \tvs \c$.
+  the sum of $\stw \t$ and $\stw \tv$.
   The weight of other constraints is given using the measure
   $\mathprefix{uw}$ defined in the the
   proof of \cref{lem:unification-termination}.
@@ -6769,11 +6773,11 @@ rules that are not inherently destructive.
 
       \begin{mathpar}
 	\begin{tabular}{RCL}
-	  \cw {\cpapp \x \tvp \tvc \inst} &=& 1 + \tw \tv \c \\
-	  &\geq& 1 + 2 \times \sw \sh + \sum\iton \tw \tvbi \c  \\[1ex]
+	  \cw {\cpapp \x \tvp \tvc \inst} &=& 1 + \stw \tv \\
+	  &\geq& 1 + 2 \times \sw \sh + \sum\iton \stw \tvbi  \\[1ex]
 	  \cw {\cexists {\tvbs'} \cunif \tvc {\shapp \tvbs'} \cand \cpapp \x {\tvbs} {\tvbs'} \inst}
 	  &=&
-	  1 + \sw \sh + \sum\iton \tw \tvbi \c + |\tvbs'|
+	  1 + \sw \sh + \sum\iton \stw \tvbi + |\tvbs'|
 	\end{tabular}
       \end{mathpar}
       To ensure a strict decrease, it suffices to show that $\sw \sh > |\tvbs'|$.
@@ -6781,8 +6785,6 @@ rules that are not inherently destructive.
       Therefore, the weight strictly decreases under \Rule{S-Inst-Copy}.
 
   \end{proofcases}
-
-  Finally, we can measure whole constraints by the multiset of the weights of their partial instances. This order strictly decreases across all instantiation rules, and is preserved by all obviously destructive rules.
 
   Thus the constraint solver terminates.
 \end{proof}
