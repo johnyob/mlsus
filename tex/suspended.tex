@@ -4119,7 +4119,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 \begin{judgboxmathpar}
   {\c \simple}
   {The constraint $\c$ is simple.}
-
+  \label{fig:simple}
   \inferrule[Simple-True]
     {}
     {\ctrue \simple}
@@ -4168,6 +4168,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 \begin{judgboxmathpar}
   {\C \simple}
   {The constraint context $\C$ is simple.}
+  \label{fig:simple-context}
 
   \inferrule[Simple-Ctx-Hole]
     {}
@@ -4205,6 +4206,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 \begin{judgboxmathpar}
   {\cerase \c}
   {The erasure of $\c$.}
+  \label{fig:erasure}
 \newcommand{\Erule}[2]{\cerase {#1} &\eqdef& {#2}}
 \begin{tabular}{RCL}
   \Erule{\ctrue}{\ctrue} \\
@@ -4226,19 +4228,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   {\semenv \Th \c}
   {Under the semantic environment $\semenv$,
    the constraint $\c$ is canonically satisfiable.}
-  \inferrule[Can-Simple]
-    {\semenv \thsimple \c}
-    {\semenv \Th \c}
-
-  \inferrule[Can-Susp-Ctx]
-    {\Cshape \C \t \sh \\ \semenv \Th \C\where{\cmatched \t \sh \cbrs}}
-    {\semenv \Th \C\where{\cmatch \t \cbrs}}
-\end{judgboxmathpar}
-
-\begin{judgboxmathpar}
-  {\semenv \Th \c}
-  {Under the semantic environment $\semenv$,
-   the constraint $\c$ is canonically satisfiable.}
+  \label{fig:canonical-sem}
   \inferrule[Can-Simple]
     {\semenv \thsimple \c}
     {\semenv \Th \c}
@@ -5123,11 +5113,13 @@ soundness and completeness in \cref{app:proofs-typing}.
 
 \subsection{Canonicalization of satisfiability}
 
-This section aims at proving the canonicalization of satisfiability, that is,
-for any $\semenv \th \c$, there is a canonical derivation $\semenv \Th \c$.
-%
-We begin by proving some auxiliary lemmas regarding inversion and
-entailment in our system.
+They key result in this section is that our semantic derivations $\semenv \th \c$ can always be rewritten to only apply the rule \Rule{Susp-Ctx} at the very bottom of the derivation, rather than in the middle of derivations. This corresponds to explicitating the unique shapes of all suspended constraints (in some order that respects the dependency between suspended constraints), and then continuing with a syntax-directed proof of a fully-discharged constraint.
+
+We did not impose this ordering in our definition of the semantics to make it more flexible and more declarative, but the inversion principle that it provides will be helpful when reasoning about the solver in \cref{app:proofs-solving}.
+
+We define in \cref{fig:simple} a formal judgment $\c \simple$ that says that $\c$ does not contain any suspended match constraint, and extend it trivially to constraint contexts: $\C \simple$. In particular, the erasure $\cerase \c$ of a constraint (\cref{def:erasure}) is always simple. We then introduce in \cref{fig:canonical-sem} a ``canonical'' semantic judgment $\semenv \Th \c$ that enforces the structure we mentioned: its derivation starts by discharging suspended constraints, until eventually we reach a simple constraint $\c$. Below we prove that any semantic derivation $\semenv \th \c$ can be turned into a canonical semantic derivation $\semenv \Th \C$.
+
+We can think of this result as controlling the amount of non-syntax-directdness in our rules: we need some of it, but it suffices to have it only at the outside, and it contains a more standard derivation that is easy to reason about.
 
 \begin{lemma}
   \label{lem:match-is-not-simple}
@@ -5137,7 +5129,6 @@ entailment in our system.
     Structural induction on $\C$.
   \end{proof}
 \end{lemma}
-
 
 \begin{lemma}[Simple inversion]~
   \label{lem:simple-inversion}
@@ -5233,7 +5224,7 @@ entailment in our system.
     Induction on the structure of $\c$.
   \end{proof}
 \end{lemma}
-
+\end{version}
 
 The Composability result below is an important test of our definition of the unicity condition $\Cshape \C \t \sh$, which is in part engineered for this lemma to be simple to prove. In the past we used a definition of unicity that also required $\C \where \ctrue$ to be satisfiable, which broke the composability property.
 \begin{lemma}[Composability of unicity]

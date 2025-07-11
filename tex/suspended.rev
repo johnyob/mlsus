@@ -1,64 +1,104 @@
-Shapes are one of the following form:
-\begin{mathpar}
-\begin{bnfgrammar}[\def \and {\wide\mid}]
-\entry{\sh}{
-       \tunit
-  \and \tva \to \tvb
-  \and \Pi\iton \tvs
-  \and \tvs \F
-  \and \exi \tvs \tpoly \ts
-}
-\end{bnfgrammar}
-\end{mathpar}
-\Xalistair{This syntax is a bit odd for polytypes as no other shape quantifies
-over its monomorphic part}\Xdidier{Initially, shapes where just
-constructors for me---not shallow terms}\Xdidier{The syntax is not enough:
-we should ensure that all type variables are disjoint, so that shapes are
-equivalent to constructors..., even for polytypes thanks to the existence of
-a canonical representation.}\Xdidier {Shapes should be closed, or we should
-be clearer with $\alpha$-conversion.}
+\begin{lemma}
+  \label{lem:match-is-not-simple}
+  For any constraint context $\C\where{\square}$,
+  the constraint $\C\where{\cmatch \t \cbrs}$ is not simple.
+  \begin{proof}
+    Structural induction on $\C$.
+  \end{proof}
+\end{lemma}
 
-The shape of a variable is undefined (as in \cref{fig:shape-fn-def-typing}).
-The shape of the unit type $\tunit$ is $\tunit$. Monotypes that contain
-nested types, such as the function type $\t \to \tp$, have the shape of
-their top-level type constructor with their children replaced by variables,
-\ie $\tva \to \tvb$.
-%
-The shape of a polytype $\tpoly \ts$ is the \emph{polytype skeleton} of
-$\tpoly \ts$ abstracted over the monomorphic parts. It is the minimal
-closed type expression $\exi \tvas {\tpoly {\all \tvbs \t}}$ (up to the
-ordering of variables) such that there exists types $\tys$ such that
-$\tfor \tvbs \t \where {\tvas \is \tys}$ is equal to $\ts$.
-%
-Closed, means that $\tvas$ is equal to the free type variables
-$\ftv \ts$ of $\ts$. The minimality condition is equivalent to the fact that
-any suffix of a non-variable node in $\t$ leads to a polymorphic type
-variable, \ie a variable in $\tvbs$.
-%
-When $\exi \tvs \tpoly \ts$ is a polytype skeleton, we write $\cpoly \tys
-\ts$ for the polytype $\tpoly \ts \where {\tvs \is \tys}$.
 
-\begin{mathparfig}[t]
-{fig:shape-fn-def-typing}
-{Definition of $\shape \t$, a partial function from types to
-shape-substitution pairs $\langle \sh, \theta \rangle$, extended for all
-types defined in the calculus}
-  \shape \tv \eqdef \bot
+\begin{lemma}[Simple inversion]~
+  \label{lem:simple-inversion}
+  \begin{enumerate}[(\roman*)]
+    \item If $\semenv \th \cunif \ta \tb$, then $\semenv(\ta) = \semenv(\tb)$.
+    \item If $\semenv \th \ueq$, then $\semenv(\t) = \gt$ for all $\t \in \ueq$ and some ground type $\gt$.
+    \item If $\semenv \th \capp \x \t$, then $\semenv(\t) \in \semenv(\x)$ or $\greg \tv \semenvp \in \semenv(\x)$ and $\semenvp(\tv) = \semenv(\t)$.
+    \item If $\semenv \th \cpinst \inst \tv \t$, then $\semenv(\inst)(\tv) = \semenv(\t)$
 
-  \shape 1 \eqdef 1
+    \item If $\semenv \th \ca \cand \cb$ and $\ca \cand \cb \simple$, then $\semenv \th \ca$ and $\semenv \th \cb$.
+    \item If $\semenv \th \cexists \tv \c$ and $\cexists \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for some $\gt$.
+    \item If $\semenv \th \cexistsi \inst \x \c$ and $\cexistsi \inst \x \c \simple$, then $\semenv\where{\inst \is \semenvp} \th \c$ for some $\semenvp$ such that $\greg \tv \semenvp \in \semenv(\x)$.
+    \item If $\semenv \th \cfor \tv \c$ and $\cfor \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for all ground types $\gt$.
+    \item If $\semenv \th \clet \x \tv \ca \cb$ and $\clet \x \tv \ca \cb \simple$, then $\semenv \th \cexists \tv \ca$ and \\$\semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb$.
+    \item If $\semenv \th \cletr \x \tv \tvs \ca \cb$ and $\cletr \x \tv \tvs \ca \cb \simple$, then
+      $\semenv \th \cexists {\tv, \tvs} \ca$ and \\$\semenv\where{\x \is \semenv(\cabsr \tv \tvs \ca)} \th \cb$.
+  \end{enumerate}
+  \begin{proof}~
+    \begin{enumerate}[(\roman*)]
+      \item Case analysis on the given derivation $\semenv \th \cunif \ta \tb$.
+There is a unique case for the atomic constraint $\cunif \ta \tb$:
+\begin{proofcases}
+    \proofcasederivation
+      {Unif}
+      {\semenv(\ta) = \semenv(\tb)}
+      {\semenv \th \cunif \ta \tb}
 
-  \shape {\t \to \tp} \eqdef
-      \angles {\tv \to \tv', \where {\tv \is \t, \tv' \is \tp}}
+    \begin{llproof}
+\Hand  \eqPf{\semenv(\ta)}{\semenv(\tb)}  {Premise}
+    \end{llproof}
+\end{proofcases}
 
-  \shape {\Pi\iton \tys} \eqdef
-      \angles {\Pi\iton \tvs, \where {\tvs \is \tys}}
+      \item Similar to \Rule{Unif} case.
+      \item Similar to \Rule{Unif} case.
+      \item Similar to \Rule{Unif} case.
 
-  \shape {\tys \F} \eqdef
-      \angles {\tvs \F, \where {\tvs \is \tys}}
+      \item Case analysis on the given derivation $\semenv \th \ca \cand \cb$.
+      \begin{proofcases}
+\proofcasederivation
+  {Conj}
+  {\semenv \th \ca \\ \semenv \th \cb}
+  {\semenv \th \ca \cand \cb}
 
-  \shape {\tpoly \ts} \eqdef
-      \angles {\exi \tvs \tpoly \ts, \where {\tvs \is \tys}}
-\end{mathparfig}
+\begin{llproof}
+\Hand    \vdashPf{\semenv}{\ca} {Premise}
+\Hand     \vdashPf{\semenv}{\cb} {Premise}
+\end{llproof}
 
-\Xalistair{I feel the definition for $\tpoly \ts$ is not formal enough}
+\proofcasederivation
+  {Susp-Ctx}
+  {\Cshape \C \t \sh \\ \semenv \th \C\where{\cmatched \t \sh \cbrs}}
+  {\semenv \th \underbrace{\C\where{\cmatch \t \cbrs}}_{\ca \cand \cb}}
 
+\begin{llproof}
+  \simplePf{\C\where{\cmatch \t \cbrs}} {Given}
+  \nsimplePf{\C\where{\cmatch \t \cbrs}} {By \cref{lem:match-is-not-simple}}
+\Hand    \contraPf{\semenv \th \ca, \semenv \th \cb}
+\end{llproof}
+
+      \end{proofcases}
+
+      \item Similar to \Rule{Conj} case.
+      \item Similar to \Rule{Conj} case.
+      \item Similar to \Rule{Conj} case.
+      \item Similar to \Rule{Conj} case.
+      \item Similar to \Rule{Conj} case.
+    \end{enumerate}
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}[Composability of simplicity]
+  \label{lem:compose-simple}
+  If $\c \simple$ and $\C \simple$, then $\C\where\c \simple$.
+  Additionally, if $\Ca \simple$ and $\Cb \simple$, then $\Ca\where\Cb \simple$.
+  \begin{proof}
+    Induction on the derivation of $\C \simple$ and $\Ca \simple$, respectively.
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}[Simple congruence]
+  \label{lem:cong-simple}
+  Given simple constraints $\ca, \cb$ and simple context $\C$.
+  If \\$\ca \centails \cb$, then $\C\where{\ca} \centails \C\where{\cb}$.
+  \begin{proof}
+    Induction on the derivation of $\C \simple$.
+  \end{proof}
+\end{lemma}
+
+\begin{lemma}[Erasure is simple]
+  \label{lem:erase-simple}
+  For all constraints $\c$, $\cerase \c \simple$.
+  \begin{proof}
+    Induction on the structure of $\c$.
+  \end{proof}
+\end{lemma}
