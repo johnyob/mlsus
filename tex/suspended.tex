@@ -2429,7 +2429,7 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
   If constraint $\c$ cannot take a step $\c \csolve \cp$, then either:
   \begin{enumerate}[(\roman*)]
     \item $\c$ is solved.
-    \item $\c$ is stuck, that is:
+    \item $\c$ is stuck, it is either:
       \begin{enumerate*}
       \item
         $\cfalse$;
@@ -2443,7 +2443,7 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
         $\c$, $\Cshape {\hat\C} \tv \sh$ does not hold for any $\sh$.
 
       \end{enumerate*}
-     Here, $\hat\C$ is a \emph{solved} context \ie such that no other
+     Here, $\hat\C$ is a normal context \ie such that no other
      rewrites can be applied.
   \end{enumerate}
 \end{restatable}
