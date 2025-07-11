@@ -597,8 +597,9 @@ More precisely:
 \end{enumerate}
 
 We keep the grammar of shapes and patterns abstract in this section,
-to explain the general framework of suspended constraints. Shapes are
-formalized in \cref{sec:semantics}.
+to explain the general framework of suspended constraints. For now, it sufficies to
+think of shapes as top-level constructors like function arrows $\cdot \to \cdot$.
+This will be made more precise in \cref{sec:semantics}.
 
 \parcomment {Constraint contexts}
 
@@ -615,12 +616,12 @@ variables bound at the hole in $\C$.
 
 The remainder of this section illustrates the role of suspended constraints
 in supporting \emph{fragile} language features as defined above.
-These include:
+In particular:
 \begin{enumerate}
-  \item Semi-explicit first-class polymorphism;
-  \item Constructor and record label overloading for nominal algebraic
+  \item[(\cref{sec/constraints/polytypes})] Semi-explicit first-class polymorphism;
+  \item[(\cref{sec:constraints:overloading})] Constructor and record label overloading for nominal algebraic
   datatypes;
-  \item Overloaded tuple projection in the style of \SML.
+\item[(\cref{sec:constraints:tuples})] Overloaded tuple projection in the style of \SML.
 \end{enumerate}
 We demonstrate how the typability of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
@@ -629,19 +630,32 @@ produces a constraint $\c$ which is satisfiable if and only if $\e$ is
 well-typed.
 %
 
+\parcomment{Why our solution makes things easier?}
+As we will see, once we adopt the suspended constraint machinery developed in
+this paper, much of the complexity of these typing fragile constructs
+vanishes. It is suspended constraints that do most of the heavy lifting.
+
 \subsection{Semi-explicit first-class polymorphism}
 \label {sec/constraints/polytypes}
 
+\parcomment {Why semi-explicit first-class poly is used?}
+
+Semi-explicit first-class polymorphism \citep*{Garrigue-Remy/poly-ml} brings
+some System $\F$-like expressiveness to $\ML$ by allowing impredicative,
+first-class polymorphism while preserving principal type inference. It has
+since been adopted by \OCaml, notably for polymorphic object methods.
+
 \parcomment {Intro (and annotations)}
-Semi-explicit first-class polymorphism \citet*{Garrigue-Remy/poly-ml} uses
-\textit{annotated types} to track the origins of polymorphic types.
-%
+
 The type constructor $\tapoly \ts \av$ boxes a polymorphic type scheme
-$\ts$, turning it into a \textit{polytype} annotated with the annotation
-variable $\av$.  Once boxed, the polytype $\tapoly \ts \av$ is considered
-a monotype, thereby enabling impredicative polymorphism. Annotation variables
-may themselves be generalized, yielding type schemes such as
-$\tfor \av {\tapoly \ts \av}$.
+$\ts$, turning it into a \textit{polytype} annotated with the \emph{annotation
+variable} $\av$.  Once boxed, the polytype $\tapoly \ts \av$ is considered
+a monotype, thereby enabling impredicative polymorphism.
+Annotation variables record the origins of polytypes and may themselves
+be generalized, yielding type schemes such as $\tfor
+\av {\tapoly \ts \av}$. When $\av$ is generalized, the polytype is considered \emph{known},
+rather than still being inferred---this distinction is precisely the purpose of annotation
+variables, and it captures \geninst-directionality explicitly.
 
 \parcomment {Boxing}
 
@@ -666,10 +680,7 @@ the form $\tfor \av {\tapoly \ts \av}$ and then assigns $\einst \e$ a type
 $\t$ that is an instance of $\ts$. If, by contrast, $\e$ has the type
 $\tapoly \ts \av$ for some non-generalizable annotation variable $\av$, then
 $\e$ is considered of a not-yet-known polytype, and therefore $\einst \e$ is
-ill-typed. This mechanism precisely captures \geninst-directionality: it is
-the polymorphism of $\av$ that ensures that marks the type as \emph{known},
-rather than still being inferred---the very purpose of annotation variables
-is to make this distinction explicit.
+ill-typed.
 
 \parcomment {Example ill-typed term}
 
