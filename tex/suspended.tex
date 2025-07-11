@@ -6714,9 +6714,9 @@ rules that are not inherently destructive.
   of non-partial instantiations $\capp \x \t$ decreases strictly on
   \Rule{S-Let-AppR} when a partial instantiation starts, and is
   preserved by other non-discharge rules. The rule \Rule{S-Let-AppR}
-  can thus only occur finitely many time in non-discharging sequences,
+  can thus only occur finitely many times in non-discharging sequences,
   and it suffices to prove that all rewriting sequences that are
-  non-discharging and are not \Rule{S-Let-AppR} are finite.
+  non-discharging and\Xdidier{???} are not \Rule{S-Let-AppR} are finite.
 
   \paragraph{Other instantiation rules} Among other instantiation
   rules, the rule of concern is \Rule{S-Inst-Copy}, which is not
@@ -6753,7 +6753,7 @@ rules that are not inherently destructive.
   \newcommand{\cw}[1]{\mathprefix{cw}{(#1)}}
 
   We define a weight that captures the contribution of types
-  within $\ca$ to the partial instances in $\cb$:
+  within $\ca$ to the partial instances in~$\cb$:
   \begin{mathpar}
     \begin{tabular}{RCL}
       \stw {\shapp \tys} &\eqdef& 2 \times \sw \sh + \sum \iton \stw \ti \\[1ex]
@@ -6766,9 +6766,8 @@ rules that are not inherently destructive.
       \right.
     \end{tabular}
   \end{mathpar}
-
-  The weight of a partial instantiation $\cw {\cpapp \x \tv \t \inst}$ is defined as
-  the sum of $\stw \t$ and $\stw \tv$.
+  The weight of a partial instantiation $\cw {\cpapp \x \tv \t \inst}$ is
+  defined as  the sum of $\stw \t$ and ${\stw \tv}$.
   The weight of other constraints is given using the measure
   $\mathprefix{uw}$ defined in the the
   proof of \cref{lem:unification-termination}.
