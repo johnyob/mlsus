@@ -1090,7 +1090,7 @@ set of non-trivial shapes.
 \begin{wraphbox}{}{}
 \begin{mathpar}[inline]
   \infer[Inst-Shape]
-    {\bar \tvcs_2 \disjoint \any {\tvcs_1} \t}
+    {\tvcs_2 \disjoint \any {\tvcs_1} \t}
     {\any {\tvcs_1} \t \preceq
      \any {\tvcs_2} \t \where {\tvcs_1 \is \tys_1}}
 \end{mathpar}
@@ -1977,7 +1977,7 @@ stuck.
 
   \rewrite[S-Let-ExistsRight]
     {\cletr \x \tv \tvs \ca {\cexists \tvb \cb}}
-    {\tvb \disjoint \tv, \tvs, \cb}
+    {\tvb \disjoint \tv, \tvs, \ca}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
 
   \rewrite[S-Let-ConjLeft]
@@ -2016,7 +2016,7 @@ equational theory of types implemented by the unification algorithm.
 \\
   \infer[LetR]
     {\semenv \th \cexists {\tv, \tvs} \ca \\
-     \semenv, \x \is \semenv(\cabsr \tv \tvs \ca) \th \cb}
+     \semenv\where{\x \is \semenv(\cabsr \tv \tvs \ca)} \th \cb}
     {\semenv \th \cletr \x \tv \tvs \ca \cb}
 
   \infer[AppR]
@@ -2292,9 +2292,10 @@ There are three cases in which an instantiation constraint is eliminated:
   \rewrite[S-Inst-Copy]
     {\cletr \x \tv \tvs {\c}
       \C\where{\cpapp \x \tvp \tvc \inst}}
-     {\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\
+     {\c = \cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}\\\\
       \tvp \in \reg \tv \tvs \\
       \neg \cyclic {\c} \\
+     \tvbs' \disjoint \tvp, \tvc, \tvbs \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv \tvs {\c}
       \C\where{\cexists {\tvbs'}
@@ -2306,16 +2307,17 @@ There are three cases in which an instantiation constraint is eliminated:
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
   \rewrite[S-Inst-Poly]
-    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c}
+    {\cletr \x \tv {\tvs} {\ueqs \cand \c}
         {\C\where{\cpapp \x \tvp \tvc \inst}}}
-    {\cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
-     \tvp \disjoint \c, \insts \C \inst \\
+    {\cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+      \tvp \in \reg \tv \tvs \\
+     \tvp \disjoint \c \\ \inst.\tvp \disjoint \insts \C \\
      \x \disjoint \bvs \C}
-    {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
+    {\cletr \x \tv {\tvs} {\ueqs \cand \c} {\C\where\ctrue}}
 
   \rewrite[S-Inst-Mono]
     {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}}\\}
-   {\tvb \disjoint \tv, \tvs \\
+   {\tvb \notin \reg \tv \tvs \\
      \x, \tvb \disjoint \bvs \C}
     {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
@@ -4005,7 +4007,7 @@ definition in full, or when studying the meta-theory of the system.
 
   \infer[LetR]
     {\semenv \th \cexists {\tv, \tvs} \ca \\
-     \semenv, \x \is \semenv(\cabsr \tv \tvs \ca) \th \cb}
+     \semenv\where{\x \is \semenv(\cabsr \tv \tvs \ca)} \th \cb}
     {\semenv \th \cletr \x \tv \tvs \ca \cb}
 
   \infer[AppR]
@@ -4068,7 +4070,7 @@ definition in full, or when studying the meta-theory of the system.
   {\Sh \preceq \Shp}
   {The shape $\Shp$ is an instance of $\Sh$. Alternatively, $\Shp$ is more general than $\Sh$.}
   \infer[Inst-Shape]
-    {\bar \tvcs_2 \disjoint \any {\tvcs_1} \t}
+    {\tvcs_2 \disjoint \any {\tvcs_1} \t}
     {\any {\tvcs_1} \t \preceq
      \any {\tvcs_2} \t \where {\tvcs_1 \is \tys_1}}
 \end{judgboxmathpar}
@@ -4245,8 +4247,8 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 \end{judgboxmathpar}
 
 \begin{judgboxmathpar}
-  {\G \th \el : \ta \to \tb}
-  {Under the typing context $\G$, the label $\el$ has the field type $\ta$ and record type $\tb$.}
+  {\el : \ta \to \tb}
+  {The label $\el$ has the field type $\ta$ and record type $\tb$.}
   \infer[Lab-Magic]
     {}
     {\G \th \elmagic \elab : \tp \to \t}
@@ -4377,7 +4379,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
   \inferrule[Rcd-Assn]
     {\G \th \e : \t \\
-     \G \th \el : \t \to \tp}
+     \el : \t \to \tp}
     {\G \th \el = \e : \tp}
 
   \inferrule[Rcd]
@@ -4387,7 +4389,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
   \inferrule[Rcd-Proj]
     {\G \th \e : \tp \\
-     \G \th \el : \t \to \tp \\
+     \el : \t \to \tp \\
      \el \uni \t }
     {\G \th \efield \e \el : \t}
 
@@ -4713,7 +4715,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   \inferrule [Can-Use-I]
     {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
      \Th \E\where{\exinst \e \tvcs \ts} : \t}
-    {\th \E\where{\einst \e} : \t}
+    {\Th \E\where{\einst \e} : \t}
 
   \inferrule[Can-Lab-I]
     {\Lshape \Lab \elab \T \\
@@ -4756,7 +4758,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
     \rewrite[U-Name]
       {\cunif {\pshapp \parens{\tys, \ti, \typs}} \ueq }
-      {\tv \disjoint \tys, \typs, \ueq }
+      {\tv \disjoint \tys, \typs, \ueq \\ \ti \notin \TyVars}
       {\cexists \tv
         {\cunif \tv \ti \cand
          \cunif {\pshapp \parens{\tys, \tv, \typs}} \ueq}}
@@ -4809,12 +4811,12 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
   \rewrite[S-Let-ExistsLeft]
     {\cletr \x \tv \tvs {\cexists \tvb \ca} \cb }{
-     \tvb \disjoint \tv, \tvs}
+     \tvb \disjoint \tv, \tvs, \cb}
     {\cletr \x \tv {\tvs, \tvb} \ca \cb}
 
   \rewrite[S-Let-ExistsRight]
     {\cletr \x \tv \tvs \ca {\cexists \tvb \cb} }{
-     \tvb \disjoint \tv, \tvs, \cb}
+     \tvb \disjoint \tv, \tvs, \ca}
     {\cexists \tvb {\clet \x \tvs \ca \cb}}
 
   \rewrite[S-Let-ConjLeft]
@@ -4838,7 +4840,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
    \rewrite[S-Inst-Name]
     {\cpinst \inst \tv \t}
-    {}
+    {\t \notin \TyVars}
     {\cexists \tvc \cunif \tvc \t \cand \cpinst \inst \tv \tvc}
 
   \rewrite[S-Let-AppR]
@@ -4864,16 +4866,18 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\cpinst \inst \tv \tvca \cand \cunif \tvca \tvcb}
 
   \rewrite[S-Inst-Poly]
-    {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c}
+    {\cletr \x \tv {\tvs} {\ueqs \cand \c}
         {\C\where{\cpapp \x \tvp \tvc \inst}}}
-    {\cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\\\
-     \tvp \disjoint \c, \insts \C \inst \\
+    {\cfor \tvp \cexists {\tv} {\ueqs} \cequiv \ctrue \\\\
+     \tvp \in \reg \tv \tvs \\
+     \tvp \disjoint \c \\
+     \inst.\tvp \disjoint \insts \C \\
      \x \disjoint \bvs \C}
-    {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
+    {\cletr \x \tv {\tvs} {\ueqs \cand \c} {\C\where\ctrue}}
 
   \rewrite[S-Inst-Mono]
     {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}}}
-    {\tvb \disjoint \tv, \tvs \\ \x, \tvb \disjoint \bvs \C}
+    {\tvb \notin \reg \tv \tvs \\ \x, \tvb \disjoint \bvs \C}
     {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
   \rewrite[S-Let-Solve]
@@ -4951,7 +4955,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
   \rewrite[S-All-Rigid]
     {\cfor {\tvs, \tv}
-      {\cexists \tvbs \C \cand \cunif \tv {\cunif \t \ueq}}}
+      {\cexists \tvbs \c \cand \cunif \tv {\cunif \t \ueq}}}
     {\t \notin \TyVars \\ \tv \disjoint \tvbs}
     {\cfalse}
 
@@ -6300,16 +6304,19 @@ generally in our system.
 
     \proofcaserewrite
       {S-Inst-Poly}
-      {\cletr \x \tv {\tvs, \tvp} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
+      {\cletr \x \tv {\tvs} {\ueqs \cand \c} {\C\where{\cpapp \x \tvp \tvc \inst}} \\
        \cfor \tvp \cexists {\tv, \tvs} {\ueqs} \cequiv \ctrue \\
-       \tvp \disjoint \c, \insts \C \inst \\
+       \tvp \in \reg \tv \tvs \\
+       \tvp \disjoint \c \\
+       \inst.\tvp \disjoint \insts \C \\
        \x \disjoint \bvs \C}
-      {\cletr \x \tv {\tvs,\tvp} {\ueqs \cand \c} {\C\where\ctrue}}
+      {\cletr \x \tv {\tvs} {\ueqs \cand \c} {\C\where\ctrue}}
 
 
 	\begin{llproof}
 	  \equivPf{\cfor \tvp \cexists {\tv, \tvs} \ueqs}{\ctrue}{Premise}
-	  \disjointPf{\tvp}{\c, \insts \C \inst}{Premise}
+	  \disjointPf{\tvp}{\c}{Premise}
+	  \disjointPf{\inst.\tvp}{\insts \C}{Premise}
 	  \disjointPf{\x}{\bvs \C}{Premise}
 	  \decolumnizePf
 	  \sufficientPf{equivalence between}
@@ -6354,7 +6361,7 @@ generally in our system.
 		  \inPf{\greg \tv \semenvb}{\semenv(\x)}{By definition}
 		  \supposePf{\semenvc \th \Cb\where\ctrue}{Considering entailment on $\cexistsi \inst \x$}
 		  \eqPf{\semenvc(\inst)}{\semenva}{\ditto}
-		  \vdashPf{\semenvc\where{\inst \is \semenvb}}{\Cb\where\ctrue}{$\inst.\tvp \disjoint \Cb$}
+		  \vdashPf{\semenvc\where{\inst \is \semenvb}}{\Cb\where\ctrue}{$\inst.\tvp \disjoint \insts \Cb$}
 		  \vdashPf{\deriv :: \semenvc}{\Cb\where\ctrue}{By \Rule{Exists-Inst}}
 		  \commentPf{$\deriv$ is a derivation that satisfies $\semenva(\tvp) = \semenvp(\tvc)$.}{}
 \Hand		  \commentPf{So this case degenerates to the former case.}{}
@@ -6365,7 +6372,7 @@ generally in our system.
     \proofcaserewrite
       {S-Inst-Mono}
       {\cletr \x \tv \tvs \c {\C\where{\cpapp \x \tvb \tvc \inst}} \\
-       \tvb \disjoint \tv, \tvs \\
+       \tvb \notin \reg \tv \tvs \\
        \x, \tvb \disjoint \bvs \C}
       {\cletr \x \tv \tvs \c {\C\where{\cunif \tvb \tvc}}}
 
