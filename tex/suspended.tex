@@ -5121,112 +5121,21 @@ We define in \cref{fig:simple} a formal judgment $\c \simple$ that says that $\c
 
 We can think of this result as controlling the amount of non-syntax-directdness in our rules: we need some of it, but it suffices to have it only at the outside, and it contains a more standard derivation that is easy to reason about.
 
-\begin{lemma}
-  \label{lem:match-is-not-simple}
-  For any constraint context $\C\where{\square}$,
-  the constraint $\C\where{\cmatch \t \cbrs}$ is not simple.
-  \begin{proof}
-    Structural induction on $\C$.
-  \end{proof}
-\end{lemma}
+\paragraph{Inversion} When $\c$ is simple, a derivation of $\semenv \th \c$ does not use the contextual rule (it is a derivation in $\semenv \thsimple \c$), so it enjoys the usual inversion principle on syntax-directed judgments; for example, if $\semenv \thsimple {\ca \cand \cb}$ then by inversion $\semenv \thsimple \ca$ and $\semenv \thsimple \cb$, etc.
 
-\begin{lemma}[Simple inversion]~
-  \label{lem:simple-inversion}
-  \begin{enumerate}[(\roman*)]
-    \item If $\semenv \th \cunif \ta \tb$, then $\semenv(\ta) = \semenv(\tb)$.
-    \item If $\semenv \th \ueq$, then $\semenv(\t) = \gt$ for all $\t \in \ueq$ and some ground type $\gt$.
-    \item If $\semenv \th \capp \x \t$, then $\semenv(\t) \in \semenv(\x)$ or $\greg \tv \semenvp \in \semenv(\x)$ and $\semenvp(\tv) = \semenv(\t)$.
-    \item If $\semenv \th \cpinst \inst \tv \t$, then $\semenv(\inst)(\tv) = \semenv(\t)$
-
-    \item If $\semenv \th \ca \cand \cb$ and $\ca \cand \cb \simple$, then $\semenv \th \ca$ and $\semenv \th \cb$.
-    \item If $\semenv \th \cexists \tv \c$ and $\cexists \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for some $\gt$.
-    \item If $\semenv \th \cexistsi \inst \x \c$ and $\cexistsi \inst \x \c \simple$, then $\semenv\where{\inst \is \semenvp} \th \c$ for some $\semenvp$ such that $\greg \tv \semenvp \in \semenv(\x)$.
-    \item If $\semenv \th \cfor \tv \c$ and $\cfor \tv \c \simple$, then $\semenv\where{\tv \is \gt} \th \c$ for all ground types $\gt$.
-    \item If $\semenv \th \clet \x \tv \ca \cb$ and $\clet \x \tv \ca \cb \simple$, then $\semenv \th \cexists \tv \ca$ and \\$\semenv\where{\x \is \semenv(\cabs \tv \ca)} \th \cb$.
-    \item If $\semenv \th \cletr \x \tv \tvs \ca \cb$ and $\cletr \x \tv \tvs \ca \cb \simple$, then
-      $\semenv \th \cexists {\tv, \tvs} \ca$ and \\$\semenv\where{\x \is \semenv(\cabsr \tv \tvs \ca)} \th \cb$.
-  \end{enumerate}
-  \begin{proof}~
-    \begin{enumerate}[(\roman*)]
-      \item Case analysis on the given derivation $\semenv \th \cunif \ta \tb$.
-	There is a unique case for the atomic constraint $\cunif \ta \tb$:
-	\begin{proofcases}
-	    \proofcasederivation
-	      {Unif}
-	      {\semenv(\ta) = \semenv(\tb)}
-	      {\semenv \th \cunif \ta \tb}
-
-	    \begin{llproof}
-\Hand 		\eqPf{\semenv(\ta)}{\semenv(\tb)}  {Premise}
-	    \end{llproof}
-	\end{proofcases}
-
-      \item Similar to \Rule{Unif} case.
-      \item Similar to \Rule{Unif} case.
-      \item Similar to \Rule{Unif} case.
-
-      \item Case analysis on the given derivation $\semenv \th \ca \cand \cb$.
-      \begin{proofcases}
-	\proofcasederivation
-	  {Conj}
-	  {\semenv \th \ca \\ \semenv \th \cb}
-	  {\semenv \th \ca \cand \cb}
-
-	\begin{llproof}
-\Hand 	  \vdashPf{\semenv}{\ca} {Premise}
-\Hand     \vdashPf{\semenv}{\cb} {Premise}
-	\end{llproof}
-
-	\proofcasederivation
-	  {Susp-Ctx}
-	  {\Cshape \C \t \sh \\ \semenv \th \C\where{\cmatched \t \sh \cbrs}}
-	  {\semenv \th \underbrace{\C\where{\cmatch \t \cbrs}}_{\ca \cand \cb}}
-
-	\begin{llproof}
-	  \simplePf{\C\where{\cmatch \t \cbrs}} {Given}
-	  \nsimplePf{\C\where{\cmatch \t \cbrs}} {By \cref{lem:match-is-not-simple}}
-\Hand 	  \contraPf{\semenv \th \ca, \semenv \th \cb}
-	\end{llproof}
-
-      \end{proofcases}
-
-      \item Similar to \Rule{Conj} case.
-      \item Similar to \Rule{Conj} case.
-      \item Similar to \Rule{Conj} case.
-      \item Similar to \Rule{Conj} case.
-      \item Similar to \Rule{Conj} case.
-    \end{enumerate}
-  \end{proof}
-\end{lemma}
-
-\begin{lemma}[Composability of simplicity]
-  \label{lem:compose-simple}
-  If $\c \simple$ and $\C \simple$, then $\C\where\c \simple$.
-  Additionally, if $\Ca \simple$ and $\Cb \simple$, then $\Ca\where\Cb \simple$.
-  \begin{proof}
-    Induction on the derivation of $\C \simple$ and $\Ca \simple$, respectively.
-  \end{proof}
-\end{lemma}
+\paragraph{Congruence} Congruence does not hold in general in our system due to the contextual rule. For example, $\ca \eqdef (\cmatch \tva {\cbranch \wild \ctrue})$ is unsatisfiable so we have $\ca \cequiv \cfalse$, but for $\C \eqdef (\cexists \tva \cunif \tva \tint \cand \square)$ we have $\C \where \ca \cequiv \ctrue$ and $\C \where \cfalse \equiv \cfalse$. It holds simply for simple constraints.
 
 \begin{lemma}[Simple congruence]
   \label{lem:cong-simple}
   Given simple constraints $\ca, \cb$ and simple context $\C$.
   If \\$\ca \centails \cb$, then $\C\where{\ca} \centails \C\where{\cb}$.
+
   \begin{proof}
     Induction on the derivation of $\C \simple$.
   \end{proof}
 \end{lemma}
 
-\begin{lemma}[Erasure is simple]
-  \label{lem:erase-simple}
-  For all constraints $\c$, $\cerase \c \simple$.
-  \begin{proof}
-    Induction on the structure of $\c$.
-  \end{proof}
-\end{lemma}
-\end{version}
-
-The Composability result below is an important test of our definition of the unicity condition $\Cshape \C \t \sh$, which is in part engineered for this lemma to be simple to prove. In the past we used a definition of unicity that also required $\C \where \ctrue$ to be satisfiable, which broke the composability property.
+\paragraph{Composability} The composability result below is an important test of our definition of the unicity condition $\Cshape \C \t \sh$, which is in part engineered for this lemma to be simple to prove. In the past we used a definition of unicity that also required $\C \where \ctrue$ to be satisfiable, which broke the composability property.
 \begin{lemma}[Composability of unicity]
   \label{lem:compose-unicity}
   If $\Cshape \Ca \t \sh$, then $\Cshape {\Cb\where\Ca} \t \sh$.
@@ -5234,24 +5143,15 @@ The Composability result below is an important test of our definition of the uni
     Induction on the structure of $\Cb$.
     \begin{proofcases}
       \proofcase{$\square$}
-
-	\begin{llproof}
-	  \shapePf{\Ca}{\t}{\sh}{Premise}
-	  \eqPf{\Cb\where\Ca}{\square\where\Ca}{$\Cb$ is $\square$}
-	  \continueeqPf{\Ca}{By definition}
-\Hand	  \shapePf{\square\where\Ca}{\t}{\sh}{From premise}
-	\end{llproof}
-
+        immediate.
       \proofcase{$\Cc \cand \c$}
 
 	\begin{llproof}
 	  \shapePf{\Ca}{\t}{\sh}{Premise}
 	  \shapePf{\Cc\where\Ca}{\t}{\sh}{By \ih}
 	  \ForallPf{\semenv, \gt}{}{Definition of $\Cshape {\parens{\Cc\where\Ca \cand \c}} \t \sh$}
-	  \vdashPf{\semenv}{\cerase {\Cc\where\Ca\where{\cunif \t \gt} \cand \c}}{$\implies$I}
-	  \eqPf{\cerase {\Cc\where\Ca\where{\cunif \t \gt} \cand \c}}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}} \cand \cerase \c}{By definition}
-	  \simplePf{\cerase {\Cc\where\Ca\where{\cunif \t \gt} \cand \c}}{\cref{lem:erase-simple}}
-	  \vdashPf{\semenv}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:simple-inversion}}
+	  \vdashPf{\semenv}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}} \cand \cerase \c}{$\implies$I}
+	  \vdashPf{\semenv}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{Simple inversion}
 	  \eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape {\Cc\where\Ca} \t \sh$}
 \Hand 	  \shapePf{\parens{\Cc\where\Ca \cand \c}}{\t}{\sh}{Above}
 	\end{llproof}
@@ -5268,10 +5168,8 @@ The Composability result below is an important test of our definition of the uni
 	  \shapePf{\Ca}{\t}{\sh}{Premise}
 	  \shapePf{\Cc\where\Ca}{\t}{\sh}{By \ih}
 	  \ForallPf{\semenv, \gt}{}{Definition of $\Cshape {\parens{\cexists \tv \Cc\where\Ca}} \t \sh$}
-	  \vdashPf{\semenv}{\cerase {\cexists \tv \Cc\where\Ca\where{\cunif \t \gt}}}{$\implies$I}
-	  \eqPf{\cerase {\cexists \tv \Cc\where\Ca\where{\cunif \t \gt}}}{\cexists \tv \cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{By definition}
-	  \simplePf{\cerase {\cexists \tv \Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:erase-simple}}
-	  \vdashPf{\semenv\where{\tv \is \gtp}}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:simple-inversion}}
+	  \vdashPf{\semenv}{\cexists \tv \cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{$\implies$I}
+	  \vdashPf{\semenv\where{\tv \is \gtp}}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{Simple inversion}
 	  \eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape {\Cc\where\Ca} \t \sh$}
 \Hand 	  \shapePf{\parens{\cexists \tv \Cc\where\Ca}}{\t}{\sh}{Above}
 	\end{llproof}
@@ -5294,13 +5192,9 @@ The Composability result below is an important test of our definition of the uni
 	  \shapePf{\Ca}{\t}{\sh}{Premise}
 	  \shapePf{\Cc\where\Ca}{\t}{\sh}{By \ih}
 	  \ForallPf{\semenv, \gt}{}{Definition of $\Cshape {\parens {\Let \x \ldots}} \t \sh$}
-	  \vdashPf{\semenv}{\cerase {\clet \x \tv {\Cc\where\Ca\where{\cunif \t \gt}} \c}}{$\implies$I}
-	  &&$\cerase {\clet \x \tv {\Cc\where\Ca\where{\cunif \t \gt}} \c}$ & \\
-	  &&$=\clet \x \tv {\cerase {\Cc\where\Ca\where{\cunif \t \gt}}} {\cerase \c}$ & {By definition} \\
-	  \simplePf{\cerase {\clet \x \tv {\Cc\where\Ca\where{\cunif \t \gt}} \c}}{\cref{lem:erase-simple}}
-	  \vdashPf{\semenv}{\cexists \tv \cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:simple-inversion}}
-	  \simplePf{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:erase-simple}}
-	  \vdashPf{\semenv\where{\tv \is \gtp}}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{\cref{lem:simple-inversion}}
+	  \vdashPf{\semenv}{\clet \x \tv {\cerase {\Cc\where\Ca\where{\cunif \t \gt}}} {\cerase \c}}{$\implies$I}
+	  \vdashPf{\semenv}{\cexists \tv \cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{Simple inversion}
+	  \vdashPf{\semenv\where{\tv \is \gtp}}{\cerase {\Cc\where\Ca\where{\cunif \t \gt}}}{Simple inversion}
 	  \eqPf{\shape \gt}{\sh}{$\implies$E on $\Cshape {\Cc\where\Ca} \t \sh$}
 \Hand 	  \shapePf{\parens{\clet \x \tv {\Cc\where\Ca} \c}}{\t}{\sh}{Above}
 	\end{llproof}
@@ -5333,7 +5227,8 @@ The Composability result below is an important test of our definition of the uni
     \item If $\Cshape {\parens{\cfor \tv \C}} \t \sh$, then $\Cshape \C \t \sh$.
   \end{enumerate}
   \begin{proof}
-    Follows from \cref{lem:simple-inversion}.
+    The definition of $\Cshape \C \t \sh$ uses simple semantics on the
+    erasure $\cerase \C$, so these results are easily shown by simple inversion.
   \end{proof}
 \end{lemma}
 
@@ -5357,9 +5252,9 @@ The Composability result below is an important test of our definition of the uni
       {\semenv \th \ctrue}
 
       \begin{llproof}
-	\simplePf{\ctrue}{By definition}
-\Hand 	\VdashPf{\semenv}{\ctrue}{By \Rule{Can-Base}}
+\Hand   \VdashPf{\semenv}{\ctrue}{immediate by \Rule{Can-Base}}
       \end{llproof}
+
     \proofcasederivation
       {Unif}
       {\semenv(\ta) = \semenv(\tb)}
@@ -5391,14 +5286,10 @@ The Composability result below is an important test of our definition of the uni
 	  {\semenv \th \cb \\ \cb \simple}
 	  {\semenv \Th \cb}
 
-	  \begin{llproof}
-	    \simplePf{\ca}{Premise}
-	    \simplePf{\cb}{Premise}
-	    \simplePf{\ca \cand \cb}{By \Rule{Simple-Conj}}
-	    \decolumnizePf
-\Hand 	    \VdashPf{\semenv}{\ca \cand \cb}{By \Rule{Can-Base}}
+        \begin{llproof}
+\Hand     \VdashPf{\semenv}{\ca \cand \cb}{immediate by \Rule{Can-Base}}
+        \end{llproof}
 
-	  \end{llproof}
 
 	\proofcasederivationdouble
 	  {Can-Susp-Ctx}
@@ -5451,9 +5342,7 @@ The Composability result below is an important test of our definition of the uni
 	      {\semenv\where{\tv \is \gt} \Th \c}
 
 	      \begin{llproof}
-		\simplePf{\c}{Premise}
-		\simplePf{\cexists \tv \c}{By \Rule{Simple-Exists}}
-\Hand 		\VdashPf{\semenv}{\cexists \tv \c}{By \Rule{Can-Base}}
+\Hand 		\VdashPf{\semenv}{\cexists \tv \c}{Immediate by \Rule{Can-Base}}
 	      \end{llproof}
 
 
@@ -5507,11 +5396,7 @@ The Composability result below is an important test of our definition of the uni
 	      {\semenv\where{\x \is \semenv(\cabs \tv \ca)} \Th \cb}
 
 	      \begin{llproof}
-		\simplePf{\cexists \tv \ca}{Premise}
-		\simplePf{\ca}{Inversion of \Rule{Simple-Exists}}
-		\simplePf{\cb}{Premise}
-		\simplePf{\clet \x \tv \ca \cb}{By \Rule{Simple-Let}}
-\Hand		\VdashPf{\semenv}{\clet \x \tv \ca \cb}{By \Rule{Can-Base}}
+\Hand		\VdashPf{\semenv}{\clet \x \tv \ca \cb}{Immediate by \Rule{Can-Base}}
 	      \end{llproof}
 
 	    \proofcasederivationdouble
@@ -5643,11 +5528,7 @@ The Composability result below is an important test of our definition of the uni
 	{\semenv \th \C\where{\cmatch \t \cbrs} \\ \C\where{\cmatch \t \cbrs} \simple}
 	{\semenv \Th \C\where{\cmatch \t \cbrs}}
 
-	\begin{llproof}
-	  \simplePf{\C\where{\cmatch \t \cbrs}}{Premise}
-	  \nsimplePf{\C\where{\cmatch \t \cbrs}}{\cref{lem:match-is-not-simple}}
-\Hand 	  \contraPf{\semenv \th \C\where{\cmatched \t \sh \cbrs}}{}
-	\end{llproof}
+        The second premise is a contradiction.
 
       \proofcasederivation
 	{Can-Susp-Ctx}
@@ -5989,7 +5870,7 @@ generally in our system.
 
 	\begin{llproof}
 	  \vdashPf{\semenv}{\cletr \x \tv \tvs {\C\where{\cs}} {\Cp\where{\ca}}}{Premise}
-	  \vdashPf{\semenv}{\cexists {\tv, \tvs} \C\where{\cs}}{\cref{lem:simple-inversion}}
+	  \vdashPf{\semenv}{\cexists {\tv, \tvs} \C\where{\cs}}{Simple inversion}
 	  \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \C\where{\cs})}}{\Cp\where{\ca}}{\ditto}
 	  \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \C\where{\cs})}}{\Cp\where{\cb}}{$\ddagger$}
 	  \vdashPf{\semenv}{\cletr \x \tv \tvs {\C\where{\cs}} {\Cp\where{\cb}}}{By \Rule{LetR}}
@@ -6027,9 +5908,9 @@ generally in our system.
       \vdashPf{\semenv}{\cerase{\Ca\where{\cunif \tv {\cunif {\shapp[\shape \t] \tys} \ueq} \cand \Cb\where{\cunif \tv \gt}}}}{Premise}
       \vdashPf{\semenva}{\cunif \tv {\cunif {\shapp[\shape \t] \tys} \ueq}}{Inversion of $\Ca$}
       \vdashPf{\semenvb}{\cunif \tv \gt}{Inversion of $\Cb$}
-      \eqPf{\gt}{\semenvb(\tv)}{\cref{lem:simple-inversion}}
+      \eqPf{\gt}{\semenvb(\tv)}{Simple inversion}
       \continueeqPf{\semenva(\tv)}{$\tv \disjoint \bvs \Cb$}
-      \continueeqPf{\shapp[\shape \t] {\semenva(\tys)}}{\cref{lem:simple-inversion}}
+      \continueeqPf{\shapp[\shape \t] {\semenva(\tys)}}{Simple inversion}
 \Hand \eqPf{\shape \gt}{\shape \t}{Applying shape to both sides}
     \end{llproof}
   \end{proof}
@@ -6100,8 +5981,8 @@ generally in our system.
 	  \begin{llproof}
 	    \ForallPf{\semenv}{}{}
 	    \vdashPf{\semenv}{\parens {\cexists \tv \ca} \cand \cb}{Premise}
-	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca}{\cref{lem:simple-inversion}}
-	    \vdashPf{\semenv}{\cb}{\cref{lem:simple-inversion}}
+	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca}{Simple inversion}
+	    \vdashPf{\semenv}{\cb}{Simple inversion}
 	    \vdashPf{\semenv\where{\tv \is \gt}}{\cb}{$\tv \disjoint \cb$}
 	    \vdashPf{\semenv\where{\tv \is \gt}}{\ca \cand \cb}{By \Rule{Conj}}
 \Hand       \vdashPf{\semenv}{\cexists \tv \ca \cand \cb}{By \Rule{Exists}}
@@ -6202,7 +6083,7 @@ generally in our system.
 
 	    \begin{llproof}
 	      \vdashPf{\semenvp}{\capp \x \t}{Premise}
-	      \inPf{\greg \tv {\semenva}}{\semenv(\x)}{\cref{lem:simple-inversion}}
+	      \inPf{\greg \tv {\semenva}}{\semenv(\x)}{Simple inversion}
 	      \eqPf{\semenva(\tv)}{\semenvp(\t)}{\ditto}
 	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cpinst \inst \tv \tvc}{By \Rule{Partial-Inst}}
 	      \vdashPf{\semenvp\where{\tvc \is \semenvp(\t), \inst \is \semenva}}{\cunif \tvc \t}{By \Rule{Unif}}
@@ -6243,10 +6124,10 @@ generally in our system.
 	      \vdashPf{\semenvp} {\cpapp \x \tvp \tvc \inst}{Premise}
 	      \inPf{\greg \tv \semenva}{\semenv(\x)}{$\cexistsi \inst \x \in \C$}
 	      \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
-	      \eqPf{\semenvp(\tvc)}{\semenv(\inst)(\tvp)}{\cref{lem:simple-inversion}}
+	      \eqPf{\semenvp(\tvc)}{\semenv(\inst)(\tvp)}{Simple inversion}
 	      \continueeqPf{\semenva(\tvp)}{Above}
 	      \vdashPf{\semenva}{\cp \cand \cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Above}
-	      \vdashPf{\semenva}{\cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{\cref{lem:simple-inversion}}
+	      \vdashPf{\semenva}{\cunif \tvp {\cunif {\shapp \tvbs} \ueq}}{Simple inversion}
 	      \eqPf{\semenva(\tvp)}{\shapp {\semenva(\tvbs)}}{\ditto}
 	      \eqPf{\semenvp(\tvc)}{\shapp {\semenva(\tvbs)}}{Above}
 	      \vdashPf{\semenvp\where{\tvbs' \is \semenva(\tvbs)}}{\cunif \tvc {\shapp {\tvbs'}}}{By \Rule{Unif}}
@@ -6279,7 +6160,7 @@ generally in our system.
 
 	  \begin{llproof}
 	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca \cand \cpinst \inst \tv \tvcb}{Premise}
-	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca}{\cref{lem:simple-inversion}}
+	    \vdashPf{\semenv}{\cpinst \inst \tv \tvca}{Simple inversion}
 	    \vdashPf{\semenv}{\cpinst \inst \tv \tvcb}{\ditto}
 	    \eqPf{\semenv(\tvca)}{\semenv(\inst)(\tv)}{\ditto}
 	    \eqPf{\semenv(\tvcb)}{\semenv(\inst)(\tv)}{\ditto}
@@ -6347,7 +6228,7 @@ generally in our system.
 		\begin{llproof}
 		  \LetPf{\semenvb}{\semenva\where{\tvp \is \semenvp(\tvc)}}{}
 		  \vdashPf{\semenva}{\ueqs \cand \c}{By definition}
-		  \vdashPf{\semenva}{\ueqs}{\cref{lem:simple-inversion}}
+		  \vdashPf{\semenva}{\ueqs}{Simple inversion}
 		  \vdashPf{\semenvb}{\ueqs}{$\tvp$ is polymorphic}
 		  \vdashPf{\semenvb}{\c}{$\tvp \disjoint \c$}
 		  \vdashPf{\semenvb}{\ueqs \cand \c}{By \Rule{Conj}}
@@ -6386,7 +6267,7 @@ generally in our system.
 	    \vdashPf{\semenvp}{\cpapp \x \tvb \tvc \inst}{Premise}
 	    \inPf{\greg \tv \semenva}{\semenv(\c)}{$\cexistsi \inst \x \in \C$}
 	    \eqPf{\semenvp(\inst)}{\semenva}{\ditto}
-	    \eqPf{\semenvp(\tvc)}{\semenva(\tvb)}{\cref{lem:simple-inversion}}
+	    \eqPf{\semenvp(\tvc)}{\semenva(\tvb)}{Simple inversion}
 	    \eqPf{\semenva(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \tv, \tvs$}
 	    \eqPf{\semenvp(\tvb)}{\semenv(\tvb)}{$\tvb \disjoint \bvs \C$}
 	    \eqPf{\semenvp(\tvc)}{\semenvp(\tvb)}{Above}
@@ -6419,7 +6300,7 @@ generally in our system.
 	  \begin{llproof}
 	    \ForallPf{\semenv}{}{}
 	    \vdashPf{\semenv}{\cletr \x \tv \tvs \ueqs \c}{Premise}
-	    \vdashPf{\semenv}{\cexists {\tv, \tvs} \ueqs}{\cref{lem:simple-inversion}}
+	    \vdashPf{\semenv}{\cexists {\tv, \tvs} \ueqs}{Simple inversion}
 	    \vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv \tvs \ueqs)}}{\c}{\ditto}
 \Hand	    \vdashPf{\semenv}{\c}{$\x \disjoint \c$}
 	  \end{llproof}
@@ -6450,7 +6331,7 @@ generally in our system.
 
       \begin{llproof}
 	\vdashPf{\semenv}{\cletr \x \tv {\tvas, \tvbs} \ca \cb}{Premise}
-	\vdashPf{\semenv}{\cexists {\tv, \tvas, \tvbs} \ca}{\cref{lem:simple-inversion}}
+	\vdashPf{\semenv}{\cexists {\tv, \tvas, \tvbs} \ca}{Simple inversion}
 	\vdashPf{\semenv\where{\x \is \semenv(\cabsr \tv {\tvs, \tvbs} \ca)}}{\cb}{\ditto}
 	\vdashPf{\semenv\where{\tv \is \gt, \tvas \is \gts, \tvbs \is \bar\gtp}}{\ca}{\ditto}
 	\vdashPf{\semenv\where{\tvbs \is \bar\gtp}}{\cexists {\tv, \tvas} \ca}{By \Rule{Exists}}
@@ -7166,7 +7047,7 @@ and $\sub(\tvs) = \tys$.
     \item For simple $\c$, if $\sub$ is a unifier of $\cfor \tv \c$, then $\sub$ is a unifier of $\c$.
   \end{itemize}
   \begin{proof}
-    Follows from \cref{lem:simple-inversion}.
+    Follows by simple inversion.
   \end{proof}
 \end{lemma}
 
@@ -7189,7 +7070,7 @@ and $\sub(\tvs) = \tys$.
   $\sub$ unifies $\cexists \tv \ca$ and
   $\sub$ unifies $\cletin \x {\csem {\cabs \tv \ca}_\sub} \cb$
   \begin{proof}
-    Follows from \cref{lem:unifier-abs-equiv} and \cref{lem:simple-inversion}.
+    Follows from \cref{lem:unifier-abs-equiv} and simple inversion.
   \end{proof}
 \end{lemma}
 
