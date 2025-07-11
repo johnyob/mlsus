@@ -2426,7 +2426,7 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
 
 \begin{restatable}[Progress]{theorem}{progress}
   \label{thm:progress}
-  For any constraint $\c$, then either:
+  If constraint $\c$ cannot take a step $\c \csolve \cp$, then either:
   \begin{enumerate}[(\roman*)]
     \item $\c$ is solved.
     \item $\c$ is stuck, that is:
@@ -2445,7 +2445,6 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
       \end{enumerate*}
      Here, $\hat\C$ is a \emph{solved} context \ie such that no other
      rewrites can be applied.
-    \item $\c \csolve \cp$ for some $\cp$.
   \end{enumerate}
 \end{restatable}
 
@@ -6380,11 +6379,10 @@ generally in our system.
 \subsection{Progress}
 
 \begin{lemma}[Unification progress]
-  For any unification problem $\up$, either:
+  If unification problem $\up$ cannot take a step $\up \unif \upp$, then either:
   \begin{enumerate}[(\roman*)]
     \item $\up$ is solved.
     \item $\up$ is $\cfalse$.
-    \item $\up \unif \upp$ for some $\upp$.
     \end{enumerate}
   \begin{proof}
     This is a standard result. See \citet*{Pottier-Remy/emlti}.
