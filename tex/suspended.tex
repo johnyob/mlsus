@@ -633,7 +633,7 @@ well-typed.
 \parcomment{Why our solution makes things easier?}
 As we will see, once we adopt the suspended constraint machinery developed in
 this paper, much of the complexity of these typing fragile constructs
-vanishes. It is suspended constraints that do most of the heavy lifting.
+vanishes---suspended constraints do most of the heavy lifting.
 
 \subsection{Semi-explicit first-class polymorphism}
 \label {sec/constraints/polytypes}
@@ -2436,6 +2436,7 @@ to a non-variable type $\t$, then $\shape \t$ must be the unique shape of
 $\tvp$. Any other shape would render the instantiation unsatisfiable.
 
 % Properties
+% May look like space hacks, but restatable introduces its own space
 
 \begin{restatable}[Progress]{theorem}{progress}
   \label{thm:progress}
@@ -2461,11 +2462,13 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
   \end{enumerate}
 \end{restatable}
 
+\vspace{-1ex}
 \begin{restatable}[Termination]{theorem}{termination}
   \label{thm:termination}
   The constraint solver terminates on all inputs.
 \end{restatable}
 
+\vspace{-1ex}
 \begin{restatable}[Preservation]{theorem}{preservation}
   \label{thm:preservation}
   If $\ca \csolve \cb$, then $\ca \cequiv \cb$.
@@ -2796,7 +2799,7 @@ but the formalization of our solver relies on acyclicity to ensure
 termination.  Extending the formalization to accommodate cycles would
 require some changes.  Following the implementation, incremental
 instantiation might require to instantiate cycles atomically.
-
+%
 Shapes may also be equi-recursive, though only minimal shapes of polytypes
 can be recursive. In the acyclic setting, shape equality is syntactic; with
 cycles, this no longer holds---but we do not anticipate any fundamental issues.
