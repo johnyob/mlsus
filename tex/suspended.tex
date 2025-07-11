@@ -2689,7 +2689,10 @@ omnidirectional inference beyond the features of \OML?
 Our nominal records use a restricted form of overloading.  We have also
 experimented with a more general overloading mechanism
 \Xdidier[inspired by\citet*{Leijen-Ye/prefix@pldi2025}]{not at all! it was
-never inspired by Leijen! Citing Leijen is fine, but not in this way...}  in
+never inspired by Leijen! Citing Leijen is fine, but not in this way...}
+\Xalistair{This is Leijen's overloading though right? I guess the citation
+was a way to get what we intended anyway without need to review the work}
+in
 which several definitions may be bound to the same identifier
 ${\color{gray}\M.}\x$, but prefixed with a name space~$\color{gray}\M$ used
 for disambiguation: an implicit form $\eover \x$ in the source is elaborated
@@ -2708,16 +2711,16 @@ omnidirectional type inference could serve as a principled, constraint-based
 approach foundation for resolving implicits in the presence of
 let-generalization.
 %
-As future work, we aim to extend our constraint language to typecheck a
-calculus, inspired\Xdidier{Could we say similar instead of inspired?} by \COCHIS
-\citep*{journals/jfp/SchrijversOWM19}, with implicit parameter abstraction
-$\eifun \t \e$ and resolution $\eimplicit \t$.
+As future work, we aim to extend our constraint language to typecheck an implicit parameter
+calculus, similar to \COCHIS
+\citep*{journals/jfp/SchrijversOWM19}, but with \ML polymorphism.
 
 \Xdidier{It is unclear to me what
 you have in mind... I don't understand $\eifun \t \e$. Do you mean $\eifun
 \tv \e?$. So it should even worse for the reader. We should say how it would
 differ from \COCHIS, which
 only does the easy part---not polymorphism inference}
+\Xalistair{Does the above now work?}
 
 \paragraph{Higher-rank polymorphism}
 
@@ -2732,9 +2735,11 @@ framework to support higher-rank polymorphism, in the style of
 meaningful basis for understanding the trade-offs of omnidirectional and
 bidirectional inference.
 
-Since \MLF is a generalization of \OCaml polytypes still based on
-$\pi$-directional type inference, it would also be worth exploring
-whether omnidirectional type inference could further empower \hbox{\MLF}.
+\MLF is an extension of \ML that support first-class polymorphism that
+goes beyond the power of System $\F$, while retaining type inference.
+It is a generalization of \OCaml's polytypes, relying on \geninst-directionality.
+It would therefore be worth exploring whether omnidirectional type inference
+could further empower \MLF.
 
 \paragraph{Default rules}
 
