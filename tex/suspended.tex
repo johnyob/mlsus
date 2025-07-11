@@ -6665,77 +6665,44 @@ rules that are not inherently destructive.
   \end{proof}
 \end{lemma}
 
-\Xdidier {My comments}
-\begin{version}{\color{blue}\Xxx}
-I read the proof in parallel with Gabriel.
-I think I understand Alistair's schema but with details missing.
-
-Case \Rule {U-Name} is indeed broken (it is an equality), but we should find
-another argument: we are decreasing the sum of height of terms of
-multi-equations. The weight of higher terms should therefore count more
-the split into a small term and its projections, which is not the case.
-
-Case \Rule {Decomp} is correct modulo a typo.
-
-However, at the first reading, I don't really understand Gabriel's prose
-with discharging everywhere much better.
-
-I think I prefer Alistair's deconstructing intuition, which could be made
-precise by defining a strict ordering in which constraints are
-deconstructed.
-
-For example, we always progress, when while preserving the weight,
-we
-\begin{itemize}
-
-\item remove a match constraint (as we never introduce them)
-\item remove an $\x\;\t$ constraint, as we never introduce them
-\item reduce the size of a let body.
-\item remove part of a let body that does not contain an $x$
-\item move an $\exists \tv$ outside of anything, as
-      we only introduce them when decreasing the weight (to be checked)
-\item moving $\forall$ inside $\exists$.
-\item \ldots
-\end{itemize}
-We just have to list all the rules, and check/add the something
-that decreases in $\C$, while not increasing anything else
-and preserving the weights.
-
-Also, the notation $\x \in \C$ has a local definition. It should be the $\C$
-of the binding occurrence. Then extrusion of type variables/monomorphization
-modifies the scope hence the meaning of $\x \in \C$, hopefully in the right
-direction, but it should be clarified.
-\end{version}
-\Xgabriel{The argument on ``deconstruction'' and the handling of discharging rules are orthogonal. The weights on partial instantiations given by Alistair are not preserved by discharging rules, so the argument using those weights must necessarily be restricted to discharge-free sequences. My prose explains why we can do this restriction, in a more modular way than building a complex lexicographic ordering at the end of the proof.}
-
 \termination
 \begin{proof}
-  The ``discharge'' rules \Rule{S-Match-Type}, \Rule{S-Match-Var} and
-  \Rule{S-BackProp} discharge suspended constraints, and they can make
-  arbitrary sub-constraints appear in the non-suspended part of the
-  constraint. On the other hand, they strictly decrease the number of
-  occurrences of suspended match constraint (if we also count nested
-  suspended constraints), and no rewriting rule introduces new suspended
-  match constraints. So these discharge rules can only be applied finitely
-  many times. To prove termination of constraint solving, it thus suffices
-  to prove that that rewriting sequences that do not contain one of the
-  discharge rules (those that occur in-between two discharge rules) are
-  always finite.
+  The difficulty for termination comes from the ``discharge'' rules
+  \Rule{S-Match-Type}, \Rule{S-Match-Var} which can make arbitrary
+  sub-constraints appear in the non-suspended part of the constraint;
+  and from the instantiation rules that copy/duplicate existing
+  structure in another part of the constraint, increasing its total
+  size.
 
-  By a similar argument, the number of non-partial instantiations $\capp \x
-  \t$ decreases strictly on \Rule{S-Let-AppR} when a partial instantiation
-  starts, and is preserved by other non-discharge rules. The rule
-  \Rule{S-Let-AppR} can thus only occur finitely many time in
-  non-discharging sequences, and it suffices to prove that all rewriting
-  sequences that are non-discharging and are not \Rule{S-Let-AppR} are
-  finite.
+  As we argued before, the other rewrite rules are \emph{destructive},
+  they strictly simplify the constraint towards a normal form and can
+  only be applied finitely many times when taken together. The
+  fragment without discharge rules and incremental instantiation is
+  also extremely similar to the constraint language of
+  \citet*{Pottier-Remy/emlti}, so their termination proof applies
+  directly.
 
-  The termination argument for this fragment follows similar lines to that
-  of unification.
+  \paragraph{Discharge rules} The discharge rules strictly decrease
+  the number of occurrences of suspended match constraint (if we also
+  count nested suspended constraints), and no rewriting rule
+  introduces new suspended match constraints. So these discharge rules
+  can only be applied finitely many times. To prove termination of
+  constraint solving, it thus suffices to prove that that rewriting
+  sequences that do not contain one of the discharge rules (those that
+  occur in-between two discharge rules) are always finite.
 
-  The only rule of concern is \Rule{S-Inst-Copy}, which is not obviously destructive:
-  it introduces new instantiation constraints and structurally increases the size of the
-  constraint.
+  \paragraph{Starting instantiations} By a similar argument, the number
+  of non-partial instantiations $\capp \x \t$ decreases strictly on
+  \Rule{S-Let-AppR} when a partial instantiation starts, and is
+  preserved by other non-discharge rules. The rule \Rule{S-Let-AppR}
+  can thus only occur finitely many time in non-discharging sequences,
+  and it suffices to prove that all rewriting sequences that are
+  non-discharging and are not \Rule{S-Let-AppR} are finite.
+
+  \paragraph{Other instantiation rules} Among other instantiation
+  rules, the rule of concern is \Rule{S-Inst-Copy}, which is not
+  destructive: it introduces new instantiation constraints
+  and structurally increases the size of the constraint.
 
   \newcommand{\sw}[1]{\mathprefix{sw}{(#1)}}
   \newcommand{\iw}[1]{\mathprefix{iw}{(#1)}}
