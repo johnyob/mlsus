@@ -1760,6 +1760,43 @@ unboxing. Conversely, we use $\Eshape \E \e \sh$ for polytype boxing and
 overloaded records, where we disambiguate them using the expected type of
 the context.
 
+\begin{example}
+Let $\e$ be $\elet f {\efun \x {\eproj \x 1}} {\eapp f (1, 2)}$.
+$\e$ is well-typed using \emph{backpropagation}.
+$\e$ is of the form $\E \where {\x}$ where  $\E$ is the context $\elet f
+{\efun \x \ehole} {\eapp f (1, 2)}$.
+We have $\eset \th \E \where {\eproj[2] \x 1} : \tint$.
+Let us show that $\eshape \E \x {\any {\tvca, \tvcb} \tvca \tprod \tvcb}$.
+%
+Assume $\eset \th \E \where {\emagic {\eannot \x {} \gt} } : \t$. As $\gt$ is a ground
+type, the type $\gt$ of $\x$ is not a variable.  Then, $\gt$ cannot be that
+of an arbitrary sized tuple, since there is no such type for a tuple of
+arbitrary size. Hence, $\gt$ must be a tuple $\Pi\iton \tys$ for some size
+$n$. Since the codomain of $f$ must be a tuple of size~$2$ (for $\eapp f (1,
+2)$ to be well-typed), then $n$ must also be $2$. This shows that $\eshape \E
+\x {\any {\tvca, \tvcb} \tvca \tprod \tvcb}$.
+%% \begin{mathpar}
+%%   \infer
+%%     {
+%%     \infer
+%%       {
+%% 	\infer
+%% 	  {
+%% 	    \infer
+%% 	      {
+%% 		\infer
+%% 		  {}
+%% 		  {\tva, \tvb, x : \tva \th x : \tva}}
+%% 	      {\tva, \tvb, x : \tva \th \ecast x \tva \tvb : \tvb}}
+%% 	  {\tva, \tvb \th \efun x {\ecast x \tva \tvb : \tva \to \tvb}}}
+%%       {\emptyset \th \efun \x \ecast \x \tva \tvb : \tfor {\tva, \tvb} \tva \to \tvb} \\
+%%     \infer
+%%       {\ldots}
+%%       {f : \tfor {\tva, \tvb} \tva \to \tvb \th \eapp f (1, 2) : \tunit}}
+%%     {\emptyset \th \elet f {\efun \x {\ecast \x \tva \tvb}} {\eapp f (1, 2)} : \tunit}
+%% \end{mathpar}
+\end{example}
+
 
 
 \subsection{Metatheory}
