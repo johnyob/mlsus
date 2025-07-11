@@ -161,18 +161,18 @@ behavior.
 To illustrate the problem, consider the following two record types
 with overlapping field names:
 \begin{program}[input]
-type one = {x : int; y : int}
-type 'a two = {x : 'a}
+type 'a one = {x : 'a; y : int}
+type two = {x : int; z : int}
 \end{program}
 In \OCaml, both definitions are in scope, and the compiler must
-statically disambiguate field usage. The expression \ocaml!{x = 1}! can
-only be \code{int two}, and \code{r.y} necessarily infers \code{one} for \code{r}.
+statically disambiguate field usage. The expression \ocaml!{x = 1; z = 1}! can
+only be \code{two}, and \code{r.y} necessarily infers \code{one} for \code{r}.
 But field accesses such as \code{r.x} are ambiguous unless the type of \code{r} is
 \emph{known}. Consider:
 \begin{program}[input]
-let ex_1 r = r.x                         °\ocamlflags 11°
-let ex_2 = let r = {x = 1} in r.x        °\ocamlflags 00°
-let ex_3 = (fun r -> r.x) {x = 1}        °\ocamlflags 10°
+let ex_1 r = r.x                         	°\ocamlflags 21°
+let ex_2 = let r = {x = 1; y = 1} in r.x        °\ocamlflags 00°
+let ex_3 = (fun r -> r.x) {x = 1; y = 1}        °\ocamlflags 10°
 \end{program}
 In \ocaml{ex_1}, the type of \code{r} is unconstrained, so disambiguation
 fails\footnote {In fact, \OCaml uses a default
@@ -183,7 +183,7 @@ resolution strategy instead of failing when the type is ambiguous,
   the warning on default resolution.}.
 \relax
 At first glance, \code{ex_2} and \code{ex_3} appear equivalent: in both,
-the expression \code{r.x} can only refer to the field from type \code{'a two}.
+the expression \code{r.x} can only refer to the field from type \code{int one}.
 Yet \OCaml accepts \code{ex_2} and rejects \code{ex_3}.
 This is because the \code{let}-binding in \code{ex_2} allows \code{r} to be
 treated polymorphically, and thus its type is considered \emph{known}--enabling
@@ -195,8 +195,8 @@ artifact of \OCaml's inference algorithm, consider two equivalent versions of
 \ocaml{ex_3}, where \texttt{@@} and \ocaml{|>} are the application and reverse application
 functions:
 \begin{program}[input]
-let ex_3_2 = (fun r -> r.x) @@ {x = 1}   °\ocamlflags 10°
-let ex_3_3 = {x = 1} |> (fun r -> r.x)   °\ocamlflags 10°
+let ex_3_2 = (fun r -> r.x) @@ {x = 1; y = 1}   °\ocamlflags 10°
+let ex_3_3 = {x = 1; y = 1} |> (fun r -> r.x)   °\ocamlflags 20°
 \end{program}
 While these terms are semantically equivalent, they highlight a potential hazard:
 their typability would vary under a directionally biased inference algorithm,
@@ -211,7 +211,7 @@ is disallowed and they are ill-typed.
 This criterion also
 warns on the following example, where \code{r} has a monomorphic type:
 \begin{program}[input]
-let ex_4 p r = if p then r.x else (r : one).x °\ocamlflags 20°
+let ex_4 p r = if p then r.x else (r : 'a one).x °\ocamlflags 20°
 \end{program}
 Warning here is preferable to silently accepting or rejecting the program based
 on the inference order between the \code{if} branches.
@@ -268,7 +268,7 @@ user-provided type annotations from a function to its argument! For example,
 the following would be rejected as ambiguous with \geninst-directional type
 inference alone:
 \begin{program}[input]
-let g (f : 'a two -> int) : int = f {x = 1} in g (fun r -> r.x) $
+let g (f : two -> int) : int = f {x = 1; z = 1} in g (fun r -> r.x)$
 $ °\ocamlflags 00°
 \end{program}
 
@@ -359,26 +359,24 @@ further examples that illustrate such failures:
 \locallabelreset
 %
 \begin{program}[input]
-let ex_6 r = (r.x, r.y)                          °\ocamlflags 10°
-let ex_7 r = let x = r.x in x + r.y              °\ocamlflags 10°
-let ex_8 = let getx r = r.x in getx {x = 1}      °\ocamlflags 10°
-let ex_9 r = (r.x : bool)                        °\ocamlflags 11°
-let ex_1_0 r = r.x.x                              °\ocamlflags 11°
+let ex_6 r = (r.x, r.y)                          	°\ocamlflags 10°
+let ex_7 r = let x = r.x in x + r.y              	°\ocamlflags 10°
+let ex_8 = let getx r = r.x in getx {x = 1; y = 1}      °\ocamlflags 10°
+let ex_9 r = (r.x : bool)                        	°\ocamlflags 11°
+let ex_1_0 r = r.x.x                              	°\ocamlflags 11°
 \end{program}
-All are arguably unambiguous; \OCaml accepts none of them\footnote{It
-accepts \ocaml{ex_6} with a warning, and fails if we reverse the order of the
-type declarations. \Xalistair{This is wrong now}}, \OML accepts the first three.
+All are arguably unambiguous; \OCaml accepts none of them, \OML accepts the first three.
 
-In \ocaml{ex_6}, \ocaml{r} can only be of type \ocaml{one}. Indeed,
+In \ocaml{ex_6}, \ocaml{r} can only be of type \ocaml{'a one}. Indeed,
 considering the second projection first, we should learn that
-\ocaml{r} is of type \ocaml{one} and since it is $\lambda$-bound, this
+\ocaml{r} is of type \ocaml{'a one} and since it is $\lambda$-bound, this
 should then make the first projection unambiguous. Disambiguating this example is a matter
 of solving the typing constraints in the right order.
 
 A similar failure occurs in \ocaml{ex_7}, where the type of the
 $\lambda$-bound variable \code{r} is initially ambiguous and
 unknown. It is only upon typing the projection \code{r.y} that
-\code{r} is forced to have the type \ocaml{one}; this requires
+\code{r} is forced to have the type \ocaml{'a one}; this requires
 inferring the $\Let$-body to disambiguate the $\Let$-definition.
 %
 In \code{ex_8}, disambiguation information flows from an instance to
@@ -395,7 +393,7 @@ well.
 Finally, \ocaml{ex_1_0} is an example where none of the field
 projections has enough type information to be disambiguated on its own, but the
 constraints they impose can be combined to deduce that the type of
-\ocaml{r} must be \ocaml{two}, as the \code{x} field of \code{one}
+\ocaml{r} must be \ocaml{one}, as the \code{x} field of \code{two}
 does not have a record type. This lies outside the framework of
 omnidirectional type inference, in which suspended constraints must be
 discharged one by one in some order, independently of other
@@ -788,7 +786,7 @@ formal account has been given.
 Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to
 resolve ambiguities in record types. For instance:
 \begin{program}[input]
-let ex_1_1 = {x = 42; y = 13} °\ocamlflags 00°
+let ex_1_1 = {x = 42; z = 1337} °\ocamlflags 00°
 \end{program}
 Here, \code{x} and \code{y} appear together only in the type \code{two},
 allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
@@ -811,11 +809,11 @@ This fallback mechanism highlights the directionality of \OCaml inference.
 Once the compiler selects a type, it commits to it---even if that choice
 causes errors downstream. Consider \code{ex_7} from \cref{sec/introduction}:
 \begin{program}[input]
-let ex_7 r = let x (* infers ['a two] *) = r.x in x + r.y °\ocamlflags 10°
+let ex_7 r = let x (* infers [two] *) = r.x in x + r.y °\ocamlflags 10°
 \end{program}
-Here, \OCaml defaults to \code{'a two} for \code{r} when typing \code{r.x},
+Here, \OCaml defaults to \code{two} for \code{r} when typing \code{r.x},
 but then fails to type \code{r.y}, as this default choice is fixed---even
-thought \code{one} would have satisfied both projections.
+though \code{one} would have satisfied both projections.
 
 \parcomment {Record field disambiguation in suspended constraints}
 
@@ -999,12 +997,12 @@ a satisfiability judgment $\semenv \th \c$. The semantic environment
 $\semenv$ contains a ground assignment for each free variable of $\c$
 (type and term variable), and $\semenv \th \c$ states that these
 assignments indeed satisfy $\c$. Let us write $\Ground$ for the set of
-\emph{ground} types, types without free variables.\footnote{Ground
+\emph{ground} types, types without free variables\footnote{Ground
   types are thus finite trees, assuming the existence
 %
 of some base types such as $\tint$. In \cref{sec/rec-types}, we
 discuss the alternative choice of regular trees for the set of ground
-types that models equirecursive types.} $\semenv$ maps each type
+types that models equirecursive types.}. $\semenv$ maps each type
 variable $\tv$ to a ground types $\gt \in \Ground$, and each term
 variable $x$ to sets of ground types $\gabs \subseteq \Ground$
 (the set of ground instances of a type scheme for $\x$).
@@ -1484,22 +1482,22 @@ let ex_7 r = let x = r.x in x + r.y °\ocamlflags 10°
 \end{program}
 The typing constraint generated for \code{ex_7} contains the following, where $\tv$ stands for the type of \code{r}:
 \begin{mathpar}
-  \cexists \tv
+  \cexists {\tv, \tvc}
     \clet x \tvb
       {(\cmatch \tva \dots)}
-      {\cinst x \tint \cand \cunif \tv {\mathsf{one}}}
+      {\cinst x \tint \cand \cunif \tv {\Tapp[\mathsf{one}] \tvc}}
 \end{mathpar}
 The suspended constraint can be discharged under our semantics, as
 intended. We apply the \Rule{Susp-Ctx} rule with context
 $\C$ equal to
 \begin{mathpar}[inline]
   \clet \x \tvb \square \capp \x \tint \cand
-  \cunif \tv {\mathsf{one}}
+  \cunif \tv {\Tapp[\mathsf{one}] \tvc}
 \end{mathpar}.
 Although the context includes a \code{let}-binding---which in practice
 involves \code{let}-generalization---we can still deduce $\Cshape \C \tv
-{\mathsf{one}}$, since the erased context $\cerase \C$ contains the
-unification $\cunif \tv {\mathsf{one}}$.
+{\any \tvcp \Tapp[\mathsf{one}] \tvcp}$, since the erased context $\cerase \C$ contains the
+unification $\cunif \tv {\Tapp[\mathsf{one}] \tvc}$.
 
 This example illustrates that our formulation of suspended constraints
 interacts nicely with \code{let}-polymorphism. Although the two features are
@@ -1511,16 +1509,16 @@ as we will further show in our next example.
 A subtle yet crucial feature of our semantics is its support for
 \emph{backpropagation}:
 \begin{program}[input]
-let ex_8 = let getx r = r.x in getx { x = 1 }  °\ocamlflags 10°
+let ex_8 = let getx r = r.x in getx {x = 1; y = 1}  °\ocamlflags 10°
 \end{program}
 As in the previous example, the type of \code{r} cannot be disambiguated in the
 \code{let}-definition alone. In the previous example, this type was unified
 to a known shape in the \code{let}-body. Here, this is more subtle: an
 \emph{instance} of the type scheme is taken, which is only well-typed if
 \code{r} has a variable type or a type of the form
-\ocaml{'a two}. The projection \code{r.x} would be
+\ocaml{'a one}. The projection \code{r.x} would be
 forbidden if \code{r} had a variable type, so
-\code{'a two} is the unique solution. We call this flow of
+\code{'a one} is the unique solution. We call this flow of
 information from instances back to definitions \emph{backpropagation}.
 
 The constraint generated when typing
@@ -1533,12 +1531,12 @@ The constraint generated when typing
         \cunif \tvd {\tvb \to \tvc} \cand
 	\cmatch \tvb \dots
         }}{}
-    \cinst {getx} {(\tint \ \mathsf{two} \to \tv)}
+    \cinst {getx} {(\tint \ \mathsf{one} \to \tv)}
 \end{tabular}
 \end{mathpar}
 With the context $\C$ equal to $\clet {getx}
 \tvd {\cexists {\tvb, \tvc} \cunif \tvd {\tvb \to \tvc} \cand \square}
-{\capp {getx} {(\tint \ \mathsf{two} \to \tv)}}$, we can show the unicity predicate $\Cshape \C \tvb \sh$ for the shape $\sh = (\any \tvc {\tvc~\mathsf{two}})$.
+{\capp {getx} {(\tint \ \mathsf{one} \to \tv)}}$, we can show the unicity predicate $\Cshape \C \tvb \sh$ for the shape $\sh = (\any \tvc {\tvc~\mathsf{one}})$.
 %% That is:
 %% \begin{mathpar}
 %%   \all {\semenv, \gt} \uad
@@ -1549,14 +1547,14 @@ is
 \begin{mathpar}[inline]
 \clet {getx}
 \tvd {\cexists {\tvb, \tvc} \cunif \tvd {\tvb \to \tvc} \cand \cunif \tvb \gt}
-{\capp {getx} {(\tint \ \mathsf{two} \to \tv)}}
+{\capp {getx} {(\tint \ \mathsf{one} \to \tv)}}
 \end{mathpar}.
 Since $getx$ is bound to the constraint abstraction
 \relax $\cabs \tvd \exists \tvc.\uad \cunif \delta {(\gt \to \gamma)}$,
 the instantiation
-\relax $\capp {getx} (\tint \ \mathsf{two} \to \tv)$
+\relax $\capp {getx} (\tint \ \mathsf{one} \to \tv)$
 can only be satisfied when
-\relax $\gt = \tint\ \mathsf{two}$. This proves unicity,
+\relax $\gt = \tint\ \mathsf{one}$. This proves unicity,
 hence \code{ex_7} is accepted by our semantics.
 \end{example}
 
@@ -2140,10 +2138,10 @@ this, let us examine \ocaml{ex_7} (from \cref{sec/introduction}):
 \end{program}
 The generated typing constraint contains:
 \begin{mathpar}
-  \cexists \tv
+  \cexists {\tv, \tvc}
     \clet x \tvb
       {\cmatch \tvb {\cbranch {(\cpatrcd \ct)} {\C\where {\ct,\tva,\tvb}}}}
-      {\cinst x \tint \cand \cunif \tv {\mathsf{one}}}
+      {\cinst x \tint \cand \cunif \tv {\Tapp[\mathsf{one}] \tvc}}
 \end{mathpar}
 where $\C\where{\ct,\tv,\tvb}$ is ${\Omega(\elab / t) \leq \tva \to \tvb}$.
 Here, $\tv$ stands for \code{r}'s type. The constraint remains suspended until

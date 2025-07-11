@@ -1,2 +1,2 @@
-type 'a one = {x : 'a}
-type two = {x : int; y : int}
+type 'a one = {x : 'a; y : int}
+type two = {x : int; z : int}
