@@ -13,11 +13,13 @@
 \newcommand{\Rule}[1]{\hyperlink{#1}{\TirName {#1}}}
 \renewcommand{\DefTirName}[1]
    {\expandafter \ifx \csname Rule@#1\endcsname \relax
-      \message {Def-#1}%
+      %% \message {Def-#1}%
       \expandafter \global \expandafter \let \csname Rule@#1\endcsname \empty
       \hypertarget{#1}{\TirName {#1}}\else
-      \message {Not-Def-#1}%
-      \hyperlink{#1}{\TirName {#1}}\fi}
+      %% \message {Not-Def-#1}%
+      \TirName {#1}\fi
+      %% \hyperlink{#1}{\TirName {#1}}\fi
+    }
 
 %% \newcommand \oldrewrite[3][]
 %%    {\inferrule*[fraction={{}{-}{\smash\to}},lab=#1]{#2}{#3}}
