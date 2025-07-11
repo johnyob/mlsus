@@ -2310,8 +2310,8 @@ There are three cases in which an instantiation constraint is eliminated:
   \rewrite[S-Inst-Poly]
     {\cletr \x \tv {\tvs} {\ueqs \cand \c}
         {\C\where{\cpapp \x \tvp \tvc \inst}}}
-    {\cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
-      \tvp \in \reg \tv \tvs \\
+    {\\\cfor \tvp \cexists {\tv, \tvs \setminus \tvp} {\ueqs} \cequiv \ctrue \\
+      \tvp \in \reg \tv \tvs \\\\
      \tvp \disjoint \c \\ \inst.\tvp \disjoint \insts \C \\
      \x \disjoint \bvs \C}
     {\cletr \x \tv {\tvs} {\ueqs \cand \c} {\C\where\ctrue}}
@@ -2662,8 +2662,7 @@ suspended constraints in this work, and would be interested in
 studying applications to GADT typing, which was also one of our
 original motivations.
 
-\Xalistair{Should the F in Future work be capitalized?}
-\section{Conclusions and Future work}
+\section{Conclusions and future work}
 \label{sec:discussion}
 \label{sec:future-work}
 
@@ -2679,28 +2678,31 @@ order, made possible by our introduction of \emph{partial type schemes}.
 We formalized the solver as a non-deterministic, terminating rewrite system,
 and implemented an efficient prototype to demonstrate its practicality.
 
-Through three instantiations of our framework---static overloading
-of tuples, nominal records and variant constructors, and semi-explicit first-class
-polymorphism---we showed that our framework yields a sound and complete inference
-algorithm and a principal type system. In short, it appears principality holds
-\emph{anyway} from our approach.  \Xalistair{I'm tired and tried making a pun with our title. Remove
-if you think it doesn't work or you can think of a better one}
+Through three instantiations of our framework---static overloading of
+tuples, nominal records and variant constructors, and semi-explicit
+first-class polymorphism---we showed that our framework yields a sound and
+complete inference algorithm and a principal type system. In short, it
+appears principality holds \emph{anyway} from our approach.
 %
-Naturally, all this begs the question: what else can be done with omnidirectional
-inference beyond the features of \OML?
+Naturally, all this begs the question: what else can be done with
+omnidirectional inference beyond the features of \OML?
 
 
 \paragraph{Static overloading}
 
 Our nominal records use a restricted form of overloading.  We have also
-experimented with a more general mechanism inspired by
-\citet*{Leijen-Ye/prefix@pldi2025}, in which overloaded identifiers are
-resolved by disambiguation: an implicit form $\eover \x$ is elaborated to an
-explicit form $\exover \M \x$, where $\M$ is a disambiguating module or
-namespace.
+experimented with a more general overloading mechanism
+\Xdidier[inspired by\citet*{Leijen-Ye/prefix@pldi2025}]{not at all! it was
+never inspired by Leijen! Citing Leijen is fine, but not in this way...}  in
+which several definitions may be bound to the same identifier
+${\color{gray}\M.}\x$, but prefixed with a name space~$\color{gray}\M$ used
+for disambiguation: an implicit form $\eover \x$ in the source is elaborated
+to an explicit form~$\exover {{\color{gray}\M}} \x$.
+%% , where $\M$ is a disambiguating namespace.
 %
-Although implemented in a prototype, we have not yet identified a satisfactory
-typing behavior or formalization for this feature. Nevertheless, we conjecture
+Although implemented in a prototype, we have not yet
+%% identified a satisfactory typing behavior or
+formalized this feature.  Nevertheless, we conjecture
 that they should typable with our framework.
 
 Modular implicits \citep*{White-Bour-Yallop/Modular_Implicits/ml2014} are a
@@ -2711,8 +2713,15 @@ approach foundation for resolving implicits in the presence of
 let-generalization.
 %
 As future work, we aim to extend our constraint language to typecheck a
-calculus, inspired by \COCHIS \citep*{journals/jfp/SchrijversOWM19}, with
-implicit parameter abstraction $\eifun \t \e$ and resolution $\eimplicit \t$.
+calculus, inspired\Xdidier{Could we say similar instead of inspired?} by \COCHIS
+\citep*{journals/jfp/SchrijversOWM19}, with implicit parameter abstraction
+$\eifun \t \e$ and resolution $\eimplicit \t$.
+
+\Xdidier{It is unclear to me what
+you have in mind... I don't understand $\eifun \t \e$. Do you mean $\eifun
+\tv \e?$. So it should even worse for the reader. We should say how it would
+differ from \COCHIS, which
+only does the easy part---not polymorphism inference}
 
 \paragraph{Higher-rank polymorphism}
 
@@ -2727,8 +2736,9 @@ framework to support higher-rank polymorphism, in the style of
 meaningful basis for understanding the trade-offs of omnidirectional and
 bidirectional inference.
 
-\Xalistair{Didier I know you wanted to say something about \MLF, I'm
-just not sure what you wanted to say.}
+Since \MLF is a generalization of \OCaml polytypes still based on
+$\pi$-directional type inference, it would also be worth exploring
+whether omnidirectional type inference could further empower \hbox{\MLF}.
 
 \paragraph{Default rules}
 
@@ -2739,13 +2749,15 @@ selects the most recent matching record type in scope for ambiguous field
 names; \SML assigns default types to overloaded numeric
 literals~\citep*[Section 5.8]{rossberg-hamlet}.
 
-% We tried, but failed
+\parcomment {We tried, but failed}
+
 We explored adding such \emph{default rules} to suspended match constraints,
 allowing unresolved constraints to discharge with a default shape rather than
 fail. While pragmatic, such rules are inherently non-principal and difficult to
 reconcile with our framework.
 
-% Why did we fail
+\parcomment {Why did we fail}
+
 In particular, they introduce subtle semantic complexities: if two suspended
 constraints could unlock each other, then defaulting one over the other
 may force an unsatisfiable branch to be taken.
@@ -2777,8 +2789,11 @@ our approach into \OCaml's typechecker.
 In this work, for the sake of simplicity, we treat ground types as finite
 trees. Supporting equi-recursive types amounts to using regular trees instead
 \citep*{Pottier-Remy/emlti}. Our prototype already supports them,
-but the formalization of our solver relies on acyclicity to prove termination.
-Extending it to accommodate cycles remains an open question.
+but the formalization of our solver relies on acyclicity to ensure
+termination.  Extending it to accommodate cycles would require some changes.
+Following the implementation, incremental instantiation
+%% should be cycle aware and
+might require to instantiate cycles atomically.
 
 Shapes may also be equi-recursive, though only minimal shapes of polytypes
 can be recursive. In the acyclic setting, shape equality is syntactic; with
