@@ -5109,17 +5109,45 @@ soundness and completeness in \cref{app:proofs-typing}.
 
 \subsection{Canonicalization of satisfiability}
 
-They key result in this section is that our semantic derivations $\semenv \th \c$ can always be rewritten to only apply the rule \Rule{Susp-Ctx} at the very bottom of the derivation, rather than in the middle of derivations. This corresponds to explicitating the unique shapes of all suspended constraints (in some order that respects the dependency between suspended constraints), and then continuing with a syntax-directed proof of a fully-discharged constraint.
+They key result in this section is that our semantic derivations $\semenv \th
+\c$ can always be rewritten to only apply the rule \Rule{Susp-Ctx} at the very
+bottom of the derivation, rather than in the middle of derivations. This
+corresponds to explicitating the unique shapes of all suspended constraints (in
+some order that respects the dependency between suspended constraints), and
+then continuing with a syntax-directed proof of a fully-discharged constraint.
 
-We did not impose this ordering in our definition of the semantics to make it more flexible and more declarative, but the inversion principle that it provides will be helpful when reasoning about the solver in \cref{app:proofs-solving}.
+We did not impose this ordering in our definition of the semantics to make it
+more flexible and more declarative, but the inversion principle that it
+provides will be helpful when reasoning about the solver in
+\cref{app:proofs-solving}.
 
-We define in \cref{fig:simple} a formal judgment $\c \simple$ that says that $\c$ does not contain any suspended match constraint, and extend it trivially to constraint contexts: $\C \simple$. In particular, the erasure $\cerase \c$ of a constraint (\cref{def:erasure}) is always simple. We then introduce in \cref{fig:canonical-sem} a ``canonical'' semantic judgment $\semenv \Th \c$ that enforces the structure we mentioned: its derivation starts by discharging suspended constraints, until eventually we reach a simple constraint $\c$. Below we prove that any semantic derivation $\semenv \th \c$ can be turned into a canonical semantic derivation $\semenv \Th \C$.
+We define in \cref{fig:simple} a formal judgment $\c \simple$ that says that
+$\c$ does not contain any suspended match constraint, and extend it trivially
+to constraint contexts: $\C \simple$. In particular, the erasure $\cerase \c$
+of a constraint (\cref{def:erasure}) is always simple. We then introduce in
+\cref{fig:canonical-sem} a ``canonical'' semantic judgment $\semenv \Th \c$
+that enforces the structure we mentioned: its derivation starts by discharging
+suspended constraints, until eventually we reach a simple constraint $\c$.
+Below we prove that any semantic derivation $\semenv \th \c$ can be turned into
+a canonical semantic derivation $\semenv \Th \c$.
 
-We can think of this result as controlling the amount of non-syntax-directdness in our rules: we need some of it, but it suffices to have it only at the outside, and it contains a more standard derivation that is easy to reason about.
+We can think of this result as controlling the amount of non-syntax-directdness
+in our rules: we need some of it, but it suffices to have it only at the
+outside, and it contains a more standard derivation that is easy to reason
+about.
 
-\paragraph{Inversion} When $\c$ is simple, a derivation of $\semenv \th \c$ does not use the contextual rule (it is a derivation in $\semenv \thsimple \c$), so it enjoys the usual inversion principle on syntax-directed judgments; for example, if $\semenv \thsimple {\ca \cand \cb}$ then by inversion $\semenv \thsimple \ca$ and $\semenv \thsimple \cb$, etc.
+\paragraph{Inversion} When $\c$ is simple, a derivation of $\semenv \th \c$
+does not use the contextual rule (it is a derivation in $\semenv \thsimple
+\c$), so it enjoys the usual inversion principle on syntax-directed judgments;
+for example, if $\semenv \thsimple {\ca \cand \cb}$ then by inversion $\semenv
+\thsimple \ca$ and $\semenv \thsimple \cb$, etc.
 
-\paragraph{Congruence} Congruence does not hold in general in our system due to the contextual rule. For example, $\ca \eqdef (\cmatch \tva {\cbranch \wild \ctrue})$ is unsatisfiable so we have $\ca \cequiv \cfalse$, but for $\C \eqdef (\cexists \tva \cunif \tva \tint \cand \square)$ we have $\C \where \ca \cequiv \ctrue$ and $\C \where \cfalse \equiv \cfalse$. It holds simply for simple constraints.
+\paragraph{Congruence} Congruence does not hold in general in our system due to
+the contextual rule. For example, $\ca \eqdef (\cmatch \tva {\cbranch \wild
+\ctrue})$ is unsatisfiable so we have $\ca \cequiv \cfalse$, but for $\C \eqdef
+(\cexists \tva \cunif \tva \tint \cand \square)$ we have $\C \where \ca \cequiv
+\ctrue$ and $\C \where \cfalse \equiv \cfalse$. It holds simply for simple
+constraints.
 
 \begin{lemma}[Simple congruence]
   \label{lem:cong-simple}
