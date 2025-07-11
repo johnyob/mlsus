@@ -292,10 +292,10 @@ In absence of \emph{implicit} polymorphism, type inference is solely based
 on unification constraints which can be solved in any order;
 omnidirectional inference is then natural and easy to implement.  The
 difficulty originates from \ML \emph{implicit} let-polymorphism for which all known
-implementations choose to always infer the type of a let-binding
-first, to then turn it into a type scheme that is assigned to the
-let-bound variable to extend the typing environment in which the body
-is finally typed. The Hindley-Milner algorithm $\mathcal{J}$, one of
+implementations follow the \geninst-order: first typing the binding,
+generalizing it into a type scheme, and finally typing the body under the extended
+typing environment that binds the generalized scheme.
+The Hindley-Milner algorithm $\mathcal{J}$, one of
 its variant $\mathcal{W}$ or $\mathcal{M}$~\citep*
 {Lee_Yi/algoM@toplas1998}, or more flexible constraint-based type
 inference implementations~\citep* {Remy/mleth,Remy/thesis,
@@ -367,7 +367,7 @@ let ex_1_0 r = r.x.x                              °\ocamlflags 11°
 \end{program}
 All are arguably unambiguous; \OCaml accepts none of them\footnote{It
 accepts \ocaml{ex_6} with a warning, and fails if we reverse the order of the
-type declarations.}, \OML accepts the first three.
+type declarations. \Xalistair{This is wrong now}}, \OML accepts the first three.
 
 In \ocaml{ex_6}, \ocaml{r} can only be of type \ocaml{one}. Indeed,
 considering the second projection first, we should learn that
@@ -386,9 +386,9 @@ back the definition, opposite to the \Geninst-order; we call this
 \emph{backpropagation}.
 
 The example \ocaml{ex_9} can be disambiguated from the return type of
-the projection, rather than from its source. The typing rules for
-records that we present on this work restrict disambiguation to the
-source type only and rejects this example. But other typing rules
+the projection, rather than from the type of \code{r}. The typing rules for
+records that we present in this work restrict disambiguation to the
+record type alone, and thus rejects this example. Alternative typing rules
 using omnidirectional type inference could support this example as
 well.
 
@@ -424,7 +424,7 @@ The paper is organized as follows:
   In \cref{sec:language}, we define \OML, an extension of \ML featuring static
   overloading of record labels, overloaded tuple projections, and
   semi-explicit first-class polymorphism, sketch its typing rules,
-  and states the theorems of soundness and completeness.
+  and state the theorems of soundness and completeness.
   By lack of space, detailed typing rules and constraint generation are
   postponed to \cref {app:oml-calculus}.
 
@@ -557,7 +557,7 @@ Two constructs deal with the introduction and elimination of
 constraint abstractions. A constraint abstraction $\cabs \tv \c$ can
 simply be seen as a function which when applied to some type $\t$
 returns $\c \where {\tv \is \t}$. Constraint abstractions are
-introduced by a let-construct $(\clet \x \tv \ca \cb)$ which binds
+introduced by a let construct $(\clet \x \tv \ca \cb)$ which binds
 the constraint abstraction to the term variable $\x$ in
 $\cb$---additionally ensuring the abstraction is satisfiable. They
 are eliminated using the application constraint $(\capp \x \t)$ which
@@ -571,7 +571,7 @@ Finally, we introduce \textit{suspended match constraints} $(\cmatch \t \cbrs)$.
 %% %in \citep{TODO} % this would be a de-anonymizing citation, silence it for now
 %% }
 These constraints are \emph{suspended} until
-until the \textit{shape} of $\t$, such as its top-level constructor,
+the \textit{shape} of $\t$, such as its top-level constructor,
 is known. Then they are \emph{discharged}: a unique branch is selected
 and its associated constraint has to be solved. A match constraint
 that is never discharged is considered unsatisfiable.
@@ -720,10 +720,10 @@ ill-typed despite the annotation.
 \parcomment {Suspended match constraints fixes this}
 
 Suspended match constraints eliminate this sensitivity to directionality
-when type-checking $\einst e$. If $\e$ is already known to have the type
+when typechecking $\einst e$. If $\e$ is already known to have the type
 $[\ts]$, then we can simply
-instantiate it.  However, if the type of $\e$ is not yet known, \ie  it is a
-(possibly constrained) type variable $\tv$: then, we must defer until more
+instantiate it.  However, if the type of $\e$ is not yet known---\ie  it is a
+(possibly constrained) type variable $\tv$---then we must defer until more
 information is available. We capture this behaviour with a suspended match
 constraint:
 \begin{mathpar}
@@ -873,12 +873,12 @@ fully determined (\ie it cannot be a polymorphic row variable).  This
 ensures that the arity of the tuple is \emph{known} statically from
 the surrounding context, thereby avoiding the need for row
 polymorphism. However, this restriction is not expressed in the typing
-rules themselves, it is specified in terms of the
-type-inference process.
+rules themselves, but is specified operationally as part of the
+type inference process.
 
 \parcomment {Tuple projection is statically overloaded}
 
-From a typing perspective, tuple projection in \SML behave like a form
+From a typing perspective, tuple projection in \SML behaves like a form
 of static overloading: the expression $\eproj \e j$ is valid only when $\e$ is
 known to be an $n$-ary tuple for some fixed $n \geq j$.
 
@@ -894,25 +894,24 @@ constraint:
     \cand \cmatch \tvb {\cbranch {\cpatprod \tvc j} {\cunif \tva \tvc}}
 \end{mathpar}
 \parcomment{Tuple patterns}
-The suspended constraint $\cmatch \tvb {\cbranch {\cpatprod \tvc j} {\cunif
-\tva \tvc}}$ blocks until the shape of $\e$ ($\tvb$) is known to be a tuple
+The suspended constraint $(\cmatch \tvb {\cbranch {\cpatprod \tvc j} {\cunif
+\tva \tvc}})$ blocks until the shape of $\e$ ($\tvb$) is known to be a tuple
 of sufficient arity. The pattern $\cpatprod
 \tvc j$ matches only tuple types $\tProd \ti$, where $n \geq j$, binding the
 $j$-th component to $\tvc$, which is then unified with the expected result type
 $\tva$.
 
-\paragraph{Comparison to \SML} Our understanding is that \SML
-type-checkers implement row-polymorphic records under the hood, but
-they never generalize row variables and fail if a declaration contains
-an undetermined row variable. This is a nice approach and we
-conjecture that it accepts the same programs as our implementation of
-overloaded tuples using suspended constraints. On the other hand, it
-only works for structural types for which we know of a row-based
-presentation enjoying good type-inference properties. It cannot be
-applied to disambiguate between nominal records or variants that share
-field or constructor names, especially when some field projections or
-data constructors need non-uniform typing rules, such polymorphic
-fields or GADT constructors.
+\paragraph{Comparison to \SML}
+
+Our understanding is that \SML typecheckers implement row-polymorphic records
+under the hood, but they never generalize row variables, rejecting any
+declaration that leaves a row variable undetermined. This is a neat approach,
+and we conjecture that it accepts the same programs as our implementation of
+overloaded tuples using suspended constraints. On the other hand, it only works
+for structural types. It cannot be applied to disambiguate between
+nominal records or variants that share field or constructor names, particularly
+when some field projections or constructors need non-uniform typing rules,
+such polymorphic fields or GADT constructors.
 
 
 \begin{mathparfig}[htpb!]%
@@ -1085,7 +1084,7 @@ write simply $\t$.
 %
 We write $\bot$ for the shape $\any \tvc \tvc$, which we call the
 \emph{trivial} shape. We write $\Shapesz$ the
-set of non trivial shapes.
+set of non-trivial shapes.
 %% and use letter $\Sh$ to range
 %% over non trivial shapes.
 
@@ -1168,7 +1167,7 @@ be represented as the shape application $\shapp (\tint \tlist)$.
 \subsection{Suspended constraints}
 
 We have left the syntax of shape patterns deliberately abstract. We also
-assume a matching relation
+assume a matching relation:
 % mathpar instead of mathline since spacing was odd. If spacing is fixed, use mathline
 \begin{mathpar}
   \cmatches \cpat \sh \tvcs \theta
@@ -2123,7 +2122,7 @@ Nonetheless, to continue solving the let-body, we must assign a scheme to
 $\tvb$ will later unify with $\tint$ once the match constraint is discharged.
 But it would be incomplete to lower $\tvb$ as a monomorphic variable.
 %
-This motivates, \emph{partial type schemes}, our second novel mechanism for
+This motivates \emph{partial type schemes}, our second novel mechanism for
 omnidirectional inference. Partial type schemes are type schemes that delay
 commitment to certain quantifications (\eg $\tvb$). Such \emph{partially
 generalized} variables are treated as generalized, but can be incrementally
@@ -2542,7 +2541,7 @@ we re-generalize the stale descendants of the region in the region tree.
 
 \citet*{Garrigue-Remy/poly-ml} introduced an approach to principality
 tracking for polytypes, that has since be extended to other features
-of the \OCaml language: whenever the type-checker wants to know if
+of the \OCaml language: whenever the typechecker wants to know if
 a type is known in a robust way, it checks whether the type is
 generalizable. We compared their approach to ours in
 \cref{sec/constraints/polytypes}.
@@ -2586,7 +2585,7 @@ the constraint, typically for static overloading.
 
 \paragraph{Suspended constraints in dependent-type systems}
 
-Suspending the constraints that cannot be solved yet is not a novel idea, it
+Suspending the constraints that cannot be solved yet is not a novel idea: it
 is a standard approach to implement unification dependently-typed
 systems. This goes back to Huet's algorithm for higher-order
 unification~\citep*{huet-unif} and pattern
