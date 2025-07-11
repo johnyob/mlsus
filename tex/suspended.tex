@@ -2463,19 +2463,20 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
 \section{Implementation}
 \label{sec:implementation}
 
-We have two working prototypes of a core \ML language with suspended match
-constraints and partial generalization, in which we have reproduced the various
-type-system features and examples presented in this work.  One closely follows
-the constraint-based presentation described here\footnote{ The other prototype
-is a direct implementation of type inference based on semi-unification. We
-mention it here only it indicate that we have explored multiple implementation
-strategies leading to the same results.}. It is public and open-source (link
-omitted for anonymity). Its implementation is inspired by previous work such as
-\Inferno~\citep {Pottier/inferno@icfp2014, Pottier/inferno@opam}.  It uses
-state-of-the-art implementation techniques for efficiency, such as a Tarjan's
-union-find data structure for unification \citep*{journals/jacm/Tarjan75} and
-\emph{ranks} (or \emph{levels}) for efficient generalization. Let us discuss a
-few salient points.
+We have two working prototypes implementing the \OML language with suspended
+match constraints and partial type schemes, in which we have reproduced the
+various type-system features and examples presented in this work.  One closely
+follows the constraint-based presentation described here\footnote{The other
+prototype is a direct implementation of type inference based on
+semi-unification. We mention it here only it indicate that we have explored
+multiple implementation strategies leading to the same results.}. It is public
+and open-source (link omitted for anonymity). Its implementation is inspired by
+previous work such as \Inferno~\citep {Pottier/inferno@icfp2014,
+Pottier/inferno@opam}.  It uses state-of-the-art implementation techniques for
+efficiency, such as a Tarjan's union-find data structure for unification
+\citep*{journals/jacm/Tarjan75} and \emph{ranks} (or \emph{levels}) for
+efficient generalization \citep*{Remy/mleth}. Let us discuss a few salient
+points.
 
 \paragraph{Unification and scheduling}
 
@@ -2506,12 +2507,12 @@ variable scope to the current region. Unification associates
 an integer \emph{rank} (or \emph{level}) for each variable, that indexes the
 region in the stack to which it belongs.
 %
-This choice does not work for partial generalization. If
+This approach does not work for partial generalization. If
 generalization at some region is suspended by a match constraint, the
 region must remain alive while we continue inference in other
-regions. Later parts of the constraint may introduce a new
-$\Let$-region at the same rank that are unrelated---neither an
-ancestor nor a descendant---breaking the linear assumption of ranks.
+regions. However, later parts of the constraint may introduce a new
+$\Let$-region at the same rank that is unrelated to the suspended one---neither its
+ancestor nor its descendant---breaking the linear assumption of ranks.
 
 Our implementation must instead use a \emph{tree} of nested
 $\Let$-regions. Under this scheme, ranks no longer uniquely determine a
@@ -2519,7 +2520,7 @@ variable's region. Instead, we interpret a rank relative to a path in the
 region tree from the root. When two variables are unified, they must always
 lie on some shared path---by scoping invariants---so computing their minimum
 rank (along this path) sufficies to determine the lowered region: we keep
-the efficient integer comparisons of rank-based generalization.
+the efficient integer comparisons of generalization.
 
 \paragraph{Partial generalization}
 
@@ -2537,9 +2538,8 @@ into four categories:
   \item[G] Variables that are generalized. \\
     \emph{Not accessible from any instance type. Treated polymorphically.}
 
-  \item[PG] Variables that are generalizable, but may be
-    updated in the future. \\
-    \emph{Variables mentioned by suspended match constraint or partial
+  \item[PG] Variables that are partially generalizable. \\
+    \emph{Generalizable variables mentioned by suspended match constraint or partial
     instantiations.}
 
   \item[PI] Variables that were previously partially generalized
@@ -2554,19 +2554,19 @@ yet been solved. Guarded variables are generalized as partial generics (\textbf{
 unguarded ones are fully generalized (\textbf{G}).
 
 When an instance is taken from a partial generic, we retain a forward reference
-from the partial generic (\textbf{PG}) to the instance. This enables the generic to
-notify the instance that it has been updated, propagating the updated type
-structure to all instances. This is a reversed analogue of how partial
-instantiation constraints track copies. In addition, the instance remains
-guarded by the partial generic until the latter is either lowered or fully
-generalized.
+from the partial generic (\textbf{PG}) to the instance. This enables the
+generic to notify the instance that it has been updated, propagating the
+updated type structure to all instances. This mirrors, in reverse, the way our
+formalized solver uses partial instantiation constraints to track copies. In
+addition, the instance remains guarded by the partial generic until the latter
+is either lowered or fully generalized.
 
-Once a suspended match constraint is solved, it removes the guard it
+Once a suspended match constraint is solved, it removes the guards it
 introduced. This may enable previously partial generics to become fully
 generalizable. Conversely, if a partially generalized variable is lowered (\eg
 by \Rule{S-Lower-Exists}), it must be unified with all its instances.
 
-\paragraph{Lazy generalization} Repeatedly generalzing a region after every
+\paragraph{Lazy generalization} Repeatedly generalizing a region after every
 update is expensive.  Instead we generalize on demand. We mark regions as
 ``stale'' when they may require re-generalization. When an instance is taken,
 we re-generalize the stale descendants of the region in the region tree.
@@ -2616,9 +2616,9 @@ scheme, and they get copied during instantiation. This is much simpler to
 implement than our partial type schemes, but it provides a different behavior
 where each instance can choose independently how to resolve the constraint.
 Qualified types are an excellent choice when this is the desired behavior,
-typically for dynamic overloading. We had to introduce the more complex partial
-generalization to express features that require a unique resolution of the
-constraint, typically for static overloading.
+typically for dynamic overloading. To handle cases that require a unique
+resolution of the constraint across all instances---such as static
+overloading---we require the more complex mechanism of partial generalization.
 
 \paragraph{Suspended constraints in dependent-type systems}
 
@@ -2676,7 +2676,7 @@ Central to our approach is a new declarative account of when type inference is
 Our constraint solver is omnidirectional: constraints may be solved in any
 order, made possible by our introduction of \emph{partial type schemes}.
 We formalized the solver as a non-determinstic, terminating rewrite system,
-backed by an efficient prototype implementation.
+and implemented an efficient prototype to demonstrate its practicality.
 
 Through three instantiations of our framework---static overloading
 of tuples, nominal records and variant constructors, and semi-explicit first-class
@@ -2693,11 +2693,12 @@ inference beyond the features of \OML?
 
 Our nominal records use a restricted form of overloading.  We have also
 experimented with a more general mechanism inspired by
-\citet*{Leijen-Ye/prefix@pldi2025}, which resolves overloaded identifiers via
-disambiguation: the implicit form $\eover \x$, and an explicit counterpart
-$\exover \M \x$, where $\M$ is a disambiguating module or namespace.
+\citet*{Leijen-Ye/prefix@pldi2025}, in which overloaded identifiers are
+resolved by disambiguation: an implicit form $\eover \x$ is elaborated to an
+explicit form $\exover \M \x$, where $\M$ is a disambiguating module or
+namespace.
 %
-Although implemented in a prorotype, we have not yet identified a satisfactory
+Although implemented in a prototype, we have not yet identified a satisfactory
 typing behaviour or formalisation for this feature. Nevertheless, we conjecture
 that they should typable with our framework.
 
@@ -2710,13 +2711,13 @@ let-generalization.
 %
 As future work, we aim to extend our constraint language to typecheck a
 calculus, inspired by \COCHIS \citep*{journals/jfp/SchrijversOWM19}, with
-implicit abstraction $\eifun \t \e$ and resultion $\eimplicit \t$.
+implicit parameter abstraction $\eifun \t \e$ and resolution $\eimplicit \t$.
 
 \paragraph{Higher-rank polymorphism}
 
 In \cref{sec/introduction} and \cref{sec:related-work}, we compared
 omnidirectional and bidirectional type inference in the context of static
-overloading. While overloading is nontrivial, it poses little challenge for the
+overloading. While overloading is non-trivial, it poses little challenge for the
 bidirectional framework, making the comparison somewhat limited. Bidirectional
 typing is best known for its scalability to more complex settings, such as
 higher-rank polymorphism. We are therefore interested in extending our
@@ -2748,10 +2749,12 @@ In particular, they introduce subtle semantic complexities: if two suspended
 constraints could unlock each other, then defaulting one over the other
 may force an unsatisfiable branch to be taken.
 % But we have a nifty prototype
-Our prototype includes an implementation of default rules---but design space
-remains open. Should we fire all default rules of all suspended constraints
+The optimal or principled strategy for applying defaults in such cases
+remains unclear.
+Should we fire all default rules of all suspended constraints
 that remain after the solver terminates, or in batches, restricted to connected
 components of mutually dependent suspended constraints?
+Our prototype opts for the latter, but this warrants further study.
 
 %%\paragraph{Behavior of default rules} Giving priority to most recent
 %%definitions is a possible default behavior for field and constructor
@@ -2772,13 +2775,13 @@ our approach into \OCaml's typechecker.
 
 In this work, for the sake of simplicity, we treat ground types as finite
 trees. Supporting equi-recursive types amounts to using regular trees instead
-\citep*{Pottier-Remy/emlti}. Our prototype already handles such types,
+\citep*{Pottier-Remy/emlti}. Our prototype already supports them,
 but the formalisation of our solver relies on acyclicity to prove termination.
 Extending it to accommodate cycles remains an open question.
-%
+
 Shapes may also be equi-recursive, though only minimal shapes of polytypes
-can be recursive. While equality of shapes is syntactic in the acyclic setting,
-this is no longer the case---but we do not believe this raises any issue.
+can be recursive. In the acyclic setting, shape equality is syntactic; with
+cycles, this no longer holds---but we do not anticipate any fundamental issues.
 
 % \begin{acks}
 % \end{acks}
@@ -5771,7 +5774,7 @@ $\C\where{\cmatch \tv \cbrs} \cnequiv \C\where\cfalse$ for $\C \is \square
 \cand \cunif \tv \tint$.
 
 As a result, we must prove \emph{contextual equivalence} for each rewriting
-rule explicitly. This is both nontrivial and tedious. To simplify the task, we
+rule explicitly. This is both non-trivial and tedious. To simplify the task, we
 first present a series of auxillary lemmas that recover contextual equivalence
 for many common cases.
 %
