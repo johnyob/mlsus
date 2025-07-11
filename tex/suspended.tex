@@ -2687,14 +2687,12 @@ omnidirectional inference beyond the features of \OML?
 \paragraph{Static overloading}
 
 Our nominal records use a restricted form of overloading.  We have also
-experimented with a more general overloading mechanism
-\Xdidier[inspired by\citet*{Leijen-Ye/prefix@pldi2025}]{not at all! it was
-never inspired by Leijen! Citing Leijen is fine, but not in this way...}  in
-which several definitions may be bound to the same identifier
-${\color{gray}\M.}\x$, but prefixed with a name space~$\color{gray}\M$ used
-for disambiguation: an implicit form $\eover \x$ in the source is elaborated
-to an explicit form~$\exover {{\color{gray}\M}} \x$.
-%% , where $\M$ is a disambiguating namespace.
+experimented with a more general overloading mechanism in which several
+definitions may be bound to the same identifier ${\color{gray}\M.}\x$, but
+prefixed with a namespace\footnote {Reusing the notation
+of~\citet*{Leijen-Ye/prefix@pldi2025}.}~$\color{gray}\M$ used for
+disambiguation: an implicit form $\x$ in the source is elaborated to an
+explicit form~$\exover {{\color{gray}\M}} \x$.
 %
 Although implemented in a prototype, we have not yet
 %% identified a satisfactory typing behavior or
@@ -5131,11 +5129,7 @@ suspended constraints, until eventually we reach a simple constraint $\c$.
 Below we prove that any semantic derivation $\semenv \th \c$ can be turned into
 a canonical semantic derivation $\semenv \Th \c$.
 
-We can think of this result as controlling the amount of
-non-syntax-directedness in our rules: we fundamentally need
-a non-syntax-directed (contextual) rule, but it suffices to have it
-only at the outside, and inside it contains a more standard derivation
-that is easy to reason about.
+We can think of this result as controlling the amount of non-syntax-directness in our rules: we need some of it, but it suffices to have it only at the outside, and it contains a more standard derivation that is easy to reason about.
 
 \paragraph{Inversion} When $\c$ is simple, a derivation of $\semenv \th \c$
 does not use the contextual rule (it is a derivation in $\semenv \thsimple
