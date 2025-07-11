@@ -922,7 +922,7 @@ such polymorphic fields or GADT constructors.
    \end{bnfgrammar}
    \par
   \infer[True]
-    {}
+    { }
     {\semenv \th \ctrue}
 
   \infer[Conj]
@@ -1783,7 +1783,7 @@ $n$. Since the codomain of $f$ must be a tuple of size~$2$ (for $\eapp f (1,
 %% 	    \infer
 %% 	      {
 %% 		\infer
-%% 		  {}
+%% 		  { }
 %% 		  {\tva, \tvb, x : \tva \th x : \tva}}
 %% 	      {\tva, \tvb, x : \tva \th \ecast x \tva \tvb : \tvb}}
 %% 	  {\tva, \tvb \th \efun x {\ecast x \tva \tvb : \tva \to \tvb}}}
@@ -2855,7 +2855,7 @@ label instantiations respectively.
     {\G \th \eapp \ea \eb : \tb}
 
   \inferrule[Unit]
-    {}
+    { }
     {\G \th () : 1}
 
   \inferrule[Annot]
@@ -2971,7 +2971,7 @@ Concrete proposal:
     {\G \th \tv}
 
   \inferrule[Unit-Wf]
-    {}
+    { }
     {\G \th \tunit}
 
   \inferrule[Arr-Wf]
@@ -3136,7 +3136,7 @@ expressions above by introducing analogous annotation and hole constructs for
 labels.
 \begin{mathpar}
   \infer[Lab-Magic]
-    {}
+    { }
     {\G \th \elmagic \elab : \tp \to \t}
 
   \infer[Lab-Annot]
@@ -4121,11 +4121,11 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   {The constraint $\c$ is simple.}
   \label{fig:simple}
   \inferrule[Simple-True]
-    {}
+    { }
     {\ctrue \simple}
 
   \inferrule[Simple-False]
-    {}
+    { }
     {\cfalse \simple}
 
   \inferrule[Simple-Conj]
@@ -4141,7 +4141,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\cfor \tv \c \simple}
 
   \inferrule[Simple-Unif]
-    {}
+    { }
     {\cunif \ta \tb \simple}
 
   \inferrule[Simple-Let]
@@ -4149,7 +4149,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\clet \x \tv \ca \cb \simple}
 
   \inferrule[Simple-App]
-    {}
+    { }
     {\capp \x \t \simple}
 
   \inferrule[Simple-LetR]
@@ -4161,7 +4161,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\cexistsi \inst \x \c \simple}
 
   \inferrule[Simple-Partial-Inst]
-    {}
+    { }
     {\cpinst \inst \tv \t \simple}
 \end{judgboxmathpar}
 
@@ -4171,7 +4171,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   \label{fig:simple-context}
 
   \inferrule[Simple-Ctx-Hole]
-    {}
+    { }
     {\square \simple}
 
   \inferrule[Simple-Ctx-Conj-Left]
@@ -4242,7 +4242,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   {\el : \ta \to \tb}
   {The label $\el$ has the field type $\ta$ and record type $\tb$.}
   \infer[Lab-Magic]
-    {}
+    { }
     {\G \th \elmagic \elab : \tp \to \t}
 
   \infer[Lab-Annot]
@@ -4291,7 +4291,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\el \uni {\T \tys}}
 
   \inferrule[Lab-?]
-    {}
+    { }
     {\bar \el \uni \t}
 \end{judgboxmathpar}
 
@@ -4317,7 +4317,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\G \th \eapp \ea \eb : \tb}
 
   \inferrule[Unit]
-    {}
+    { }
     {\G \th () : 1}
 
   \inferrule[Annot]
@@ -4573,7 +4573,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   {\e \simple}
   {The term $\e$ is simple.}
   \inferrule[Simple-Var]
-    {}
+    { }
     {\x \simple}
 
   \inferrule[Simple-Fun]
@@ -4585,7 +4585,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\eapp \ea \eb \simple}
 
   \inferrule[Simple-Unit]
-    {}
+    { }
     {\eunit \simple}
 
   \inferrule[Simple-Let]
@@ -4629,11 +4629,11 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\emagic \e \simple}
 
   \inferrule[Simple-Lab]
-    {}
+    { }
     {\elab / \T ~ \simple}
 
   \inferrule[Simple-Lab-Magic]
-    {}
+    { }
     {\elmagic \elab \simple}
 
   \inferrule[Simple-Lab-Annot]
@@ -5353,7 +5353,7 @@ The Composability result below is an important test of our definition of the uni
   \begin{proofcases}
     \proofcasederivation
       {True}
-      {}
+      { }
       {\semenv \th \ctrue}
 
       \begin{llproof}
@@ -6999,7 +6999,7 @@ direction, but it should be clarified.
       \begin{proofcases}
 	\proofcaserewrite
 	  {Zero-Step}
-	  {}
+	  { }
 	  {\hat\c \csolve^* \hat\c}
 
 	We have $\c = \hat\c$ by inversion. All solved forms are satisfiable, thus
