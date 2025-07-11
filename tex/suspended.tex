@@ -409,7 +409,6 @@ NP-hard, even in the absence of let-polymorphism, as shown by an encoding of
 
 \subsubsection* {Plan}
 
-\Xalistair{Make sure this is correct}
 The paper is organized as follows:
 \begin{enumerate*}[label={}]
 
@@ -418,32 +417,34 @@ The paper is organized as follows:
   and their application to three extensions for \ML of various kind.
 
 \item
-  In \cref{sec:semantics}, we describe suspended constraints and their semantics.
+  In \cref{sec:semantics}, we describe suspended match constraints and their semantics.
 
 \item
   In \cref{sec:language}, we define \OML, an extension of \ML featuring static
-  overloading of record labels, overloaded tuple projections, and
-  semi-explicit first-class polymorphism, sketch its typing rules,
-  and state the theorems of soundness and completeness.
-  By lack of space, detailed typing rules and constraint generation are
-  postponed to \cref {app:oml-calculus}.
+    overloading of record labels, overloaded tuple projections, and
+    semi-explicit first-class polymorphism. We sketch its typing rules and
+    state the theorems of soundness and completeness for constraint generation,
+    as well as principality. By lack of space, detailed typing rules and constraint
+    generation are postponed to \cref {app:oml-calculus}.
 
 \item
   In \cref{sec:solving}, we provide a formal definition of our constraint
-  solver as a series of non-deterministic rewriting rules.
+  solver as a series of non-deterministic rewriting rules and state the main
+  theorems for correctness.
 
 \item
   In \cref{sec:implementation}, we describe an efficient implementation
-    of suspended constraints. We discuss some extensions that we have prototyped
-    but whose theory is less clear in \cref{sec:discussion}.
+    of suspended constraints and partial type schemes.
 
 \item
-  In \cref{sec:related-work} and \cref{sec:future-work}, we discuss related
-  and future work.
+  In \cref{sec:related-work}, we compare with related work,
+  and in \cref{sec:future-work}, we conclude with a discussion of future work,
+  including prototyped extensions whose theory is less clear.
 
 \end{enumerate*}
-Appendix \cref{appendix:figures} contains an exhaustive list of figures.
-All proofs are postponed to appendices.
+Appendix \cref{appendix:figures} contains a complete technical reference,
+collecting key definitions and figures for convenient lookup. All proofs are
+postponed to appendices.
 
 \subsubsection* {Our contributions}
 
