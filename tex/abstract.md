@@ -1,6 +1,18 @@
-We propose a new concept of *omnidirectional* type inference, which is the ability to resolve ML-style typing constraints in disorder, by contrast with all known implementations that typecheck the bindings before the bodies of let-expressions.
+We propose a new concept of *omnidirectional* type inference: the
+ability to resolve ML-style typing constraints in disorder. In contrast,
+all known existing implementations which typically infer the types of
+let-bound expressions before typechecking their use sites.
 
-This relies on two technical devices. *Suspended match constraints* suspend the resolution of some constraints until the context has more information on a type variable. *Partial type schemes* allow taking instances of a type scheme
-that is not completely solved as it contains suspended constraints, with a mechanism to update their instances when their type scheme is refined, incrementally.
+This relies on two technical devices: *suspended match constraints*, which
+suspend the resolution of some constraints until the context has more
+information about a type variable; and *partial type schemes*, which allow
+taking instances a of partially solved type scheme containing suspended
+constraints, with a
+mechanism to incrementally update instances as the scheme is refined.
 
-The benefits of omnidirectional type inference are striking for several advanced ML extensions, typically those that rely on optional type annotations for which the principal type property is often fragile. We illustrate them with OCaml's static overloading of record labels and constructors, semi-explicit first-class polymorphism, and tuple projections à la SML.
+The benefits of omnidirectional type inference are striking for several
+advanced ML extensions, typically those that rely on optional type
+annotations where principality is fragile. We illustrate them with OCaml's
+static overloading of record labels and datatype constructors, semi-explicit
+first-class polymorphism, and tuple projections à la SML.
+
