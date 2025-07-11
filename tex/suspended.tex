@@ -2578,8 +2578,8 @@ we re-generalize the stale descendants of the region in the region tree.
 \citet*{Garrigue-Remy/poly-ml} introduced an approach to principality tracking
 for polytypes---what we now call \geninst-directional inference---in which
 generalization and instantiation govern the flow of known type information.
-This approach has since be extended to other features of the \OCaml language:
-whenever the typechecker wants to know if a type is known in a robust way, it
+This approach has since been extended to other features of the \OCaml language:
+whenever the typechecker need to know if a type is known in a robust way, it
 checks whether the type is generalizable. We compared their approach to ours in
 \cref{sec/introduction} and \cref{sec/constraints/polytypes}.
 
@@ -2594,7 +2594,7 @@ a direct inspiration for the present work was a user complaint in
 \citet*{rossberg-wasm} on the type-based disambiguation of \OCaml: its
 bidirectional logic propagates type information from patterns to
 definitions in \code{let}-bindings, when the WebAssembly reference
-implementation would sometimes prefer the other direction.
+implementation would sometimes prefers the other direction.
 %
 % De-anonymizing URL: https://github.com/ocaml/ocaml/issues/7389
 %
@@ -2628,7 +2628,7 @@ unification~\citep*{Miller/pattern-unif@iclp91} where flexible-flexible
 pairs are delayed until at least one side becomes rigid. The novelty of our
 work lies in combining constraint suspension with \ML-style implicit
 polymorphism---absent from most dependently-typed systems---and in the design
-of a declarative constraint semantics used establish principality.
+of a declarative constraint semantics used to establish principality.
 
 %% \paragraph{Leijen et al. (TODO change paragraph naming)}
 %% Should we cite \citet*{Leijen-Ye/prefix@pldi2025}?
@@ -2698,7 +2698,7 @@ explicit form~$\exover {{\color{gray}\M}} \x$.
 Although implemented in a prototype, we have not yet
 %% identified a satisfactory typing behavior or
 formalized this feature.  Nevertheless, we conjecture
-that they should typable with our framework.
+that it should be typable with our framework.
 
 Modular implicits \citep*{White-Bour-Yallop/Modular_Implicits/ml2014} are a
 proposed extension to \OCaml's module system, intended to support ad-hoc
@@ -2708,7 +2708,7 @@ approach foundation for resolving implicits in the presence of
 let-generalization.
 %
 As future work, we aim to extend our constraint language to typecheck an
-implicit parameters calculus, similar to \COCHIS
+implicit-parameters calculus, similar to \COCHIS
 \citep*{journals/jfp/SchrijversOWM19}, but with \ML polymorphism.
 
 
@@ -2781,10 +2781,9 @@ In this work, for the sake of simplicity, we treat ground types as finite
 trees. Supporting equi-recursive types amounts to using regular trees instead
 \citep*{Pottier-Remy/emlti}. Our prototype already supports them,
 but the formalization of our solver relies on acyclicity to ensure
-termination.  Extending it to accommodate cycles would require some changes.
-Following the implementation, incremental instantiation
-%% should be cycle aware and
-might require to instantiate cycles atomically.
+termination.  Extending the formalization to accommodate cycles would
+require some changes.  Following the implementation, incremental
+instantiation might require to instantiate cycles atomically.
 
 Shapes may also be equi-recursive, though only minimal shapes of polytypes
 can be recursive. In the acyclic setting, shape equality is syntactic; with
