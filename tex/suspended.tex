@@ -115,7 +115,7 @@ $   °\Ocamlcomment{\ocamlFlag {\MLF}1}°
 
 \subsection{Directional type inference}
 
-Each fragile constructs admits
+Each fragile construct admits
 a robust counterpart where the type annotation is mandatory. While
 robust constructs fit perfectly into the \ML framework, they are
 significantly more cumbersome to use, as they always require explicit type
@@ -211,7 +211,7 @@ is disallowed and they are ill-typed.
 This criterion also
 warns on the following example, where \code{r} has a monomorphic type:
 \begin{program}[input]
-let ex_4 p r = if p then r.x else (r : two).x °\ocamlflags 20°
+let ex_4 p r = if p then r.x else (r : one).x °\ocamlflags 20°
 \end{program}
 Warning here is preferable to silently accepting or rejecting the program based
 on the inference order between the \code{if} branches.
@@ -221,10 +221,11 @@ type inference for fragile features, aligning with the implicit inference order
 present in most \ML-like typecheckers.
 %
 This mechanism was originally proposed by~\citet*{Garrigue-Remy/poly-ml} for
-semi-explicit first-class polymorphism, and used in \MLF. It has since been adopted in
-\TODO{Mention polymorphic methods here}
-\OCaml for resolving overloading of record fields and variant constructors in
-\OCaml, and more generally whenever the type-checker disambiguates on type information.
+semi-explicit first-class polymorphism, and used in \MLF. It has since been
+adopted in \OCaml for features such as polymorphic object methods and the
+overloading of record fields and variant constructors. More generally, \OCaml
+uses \geninst-directionality whenever the typechecker disambiguates on type
+information.
 
 \paragraph{Bidirectional type inference}
 
@@ -267,18 +268,18 @@ user-provided type annotations from a function to its argument! For example,
 the following would be rejected as ambiguous with \geninst-directional type
 inference alone:
 \begin{program}[input]
-let g (f : 'a one -> int) : int = f {x = 1} in g (fun r -> r.x) $
+let g (f : 'a two -> int) : int = f {x = 1} in g (fun r -> r.x) $
 $ °\ocamlflags 00°
 \end{program}
 
-\OCaml uses \geninst-directional type inference as the primary mechanism, but
-it also uses a weak form of bidirectional propagation: in this example the type
+\OCaml uses \geninst-directional type inference as its primary mechanism, alongside
+a weak form of bidirectional propagation. In this example the type
 of the argument of \code{g} is known \Geninst-directionally, but \OCaml then
 propagates this expected type within the function definition in bidirectional
 fashion, so that this example may be considered non-ambiguous.
 
 Besides, the implementation of \geninst-directional type inference has an
-algorithmic cost: for technical reasons, type annotations must unshare
+algorithmic cost. For technical reasons, type annotations must unshare
 types (from acyclic graphs as naturally produced by unification to trees),
 which may increase the size of types and the cost of type inference. For
 that reason, the implementation of \OCaml cheats and is incomplete by
@@ -331,10 +332,7 @@ a cost, which is that everything is hard:
 \item
   Giving an adequate semantics for suspended constraints is hard, as we
   must capture declaratively the intuition that some type information must be
-  \emph{known} rather than \emph{guessed}, but also that some programs
-  that are semantically non-ambiguous (there is a unique fully-annotated
-  version that is well-typed) must still be rejected as ambiguous to prevent
-  us from looking into suspended constraints.
+  \emph{known} rather than \emph{guessed}.
 
 \item
   Implementing partial types schemes is also hard.
@@ -371,16 +369,16 @@ All are arguably unambiguous; \OCaml accepts none of them\footnote{It
 accepts \ocaml{ex_6} with a warning, and fails if we reverse the order of the
 type declarations.}, \OML accepts the first three.
 
-In \ocaml{ex_6}, \ocaml{r} can only be of type \ocaml{two}. Indeed,
+In \ocaml{ex_6}, \ocaml{r} can only be of type \ocaml{one}. Indeed,
 considering the second projection first, we should learn that
-\ocaml{r} is of type \ocaml{two} and since it is $\lambda$-bound, this
+\ocaml{r} is of type \ocaml{one} and since it is $\lambda$-bound, this
 should then make the first projection unambiguous. Disambiguating this example is a matter
 of solving the typing constraints in the right order.
 
 A similar failure occurs in \ocaml{ex_7}, where the type of the
 $\lambda$-bound variable \code{r} is initially ambiguous and
 unknown. It is only upon typing the projection \code{r.y} that
-\code{r} is forced to have the type \ocaml{two}; this requires
+\code{r} is forced to have the type \ocaml{one}; this requires
 inferring the $\Let$-body to disambiguate the $\Let$-definition.
 %
 In \code{ex_8}, disambiguation information flows from an instance to
@@ -397,7 +395,7 @@ well.
 Finally, \ocaml{ex_1_0} is an example where none of the field
 projections has enough type information to be disambiguated on its own, but the
 constraints they impose can be combined to deduce that the type of
-\ocaml{r} must be \ocaml{one}, as the \code{x} field of \code{two}
+\ocaml{r} must be \ocaml{two}, as the \code{x} field of \code{one}
 does not have a record type. This lies outside the framework of
 omnidirectional type inference, in which suspended constraints must be
 discharged one by one in some order, independently of other
@@ -411,6 +409,7 @@ NP-hard, even in the absence of let-polymorphism, as shown by an encoding of
 
 \subsubsection* {Plan}
 
+\Xalistair{Make sure this is correct}
 The paper is organized as follows:
 \begin{enumerate*}[label={}]
 
@@ -691,19 +690,6 @@ for $\efun \x {\elet \x {(\x : \tapoly \ts {})} {\einst \x}}$---is
 well-typed because the explicit annotation introduces a fresh
 variable annotation $\ava$, which can then be generalized, yielding
 $\tfor \ava {\tapoly \ts \ava}$.
-
-\Xalistair{Is it used for polymorphic nominal records? I was
-under the impression we didn't need \code{Tpoly} for this.}
-\Xgabriel{(my previous answer was about something else (generalizability as principality checking), I was not in the right context in the paper.)}
-\TODO{Remove this paragraph}
-This is the type-level feature that supports polymorphic methods and
-polymorphic record fields in \OCaml. If a record type
-\ocaml[mathescape=true]{$\tv$ t} has been declared with a single polymorphic
-field
-\ocaml[mathescape=true]{f} of type $\sigma$, then the record expression
-\ocaml[mathescape=true]!{f = $e$}! desugars into
-\ocaml[mathescape=true]!{f = $[e : \exists \tv. \ts]$}!,
-and the record projection \ocaml{r.f} desugars into $\einst {\mathtt{r.f}}$.
 
 \parcomment {Shortcomings of annotation variables}
 
@@ -2440,27 +2426,27 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
 \section{Implementation}
 \label{sec:implementation}
 
-\TODO{Add footnote for semi-unification prototype}
 We have two working prototypes of a core \ML language with suspended match
-constraints and partial generalization, in which we have reproduced the
-various type-system features and examples presented in this work.  One is a
-direct implementation of type inference based on semi-unification. It is
-experimental and not released yet.  The other one, which we describe below,
-is closely following the constraint-based presentation of this work.  It is
-public and open-source (link omitted for anonymity).
-Its implementation is inspired by previous work such as
+constraints and partial generalization, in which we have reproduced the various
+type-system features and examples presented in this work.  One closely follows
+the constraint-based presentation described here\footnote{ The other prototype
+is a direct implementation of type inference based on semi-unification. We
+mention it here only it indicate that we have explored multiple implementation
+strategies leading to the same results.}. It is public and open-source (link
+omitted for anonymity). Its implementation is inspired by previous work such as
 \Inferno~\citep {Pottier/inferno@icfp2014, Pottier/inferno@opam}.  It uses
-state-of-the-art implementation techniques for efficiency, such as a
-Union-Find data structure and the use of \emph{ranks} (or \emph{levels}) for
-efficient generalization. Let us discuss a few salient points.
+state-of-the-art implementation techniques for efficiency, such as a Tarjan's
+union-find data structure for unification \citep*{journals/jacm/Tarjan75} and
+\emph{ranks} (or \emph{levels}) for efficient generalization. Let us discuss a
+few salient points.
 
 \paragraph{Unification and scheduling}
 
 Each unsolved unification variable maintains a \emph{wait list} of suspended
 constraints that are blocked until the variable is unified with a concrete
-type. At this point the wait list is flushed: the suspended constraints are
-scheduled on the global constraint scheduler, which is responsible for
-eventually solving them.
+type. When such a unification occurs, the wait list is flushed: the suspended
+constraints are scheduled on the global constraint scheduler, which is
+responsible for eventually solving them.
 
 \paragraph{From a stack to a tree}
 
@@ -2479,16 +2465,16 @@ eventually solving them.
 
 Many standard \ML implementations, for example \Inferno, represent the solver
 state as a linear \emph{stack} of inference regions, from the outermost
-variable scope to the current region being inferred. Unification maintains
-an integer \emph{rank} (or \emph{level}) for each variable, that index a
-region in the stack.
+variable scope to the current region. Unification associates
+an integer \emph{rank} (or \emph{level}) for each variable, that indexes the
+region in the stack to which it belongs.
 %
 This choice does not work for partial generalization. If
 generalization at some region is suspended by a match constraint, the
-region must remain alive while we restart inference in outer
+region must remain alive while we continue inference in other
 regions. Later parts of the constraint may introduce a new
-$\Let$-region at the same rank that is unrelated -- neither an
-ancestor nor a descendant -- breaking the linear assumption of ranks.
+$\Let$-region at the same rank that are unrelated---neither an
+ancestor nor a descendant---breaking the linear assumption of ranks.
 
 Our implementation must instead use a \emph{tree} of nested
 $\Let$-regions. Under this scheme, ranks no longer uniquely determine a
@@ -2496,7 +2482,7 @@ variable's region. Instead, we interpret a rank relative to a path in the
 region tree from the root. When two variables are unified, they must always
 lie on some shared path---by scoping invariants---so computing their minimum
 rank (along this path) sufficies to determine the lowered region: we keep
-the efficient integer comparisons.
+the efficient integer comparisons of rank-based generalization.
 
 \paragraph{Partial generalization}
 
@@ -2509,7 +2495,7 @@ into four categories:
   \let \Item \item
   \renewcommand \item [1][]{\Item[(\textbf{#1})]}
   \item[I] Variables are yet to be generalized. \\
-    \emph{Introduced by applications or source types in constraints}
+    \emph{Introduced by instantiations or source types in constraints}
 
   \item[G] Variables that are generalized. \\
     \emph{Not accessible from any instance type. Treated polymorphically.}
@@ -2517,115 +2503,36 @@ into four categories:
   \item[PG] Variables that are generalizable, but may be
     updated in the future. \\
     \emph{Variables mentioned by suspended match constraint or partial
-    applications.}
+    instantiations.}
 
   \item[PI] Variables that were previously partially generalized
     but have since been updated.  \\
-    \emph{Awaiting re-generalization. Introduced by unification of partial
+    \emph{Awaiting re-generalization. Introduced by the unification of partial
     generics.}
 \end{itemize}
 At generalization time, we conservatively approximate whether a variable may be
 updated in the future using \emph{guards}. A guard is a mark on a variable that
 indicates the variable is captured by some suspended constraint that has not
-yet been solved. Guarded variables are generalized as partial generics (PG);
-unguarded ones are fully generalized (G).
+yet been solved. Guarded variables are generalized as partial generics (\textbf{PG});
+unguarded ones are fully generalized (\textbf{G}).
 
-When an instance is taken from a partial generic, we retain a forward-reference
-from the partial generic (PG) to the instance. This enables the generic to
+When an instance is taken from a partial generic, we retain a forward reference
+from the partial generic (\textbf{PG}) to the instance. This enables the generic to
 notify the instance that it has been updated, propagating the updated type
 structure to all instances. This is a reversed analogue of how partial
-application constraints track renamings. In addition, the instance remains
+instantiation constraints track copies. In addition, the instance remains
 guarded by the partial generic until the latter is either lowered or fully
 generalized.
 
 Once a suspended match constraint is solved, it removes the guard it
 introduced. This may enable previously partial generics to become fully
-generalizable. Conversely, if a partially generalized variable is lowered (\eg by \Rule{S-Lower-Exists}), it must be unified with all its instances.
+generalizable. Conversely, if a partially generalized variable is lowered (\eg
+by \Rule{S-Lower-Exists}), it must be unified with all its instances.
 
-\paragraph{Lazy generalization} Repeatedly generalzing a region after every update is expensive.  Instead we generalize on demand. We mark regions as ``stale'' when they may require re-generalization. When an instance is taken, we re-generalize the stale descendants of the region in the region tree.
-
-\section{Discussion and Future Work}
-\label{sec:discussion}
-\label{sec:future-work}
-
-\subsection{Other uses of suspended constraints}
-
-We applied omnidirectional type inference to three features that have
-already been used in some dialect of \ML, with specific typing rules we
-propose for each feature. Suspended match constraints is a framework that
-could be used to encode typing rules for other fragile features.
-
-Our nomimal records use a restricted form of overloading.  We have also
-experimented with a more general form of overloading in one of our
-prototypes. Although, we have not formalized them yet, we believe they fit
-well in our formalism. One possibility is to extend the framework we
-presented to to support patterns on arbitrary shapes (and not restricted to
-shallow shapes), as long as none is a prefix of another.  An alternative
-would be to encode matching on arbitrary shapes as a cascade of matching on
-shallow shapes.  This is left for future work.
-
-
-\begin{version}{}
-\citet*{Leijen-Ye/prefix@pldi2025} propose a general mechanism for
-overloading identifiers, with an implicit form $\eover \x$ and an explicit
-form $\exover \M \x$ prefixed by a disambiguation name $\M$. We can extend
-our approach to typing rules for this construct:
-\begin{mathpar}
-\infer [Over-X]{
-    \exover \Mi \x : \t \in \G
-}{% --------------------------
-    \G \th \exover \Mi \x : \t
-}
-
-\infer [Over-I]{
-    \G \th \Eshape \E \x \Sh  \\
-    \G \th \E \where {\exover \M \x} : \t \\
-    \exists !z.\ \Sh \leq \G(\exover \M \x)
-}{% --------------------------------------
-    \G \th \E \where {\eover \x} : \t
-}
-\end{mathpar}
-The third premise of \Rule {Over-I} asks that there is a unique explicit
-name $\exover \M \x$ that instantiates $\Sh$ in the context. The framework
-we presented for \OML does not immediately allow to implement these rules,
-as it only uses patterns that discriminate on minimal (shallow) shapes, but
-it can be extended to support patterns on arbitrary shapes (as long as none
-is a prefix of another).
-\end{version}
-
-\subsection{Default rules}
-
-Some type systems use type information to disambiguate fragile
-construct, but also have a fallback mechanism to make a default,
-non-principal choice when no type information is available. \OCaml
-uses such a fallback when a field name cannot be disambiguated, it
-selects the last declaration of a record type with this field in the
-lexical scope. \SML has an overloading mechanism for numeric literals
-that provides default types for each literal form~\citep*[Section 5.8]{rossberg-hamlet}.
-
-To support this specification we considered
-adding \emph{default rules} for suspended match constraints, that
-would be selected instead of failing when a suspended constraint is
-never discharged. This extension is however difficult to design, as it
-would likely break principality.
-
-If two suspended constraints could unlock each other, then defaulting
-the first or the second one may result in different branches being
-selected for one of them. A more robust strategy is to fire all
-default rules of all suspended constraints that remain after the
-solver terminates. A more permissive one is to fire defaults in the
-minimal connected component for the dependency ordering between
-suspended constraints.
-
-\paragraph{Behavior of default rules} Giving priority to most recent
-definitions is a possible default behavior for field and constructor
-disambiguation. For structural tuples there is no reasonable default
-rule.
-%
-For polytypes, one option is to fallback to a monomorphic polytype. The
-other one is to pick the principal type scheme of the expression with an
-unresolved polytype. Of course, there are examples that favor one choice
-and other examples that favor the other.
+\paragraph{Lazy generalization} Repeatedly generalzing a region after every
+update is expensive.  Instead we generalize on demand. We mark regions as
+``stale'' when they may require re-generalization. When an instance is taken,
+we re-generalize the stale descendants of the region in the region tree.
 
 \section{Related work}
 \label{sec:related-work}
@@ -2639,6 +2546,27 @@ of the \OCaml language: whenever the type-checker wants to know if
 a type is known in a robust way, it checks whether the type is
 generalizable. We compared their approach to ours in
 \cref{sec/constraints/polytypes}.
+
+\paragraph{Bidirectional type inference}
+
+At the level of simply-typed
+terms or \ML, we believe that omni-directional inference works better
+than bidirectional type inference: it can type more programs than
+a given fixed bidirectional system, and has a more declarative
+specification---we would say that it is ``more principal''.  In fact,
+a direct inspiration for the present work was a user complaint in
+\citet*{rossberg-wasm} on the type-based disambiguation of \OCaml: its
+bidirectional logic propagates type information from patterns to
+definitions in \code{let}-bindings, when the WebAssembly reference
+implementation would sometimes prefer the other direction.
+%
+% De-anonymizing URL: https://github.com/ocaml/ocaml/issues/7389
+%
+On the other hand, bidirectional typing is known to scale to powerful
+systems such as fully-implicit predicative
+polymorphism~\citep*{dunfield-krishnaswami-bidirectional-poly} and we
+have not considered scaling our approach to those systems yet.
+
 
 \paragraph{Qualified types}
 
@@ -2667,26 +2595,6 @@ pairs are delayed until at least one side becomes rigid. The contributions
 of our work are the combination with implicit generalization, which is
 typically absent from those systems, and the design of declarative semantics
 to establish principality.
-
-\paragraph{Bidirectional type inference}
-
-At the level of simply-typed
-terms or \ML, we believe that omni-directional inference works better
-than bidirectional type inference: it can type more programs than
-a given fixed bidirectional system, and has a more declarative
-specification---we would say that it is ``more principal''.  In fact,
-a direct inspiration for the present work was a user complaint in
-\citet*{rossberg-wasm} on the type-based disambiguation of \OCaml: its
-bidirectional logic propagates type information from patterns to
-definitions in \code{let}-bindings, when the WebAssembly reference
-implementation would sometimes prefer the other direction.
-%
-% De-anonymizing URL: https://github.com/ocaml/ocaml/issues/7389
-%
-On the other hand, bidirectional typing is known to scale to powerful
-systems such as fully-implicit predicative
-polymorphism~\citep*{dunfield-krishnaswami-bidirectional-poly} and we
-have not considered scaling our approach to those systems yet.
 
 %% \paragraph{Leijen et al. (TODO change paragraph naming)}
 %% Should we cite \citet*{Leijen-Ye/prefix@pldi2025}?
@@ -2717,13 +2625,127 @@ suspended constraints in this work, and would be interested in
 studying applications to GADT typing, which was also one of our
 original motivations.
 
+\Xalistair{Should the F in Future work be capitalized?}
+\section{Conclusions and Future work}
+\label{sec:discussion}
+\label{sec:future-work}
+
+In this work, we developed a constraint-based framework for omnidirectional
+type inference, capable of supporting fragile features that would otherwise
+break principality.
+%
+Central to our approach is a new declarative account of when type inference is
+\emph{known} from the context, rather than \emph{guessed}.
+
+Our constraint solver is omnidirectional: constraints may be solved in any
+order, made possible by our introduction of \emph{partial type schemes}.
+We formalized the solver as a non-determinstic, terminating rewrite system,
+backed by an efficient prototype implementation.
+
+Through three instantiations of our framework---static overloading
+of tuples, nominal records and variant constructors, and semi-explicit first-class
+polymorphism---we showed that our framework yields a sound and complete inference
+algorithm and a principal type system. In short, it appears principality holds
+\emph{anyway} from our approach.  \Xalistair{I'm tired and tried making a pun with our title. Remove
+if you think it doesn't work or you can think of a better one}
+%
+Naturally, all this begs the question: what else can be done with omnidirectional
+inference beyond the features of \OML?
+
+
+\paragraph{Static overloading}
+
+Our nominal records use a restricted form of overloading.  We have also
+experimented with a more general mechanism inspired by
+\citet*{Leijen-Ye/prefix@pldi2025}, which resolves overloaded identifiers via
+disambiguation: the implicit form $\eover \x$, and an explicit counterpart
+$\exover \M \x$, where $\M$ is a disambiguating module or namespace.
+%
+Although implemented in a prorotype, we have not yet identified a satisfactory
+typing behaviour or formalisation for this feature. Nevertheless, we conjecture
+that they should typable with our framework.
+
+Modular implicits \citep*{White-Bour-Yallop/Modular_Implicits/ml2014} are a
+proposed extension to \OCaml's module system, intended to support ad-hoc
+polymorphism through type-directed implicit paramters. We believe
+omnidirectional type inference could serve as a principled, constraint-based
+approach foundation for resolving implicits in the presence of
+let-generalization.
+%
+As future work, we aim to extend our constraint language to typecheck a
+calculus, inspired by \COCHIS \citep*{journals/jfp/SchrijversOWM19}, with
+implicit abstraction $\eifun \t \e$ and resultion $\eimplicit \t$.
+
+\paragraph{Higher-rank polymorphism}
+
+In \cref{sec:introduction, sec:related-work}, we compared omnidirectional and
+bidirectional type inference in the context of static overloading. While
+overloading is nontrivial, it poses little challenge for the bidirectional
+framework, making the comparison somewhat limited. Bidirectional typing is
+best known for its scalability to more complex settings, such as higher-rank
+polymorphism. We are therefore interested in extending our framework to support
+higher-rank polymorphism, in the style of
+\citet*{dunfield-krishnaswami-bidirectional-poly}. This would provide a more
+meaningful basis for understanding the trade-offs of omnidirectional and
+bidirectional inference.
+
+\Xalistair{Didier I know you wanted to say something about \MLF, I'm
+just not sure what you wanted to say.}
+
+\paragraph{Default rules}
+
+% Default rules are useful
+Some type systems disambiguate fragile constructs using known type information,
+but fall back on default, non-principal choices when none is available. \OCaml
+selects the most recent matching record type in scope for ambiguous field
+names; \SML assigns default types to overloaded numeric
+literals~\citep*[Section 5.8]{rossberg-hamlet}.
+
+% We tried, but failed
+We explored adding such \emph{default rules} to suspended match constraints,
+allowing unresolved constraints to discharge with a default shape rather than
+fail. While pragmatic, such rules are inherently non-principal and difficult to
+reconcile with our framework.
+
+% Why did we fail
+In particular, they introduce subtle semantic complexities: if two suspended
+constraints could unlock each other, then defaulting one over the other
+may force an unsatisfiable branch to be taken.
+% But we have a nifty prototype
+Our prototype includes an implementation of default rules---but design space
+remains open. Should we fire all default rules of all suspended constraints
+that remain after the solver terminates, or in batches, restricted to connected
+components of mutually dependent suspended constraints?
+
+%%\paragraph{Behavior of default rules} Giving priority to most recent
+%%definitions is a possible default behavior for field and constructor
+%%disambiguation. For structural tuples there is no reasonable default
+%%rule.
+%
+%%For polytypes, one option is to fallback to a monomorphic polytype. The
+%%other one is to pick the principal type scheme of the expression with an
+%%unresolved polytype. Of course, there are examples that favor one choice
+%%and other examples that favor the other.
+
+\paragraph{Equi-recursive types}
+\label {sec/rec-types}
+
+\OCaml allows equi-recursive types to express recursive polymorphic variants
+and objects types. Supporting such types is a necessary step towards integrating
+our approach into \OCaml's typechecker.
+
+In this work, for the sake of simplicity, we treat ground types as finite
+trees. Supporting equi-recursive types amounts to using regular trees instead
+\citep*{Pottier-Remy/emlti}. Our prototype already handles such types,
+but the formalisation of our solver relies on acyclicity to prove termination.
+Extending it to accommodate cycles remains an open question.
+%
+Shapes may also be equi-recursive, though only minimal shapes of polytypes
+can be recursive. While equality of shapes is syntactic in the acyclic setting,
+this is no longer the case---but we do not believe this raises any issue.
+
 % \begin{acks}
 % \end{acks}
-
-\section*{Conclusion}
-
-
-\Xgabriel{No conclusion? I'm fine with this, and it takes less space than having a conclusion.}
 
 %% \bibliographystyle{ACM-Reference-Format}
 \bibliography{suspended}
@@ -2742,8 +2764,8 @@ readable prose in the style of the rest of the paper.
   this is the long version of \cref{sec:language}.
 \item \cref{app:unification} presents a relatively standard part of our constraint solver (\cref{sec:solving}),
   namely the unification rules.
-\item \cref{app:more-discussion} contains topics of discussion that we
-  did not have the space to include in \cref{sec:discussion}.
+%%\item \cref{app:more-discussion} contains topics of discussion that we
+ %% did not have the space to include in \cref{sec:discussion}.
 \end{itemize}
 
 \paragraph{Reference appendix}
@@ -3749,57 +3771,15 @@ This is formalized by the relation $\tv \prec_\up \tvb$ indicating that $\tv$
 occurs in a type assigned to $\tvb$ in $\up$. A unification problem is cyclic,
 written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
 
-\section{More discussion}
-\label{app:more-discussion}
-
-\subsection{Equi-recursive types}
-\label {sec/rec-types}
-
-\Xgabriel{If you decide to move this section back in, you should explain why we care about this feature.}
-
-For sake of simplicity, we have taken finite trees for ground types, that
-is, for the semantics of constraints.  Iso-recursive types can easily be
-added as in \ML, using a new datatype definition where  a record label
-or datatype constructor is used to fold or unfold the recursive definition.
-
-\OCaml also allows equi-recursive types, which can be modeled by taking
-regular trees instead of tree for ground types.  Doing this change would
-preserve the main metatheoretical properties, as in~\citet*
-{Pottier-Remy/emlti}, as we never rely on finiteness of ground types.  This
-would allow type inference with equi-recursive types.
-
-Technically, we need to extend the syntax of types with
-a new introduction form $\trec \tv \t$ with the condition that $\t$ is
-constructive, \ie a nonvariable type.  Internally, we never manipulate
-recursive types but equations. The change, is a remove
-\Rule {U-Cycle} and consistently allow canonical forms to contain cycles,
-as they now admit regular tree solutions.
-
-Similarly, shapes may be recursive, but only minimal shapes of polytypes may
-be recursive. All types still have unique minimal shapes where equality of
-shapes is taken up to equi-recursion, indeed.  While equality of shapes is
-syntactical in the absence of recursive types, this is no longer the
-case---but this does not raise any issue.
-
-\Xdidier{There is an inline note here.}
-\begin{version}{}
-I did not see any difficult with equi-recursive types.
-I am not even sure we need to mention~\citet*
-{Gauthier-Pottier/numbering@icfp04}.
-Ths provides a cannonical representation, generalizing de Bruin indicies so
-that second-order equality of terms amount to fisrt-order equality.
-The canonical representation useing shapes is simiular.
-\Xdidier {How much more should we say?}
-
-\Xdidier {Should we give the change in unification rules?}
-\end{version}
-
 \clearpage
 \section{Full technical reference}
 \label{appendix:figures}
 \label{app:full-reference}
 
-This section repeats all the technical definitions mentioned in the paper, including the cases, rules, and definitions that were omitted from the main paper to save space. It can serve as a useful cheatsheet to understand a definition in full, or when studying the meta-theory of the system.
+This section repeats all the technical definitions mentioned in the paper,
+including the cases, rules, and definitions that were omitted from the main
+paper to save space. It can serve as a useful cheatsheet to understand a
+definition in full, or when studying the meta-theory of the system.
 
 \begin{bnffig}[htpb!]%
   {fig:all--syntax}%

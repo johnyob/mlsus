@@ -204,7 +204,7 @@
 \defmetavar {\Lab} {\mathscr{L}}
 
 \defmetavar {\x} {x}
-\defmetavar{\M}{z} % module prefix for Leijen
+\defmetavar{\M}{M} % module prefix for Leijen
 \defmetavar[n]{\e}{e}
 \newcommand{\econstr}[2]{#1 \@ #2}
 \newcommand{\einst}[2][]{\angles {#2\ifempty{#1}{}{:#1}}}
@@ -213,6 +213,8 @@
 \newcommand{\expoly}[3]{\epoly {#1 : \exi {#2} {#3}}}
 \newcommand{\eunit}{()}
 \newcommand{\efun}[2]{\lambda #1. \, #2}
+\newcommand{\eifun}[2]{\lambda_{?} #1. \, #2}
+\newcommand{\eimplicit}[1]{?#1}
 \newcommand{\eapp}[2]{#1 \; #2}
 \newcommand{\eappp}[3]{\eapp{\eapp{#1}{#2}}{#3}}
 \newcommand{\eApp}{\mathbin{@}}
