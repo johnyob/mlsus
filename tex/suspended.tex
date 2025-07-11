@@ -2539,12 +2539,13 @@ we re-generalize the stale descendants of the region in the region tree.
 
 \paragraph{Principality tracking in \OCaml}
 
-\citet*{Garrigue-Remy/poly-ml} introduced an approach to principality
-tracking for polytypes, that has since be extended to other features
-of the \OCaml language: whenever the typechecker wants to know if
-a type is known in a robust way, it checks whether the type is
-generalizable. We compared their approach to ours in
-\cref{sec/constraints/polytypes}.
+\citet*{Garrigue-Remy/poly-ml} introduced an approach to principality tracking
+for polytypes---what we now call \geninst-directional inference---in which
+generalization and instantiation govern the flow of known type information.
+This approach has since be extended to other features of the \OCaml language:
+whenever the typechecker wants to know if a type is known in a robust way, it
+checks whether the type is generalizable. We compared their approach to ours in
+\cref{sec/introduction} and \cref{sec/constraints/polytypes}.
 
 \paragraph{Bidirectional type inference}
 
@@ -2569,19 +2570,17 @@ have not considered scaling our approach to those systems yet.
 
 \paragraph{Qualified types}
 
-Qualified types~\citep*{jones-qualified-types}, most well-known via their
-usage in Haskell type-classes, are related to our suspended match
-constraints as they represent constraints on types or type
-variables. At generalization time, the constraints on generalizable
-variables are kept as part of the generalized type scheme, and they
-get copied during instantiation. This is much simpler to implement
-than our partial generalization and partial instantiations, but it
-provides a different behavior where each instance can choose
-independently how to resolve the constraint. Qualified types are an
-excellent choice when this is the desired behavior, typically for
-dynamic overloading. We had to introduce the more complex partial
-generalization to express features that require a unique resolution of
-the constraint, typically for static overloading.
+Qualified types~\citep*{jones-qualified-types}, most well-known via their usage
+in Haskell type-classes, are related to our suspended match constraints as they
+represent constraints on types or type variables. At generalization time, the
+constraints on generalizable variables are kept as part of the generalized type
+scheme, and they get copied during instantiation. This is much simpler to
+implement than our partial type schemes, but it provides a different behavior
+where each instance can choose independently how to resolve the constraint.
+Qualified types are an excellent choice when this is the desired behavior,
+typically for dynamic overloading. We had to introduce the more complex partial
+generalization to express features that require a unique resolution of the
+constraint, typically for static overloading.
 
 \paragraph{Suspended constraints in dependent-type systems}
 
@@ -2590,10 +2589,10 @@ is a standard approach to implement unification dependently-typed
 systems. This goes back to Huet's algorithm for higher-order
 unification~\citep*{huet-unif} and pattern
 unification~\citep*{Miller/pattern-unif@iclp91} where flexible-flexible
-pairs are delayed until at least one side becomes rigid. The contributions
-of our work are the combination with implicit generalization, which is
-typically absent from those systems, and the design of declarative semantics
-to establish principality.
+pairs are delayed until at least one side becomes rigid. The novelty of our
+work lies in combining constraint suspension with \ML-style implicit
+polymorphism---absent from most dependently-typed systems---and in the design
+of a declarative constraint semantics used establish principality.
 
 %% \paragraph{Leijen et al. (TODO change paragraph naming)}
 %% Should we cite \citet*{Leijen-Ye/prefix@pldi2025}?
