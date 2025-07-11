@@ -1285,6 +1285,7 @@ recovered from the constraint context $\C$. The \emph{unicity} condition
 $\Cshape \C \t \sh$ (defined below) ensures that $\sh$ is uniquely determined by $\C$.
 
 \begin{definition}[Erasure]
+  \label{def:erasure}
   The erasure $\cerase \c$ of a constraint $\c$ is defined as the constraint
   obtained by replacing suspended match constraints in $\c$ with $\ctrue$.
 \end{definition}
@@ -6479,7 +6480,7 @@ generally in our system.
 	  \proofcase{$\hat\Ca\where{\cmatch \tvp \cbrs}$}
 	    We have $\nCshape \Ca \tvp$.
 
-	    Consider an match constraint $\cmatch \tvp \cbrs$ in $\ca$.
+	    Consider a match constraint $\cmatch \tvp \cbrs$ in $\ca$.
 
 	    If $\cunif \tvp {\cunif \t \ueq} \in \cb$ and $\t \notin \TyVars$. By the above logic, it must be at the root (otherwise $\cb$
 	    is not stuck). So we have $\cunif \tvp {\cunif \t \ueq} \in \hat \Ca \cand \cb$. Thus we can apply \Rule{S-Match-Type}.
@@ -6716,7 +6717,7 @@ rules that are not inherently destructive.
   preserved by other non-discharge rules. The rule \Rule{S-Let-AppR}
   can thus only occur finitely many times in non-discharging sequences,
   and it suffices to prove that all rewriting sequences that are
-  non-discharging and\Xdidier{???} are not \Rule{S-Let-AppR} are finite.
+  non-discharging and do not contain \Rule{S-Let-AppR} are finite.
 
   \paragraph{Other instantiation rules} Among other instantiation
   rules, the rule of concern is \Rule{S-Inst-Copy}, which is not
