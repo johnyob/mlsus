@@ -6,7 +6,7 @@ let-bound expressions before typechecking their use sites.
 This relies on two technical devices: *suspended match constraints*, which
 suspend the resolution of some constraints until the context has more
 information about a type variable; and *partial type schemes*, which allow
-taking instances a of partially solved type scheme containing suspended
+taking instances of partially solved type scheme containing suspended
 constraints, with a
 mechanism to incrementally update instances as the scheme is refined.
 
