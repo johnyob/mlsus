@@ -33,7 +33,7 @@ let-bound expressions before typechecking their use sites.
 This relies on two technical devices: \emph{suspended match constraints}, which
 suspend the resolution of some constraints until the context has more
 information about a type variable; and \emph{partial type schemes}, which allow
-taking instances a of partially solved type scheme containing suspended
+taking instances of partially solved type scheme containing suspended
 constraints, with a
 mechanism to incrementally update instances as the scheme is refined.
 
@@ -206,7 +206,7 @@ all subexpressions \emph{simultaneously}, until they are \code{let}-bound.
 
 Consequently, \OCaml does not make any difference between \ocaml[indices]{ex_3},
 \ocaml[indices]{ex_3_2}, or \ocaml[indices]{ex_3_3}; in all cases, disambiguation
-is disallowed and they are ill-typed.
+is disallowed, and they are ill-typed.
 %
 This criterion also
 warns on the following example, where \code{r} has a monomorphic type:
@@ -240,7 +240,7 @@ applications $\eapp \ea \eb$ by first \emph{inferring} that $\ea$ has some
 function type $\t \tarrow \tp$, and then \emph{checking} $\eb$ against $\t$.
 This is not the only possible choice: bidirectional type inference is a
 framework that must be instantiated by assigning modes---checking or
-inference---to each language construct. There usually is no optimal assignment
+inference---to each language construct. There is usually no optimal assignment
 of modes: for any choice of modes, some programs will typecheck successfully,
 while others will fail unnecessarily. Yet the typing rules must irrevocably
 commit to a fixed set of modes. After which, principal types often exist, but
@@ -652,7 +652,7 @@ $\ts$.
 %
 The resulting expression has type $\tapoly {\ts \where {\tvs \is \tys}} \av$
 where $\av$ is an arbitrary (typically fresh) annotation variable and $\tys$
-are arbritraty types that replace the free variables $\tvs$.
+are arbitrary types that replace the free variables $\tvs$.
 The annotation variable $\av$ can thus be generalized.  That is $\expoly \e
 \tvs \ts$ can also be assigned the type scheme $\all \av {\tapoly {\ts
 \where {\tvs \is \tys}} \av}$.
@@ -1218,7 +1218,7 @@ This rule states that a suspended constraint is satisfied by $\semenv$ whenever
 the corresponding discharged constraint holds for the canonical shape $\sh$ of
 $\t$ in the semantic environment $\semenv$. If $\sh$ matches no branch in
 $\cbrs$, then the discharged constraint is not defined, so this rule cannot be
-applied and the suspended constraint is unsatisfiable.
+applied, and the suspended constraint is unsatisfiable.
 
 \parcomment {The problem}
 
@@ -2373,7 +2373,7 @@ $\tvbs$ are uniquely fixed by the solutions to other variables in $\c$.
 
 \begin{definition}
   $\cdetermines \c \tvbs$ if and only if every ground assignments
-  $\semenv$ and $\semenvp$ that satisfy (the erasure of) $\c$ and coincide outside of $\tvb$
+  $\semenv$ and $\semenvp$ that satisfy (the erasure of) $\c$ and coincide outside of $\tvbs$
   coincide on $\tvbs$ as well.
   \begin{mathpar}
     \cdetermines \c \tvb \uad\eqdef\uad \all {\semenv, \semenvp} \uad
