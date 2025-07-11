@@ -745,7 +745,7 @@ By waiting for the type of $e$ to be \emph{known}, we ensure principal types
 without annotation variables.
 
 \subsection{Static overloading of constuctors and record labels}
-\label{sec/constraints/overloading}
+\label{sec:constraints:overloading}
 
 % What do we mean by static overloading?
 
@@ -809,7 +809,7 @@ discussed further in \cref{sec:discussion}.
 %
 This fallback mechanism highlights the directionality of \OCaml inference.
 Once the compiler selects a type, it commits to it---even if that choice
-causes errors downstream. Consider \code{ex_7} from \cref{sec:introduction}:
+causes errors downstream. Consider \code{ex_7} from \cref{sec/introduction}:
 \begin{program}[input]
 let ex_7 r = let x (* infers ['a two] *) = r.x in x + r.y °\ocamlflags 10°
 \end{program}
@@ -2031,7 +2031,7 @@ suspended constraint.
 \parcomment{OmniML constraints do not need dedicated rules}
 
 \OML-specific constraints, such as the label and polytype instantiations from
-\cref{sec/constraints/polytypes, sec/constraints/overloading}, require no
+\cref{sec/constraints/polytypes} and \cref{sec:constraints:overloading}, require no
 special treatment in our solver. Once their pattern variables are
 substituted---after solving a match constraint---they are desugared into
 constraints already handled by the solver.
@@ -2678,13 +2678,13 @@ implicit abstraction $\eifun \t \e$ and resultion $\eimplicit \t$.
 
 \paragraph{Higher-rank polymorphism}
 
-In \cref{sec:introduction, sec:related-work}, we compared omnidirectional and
-bidirectional type inference in the context of static overloading. While
-overloading is nontrivial, it poses little challenge for the bidirectional
-framework, making the comparison somewhat limited. Bidirectional typing is
-best known for its scalability to more complex settings, such as higher-rank
-polymorphism. We are therefore interested in extending our framework to support
-higher-rank polymorphism, in the style of
+In \cref{sec/introduction} and \cref{sec:related-work}, we compared
+omnidirectional and bidirectional type inference in the context of static
+overloading. While overloading is nontrivial, it poses little challenge for the
+bidirectional framework, making the comparison somewhat limited. Bidirectional
+typing is best known for its scalability to more complex settings, such as
+higher-rank polymorphism. We are therefore interested in extending our
+framework to support higher-rank polymorphism, in the style of
 \citet*{dunfield-krishnaswami-bidirectional-poly}. This would provide a more
 meaningful basis for understanding the trade-offs of omnidirectional and
 bidirectional inference.
@@ -3046,7 +3046,7 @@ These states that the shape $\sh$ of expression $\e$ in context $\E$ is
 determined by the expression $\e$, in the former case, or by the context
 $\E$ in the latter case. Just like constraints, we must erase implicit constructs
 in the term that have not yet been elaborated, written $\eerase \e$ (defined in
-??).
+\cref{app:full-reference}).
 
 %% Shapes are equal modulo alpha equivalence and the removal of useless
 %% polymorphic type variables. They do not have useless existential variables.
@@ -3683,7 +3683,7 @@ constructs used in \OML's typing rules and are included for completeness.
 \section{Unification}
 \label{app:unification}
 
-The unification rules are listed in \cref{fig:omni-unification-algorithm}.
+The unification rules are listed in \cref{fig:unification-algorithm}.
 Rewriting proceeds under an arbitrary context $\Up$, modulo $\alpha$-equivalence
 and associativity/commutativity of conjunctions.
 
@@ -4979,7 +4979,7 @@ $\t$ admits a non-trivial principal shape $\sh$.
 The second is the canonicalization of satisfiability derivations $\semenv \th
 \c$, which enables a simple induction principal for reasoning about unicity.
 This canonical form for derivations is a cruicial tool in our proof of
-soundness and completeness in \cref{TODO}.
+soundness and completeness in \cref{app:proofs-typing}.
 
 \subsection{Principality of shapes}
 
@@ -6923,6 +6923,7 @@ direction, but it should be clarified.
 \end{lemma}
 
 \begin{corollary}
+  \label{corollary:correctness}
   For the closed-term-variable constraint $\c$, $\c$ is satisfiable if and only if
   $\c \csolve^* \hat\c$ and $\hat\c$ is a solved form equivalence to $\c$.
   \begin{proof}
@@ -7306,7 +7307,7 @@ and $\sub(\tvs) = \tys$.
 Let $\e$ be an arbitrary closed well-typed term; that is, there exists a type
   $\t$ such that $\th \e : \t$.
   By \cref{thm:soundness-and-completeness}, the constraint $\cinfer \e \tv$ is satisfiable
-  (specifically under the unifier $\cunif \tv \t$). By \cref{thm:correctness}, there
+  (specifically under the unifier $\cunif \tv \t$). By \cref{corollary:correctness}, there
   exists a solved constraint $\hat\c$ such that $\hat\c \cequiv \cinfer \e \tv$.
   From $\hat\c$, we extract a unifier $\sub$. Since $\hat\c \cequiv \exists \sub$,
   it follows that $\sub$ is \emph{most general}.
