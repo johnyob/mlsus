@@ -274,3 +274,18 @@
 
 \newcommand{\Strut}[1][0.5]
    {\raise #1\medskipamount \strut\lower #1\smallskipamount \strut}
+
+%% \newcommand{\para}[3][]
+%%   {\@startsection {subsection}{4}{\parindent}
+%%   {-5\baselineskip \@plus -2\p@ \@minus -.2\p@}{-3.5\p@}{}}
+%% \newcommand{\subpara}[3][]
+%%   {\@startsection {subsubsection}{4}{\parindent}}
+
+\newcommand{\parabox}[3][]
+  {\subsection{{\bfseries #2}\relax\hfill \Fbox {\large \ensuremath{#3}}}
+   \ifempty {#1}{}{\label{#1}}}
+
+\newcommand{\subparabox}[3][]
+  {\subsubsection {#2}\hfill
+   \ifempty{#3}{}{\Fbox {\ensuremath{#3}}}
+   \ifempty {#1}{}{\label{#1}}}

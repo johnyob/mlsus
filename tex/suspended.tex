@@ -1661,10 +1661,11 @@ construct into the robust, explicit counterpart:
    \einst e \and
    \exinst e \tvs \ts
 }
-%% \\
-%% \entry[Labels]{l}{
-%%   \elab \and \elab / \T
-%% }
+\\
+\entry[Labels]{l}{
+  \elab \and \elab / \T
+\Xdidier{was commented....}
+}
 \\[1ex]
 \entry[Types]{\t}{
    \tv \and
@@ -1811,7 +1812,7 @@ $n$. Since the codomain of $f$ must be a tuple of size~$2$ (for $\eapp f (1,
 
 
 \subsection{Metatheory}
-\label{sec:constraint-prop}
+\label{sec/oml/metatheory}
 
 Constraint generation is sound and complete with respect to the typing judgment.
 That is to say, the term $\e$ is typable with $\t$ if and only if
@@ -2461,14 +2462,17 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
      rewrites can be applied.
   \end{enumerate}
 \end{restatable}
-
-\vspace{-1ex}
+%% \vspace{-1ex}
+%
+%% This is unconditional skiping is fragile, You may insteat will only
+%% backskip avalaible extra skip (when there is some)
+%
+\vskip -\lastskip
 \begin{restatable}[Termination]{theorem}{termination}
   \label{thm:termination}
   The constraint solver terminates on all inputs.
 \end{restatable}
-
-\vspace{-1ex}
+\vskip -\lastskip
 \begin{restatable}[Preservation]{theorem}{preservation}
   \label{thm:preservation}
   If $\ca \csolve \cb$, then $\ca \cequiv \cb$.
@@ -2813,8 +2817,11 @@ cycles, this no longer holds---but we do not anticipate any fundamental issues.
 \newpage
 \appendix
 
-\section*{Organization of our appendices}
+\section*{\Large Organization of our appendices}
 \label{app:outline}
+
+\begin{local}
+\renewcommand{\paragraph}[1]{\subsubsection*{#1}}
 
 \paragraph{Content appendices.} These appendices are intended to be
 readable prose in the style of the rest of the paper.
@@ -2846,23 +2853,29 @@ formal claims in the article. They are typically written tersely.
   by a proof on a simple constraint.
 \item \cref{app:proofs-solving} proves the correctness of the
   constraint solver with respect to the semantics.
-\item \cref{app:proofs-typing} proves the properties about the \OML
+\item \cref{app/oml/proofs} proves the properties about the \OML
   type system, in particular the correctness of constraint generation.
 \end{itemize}
 
+\end{local}
+
 \section{The \OML calculus: typing rules and constraint generation}
-\label{app:oml-calculus}
+\label{app/oml}
+
+The \OML calculus is an extension of \ML with three fragile constructs:
+nominal records, structual tuples, and polytypes.
+We present is typing rules in \cref {app/onml/typing},
+and illustrate them on examples in \cref {app/oml/examples}.
+Finally, we show constraint generations that implements the typing rules
+in \cref {sec/oml/constraints}. The metatheretical resuls for \OML
+are presented in \cref {sec/oml/metatheory} and provewd in
+\cref {app/oml/proofs}.
+
 
 \subsection{Typing rules}
-\label{sec/language/typing-rules}
+\label{app/oml/typing}
 
-As usual, the main typing judgment $\G \th \e : \ts$ states that in context
-$\G$, expression $\e$ has type scheme $\ts$.  Typing rules are given on \cref
-{fig/typing}.  They use auxiliary typing judgments $\G \th \elab = \e : \t$
-and $\el : \t \to \tp$ for the typing of record assignments and
-label instantiations respectively.
-
-\begin{mathparfig}{fig/typing}{Typing rules of \OML.}
+\begin{mathparfig}[t]{fig/typing/core}{Typing rules of core \OML.}
   \inferrule[Var]
     {x : \sigma \in \G}
     {\G \th x : \sigma}
@@ -2880,10 +2893,6 @@ label instantiations respectively.
     { }
     {\G \th () : 1}
 
-  \inferrule[Annot]
-    {\G \th e : \t\where {\tvs \is \tys}}
-    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
-
   \inferrule[Gen]
     {\G \th e : \sigma \\ \tv \disjoint \G}
     {\G \th e : \tfor \tv \sigma}
@@ -2893,10 +2902,17 @@ label instantiations respectively.
     {\G \th e : \tv \where{\tv \is \t}}
 
   \inferrule[Let]
-    {\G \th \ea : \sigma \\
+    {\G \th \ea : \sigma \\\\
      \G, x : \sigma \th \eb : \t}
     {\G \th \elet x \ea \eb : \t}
 
+  \inferrule[Annot]
+    {\G \th e : \t\where {\tvs \is \tys}}
+    {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
+\end{mathparfig}
+
+\begin{mathparfig}[t]{fig/typing/X}
+        {Typing rules of \OML---robust, explicity typed extensions.}
   \inferrule[Tuple]
     {\parens{\G \th \ei : \ti}\iton}
     {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
@@ -2906,28 +2922,13 @@ label instantiations respectively.
      1 \leq j \leq n}
     {\G \th \exfield \e n j : \tj}
 
-  \inferrule[Proj-I]
-    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
-     \G \th \E\where{\exfield \e n j} : \t}
-    {\G \th \E\where{\efield \e j} : \t}
-
   \inferrule [Poly-X]
     {\G \th \e : \ts\where {\tvs \is \tys}}
     {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
 
-  \inferrule [Poly-I]
-    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
-     \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
-    {\G \th \E \where{\epoly \e} : \t}
-
   \inferrule [Use-X]
     {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
     {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
-
-  \inferrule [Use-I]
-    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
-     \G \th \E\where{\exinst \e \tvcs \ts} : \t}
-    {\G \th \E\where{\einst \e} : \t}
 
   \inferrule[Rcd-Assn]
     {\G \th \e : \t \\
@@ -2945,14 +2946,157 @@ label instantiations respectively.
      \el \uni \t }
     {\G \th \efield \e \el : \t}
 
+  \inferrule[Lab-X]
+    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
+    {\elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
+\end{mathparfig}
+
+
+\begin{version}{}
+\TODO
+
+  {We should consider handling the three features (tuples, records,
+  polytypes) separately, one in each subsection. If we later run out of
+  space budget it will be easier to move only some of those subsections to
+  an appendix.  Concrete proposal:
+\begin{itemize}
+\item
+  one subsection at the beginning that only hints at the standard ML stuff:
+  show the syntax, hint at typing rules, show a short bit of constraint
+  generation
+\item
+  then each advanced feature (from the simplest to the more complex: tuples,
+  polytypes, records) show the typing rules, and examples, and its dedicated
+  patterns, and its constraint generation
+\end{itemize}}
+\end{version}
+
+As usual, the main typing judgment $\G \th \e : \ts$ states that in
+context~$\G$, expression~$\e$ has type scheme~$\ts$.
+\OML extends \ML with new features. Hence, core \OML typing rules,
+given on \cref {fig/typing/core}, are just \ML typing rules.
+We then present then first, followed by rules for explicit version
+of fragile construts, which are part of folklore knowledge.
+Finally, we present the typing rule for implicits fragile constructs, which
+are the crux of our work.
+
+\subsubsection {\ML typing rules for \ML and \OML robust extensions}
+
+
+\parcomment {Simple typing rules explained}
+
+Rule \Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
+Function types are introduced via lambda abstractions: in \Rule{Fun}, the
+system guesses a well-formed type $\ta$ for the type of $\x$, typechecks the
+body $e$ is under the extended context $\G, \x : \tya$ producing the return
+type $\tyb$, and assigns the abstraction the function type $\tya \to \tyb$.
+Conversely, function types are eliminated by applications; in Rule
+\Rule{App}, the type of the argument must match the function's parameter
+type $\tya$ and application returns the type $\tyb$. Rule \Rule{Unit}
+asserts that $\eunit$ has the unit type $\tunit$.
+%
+\parcomment {Gen/Inst variant explained}
+%
+Rules \Rule{Gen} and \Rule{Inst} correspond to implicit
+\textit{generalization} and \textit{instantiation} respectively.
+Generalization universally quantifies a type variable $\tv$, introducing it
+as a fresh polymorphic variable in the typing context. In \Rule{Inst}, we
+specialize a type scheme $\tfor \tv \ts$ to $\ts \where{\tv \is \t}$,
+substituting $\tv$ for an arbitrary monotype $\t$.
+%
+\parcomment {Let rule}
+%
+Let-polymorphism is handled by the \Rule{Let} rule, where a
+\textit{polymorphic} term can be bound. This allows a single definition to be
+instantiated differently at each use site---an essential feature of \ML. In
+this rule, the term $\ea$ has a polymorphic type scheme $\ts$, adds $\x :
+\ts$ into the context $\G$ to typecheck $\eb$.
+%
+\parcomment {Annotations}
+%
+Finally, annotations $\eannot \e \tvs \t$ ensures that the type of $\e$ is
+(an instance of) the type $\t$. The type variables $\tvs$ are
+\emph{flexibly} (or existentially) bound in $\t$, meaning that $\tvs$ may be
+unified with some types $\tys$ to produce a well-typed term. For instance,
+the term $(\efun \x \x + 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv
+\is \tint$ in Rule \Rule{Annot}.
+
+\paragraph {\OML extensions with explicit typing}
+
+Each fragile extensions $\e^i$ comes with a robust explicit associated
+construct.  We first present the typing of explicit constructs $\e^x$ on
+\cref {fig/typing/X}, namely structural tuples, polytypes, and nominal
+records.  Their typing is unsurprising and part of folklore knowledge.
+
+\parcomment{Structural tuples}
+
+Rule \Rule {Tuple} for constructing tuples is as expected.  Rule \Rule
+{Proj-X} describes the projection out of a tuple of an explicit
+size $n$ and is thus obvious.
+%
+\parcomment{Polytypes}
+%
+The creation and use of polytypes with explicit annotations are as expected:
+when the annotation is a closed type schems $\ts$, Rule \Rule {Poly-X} just
+requires the expression to be as polymorphic as specified by the type scheme
+$\ts$ and turn the result into a first-class polytype $\tpoly \ts$.
+Conversely, Rule \Rule {Use-X} turns an expression of a first-class polytype
+$\tpoly \ts$ into one of type scheme $\ts$ that can then be freely
+instantiated.  Both rules also allow the polytype annotation to be partial,
+that is to inferred monotypes $\tys$ for the variables $\tvs$ that appear
+free in $\tys$.
+
+\parcomment{Nominal records}
+
+Rules for nominal records with explicit annotations are a bit more
+technical.  They they use auxiliary typing judgments $\el : \t \to \tp$ and
+$\G \th \el = \e : \t$ for the typing of labels and
+record assignments, respectively.
+\XDR
+  {I find rules for records a bit messy. Rules for explicit records should
+  be easier to write, and we should not need \Rule {Rcd-Assn}, just
+  $\parens{\G \th \ei : \ti}\iton$ and changing Rule \Rule {Rcd} to have
+  $\iparens{\eli : \ti \to \t}$ and $\bar \el \uni \t$ for premises.}
+%
+We assume that record types have been previously defined, building a global
+environment $\labenv$ that maps pairs of record labels and record types
+$\elab/\T$ to the type of the corresponding projection functions.
+%
+Notice that $\el$ stands for a label $\elab$ alone or a label with an
+explicit type $\T$ written $\elab/\T$.
+%
+While rules \Rule {Rcd} and \Rule {Rcd-Proj} applies to both explicit and
+implicit use of labels, \Rule {Lab-X} only allows to assign types to
+explicit labels so far.
+\XDR
+  {I actually don't understand the use of the uniqueness predicate in
+  explicit rules: labels $\elab/t$ should be unique in type $\T$ by
+  construction.}
+\XDR{To fix and finish}
+
+\subsubsection {Typing of \OML fragile implicit constructs}
+
+\begin{mathparfig}[t]{fig/typing/I}
+        {Typing rules of \OML---fragile implicitly typed extensions.}
+  \inferrule[Proj-I]
+    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
+     \G \th \E\where{\exfield \e n j} : \t}
+    {\G \th \E\where{\efield \e j} : \t}
+
+  \inferrule [Poly-I]
+    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
+     \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
+    {\G \th \E \where{\epoly \e} : \t}
+
+  \inferrule [Use-I]
+    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
+     \G \th \E\where{\exinst \e \tvcs \ts} : \t}
+    {\G \th \E\where{\einst \e} : \t}
+
   \inferrule[Lab-I]
     {\Lshape \Lab \elab \T \\
       \G \th \Lab[\elab / \T] : \t}
     {\G \th \Lab[\elab] : \t}
-
-  \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
-    {\elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
 
   \inferrule[Lab-I]
     {\Lshape \Lab \elab \T \\
@@ -2961,111 +3105,16 @@ label instantiations respectively.
 
   \inferrule[Lab-!]
     {\bar \el \uni {\T} \in \labenv}
-    {\bar \el \uni {\T} \tys}
+    {\bar \el \uni {\T \tys}}
 
   \inferrule[Lab-?]
-    {}
+    { }
     {\bar \el \uni \t}
 \end{mathparfig}
 
-%\TODO{We should consider handling the three features (tuples, records, polytypes) separately, one in each subsection.
-%If we later run out of space budget it will be easier to move only some of those subsections to an appendix.
-%Concrete proposal:
-%\begin{itemize}
-%\item one subsection at the beginning that only hints at the standard ML stuff:
-%  show the syntax, hint at typing rules, show a short bit of constraint generation
-%\item then each advanced feature (from the simplest to the more complex: tuples, polytypes, records)
-%  show the typing rules, and examples, and its dedicated patterns, and its constraint generation
-%\end{itemize}}
-%
-\begin{version}{}
-\begin{bnffig}{fig/types/bnf}{aaa}
-\entry[Types]{\t}{
-    \tv \and
-    \tunit \and
-    \t \to \t \and
-    \Pi \parens \t\iton \and
-    \T \tys \and
-    \tpoly \ts
-}
-\end{bnffig}
+\parcomment {Structual tuples}
 
-\begin{mathparfig}
-  {fig/types/wf}
-  {Well-formedness of types}
-  \inferrule[Var-Wf]
-    {\tv \in \G}
-    {\G \th \tv}
-
-  \inferrule[Unit-Wf]
-    { }
-    {\G \th \tunit}
-
-  \inferrule[Arr-Wf]
-    {\G \th \t \\ \G \th \tp}
-    {\G \th \t \to \tp}
-
-  \inferrule[Prod-Wf]
-    {(\G \th \ti)\iton}
-    {\G \th \Pi\iton \ti}
-
-  \inferrule[Rcd-Wf]
-    {(\G \th \ti)\iton \\
-     {\T} \in \dom \Omega}
-    {\G \th \T \tys}
-
-  \inferrule[Poly-Wf]
-    {\G \th \ts}
-    {\G \th \tpoly \ts}
-
-  \inferrule[Forall-Wf]
-    {\G, \tv \th \ts}
-    {\G \th \tfor \tv \ts}
-\end{mathparfig}
-\end{version}
-
-
-\parcomment {Simple typing rules explained}
-
-\Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
-Function types are introduced via lambda abstractions: in \Rule{Fun}, the
-system guesses a well-formed type $\ta$ for the type of $\x$, typechecks the
-body $e$ is under the extended context $\G, \x : \tya$ producing the return
-type $\tyb$, and assigns the abstraction the function type $\tya \to \tyb$.
-Conversely, function types are eliminated by applications; in Rule \Rule{App},
-the type of the argument must match the function's parameter type $\tya$ and
-application returns the type $\tyb$. \Rule{Unit} asserts that $\eunit$ has
-the unit type $\tunit$.
-
-\parcomment {Gen/Inst explained}
-
-\Rule{Gen} and \Rule{Inst} correspond to implicit
-\textit{generalization} and \textit{instantiation} respectively.
-Generalization universally quantifies a type variable $\tv$, introducing it
-as a fresh polymorphic variable in the typing context. In \Rule{Inst}, we
-specialize a type scheme $\tfor \tv \ts$ to $\ts \where{\tv \is \t}$,
-substituting $\tv$ for an arbitrary monotype $\t$.
-
-\parcomment {Let rule}
-
-Let-polymorphism is handled by the \Rule{Let} rule, where a
-\textit{polymorphic} term can be bound. This allows a single definition to be
-instantiated differently at each use site---an essential feature of \ML. In
-this rule, the term $\ea$ has a polymorphic type scheme $\ts$, adds $\x :
-\ts$ into the context $\G$ to typecheck $\eb$.
-
-\parcomment {Annotations}
-
-Annotations $\eannot \e \tvs \t$ ensures that the type of $\e$ is (an instance
-of) the type $\t$. The type variables $\tvs$ are \emph{flexibly} (or
-existentially) bound in $\t$, meaning that $\tvs$ may be unified with some
-types $\tys$ to produce a well-typed term. For instance, the term $(\efun \x \x
-+ 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv \is \tint$ in
-\Rule{Annot}.
-
-\parcomment {Contextual rules (Poly-*, Use-*, Proj-*)}
-
-\paragraph{Polytypes and overloaded tuples}
+\subparagraph{Overloaded tuples}
 
 The typing rules for fully annotated terms ($\e^x$) are unsurprising.
 However, typing rules for terms with omitted type annotations are
@@ -3131,7 +3180,9 @@ within the context as opposed to the inferred type of $\e$.
 % Labels
 
 \paragraph{Overloaded record labels}
+
 % Contextual rules
+
 We adopt a similar non-compositional approach for elaborating overloaded
 labels, whether in record projection ($\efield e \elab$) or record
 construction ($\erecord {\overline{\elab = \e}}$), although the definitions
@@ -3245,6 +3296,7 @@ $\T$ in $\labenv$ if no other type $\T'$ can be associated with the same label
 set.
 
 \subsection {Examples of typings}
+\label {app/oml/examples}
 
 The following lemma shows that we can always take a larger context
 $\E$ or $\Lab$ for implicit rules \Rule {Proj-I}, \Rule {Use-I}, \Rule {Poly-I}
@@ -3427,7 +3479,7 @@ $n$. Since the codomain of $f$ must be a tuple of size~$2$ (for $\eapp f (1,
 
 
 \subsection{Constraint generation}
-\label{sec:constraint-gen}
+\label{app/oml/constraints}
 
 % Intro
 We now present the formal translation from terms $\e$ to constraints $\c$,
@@ -3818,6 +3870,10 @@ written $\cyclic \up$, if $\tv \prec_\up^* \tv$ for some $\tv$.
 \section{Full technical reference}
 \label{appendix:figures}
 \label{app:full-reference}
+
+\Xdidier
+  {We should present \OML before the language of constraints, which is a
+  tool for type inference in \OML}
 
 This section repeats all the technical definitions mentioned in the paper,
 including the cases, rules, and definitions that were omitted from the main
@@ -4255,7 +4311,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\G \th \elannot \el \tvs \t : \tp \to \t\where{\tvs \is \tys}}
 
   \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
+    {\labenv(\elab / \T) = \tfor \tvs \t \to \T \tvs }
     {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
 \end{judgboxmathpar}
 
@@ -4293,21 +4349,42 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
   \inferrule[Lab-!]
     {\bar \el \uni {\T} \in \labenv}
-    {\el \uni {\T \tys}}
+    {\bar \el \uni {\T \tys}}
 
   \inferrule[Lab-?]
-    { }
+    {\Xdidier{???}}
     {\bar \el \uni \t}
 \end{judgboxmathpar}
-
+\Xdidier
+  {We should only use letters (no symbols) in rule names, i.e. replace -!
+   and -? by by -Xbla and -Ybla}
+\Xdidier
+  {Something is wrong with \Rule {Lab-?}, which subsumes Lab-! without
+   its preconditions... Should it be that head of $\ty$ is not a $\T$?}
+\Xdidier
+  {Do we need \Rule {Lab-InAnnot}? Can we place the annotation
+  on the record or the projection instead?}
 
 \judgbox
   {\G \th \el = \e : \t}
-  {Under the typing context $\G$, the record assignment $\el = \e$ has the record type $\t$.}
+  {Under the typing context $\G$, the record assignment $\el = \e$ has the
+  record type $\t$.}
+
+\begin{local}
+%% \parabox [fig/ref/typing]
+%%   {Under the typing context $\G$, the term $\e$ is assigned the type $\ts $}
+%%   {\G \th \e : \ts}
+%% \subparabox[fig/ref/typing/core]{Typing rules -- Core}{}
+%% \begin{mathpar}
+%% \def \Subparabox
+%%   {\end{mathpar}\par
+%%    \subparabox[fig/ref/typing/core]{Typing rules --- Polytypes}{}%
+%%    \begin{mathpar}}
+
 
 \begin{judgboxmathpar}
   {\G \th \e : \ts}
-  {Under the typing context $\G$, the term $\e$ is assigned the type $\ts$.}
+  {Under the typing context $\G$, the term $\e$ is assigned the type $\ts $}
   \inferrule[Var]
     {x : \sigma \in \G}
     {\G \th x : \sigma}
@@ -4341,7 +4418,13 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\G \th \ea : \sigma \\
      \G, x : \sigma \th \eb : \t}
     {\G \th \elet x \ea \eb : \t}
+%% \color{gray}{
+%%   \inferrule[Magic]
+%%     {\G \th \e : \t}
+%%     {\G \th \emagic \e : \tp}
+%% }
 
+%% \Subparabox[fig/ref/typing/core]{Typing rules --- Structural tuples}{}
   \inferrule[Tuple]
     {\parens{\G \th \ei : \ti}\iton}
     {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
@@ -4356,6 +4439,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
      \G \th \E\where{\exfield \e n j} : \t}
     {\G \th \E\where{\efield \e j} : \t}
 
+%% \Subparabox[fig/ref/typing/core]{Typing rules --- Polytypes}{}
   \inferrule [Poly-X]
     {\G \th \e : \ts\where {\tvs \is \tys}}
     {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
@@ -4374,8 +4458,9 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
      \G \th \E\where{\exinst \e \tvcs \ts} : \t}
     {\G \th \E\where{\einst \e} : \t}
 
+%% \Subparabox[fig/ref/typing/core]{Typing --- Nominal records}{}
   \inferrule[Rcd-Assn]
-    {\G \th \e : \t \\
+    {\G \th \e : \t \\\\
      \el : \t \to \tp}
     {\G \th \el = \e : \tp}
 
@@ -4385,20 +4470,21 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
 
   \inferrule[Rcd-Proj]
-    {\G \th \e : \tp \\
+    {\G \th \e : \tp \\\\
      \el : \t \to \tp \\
      \el \uni \t }
     {\G \th \efield \e \el : \t}
 
   \inferrule[Lab-I]
-    {\Lshape \Lab \elab \T \\
+    {\Lshape \Lab \elab \T \\\\
       \G \th \Lab[\elab / \T] : \t}
     {\G \th \Lab[\elab] : \t}
 
   \inferrule[Magic]
     {\G \th \e : \t}
     {\G \th \emagic \e : \tp}
-\\
+
+%% \Subparabox[fig/ref/typing/aux]{Typing -- Auxiliary definitions}{}
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
 \eshape E \e \sh \Eqdef
@@ -4418,6 +4504,8 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
 \end{tabular}}
 \end{judgboxmathpar}
+\end{local}
+
 
 \judgbox
   {\cinfer {\G \th \e} \t}
@@ -5014,7 +5102,7 @@ $\t$ admits a non-trivial principal shape $\sh$.
 The second is the canonicalization of satisfiability derivations $\semenv \th
 \c$, which enables a simple induction principal for reasoning about unicity.
 This canonical form for derivations is a crucial tool in our proof of
-soundness and completeness in \cref{app:proofs-typing}.
+soundness and completeness in \cref{app/oml/proofs}.
 
 \subsection{Principality of shapes}
 
@@ -6898,7 +6986,7 @@ rules that are not inherently destructive.
 
 \clearpage
 \section{Properties of \OML}
-\label{app:proofs-typing}
+\label{app/oml/proofs}
 
 % What we do
 This section states and proves the two central metatheoretic properties of \OML. The first
@@ -7277,7 +7365,10 @@ Problems to solve or leave unsolved:
 
 \section{The \OML calculus, feature by feature}
 
-\Xgabriel{This section contains work-in-progress content that I intended to use to rewrite Section 4, ``The \OML calculus''. I still believe that there will not be enough space to keep Section 4 anyway, so I decided to stop this rewrite effort and dump the current content here.}
+\Xgabriel{This section contains work-in-progress content that I intended to
+use to rewrite Section 4, ``The \OML calculus''. I still believe that there
+will not be enough space to keep Section 4 anyway, so I decided to stop this
+rewrite effort and dump the current content here.}
 
 \subsection{The core fragment}
 \label{sec:language:core}
@@ -7489,7 +7580,7 @@ TODO: extend the magic rule and the disambiguation rule, and also provide the un
     {\G \th \efield \e \el : \t}
 
   \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \tvs \T }
+    {\labenv(\elab / \T) = \tfor \tvs \t \to \tvs \T }
     {\G \th \elab / \T : \tys\where{\tvs \is \tys} \to \tys \T}
 
   \inferrule[Lab-I]
