@@ -1,0 +1,60 @@
+\colorlet{ebox}{yellow!70}
+\colorlet{Green}{green!30}
+\colorlet{Red}{red!30}
+\colorlet{Blue}{blue!20}
+
+%% \newcommand \cbox[2][ebox]
+%%   {\tikz[baseline=(n.base)]{\node[fill=#1,anchor=base](n){#2}}}
+
+\define@key{ebox}{color}{\colorlet{ebox}{#1}}
+\define@key{ebox}{sep}[0em]{\fboxsep=#1}
+\define@boolkey{ebox}{phantom}[true]{}
+\define@key{ebox}{ph}[true]{\setkeys{ebox}{phantom=#1}}
+
+%% \def \Colorbox#1#2{\begin{[baseline]
+%%   \node  [fill=#1,rounded corners,anchor=base]{#2};}}
+%% \def \Fbox#1{\tikz[baseline]
+%%   \node  [draw,rounded corners,anchor=base]{#1};}
+
+\usepackage {tcolorbox}
+\newtcbox{\Fbox}[1][colback=white]
+  {tcbox raise base,nobeforeafter,boxrule=.4pt,boxsep=2pt,
+   left=0pt,right=0pt,top=0pt,bottom=0pt,
+   colback=white,#1}
+
+%% \usepackage {tikz}
+%% \usepackage {pgf}
+%% \usetikzlibrary{babel}
+%% \tikzset{
+%% Fbox/.style={
+%%   rounded corners,
+%%   draw,
+%%   inner sep=\fboxsep
+%%   }
+%% }
+%% \renewcommand{\Fbox}[1]
+%%    {\tikz[Fbox,baseline] \node {#1};}
+%% \renewcommand{\Fbox}[1]
+%%    {\begin{pgfpicture}
+%%        \pgfnode {rectangle}{base}{#1}{}{\pgfusepath{stroke}}
+%%      \end{pgfpicture}}
+
+
+\def \ebox@ignore #1{#1}
+\newcommand \Ebox[2][]
+  {\begingroup
+     \setkeys{ebox}{#1}%
+     \ifmmode \let \@do \ensuremath\else \let \@do \ebox@ignore \fi
+     \setbox0 \hbox {\@do{#2}}%
+     \ifKV@ebox@phantom
+       \setbox1 \hbox {\hskip -\fboxsep\colorbox{ebox}{\box0}}%
+       \dp1 \dp0 \ht1 \ht0 \wd1 \wd0
+       \box1
+     \else
+       \colorbox{ebox}{\box0}
+     \fi
+   \endgroup}
+\newcommand \ebox[2][ebox]{\Ebox[color=#1]{#2}}
+\newcommand{\Etbox}[3][]
+        {\Ebox[#1]{\def \arraystretch {1}\begin{tabular}{#2}#3\end{tabular}}}
+\newcommand{\Smash}[1]{\strut\smash{#1}}
