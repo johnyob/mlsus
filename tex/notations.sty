@@ -166,6 +166,7 @@
 
 \newcommand{\F}{\mathprefix[\mathsf]{F}}
 \newcommand{\T}{\mathprefix[\mathsf]{t}}
+\newcommand{\Tp}{{\T'}}
 \newcommand{\Fapp}[1][\F]{\mathprefix[]{#1}}
 \newcommand{\Tapp}[1][\T]{\mathprefix[]{#1}}
 
@@ -228,7 +229,7 @@
 \newcommand{\exproj}[3]{\eproj[#3] {#1} {#2}}
 \newcommand{\eproj}[3][]{#2.#3\ifempty{#1}{}{/#1}}
 \newcommand{\erecord}[1]{\braces{#1}}
-\defmetavar{\el}{l}
+\defmetavar[s]{\el}{l}
 \newcommand{\elmagic}[1]{\braces {#1}}
 \newcommand{\elannot}[3]{\parens {{#1} : \ifempty{#2}{#3}{\exi {#2} {#3}}}}
 \defmetavar{\elab}{\ell}
@@ -236,6 +237,7 @@
 \newcommand{\etuple}[1]{\parens{#1}}
 \newcommand \emagic[1]{\set{#1}}
 \newcommand{\eerase}[1]{\floor {#1}}
+\newcommand{\lab}[1]{\floor {#1}}
 \newcommand{\exover}[2]{#1.#2}
 \newcommand{\eover}[1]{{.#1}}
 
@@ -243,6 +245,13 @@
 \defmetavar {\G} {\Gamma}
 \defmetavar {\Gnil} {\cdot}
 \newcommand \labenv {\Omega}
+\newcommand \Labenv [1][\T]{\labenv/#1}
+\newcommand \labtyp [2][\T]{(\Labenv[#1])(#2)}
+   %% {\ifempty{#2}{\labenv/#1}{(\labenv/#1)(#2)}}
+\newcommand \labto [2]{#2 \to #1}
+\newcommand \labin {\mathinfix {in}}
+\newcommand \labof {\mathinfix {of}}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Other
@@ -307,7 +316,7 @@
 \newcommand{\all}[2]{\forall #1.\,#2}
 \newcommand{\exi}[2]{\exists #1.\,#2}
 \newcommand{\any}[2]{\nu #1.\,#2}
-\newcommand{\uni}{\mathop{!}}
+\newcommand{\uni}[1]{\mathop{!}{#1}}
 
 \newcommand{\eqdef}{\mathrel{\triangleq}}
 

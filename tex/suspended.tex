@@ -2872,8 +2872,8 @@ are presented in \cref {sec/oml/metatheory} and provewd in
 \cref {app/oml/proofs}.
 
 
-\subsection{Typing rules}
-\label{app/oml/typing}
+\subsection{Typing rules for robust, explicit constructs}
+\label{app/oml/typing/X}
 
 \begin{mathparfig}[t]{fig/typing/core}{Typing rules of core \OML.}
   \inferrule[Var]
@@ -2899,7 +2899,7 @@ are presented in \cref {sec/oml/metatheory} and provewd in
 
   \inferrule[Inst]
     {\G \th e : \tfor \tv \ts}
-    {\G \th e : \tv \where{\tv \is \t}}
+    {\G \th e : \ts \where{\tv \is \t}}
 
   \inferrule[Let]
     {\G \th \ea : \sigma \\\\
@@ -2910,47 +2910,6 @@ are presented in \cref {sec/oml/metatheory} and provewd in
     {\G \th e : \t\where {\tvs \is \tys}}
     {\G \th (e : \exi \tvs \t) : \t\where {\tvs \is \tys}}
 \end{mathparfig}
-
-\begin{mathparfig}[t]{fig/typing/X}
-        {Typing rules of \OML---robust, explicity typed extensions.}
-  \inferrule[Tuple]
-    {\parens{\G \th \ei : \ti}\iton}
-    {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
-
-  \inferrule[Proj-X]
-    {\G \th \e : \Pi\iton \ti \\
-     1 \leq j \leq n}
-    {\G \th \exfield \e n j : \tj}
-
-  \inferrule [Poly-X]
-    {\G \th \e : \ts\where {\tvs \is \tys}}
-    {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
-
-  \inferrule [Use-X]
-    {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
-    {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
-
-  \inferrule[Rcd-Assn]
-    {\G \th \e : \t \\
-     \el : \t \to \tp}
-    {\G \th \el = \e : \tp}
-
-  \inferrule[Rcd]
-    {\parens{\G \th \eli = \ei : \t}\iton \\
-     \bar \el \uni \t}
-    {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
-
-  \inferrule[Rcd-Proj]
-    {\G \th \e : \tp \\
-     \el : \t \to \tp \\
-     \el \uni \t }
-    {\G \th \efield \e \el : \t}
-
-  \inferrule[Lab-X]
-    {\Omega(\elab / \T) = \tfor \tvs \t \to \T \tvs }
-    {\elab / \T : \tys\where{\tvs \is \tys} \to \T \tys}
-\end{mathparfig}
-
 
 \begin{version}{}
 \TODO
@@ -2974,13 +2933,13 @@ are presented in \cref {sec/oml/metatheory} and provewd in
 As usual, the main typing judgment $\G \th \e : \ts$ states that in
 context~$\G$, expression~$\e$ has type scheme~$\ts$.
 \OML extends \ML with new features. Hence, core \OML typing rules,
-given on \cref {fig/typing/core}, are just \ML typing rules.
-We then present then first, followed by rules for explicit version
-of fragile construts, which are part of folklore knowledge.
-Finally, we present the typing rule for implicits fragile constructs, which
-are the crux of our work.
+given on \cref {fig/typing/core}, are just \ML typing rules.  We then
+present then first, followed by rules for explicit version of fragile
+construts, which are part of folklore knowledge.  Typing rule for implicits
+fragile constructs, which are the crux of our work, are deferred to the next
+section.
 
-\subsubsection {\ML typing rules for \ML and \OML robust extensions}
+\paragraph {\ML typing rules}
 
 
 \parcomment {Simple typing rules explained}
@@ -3021,7 +2980,88 @@ unified with some types $\tys$ to produce a well-typed term. For instance,
 the term $(\efun \x \x + 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv
 \is \tint$ in Rule \Rule{Annot}.
 
-\paragraph {\OML extensions with explicit typing}
+
+\begin{mathparfig}[t]{fig/typing/X}
+        {Typing rules of \OML---robust, explicity typed extensions.}
+  \inferrule[Tuple]
+    {\parens{\G \th \ei : \ti}\iton}
+    {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
+
+  \inferrule[Proj-X]
+    {\G \th \e : \Pi\iton \ti \\
+     1 \leq j \leq n}
+    {\G \th \exfield \e n j : \tj}
+
+  \inferrule [Poly-X]
+    {\G \th \e : \ts\where {\tvs \is \tys}}
+    {\G \th \epoly[\exi \tvs \ts] \e : \tpoly {\ts \where {\tvs \is \tys}}}
+
+  \inferrule [Use-X]
+    {\G \th \e : \tpoly \ts \where {\tvs \is \tys}}
+    {\G \th \exinst e \tvs \ts : \ts \where {\tvs \is \tys}}
+\begin{version}{}
+
+  \inferrule[Rcd-Assn]
+    {\G \th \e : \t \\
+     \el : \t \to \tp}
+    {\G \th \el = \e : \tp}
+\end{version}
+
+  \inferrule[Rcd]
+    {\parens{\G \th \ei : \ti}\iton \\
+     \parens{\G \th \eli : \t \to \ti}\iton \\
+     \bar \el \uni \t}
+    {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
+
+  \inferrule[Rcd-Proj]
+    {\G \th \e : \t \\
+     \el : \t \to \tp \\
+     \el \uni \t}
+    {\G \th \efield \e \el : \tp}
+
+  \inferrule[Lab]
+    {\elab : \ts \in \Omega}
+    {\G \th \elab : \ts}
+
+  \inferrule[Lab-X]
+    {\elab : \ts \in \Labenv[\T]}
+    {\G \th {\elab/\T} : \ts}
+\begin{version}{}
+
+  \inferrule[Lab-Gen]
+    {\G \th \el : \sigma \\ \tv \disjoint \G}
+    {\G \th \el : \tfor \tv \sigma}
+\end{version}
+
+  \inferrule[Lab-Inst]
+    {\G \th \el : \tfor \tv \ts}
+    {\G \th \el : \ts \where{\tv \is \t}}
+
+  \infer[Lab-Annot]
+    {\G \th \el : \labto \tp {\t\where{\tvs \is \tys}}}
+    {\G \th \elannot \el \tvs \t : \labto \tp {\t\where{\tvs \is \tys}}}
+\begin{version}{}
+
+\color{gray}
+  \inferrule[Lab-One-X]
+    {\elab \in \labenv/\T}
+    {\elab/\T \uni {\T}}
+
+  \inferrule[Lab-All-X]
+    {\el \in \els \\ \el \uni \T \\ \lab \els = \labenv/\T}
+    {\els \uni \T}
+
+  \inferrule[Lab-One]
+    {\el \uni \T}
+    {\el \uni {\T \tys}}
+
+  \inferrule[Lab-All]
+    {\els \uni \T}
+    {\els \uni {\T \tys}}
+\end{version}
+\end{mathparfig}
+
+\paragraph {Typing rules for robust, explicit features}
 
 Each fragile extensions $\e^i$ comes with a robust explicit associated
 construct.  We first present the typing of explicit constructs $\e^x$ on
@@ -3048,78 +3088,186 @@ free in $\tys$.
 
 \parcomment{Nominal records}
 
-Rules for nominal records with explicit annotations are a bit more
-technical.  They they use auxiliary typing judgments $\el : \t \to \tp$ and
-$\G \th \el = \e : \t$ for the typing of labels and
-record assignments, respectively.
 \XDR
   {I find rules for records a bit messy. Rules for explicit records should
-  be easier to write, and we should not need \Rule {Rcd-Assn}, just
-  $\parens{\G \th \ei : \ti}\iton$ and changing Rule \Rule {Rcd} to have
-  $\iparens{\eli : \ti \to \t}$ and $\bar \el \uni \t$ for premises.}
-%
-We assume that record types have been previously defined, building a global
-environment $\labenv$ that maps pairs of record labels and record types
-$\elab/\T$ to the type of the corresponding projection functions.
-%
-Notice that $\el$ stands for a label $\elab$ alone or a label with an
-explicit type $\T$ written $\elab/\T$.
-%
-While rules \Rule {Rcd} and \Rule {Rcd-Proj} applies to both explicit and
-implicit use of labels, \Rule {Lab-X} only allows to assign types to
-explicit labels so far.
-\XDR
-  {I actually don't understand the use of the uniqueness predicate in
-  explicit rules: labels $\elab/t$ should be unique in type $\T$ by
-  construction.}
-\XDR{To fix and finish}
+  be obvious to write/read.  We should not need the intermediate rule \Rule
+  {Rcd-Assn}, just $\parens{\G \th \ei : \ti}\iton$ and changing Rule \Rule
+  {Rcd} to have $\iparens{\eli : \ti \to \t}$ and $\bar \el \uni \t$ for
+  premises.  They is also an abuse of notations with $\el/\T \in \Omega$
+  where $\in$ is both interpreted as math membership and an inductively
+  define predicate with math membership as an implicit axiom}
 
-\subsubsection {Typing of \OML fragile implicit constructs}
+\XDR
+  {I propose to get read of \Rule {Rcd=Assn}}
+
+Rules for nominal records with explicit annotations are a bit more
+technical.  They use an auxiliary typing judgment $\G \th \el : \all \tv \t
+\to \tp$ for the typing of labels.
+Label expressions $\el$ extend labels with explicit labels $\elab/\T$
+and annotated label expressions $\el : \exi \tvs \t$ (where the annotation
+the shape of the record type they belong to).
+\begin{version}{}
+\begin{mathpar}
+\begin{bnfgrammar}
+\entry \el {\elab \and \elab/\T \and \el : \exi \tvs \T \t}
+        {Label expressions}
+\end{bnfgrammar}
+\end{mathpar}
+\end{version}
+
+We assume that record types have been previously defined, building a global
+environment $\labenv$ that maps labels to their projection type, \ie of the
+form $\all \tv \T \tys \to \t$.\XDR{I propose to invert the convention.} For
+a given record type $\T$, we assume each label associated with it is
+unique, while labels may belong to several record types.
+
+We write $\Labenv$ for the restriction $\set {\elab : \all \tvs \T \tys
+\to \t \in \labenv}$ of $\labenv$ to labels of type $\T$. Hence, $\dom
+(\Labenv)$ is the set of labels belonging type $\T$.
+%% We write $\Labenv{} (\elab/\T)$ for $\Labenv \elab$---
+Hence, $\labtyp \elab$ is the (unique) type scheme $\ts$ associated to
+$\elab$ in type $\T$.
+%
+We write $\lab \el$ the label underlying $\el$, \ie $\elab$ when $\el$ is
+either $\elab$ or $\elab/\T$ and $\lab \el$ when $\el$ is $\elp : \exi \tvs
+\t$.  We define $\el \labin \Labenv$ as a generalisation of
+$\elab \in \dom(\Labenv)$ as follows:
+\begin{mathpar}
+\infer {\elab \in \dom (\Labenv)}{\elab \labin \Labenv}
+
+\infer {\elab \labin \Labenv}{{\elab/\T} \labin \Labenv[\T]}
+
+\infer {\el \labin \Labenv}
+       {\elannot \el \tvs {\T\tys} \labin \Labenv[\T]}
+\end{mathpar}
+We write $\els \labof \Labenv$ the generalisation of
+$\bar \elab = \dom (\Labenv)$ defined as
+\begin{mathpar}
+\els \labof \Labenv \Wide \eqdef
+        \lab \els = \dom (\Labenv) \wide\wedge
+        \forall \el \in \els,\; \el \labin \Labenv
+\end{mathpar}
+Rule \Rule {Lab} extracts the type sheme of a label $\elab$ from
+$\labenv$. Rule \Rule {Lab-X} does the same but for an explicit label
+$\elab/\T$. Rule \Rule {Lab-Inst} allow instantiation of the type of label
+expressions. Rule \Rule {Lab-Annot} is an alternative to the use of explicit
+labels $\elab/\T$ that allows to constaint the type of a label expression.
+Notice that the type annotation only constraint the domain of the
+label-expression type.
+
+The projection rule \Rule {Rcd-Proj} checks that the label-expression can be
+applied to the type of its argument and returns the result out of the
+projection. In addition, the premise $\el \uni \t$ checks that the label
+underlying $\el$ is uniquely determined by the type $\t$ of the record.
+Rule \Rule {Rcd} is typed similarly, but using the predicate $\els \uni \t$
+to check that both labels $\el$ contains all labels of type $\T$ and can
+altogether only belong to type $\T$.
+
+In the explicit case, this could just require that $\els$ contains an
+explicit label expression $\elab/\T$. However, we wish uniqueness to also be
+determined by annotations and support \emph{closed-world} reasoning, based
+on the available definitions available in the global environment $\labenv$:
+\begin{enumerate*}
+\item
+  in a record projection $\efield \e \elab$, if the label $\elab$ is not
+  overloaded, then the global record typing context $\labenv$ assigns a
+  unique record type $\T$ to $\elab$, and we should have $\elab \uni \T$;
+
+\item
+  in a record expression $\erecord {\ela = \ea; \ldots; \el_n =
+  \en}$, if the set of labels ${ \ela, \ldots, \el_n }$ uniquely
+  identifies a record type $\T$ in the typing context $\labenv$, then
+  we can assign this type to the record expression.
+\end{enumerate*}
+Thus, we define:
+\begin{mathpar}%
+  \el \uni \T \Wide\eqdef
+  \el \labin \Labenv \wide\wedge
+  {\forall \Tp, \uad \el \labin \Labenv[\Tp] \implies \T' = \T}
+
+\el \uni {\T \tys} \wide\iff \el \uni \T
+
+\els \uni \T \Wide\eqdef
+  \els \labof \Labenv \wide\wedge
+  \forall \Tp, \; \els \labof \Labenv[\Tp] \implies \Tp = \T
+
+  \els \uni {\T \tys} \wide\iff
+  \els \uni \T
+\end{mathpar}
+These predicates only depend on the global environment $\labenv$.
+They just ensures that this is actually no real overloading involved.
+
+\subsection {Typing rules for fragile, implicit constructs}
+\label{app/oml/typing/I}
+
 
 \begin{mathparfig}[t]{fig/typing/I}
-        {Typing rules of \OML---fragile implicitly typed extensions.}
+        {Typing rules for fragile, implicitly typed extensions.}
+  \inferrule[Hole]
+    {\G \th \e : \t}
+    {\G \th \emagic \e : \tp}
+
   \inferrule[Proj-I]
-    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\
+    {\eshape \E \e {\any \tvcs \Pi\iton \tvcs} \\\\
      \G \th \E\where{\exfield \e n j} : \t}
     {\G \th \E\where{\efield \e j} : \t}
 
   \inferrule [Poly-I]
-    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\
+    {\Eshape \E \e {{\any \tvcs \tpoly \ts}} \\\\
      \G \th \E \where{\epoly[\exi \tvcs \ts] \e} : \t}
     {\G \th \E \where{\epoly \e} : \t}
 
   \inferrule [Use-I]
-    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\
+    {\eshape \E  \e {\any \tvcs \tpoly \ts} \\\\
      \G \th \E\where{\exinst \e \tvcs \ts} : \t}
     {\G \th \E\where{\einst \e} : \t}
-
-  \inferrule[Lab-I]
+\\
+  \inferrule[Labs-I]
     {\Lshape \Lab \elab \T \\
       \G \th \Lab[\elab / \T] : \t}
     {\G \th \Lab[\elab] : \t}
 
-  \inferrule[Lab-I]
-    {\Lshape \Lab \elab \T \\
-      \G \th \Lab[\elab / \T] : \t}
-    {\G \th \Lab[\elab] : \t}
-
-  \inferrule[Lab-!]
-    {\bar \el \uni {\T} \in \labenv}
-    {\bar \el \uni {\T \tys}}
-
-  \inferrule[Lab-?]
+  \infer[Lab-Hole]
     { }
-    {\bar \el \uni \t}
+    {\G \th \elmagic \elab : \tp \to \t}
+\begin{version}{}
+
+\infer[Lab-inX]
+    {\elab / {\T} \in \labenv}
+    {(\elab / \T) / {\T} \in \labenv}
+
+  \infer[Lab-inHole]
+    {\elab / {\T} \in \labenv}
+    {\elmagic \elab / {\T} \in \labenv}
+
+  \infer[Labs-Ui]
+    {\bar \el / {\T} \in \labenv \\
+     \all \Tp \uad\bar \el / \Tp \in \labenv \implies {\T} = \T'}
+    {\bar \el \uni \T \in \labenv}
+
+  \infer[Lab-inAnnot]
+      {\el / {\T} \in \labenv}
+      {\elannot \el \tvs \t / {\t} \in \labenv}
+\end{version}
 \end{mathparfig}
 
-\parcomment {Structual tuples}
+We now turn to the typing of fragile implicit constructs, given in
+\cref{fig/typing/I}. While the typing
+rules for fully annotated terms ($\e^x$) are unsurprising, and part of
+folklore knowledge, the typing rules for terms with omitted type annotations
+are quite new and non-compositional.
+%
+They all share a common framework that ensures that some types are uniquely
+determined from the context. Still each construct requires a specific
+instantiation of the framework.
+%
+We first describe the framework, then present each feature separately,
+starting with the easiest case---structural tuples.
 
-\subparagraph{Overloaded tuples}
+\paragraph{Uniquely determined shapes}
 
-The typing rules for fully annotated terms ($\e^x$) are unsurprising.
-However, typing rules for terms with omitted type annotations are
-non-compositional as they depend on a surrounding one-hole context
-$\E$. Hence, they assert that the typability of the expression $\G \th \E
+Typing rules for fragile features depend on a surrounding one-hole context
+$\E$. They assert that the typability of the expression $\G \th \E
 \where {\e^i}: \t$ where $\e^i$ is an expression with an implicit type
 annotation.
 %
@@ -3132,16 +3280,12 @@ context, either from the type of the expression, which we write $\eshape \E
 In order to describe the judgments $\eshape \E \e \sh$ and $\Eshape \E \e \sh$,
 we introduce a \emph{typed hole} construct $\emagic \e$ that allows any
 well-typed expression $\e$ to be treated as if it had any type. That is the
-typing rule for holes is:
+typing rule for holes is \Rule {Hole}, which we duplicated below:
 \begin{mathpar}
-  \inferrule[Magic]
+  \inferrule[Hole]
     {\G \th \e : \t}
     {\G \th \emagic \e : \tp}
-\end{mathpar}
-Typed holes are not allowed on source terms and are just a device for
-the definition of non-ambiguous shapes.  Finally, we define what it means for a
-shape to be determined from the type of a context or an expression:
-\begin{mathpar}
+
 \def \Eqdef {&\eqdef&}
 {\begin{tabular}{RCL}
 \eshape \E \e \sh \Eqdef
@@ -3155,38 +3299,54 @@ shape to be determined from the type of a context or an expression:
       \wide\implies \shape \gt = \sh
 \end{tabular}}
 \end{mathpar}
-These states that the shape $\sh$ of expression $\e$ in context $\E$ is
+Typed holes are not allowed in source terms and are just a device for
+the definition of non-ambiguous shapes.  Finally, we define what it means for a
+shape to be determined from the type of a context ($\eshape \E \e \sh$)
+or an expression ($\Eshape \E \e \sh$):
+%% \begin{mathpar}
+%% \def \Eqdef {&\eqdef&}
+%% {\begin{tabular}{RCL}
+%% \eshape \E \e \sh \Eqdef
+%%   \forall \G, \t, \gt, \uad
+%%   \G \th \eerase {\E \where {\emagic {\eannot \e {} \gt }}} : \t
+%%       \wide\implies \shape \gt = \sh
+%% \\[1ex]
+%% \Eshape \E \e \sh \Eqdef
+%%   \forall \G, \t, \gt, \uad
+%%       \G \th \eerase {\E\where{\eannot {\emagic \e} {} \gt}} : \t
+%%       \wide\implies \shape \gt = \sh
+%% \end{tabular}}
+%% \end{mathpar}
+%% These states that the
+the shape $\sh$ of expression $\e$ in context $\E$ is
 determined by the expression $\e$, in the former case, or by the context
 $\E$ in the latter case. Just like constraints, we must erase implicit constructs
-in the term that have not yet been elaborated, written $\eerase \e$ (defined in
-\cref{app:full-reference}).
+in the term that have not yet been elaborated, written $\eerase \e$
+(defined in \cref{app/ref/eerase}.
 
 %% Shapes are equal modulo alpha equivalence and the removal of useless
 %% polymorphic type variables. They do not have useless existential variables.
 
-% Expression-based implicit rules
+\paragraph{Overloaded tuples and polytypes}
 
 The implicit rule \Rule{Proj-I} types the projection $\eproj \e j$ provided the
 context $\E$ \emph{infers} that the shape of $\e$ must be a tuple with arity $n$.
 Similarly, \Rule{Use-I} permits instantiating a polytype in $\einst e$ if
 the context $\E$ infers that the type of $\e$ must be a polytype with shape
-$\any \tvcs \tpoly \ts$. The rule \Rule{Poly-I} types the implicit boxing
+$\any \tvcs \tpoly \ts$.  The rule \Rule{Poly-I} types the implicit boxing
 construct $\epoly \e$ by \emph{checking} the expected type of $\epoly \e$ in the
 context $\E$ is a polytype with the shape $\any \tvcs \tpoly \ts$. This rule
 differs from the previous two as the shape is determined by the expected type
 within the context as opposed to the inferred type of $\e$.
 
-
-% Labels
-
 \paragraph{Overloaded record labels}
-
-% Contextual rules
 
 We adopt a similar non-compositional approach for elaborating overloaded
 labels, whether in record projection ($\efield e \elab$) or record
-construction ($\erecord {\overline{\elab = \e}}$), although the definitions
-are slightly more involved.  Here, a one-hole label context $\Lab$ provides the
+construction ($\erecord {\overline{\elab = \e}}$).
+%% , although the definitions
+%% are slightly more involved.
+Here, a one-hole label context $\Lab$ provides the
 surrounding context in which a label $\elab$ may appear:
 \begin{mathpar}
 \begin{bnfgrammar}
@@ -3199,54 +3359,54 @@ surrounding context in which a label $\elab$ may appear:
 }
 \end{bnfgrammar}
 \end{mathpar}
-
-As with our contextual rules for expressions, we define two rules for labels.
-\Rule{Lab-X} handles explicitly annotated labels $\elab / \T$ by instantiating
-the type scheme $\tfor \tvs \t \to \T \tvs$ associated with $\elab$ in label
-environment $\labenv$. \Rule{Lab-I} handles unannotated labels by elaborating
+As with our contextual rules for expressions,
+we define two rules for labels.
+%% \Rule{Lab-X} handles explicitly annotated labels $\elab / \T$ by instantiating
+%% the type scheme $\tfor \tvs \t \to \T \tvs$ associated with $\elab$ in label
+%% environment $\labenv$.
+we introduce a rule \Rule{Lab-I} that handles unannotated labels by elaborating
 $\elab$ to $\elab / \T$ if the context $\Lab$ uniquely infers the record type
 $\T$ for $\elab$ and the resulting elaboration is well-typed.
 
-The unicity of the inferred record type is captured by the judgment $\Lshape
-\Lab \elab \T$. The definition fits into the framework we established for
-expressions above by introducing analogous annotation and hole constructs for
-labels.
+The unicity of (the shape of) the inferred record type is captured by the
+judgment $\Lshape \Lab \elab \T$. The definition fits into the framework we
+established for expressions above by introducing a hole construct for labels
+(whose typing rule \Rule {Lab-Hole} is reminded below) and a definition of
+uniqueness analogous to the ones for expressions:
 \begin{mathpar}
-  \infer[Lab-Magic]
+  \infer[Lab-Hole]
     { }
     {\G \th \elmagic \elab : \tp \to \t}
 
-  \infer[Lab-Annot]
-    {\G \th \el : \tp \to \t\where{\tvs \is \tys}}
-    {\G \th \elannot \el \tvs \t : \tp \to \t\where{\tvs \is \tys}}
-
-\\
 \Lshape \Lab \elab \T \Wide\eqdef
    \forall \G, \t, \gt , \uad
      \G \th \eerase {\Lab[\elannot {\elmagic \elab} {} \gt]} : \t
 	\implies \shape \gt= \any \tvcs {\tvcs \T}
 \end{mathpar}
+Since we extended  $\el$ to also contain $\elmagic \elab$, we
+define $\lab {\elmagic \elab}$ as $\elab$ and
+$\elmagic \elab \labin \Labenv$ as $\elab \labin \Labenv$.
 
-% Rules
-\Rule{Rcd} types a record $\erecord {\overline{\el = \e}}$ as a record type
-$\t$ provided that each field assignment $\el = \e$ can be assigned the record
-type $\t$.
-\Rule{Rcd-Assn} checks that $\e$ has the appropriate field type in $\el = \e$
-and returns the instantiated record type $\tp$ for the label $\el$.
-\Rule{Rcd-Proj} types the projection $\efield \e \el$ by checking that the
-type of $\e$ matches the record type associated with label $\el$, returning
-the field type $\t$.
 
 % Closed world reasoning
-Both \Rule{Rcd} and \Rule{Rcd-Proj} impose additional constraints on their
-record types to support \emph{closed-world} reasoning. These constraints
-exploit the uniqueness of type definitions in the global label environment
-$\labenv$ to resolve overloaded labels:
+
+\begin{version}{\color{red}\False}%\True
+The premises $\el \uni \t$ and $\els \uni \t$ in rules
+\Rule{Rcd} and \Rule{Rcd-Proj} require that the labels (taken
+altogether in the case of \Rule {Rcd} or alone in the case of \Rule
+{Pcd-Proj}) contain an explicit label, which uniquely determines the shape
+of the record.
+%
+We extend this definition to enable uniqueness to also be determined by
+annotations and support \emph{closed-world} reasoning, based on the
+available definitions available in the global environment $\Omega$:
+%% These constraints exploit the uniqueness of type definitions in the global
+%% label environment $\labenv$ to resolve overloaded labels:
 \begin{enumerate*}
 \item
   in a record projection $\efield \e \elab$, if the label $\elab$ is not
   overloaded, then the global record typing context $\labenv$ assigns a
-  unique record type $\T$ to $\elab$;
+  unique record type $\T$ to $\elab$, and we should have $\elab \uni \T$;
 
 \item
   in a record expression $\erecord {\ela = \ea; \ldots; \el_n =
@@ -3254,6 +3414,23 @@ $\labenv$ to resolve overloaded labels:
   identifies a record type $\T$ in the typing context $\labenv$, then
   we can assign this type to the record expression.
 \end{enumerate*}
+
+For that purpose we generalize the defintion of $\el \uni \T$ and $\els \uni
+\T$ with the two following rules:
+\begin{mathpar}
+\infer[Lab-One-I]
+  {\lab \el \in \labenv/\T \\
+   (\forall \tp, \uad \lab \el \in \labenv/\T' \implies \T' = \T) }
+  { \el \uni \T}
+
+\infer[Lab-All-I]
+  {\lab \els = \labenv/\T \\
+   (\forall \tp, \uad \lab \els = \labenv/\T' \implies \T' = \T) }
+  { \els \uni \T}
+\end{mathpar}
+They actually subsume rules \Rule {Lab-One-X} and
+\Rule {Lab-All-X}, which may then be removed.
+
 
 We formalize this with the judgment $\bar \el \uni \t$, which
 either:
@@ -3263,6 +3440,12 @@ either:
     or
   \item imposes no constraint on $\t$ in the ambiguous case
     (\Rule{Lab-?}).
+
+\XDR{I don't undertand the second case, as this would allow to type
+     ambiguous records}
+\XDR{\Rule {Rcd} was missing the fact that $\els \uni \T$ should enforce
+$\els$ to include all fields of $\T$ not just a subset.}
+
 \end{enumerate*}
 
 Label declarations in $\labenv$ have the form $\elab : \tfor \tvs \tp \to \T
@@ -3288,12 +3471,13 @@ We then define the uniqueness predicate $\bar \el \uni {\T} \in \labenv$ as:
 \begin{mathpar}
   \infer[Lab-U]
     {\bar \el / {\T} \in \labenv \\
-     \all {\T'} \uad\bar \el / {\T'} \in \labenv \implies {\T} = \T'}
-    {\bar \el \uni {\T} \in \labenv}
+     \all \Tp \uad\bar \el / \Tp \in \labenv \implies {\T} = \T'}
+    {\bar \el \uni \T \in \labenv}
 \end{mathpar}
 This states that the set of labels $\bar \el$ determines a unique nominal type
 $\T$ in $\labenv$ if no other type $\T'$ can be associated with the same label
 set.
+\end{version}
 
 \subsection {Examples of typings}
 \label {app/oml/examples}
@@ -3708,7 +3892,7 @@ ground type schemes $\gscm$, that is type schemes with no unbound variables
 \Crule
   {\cinferlabuni {\bar \el} \tv}
   {\begin{cases}
-    \cexists \tvs \cunif \tv {\Tapp \tvs} &\text{if } \bar \el \uni {\T} \in \labenv \\
+    \cexists \tvs \cunif \tv {\Tapp \tvs} &\text{if } \bar \el \uni \T \in \labenv \\
     \ctrue &\text{otherwise}
    \end{cases}}
 \end{tabular}
@@ -4320,7 +4504,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
   {The label $\el$ belongs to the nominal record type $\T$ in $\labenv$.}
 
 \judgbox
-  {\bar\el \uni {\T} \in \labenv}
+  {\bar\el \uni \T \in \labenv}
   {The set of labels $\bar\el$ belong to a unique nominal record type $\T$ in $\labenv$.}
 
 \begin{judgboxmathpar}
@@ -4340,19 +4524,19 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
   \infer[Lab-inAnnot]
     {\el / {\T} \in \labenv}
-    {\elannot \el \tvs \t / {\T} \in \labenv}
+    {\elannot \el \tvs {\XDR{$\t$}\T \tys}  / {\T} \in \labenv}
 
   \infer[Lab-U]
-    {\bar \el / {\T} \in \labenv \\
-     \forall {\T'}, \uad\bar \el / \T' \in \labenv \implies {\T} = \T'}
-    {\bar \el \uni {\T} \in \labenv}
+    {\els / {\T} \in \labenv \\
+     \forall \Tp, \uad\bar \el / \Tp \in \labenv \implies {\T} = \Tp}
+    {\els \uni \T \in \labenv}
 
   \inferrule[Lab-!]
-    {\bar \el \uni {\T} \in \labenv}
-    {\bar \el \uni {\T \tys}}
+    {\els \uni \T \in \labenv}
+    {\els \uni {\T \tys}}
 
   \inferrule[Lab-?]
-    {\Xdidier{???}}
+    {\Xdidier{$\bot$ ???}}
     {\bar \el \uni \t}
 \end{judgboxmathpar}
 \Xdidier
@@ -4380,7 +4564,6 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 %%   {\end{mathpar}\par
 %%    \subparabox[fig/ref/typing/core]{Typing rules --- Polytypes}{}%
 %%    \begin{mathpar}}
-
 
 \begin{judgboxmathpar}
   {\G \th \e : \ts}
@@ -4412,7 +4595,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 
   \inferrule[Inst]
     {\G \th e : \tfor \tv \ts}
-    {\G \th e : \tv \where{\tv \is \t}}
+    {\G \th e : \ts \where{\tv \is \t}}
 
   \inferrule[Let]
     {\G \th \ea : \sigma \\
@@ -4647,7 +4830,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
 \Crule
   {\cinferlabuni {\bar \el} \tv}
   {\begin{cases}
-    \cexists \tvs \cunif \tv {\Tapp \tvs} &\text{if } \bar \el \uni {\T} \in \labenv \\
+    \cexists \tvs \cunif \tv {\Tapp \tvs} &\text{if } \bar \el \uni \T \in \labenv \\
     \ctrue &\text{otherwise}
    \end{cases}}
 \\ \\
@@ -4734,6 +4917,7 @@ $\t$. $\shape \t$ is the canonical principal shape of $\t$.
     {\elannot \el \tvs \t \simple}
 \end{judgboxmathpar}
 
+\label {app/ref/eerase}
 \judgbox
   {\eerase \el}
   {The erasure of $\el$.}
