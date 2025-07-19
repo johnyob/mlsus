@@ -262,6 +262,8 @@ let disambiguation_mismatched_type ~range ~type_head =
     | `Tuple -> "tuple"
     | `Arrow -> "function type"
     | `Rigid_var -> "polymorphic variable"
+    | `Poly -> "boxed type scheme"
+    | `Scheme -> "type scheme"
   in
   Diagnostic.createf
     ~labels:[ Label.primaryf ~range "expected a type constructor, found a %s" head_name ]

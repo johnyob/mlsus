@@ -928,7 +928,7 @@ let create_former ~state ~curr_region former =
   create_type ~state ~curr_region (Structure (Structure former))
 ;;
 
-let copy ~state ~curr_region ~when_ ~instance_id t =
+let copy_and_return_table ~state ~curr_region ~when_ ~instance_id t =
   let copies = Hashtbl.create (module Identifier) in
   let rec loop type_ =
     let structure = Type.structure type_ in
@@ -961,7 +961,11 @@ let copy ~state ~curr_region ~when_ ~instance_id t =
            Type.set_inner copy (S.Inner.copy ~f:loop structure.inner));
          copy)
   in
-  loop t
+  copies, loop t
+;;
+
+let copy ~state ~curr_region ~when_ ~instance_id t =
+  snd (copy_and_return_table ~state ~curr_region ~when_ ~instance_id t)
 ;;
 
 let partial_copy ~state ~curr_region ~instance_id partial_type =
@@ -1257,10 +1261,6 @@ let update_and_generalize ~state (curr_region : Type.region_node) =
   [%log.global.debug "End generalization" (curr_region.id : Identifier.t)]
 ;;
 
-let create_scheme root region_node : Type.t Scheme.t =
-  { root; region_node = Some region_node }
-;;
-
 let force_generalization ~state region_node =
   Generalization_tree.generalize_region
     state.generalization_tree
@@ -1276,9 +1276,15 @@ let force_generalization ~state region_node =
     "Finished (forced) generalization" (region_node : Type.sexp_identifier_region_node)]
 ;;
 
-let exit_region ~curr_region root = create_scheme root curr_region
+let exit_region ~curr_region root =
+  let create_scheme root region_node : Type.t Scheme.t =
+    { root; region_node = Some region_node }
+  in
+  create_scheme root curr_region
+;;
 
-let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
+let instantiate ~state ~curr_region ~quantifiers ({ root; region_node } : Type.t Scheme.t)
+  =
   [%log.global.debug
     "Generalization tree @ instantiation"
       (state.generalization_tree : Generalization_tree.t)];
@@ -1287,7 +1293,10 @@ let instantiate ~state ~curr_region ({ root; region_node } : Type.t Scheme.t) =
   (* Create an instance group *)
   let instance_id = Instance_identifier.create state.id_source in
   (* Copy the type (always copy if possible) *)
-  copy ~state ~curr_region ~when_:(Fn.const true) ~instance_id root
+  let copies, type_ =
+    copy_and_return_table ~state ~curr_region ~when_:(Fn.const true) ~instance_id root
+  in
+  List.map quantifiers ~f:(fun q -> Hashtbl.find_exn copies (Type.id q)), type_
 ;;
 
 module Suspended_match = struct
