@@ -30,7 +30,6 @@ module Region = struct
 
   module Tree = struct
     type 'a node = 'a t Tree.node [@@deriving sexp_of]
-    type 'a path = 'a t Tree.Path.t [@@deriving sexp_of]
     type nonrec 'a t = 'a t Tree.t [@@deriving sexp_of]
 
     (** A type used to trick ppx_sexp_conv *)
@@ -51,21 +50,21 @@ module Match_identifier = Identifier
 module Instance_identifier = Identifier
 
 (** There are two kinds of guards:
-    1. Match guards -- these are unique and introduced by suspended matches. 
-        They indicate that the variable may be unified by a handler of a suspended match. 
+    1. Match guards -- these are unique and introduced by suspended matches.
+        They indicate that the variable may be unified by a handler of a suspended match.
 
-    2. Instance guards -- introduced by instantiating a partial generic. 
-       They indicate that the variable may be unified by propagation via a partial generic. 
-       
-    The guard graph [G] is formed by (labeled) edges between types and instance groups. 
-    
-    A 'match' edge is introduced by a match guard [m] between two types [t1] and [t2], written 
+    2. Instance guards -- introduced by instantiating a partial generic.
+       They indicate that the variable may be unified by propagation via a partial generic.
+
+    The guard graph [G] is formed by (labeled) edges between types and instance groups.
+
+    A 'match' edge is introduced by a match guard [m] between two types [t1] and [t2], written
     [t1 <-[m]- t2]. We read this as 't2 is guarded by t1 using match m'
 
-    A 'instance' edge is introduced by an instance group [j] and an instance type [t], written 
-    [t <-[j]- .]. We read this as 't is guarded by the partial instance group j'. It is useful to note 
-    that a cycle in the graph can never arise from an instance group (by construction). The [.] here denotes 
-    a 'root'. 
+    A 'instance' edge is introduced by an instance group [j] and an instance type [t], written
+    [t <-[j]- .]. We read this as 't is guarded by the partial instance group j'. It is useful to note
+    that a cycle in the graph can never arise from an instance group (by construction). The [.] here denotes
+    a 'root'.
 *)
 module Guard = struct
   module Match = struct
@@ -245,7 +244,7 @@ module Partial_status = struct
           unify type1 type2;
           type1)
     ; kind =
-        (* Any form of update to statuses maps to an instance. 
+        (* Any form of update to statuses maps to an instance.
            [generalize_young_region] uses this bit to determine if we need to propagate
            types to the instances. *)
         Instance
@@ -282,7 +281,29 @@ module Status = struct
     | Partial { region_node = rn1; instances; kind = _ }, Instance rn2 ->
       Map.iteri instances ~f:(fun ~key ~data -> partial_unify key data);
       Instance (Tree.nearest_common_ancestor rn1 rn2)
-    | Instance rn1, Instance rn2 -> Instance (Tree.nearest_common_ancestor rn1 rn2)
+    | Instance rn1, Instance rn2 ->
+      (* Computing the nearest common ancestor is indeed necessary here.
+
+         Consider three regions arrangled like this:
+
+             R0
+            /  \
+           R1  R2
+
+         - In R0, we have the variable 'a
+         - In R1, we unify 'a with 'b list
+         - In R2, we unify 'a with 'c list list
+
+         This implies that: 'b = 'c list.
+
+         However:
+         - 'c list has the status [Instance R2]
+         - 'b has the status [Instance R1]
+
+         On unifying 'b and 'c list, we must lower the rank of
+         'b to [Instance R0], the nearest common ancestor of R1
+         and R2. *)
+      Instance (Tree.nearest_common_ancestor rn1 rn2)
   ;;
 
   let of_region_node region_node =
@@ -364,7 +385,7 @@ module S = struct
       t
     | Partial ({ kind = Instance; instances; _ } as ps) when not (Map.is_empty instances)
       ->
-      (* [generalize] cannot generalize partial instances with non-empty instance maps. 
+      (* [generalize] cannot generalize partial instances with non-empty instance maps.
          See [generalize_young_region] *)
       { t with status = Partial { ps with kind = Generic } }
     | Partial ({ kind = Instance; _ } as ps) ->
@@ -388,7 +409,7 @@ module S = struct
   let partial_ungeneralize t ~f =
     match t.status with
     | Partial { kind = Instance; instances; region_node = _ } ->
-      (* An ungeneralized instance that is still partial (but whose level is lowered) 
+      (* An ungeneralized instance that is still partial (but whose level is lowered)
          must noify the instances of this (likely making then less generic) *)
       Map.iteri instances ~f:(fun ~key ~data -> f key data)
     | _ -> ()
@@ -453,7 +474,6 @@ module Type = struct
   [@@deriving sexp_of]
 
   type region_tree = t Region.Tree.t [@@deriving sexp_of]
-  type region_path = t Region.Tree.path [@@deriving sexp_of]
   type region = t Region.t [@@deriving sexp_of]
   type scheme = t Scheme.t [@@deriving sexp_of]
 
@@ -578,8 +598,8 @@ end = struct
       (** Maps node identifiers to immediate entered descendants *)
     ; mutable num_partially_generalized_regions : int
       (** Tracks the partially generalized regions. If there are remaining
-        partially generalized regions after generalizing the root region, it implies
-        there exists suspended matches that were never scheduled (e.g. a cycle between matches). *)
+          partially generalized regions after generalizing the root region, it implies
+          there exists suspended matches that were never scheduled (e.g. a cycle between matches). *)
     ; root : Type.region_node
     }
   [@@deriving sexp_of]
@@ -701,9 +721,9 @@ end = struct
            point the tree is in a valid state. *)
         finally ()
     in
-    (* Note when [rn] is the root of the traversal and it gets revisited 
-       by [finally ()], we need to regeneralize the region. In the nested case, this 
-       is ensured by the [loop ()] function that iterates over immediate descendants. 
+    (* Note when [rn] is the root of the traversal and it gets revisited
+       by [finally ()], we need to regeneralize the region. In the nested case, this
+       is ensured by the [loop ()] function that iterates over immediate descendants.
        But at the root, we need to ensure this with this while loop.  *)
     while Hashtbl.mem t.entered_map rn.id do
       visit rn
@@ -784,14 +804,12 @@ module Young_region = struct
   type t =
     { region : Type.region
     ; node : Type.region_node
-    ; path : Type.region_path (** A path to the current region *)
     ; mem : Type.t -> bool
       (** Returns [true] if given type is a member of the current region *)
     }
   [@@deriving sexp_of]
 
   let of_region_node region_node =
-    let path = Tree.Path.of_node region_node in
     let region = Region.Tree.region region_node in
     let mem =
       let set =
@@ -799,11 +817,7 @@ module Young_region = struct
       in
       fun type_ -> Hash_set.mem set (Type.id type_)
     in
-    { region; node = region_node; path; mem }
-  ;;
-
-  let min_region_node_by_level t r1 r2 =
-    if Tree.Path.compare_node_by_level t.path r1 r2 < 0 then r1 else r2
+    { region; node = region_node; mem }
   ;;
 end
 
@@ -812,17 +826,17 @@ module Guard_graph : sig
 
   val create : level:Tree.Level.t -> roots_and_guarded_partial_generics:Type.t list -> t
 
-  (** [never_realized t] returns a list of lists of types where each type is never realized. 
-      
-      A type is realized if it is unified with a concrete (non-variable) structure. A type is 
-      known to never be realized if it is in a cycle of the guard graph and an old variable is not 
+  (** [never_realized t] returns a list of lists of types where each type is never realized.
+
+      A type is realized if it is unified with a concrete (non-variable) structure. A type is
+      known to never be realized if it is in a cycle of the guard graph and an old variable is not
       reachable. *)
   val never_realized : t -> Type.t list list
 end = struct
   (* When generalizing the young region, we construct a guard graph of the young
-     region (and its children). Intuitively, this graph is a subgraph of the 
-     (implicit) global guard graph. 
-     
+     region (and its children). Intuitively, this graph is a subgraph of the
+     (implicit) global guard graph.
+
      This guard graph is used to compute the strongly connected components. *)
 
   module G = struct
@@ -868,7 +882,7 @@ end = struct
     let scc_roots = scc_leafs t in
     List.filter scc_roots ~f:(function
       | [ node ] ->
-        (* We want to filter out any old nodes. Old nodes will always be in 
+        (* We want to filter out any old nodes. Old nodes will always be in
            leaf SCCs of length 1 *)
         (match Type.level node with
          | None ->
@@ -959,7 +973,7 @@ let partial_copy ~state ~curr_region ~instance_id partial_type =
       (* Always copy the root structure of the partial type *)
       Type.same_class partial_type type_
       ||
-      (* Copy generics fully, partial generics are shallowly copied (only fresh vars) 
+      (* Copy generics fully, partial generics are shallowly copied (only fresh vars)
          if they're already part of this instance group *)
       match Type.status type_ with
       | Generic -> true
@@ -991,12 +1005,12 @@ let update_type_levels ~state (young_region : Young_region.t) =
   [%log.global.debug "Updating types" (young_region : Young_region.t)];
   let visited = Hash_set.create (module Identifier) in
   let rec loop type_ r =
-    (* Invariant: [r.level <= young_region.level] *)
+    (* Invariant: [r.level <= young_region.level]
+
+       This is guaranteed by the region invariant (scopes can only increase). *)
     [%log.global.debug "Visiting" (type_ : Type.t) (r : Type.sexp_identifier_region_node)];
-    assert (Tree.Path.mem young_region.path r);
     let r' = Type.region_exn ~here:[%here] type_ in
     [%log.global.debug "Region of type_" (r' : Type.sexp_identifier_region_node)];
-    assert (Tree.Path.mem young_region.path r');
     let id = Type.id type_ in
     if Hash_set.mem visited id
     then (
@@ -1007,7 +1021,11 @@ let update_type_levels ~state (young_region : Young_region.t) =
       Hash_set.add visited id;
       [%log.global.debug "Marked as visited"];
       (* Visiting and updating region *)
-      if Tree.Path.compare_node_by_level young_region.path r r' < 0
+      (* Invariant: [r] and [r'] lie on a given path from the root region.
+
+         This is guaranteed by scoping invariants. This invariant ensures that
+         these regions can be compared by levels. *)
+      if Tree.compare_node_by_level r r' < 0
       then (
         visit_region ~state r;
         Type.set_region type_ r;
@@ -1016,8 +1034,8 @@ let update_type_levels ~state (young_region : Young_region.t) =
       if not (young_region.mem type_)
       then (
         [%log.global.debug "Type not in young region" (id : Identifier.t)];
-        (* [type_] is in parent regions *)
-        assert (Tree.Level.(r'.level < young_region.node.level)))
+        (* [type_] is in parent or sibling regions *)
+        ())
       else (
         [%log.global.debug "Type in young region, visiting children" (id : Identifier.t)];
         (* [type_] is in current region *)
@@ -1074,8 +1092,8 @@ exception Rigid_variable_escape of (Range.t * Type.t)
 
 let scope_check_young_region (young_region : Young_region.t) =
   [%log.global.debug "Scope check young region" (young_region : Young_region.t)];
-  (* Iterate over rigid variables, if the level of the rigid variable is 
-     less than the young region level, then the rigid variable has escaped 
+  (* Iterate over rigid variables, if the level of the rigid variable is
+     less than the young region level, then the rigid variable has escaped
      it's scope *)
   let young_level = young_region.node.level in
   let { Region.rigid_vars; raise_scope_escape; _ } = young_region.region in
@@ -1111,7 +1129,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
          (* Register [type_] in the region [r] *)
          visit_region ~state r;
          Region.(register_type (Tree.region r) type_);
-         (* If the type is partial, we notify the instances and unify them with 
+         (* If the type is partial, we notify the instances and unify them with
             the ungeneralized partial type. *)
          Type.partial_ungeneralize type_ ~f:(fun instance_id instance ->
            let curr_region = Type.region_exn ~here:[%here] instance in
@@ -1123,7 +1141,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
        else (
          [%log.global.debug "Type is generic"];
          assert (Tree.Level.(r.level = young_level));
-         (* If the type is a partial instance and has instances, then we propagate 
+         (* If the type is a partial instance and has instances, then we propagate
             the structure. *)
          (match Type.status type_ with
           | Partial { kind = Instance; instances; _ } when not (Map.is_empty instances) ->
@@ -1134,7 +1152,7 @@ let generalize_young_region ~state (young_region : Young_region.t) =
          true)))
   in
   [%log.global.debug "Generics for young region" (generics : Type.t list)];
-  (* Generalizing a rigid variable flexizes it. We remove the variable 
+  (* Generalizing a rigid variable flexizes it. We remove the variable
      from [young_region.region.rigid_vars] to avoid unnecessary checks *)
   [%log.global.debug "Remove rigid vars from young region"];
   young_region.region.rigid_vars
