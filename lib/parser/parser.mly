@@ -1,11 +1,11 @@
 %{
 open Grace
-open Mlsus_ast 
+open Mlsus_ast
 open Ast_types
 open Ast_builder.Default
 
 (* A set of predefined operator names *)
-module Predef_names = struct 
+module Predef_names = struct
   let or_ ~range = var_name ~range "( || )"
   let and_ ~range = var_name ~range "( && )"
 
@@ -15,22 +15,22 @@ module Predef_names = struct
   let greater_than ~range = var_name ~range "( > )"
   let less_than_equal ~range = var_name ~range "( <= )"
   let greater_than_equal ~range = var_name ~range "( >= )"
-  
+
   let add ~range = var_name ~range "( + )"
   let sub ~range = var_name ~range "( - )"
   let mul ~range = var_name ~range "( * )"
-  let div ~range = var_name ~range "( / )" 
-  
+  let div ~range = var_name ~range "( / )"
+
   let neg ~range = var_name ~range "unary( - )"
-end 
+end
 
 let binary_op ~range ~op ~exp1 ~exp2 =
   Expression.(app ~range (app ~range (var ~range op) exp1) exp2)
 
-let unary_op ~range ~op ~exp = 
+let unary_op ~range ~op ~exp =
   Expression.(app ~range (var ~range op) exp)
 
-let range_of_lex lex = 
+let range_of_lex lex =
   Range.of_lex ?source:(Mlsus_source.get ()) lex
 %}
 
@@ -41,7 +41,7 @@ let range_of_lex lex =
 %left "&&"
 %left "=" "<>" "<" "<=" ">" ">="
 %left "+" "-"
-%left "*" "/" 
+%left "*" "/"
 %nonassoc prec_unary_op
 
 %start  parse_core_type parse_expression parse_structure
@@ -54,23 +54,23 @@ let range_of_lex lex =
 (** {1 Start Symbols} *)
 
 parse_structure:
-  str = structure; EOF 
+  str = structure; EOF
     { str }
 
 parse_expression:
-  exp = expression; EOF 
+  exp = expression; EOF
     { exp }
 
 parse_core_type:
-  type_ = core_type; EOF 
+  type_ = core_type; EOF
     { type_ }
 
-(** {2 Standard Library Extensions} 
+(** {2 Standard Library Extensions}
 
-    This section contains definitions of several generic parameterized rules that 
+    This section contains definitions of several generic parameterized rules that
     are useful for parsing mlsus. *)
 
-(** [seperated_nontrivial_list(sep, X)] parases a list containing at least two [X]s 
+(** [seperated_nontrivial_list(sep, X)] parases a list containing at least two [X]s
     separated by [sep]. *)
 separated_nontrivial_list(sep, X):
     x1 = X
@@ -82,24 +82,24 @@ separated_nontrivial_list(sep, X):
     ; xs = separated_nontrivial_list(sep, X)
       { x :: xs }
 
-(** [preceded_or_separated_nonempty_list(sep, X)] parses a non-emppty list of [X]s separated 
+(** [preceded_or_separated_nonempty_list(sep, X)] parses a non-emppty list of [X]s separated
     by [sep], optionally preceded by [sep]. *)
 %inline preceded_or_separated_nonempty_list(sep, X):
   ioption(sep); xs = separated_nonempty_list(sep, X)
     { xs }
 
 
-(** {3 Core Types} 
+(** {3 Core Types}
 
     This section contains the rules for parsing the grammar of core types:
     {v
-      tau ::=   
-        | 'a                (* variables *) 
+      tau ::=
+        | 'a                (* variables *)
         | tau -> tau        (* functions *)
         | tau * ... * tau   (* tuples *)
         | overline(tau) T   (* type constructors *)
-    v} 
-    
+    v}
+
     The grammar is {e stratified} to handle the precedence issues that arise. *)
 
 type_var_name:
@@ -116,7 +116,7 @@ type_name:
 
 arrow_type:
     type_ = tuple_type
-      { type_ }   
+      { type_ }
   | type1 = tuple_type
     ; "->"
     ; type2 = core_type
@@ -140,9 +140,9 @@ atom_type:
       { Type.constr ~range:(range_of_lex $loc) arg_types type_name }
 
 %inline type_argument_list:
-    (* empty *)   
+    (* empty *)
       { [] }
-  | type_ = atom_type 
+  | type_ = atom_type
       { [ type_ ] }
   | "("
     ; types = separated_nontrivial_list(",", core_type)
@@ -150,11 +150,11 @@ atom_type:
       { types }
 
 
-(** {4 Expressions and Patterns} 
+(** {4 Expressions and Patterns}
 
     This section contains the rules for parsing the grammar of expressions
     {v
-      e ::= 
+      e ::=
         | x                                 (* variable *)
         | const                             (* constants *)
         | uop e                             (* unary operator *)
@@ -171,21 +171,21 @@ atom_type:
         | e.l                               (* field *)
         | e; e                              (* sequence *)
         | (e : tau)                         (* type annotation *)
-    v} 
+    v}
 
-    Expressions also include cases, patterns and value bindings, given by the following 
+    Expressions also include cases, patterns and value bindings, given by the following
     grammars:
     {v
-      p ::= 
-        | x 
+      p ::=
+        | x
         | _
-        | p as x 
+        | p as x
         | K p?
         | { l1 = p1; ...; ln = pn }
         | (p1, ..., pn)
         | (p : tau)
 
-      c ::= p -> e 
+      c ::= p -> e
 
       vb ::= p = e
     v}
@@ -214,7 +214,7 @@ constant:
       { Const_unit }
 
 seq_expression:
-    exp = expression %prec prec_below_SEMI     
+    exp = expression %prec prec_below_SEMI
       { exp }
   | exp1 = expression
     ; ";"
@@ -222,7 +222,7 @@ seq_expression:
       { Expression.sequence ~range:(range_of_lex $loc) exp1 exp2 }
 
 expression:
-    exp = app_expression                                                                   
+    exp = app_expression
       { exp }
   | op = unary_op
     ; exp = expression %prec prec_unary_op
@@ -241,7 +241,7 @@ expression:
   | "fun"
     ; pats = nonempty_list(atom_pattern)
     ; "->"
-    ; exp = seq_expression 
+    ; exp = seq_expression
       { Expression.fun_ ~range:(range_of_lex $loc) pats exp }
   | "exists"
     ; "("
@@ -259,9 +259,9 @@ expression:
     ; "->"
     ; exp = seq_expression
         { Expression.forall ~range:(range_of_lex $loc) type_var_names exp }
-  | "match" 
-    ; exp = expression 
-    ; "with" 
+  | "match"
+    ; exp = expression
+    ; "with"
     ; cases = cases
       { Expression.match_ ~range:(range_of_lex $loc) exp ~with_:cases }
   | "let"
@@ -273,7 +273,7 @@ expression:
 app_expression:
     exp = atom_expression
       { exp }
-  | constr_name = constr_name 
+  | constr_name = constr_name
     ; arg_exp = atom_expression
       { Expression.constr ~range:(range_of_lex $loc) constr_name (Some arg_exp) }
   | exp1 = app_expression
@@ -281,7 +281,7 @@ app_expression:
       { Expression.app ~range:(range_of_lex $loc) exp1 exp2 }
 
 value_binding:
-  var_name = var_name 
+  var_name = var_name
   ; "="
   ; exp = seq_expression
     { value_binding ~range:(range_of_lex $loc) var_name exp }
@@ -301,11 +301,11 @@ case:
 record_assignment(X):
   label_name = label_name
   ; "="
-  ; x = X 
-    { (label_name, x) }    
+  ; x = X
+    { (label_name, x) }
 
 atom_expression:
-    const = constant 
+    const = constant
       { Expression.const ~range:(range_of_lex $loc) const }
   | var_name = var_name
       { Expression.var ~range:(range_of_lex $loc) var_name }
@@ -315,14 +315,18 @@ atom_expression:
     ; exps = separated_nontrivial_list(",", seq_expression)
     ; ")"
       { Expression.tuple ~range:(range_of_lex $loc) exps }
-  | "{" 
+  | "{"
     ; label_exps = separated_nonempty_list(";", record_assignment(expression))
     ; "}"
       { Expression.record ~range:(range_of_lex $loc) label_exps }
-  | exp = atom_expression 
-    ; "."  
+  | exp = atom_expression
+    ; "."
     ; label_name = label_name
       { Expression.field ~range:(range_of_lex $loc) exp label_name }
+  | exp = atom_expression
+    ; "."
+    ; index = "<int>"
+        { Expression.proj ~range:(range_of_lex $loc) exp index }
   | "("
     ; exp = seq_expression
     ; ":"
@@ -335,7 +339,7 @@ atom_expression:
       { exp }
 
 %inline unary_op:
-  "-" 
+  "-"
     { Predef_names.neg ~range:(range_of_lex $loc) }
 
 %inline bin_op:
@@ -348,7 +352,7 @@ atom_expression:
   | "*"
       { Predef_names.mul ~range:(range_of_lex $loc) }
   | ">"
-      { Predef_names.greater_than ~range:(range_of_lex $loc) }  
+      { Predef_names.greater_than ~range:(range_of_lex $loc) }
   | "<"
       { Predef_names.less_than ~range:(range_of_lex $loc) }
   | ">="
@@ -378,13 +382,13 @@ construct_pattern:
   | constr_name = constr_name
     ; arg_pat = pattern
       { Pattern.constr ~range:(range_of_lex $loc) constr_name (Some arg_pat) }
- 
+
 atom_pattern:
     const = constant
       { Pattern.const ~range:(range_of_lex $loc) const }
-  | "_"     
+  | "_"
       { Pattern.any ~range:(range_of_lex $loc) }
-  | var_name = var_name            
+  | var_name = var_name
       { Pattern.var ~range:(range_of_lex $loc) var_name }
   | constr_name = constr_name
       { Pattern.constr ~range:(range_of_lex $loc) constr_name None }
@@ -405,13 +409,13 @@ atom_pattern:
   | "("
     ; pat = pattern
     ; ")"
-      { pat }  
+      { pat }
 
 
-(** {5 Structures} 
+(** {5 Structures}
 
-    Structures are simply a list of type definitons, primitive declarations and 
-    value bindings. 
+    Structures are simply a list of type definitons, primitive declarations and
+    value bindings.
 *)
 
 core_scheme:
@@ -427,10 +431,10 @@ type_declarations:
   ; decls = separated_nonempty_list("and", type_declaration)
     { decls }
 
-type_declaration: 
-  params = type_param_list 
-  ; name = type_name 
-  ; kind = type_decl_kind 
+type_declaration:
+  params = type_param_list
+  ; name = type_name
+  ; kind = type_decl_kind
       { Structure.type_decl ~range:(range_of_lex $loc) ~name ~params kind }
 
 type_decl_kind:
@@ -450,10 +454,10 @@ constructor_declaration:
   ; arg = option(constructor_argument)
     { Structure.constr_decl ~name ~arg }
 
-label_declaration: 
-  name = label_name 
+label_declaration:
+  name = label_name
   ; ":"
-  ; arg = core_type 
+  ; arg = core_type
     { Structure.label_decl ~name ~arg }
 
 %inline constructor_argument:
@@ -462,9 +466,9 @@ label_declaration:
     { type_ }
 
 %inline type_param_list:
-    (* empty *)   
+    (* empty *)
       { [] }
-  | type_var_name = type_var_name 
+  | type_var_name = type_var_name
       { [ type_var_name ] }
   | "("
     ; type_var_names = separated_nontrivial_list(",", type_var_name)
@@ -472,9 +476,9 @@ label_declaration:
       { type_var_names }
 
 value_description:
-    name = var_name 
+    name = var_name
   ; ":"
-  ; scheme = core_scheme 
+  ; scheme = core_scheme
       { Structure.value_desc ~range:(range_of_lex $loc) ~name ~type_:scheme }
 
 structure_item:
@@ -486,7 +490,7 @@ structure_item:
       { Structure.primitive ~range:(range_of_lex $loc) value_desc }
   | type_decls = type_declarations
       { Structure.type_ ~range:(range_of_lex $loc) type_decls }
-  
+
 terminated_structure_item:
   str_item = structure_item
   ; ";;"

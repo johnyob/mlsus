@@ -38,7 +38,8 @@ module Transactional_store = struct
       { mutable contents : 'a (** The current (uncommitted) value *)
       ; mutable committed_contents : 'a (** The last committed value *)
       }
-    [@@deriving sexp]
+
+    let sexp_of_t sexp_of_a t = sexp_of_a t.contents
 
     type packed = Packed : 'a t -> packed [@@deriving sexp_of]
 
@@ -113,7 +114,16 @@ and 'a node =
   | Root of 'a root
   | Inner of 'a t
 
-and 'a t = 'a node Transactional_store.Ref.t [@@deriving sexp_of]
+and 'a t = 'a node Transactional_store.Ref.t
+
+let sexp_of_root sexp_of_a root = sexp_of_a root.value
+
+let rec sexp_of_node sexp_of_a node =
+  match node with
+  | Root root -> sexp_of_root sexp_of_a root
+  | Inner node -> sexp_of_t sexp_of_a node
+
+and sexp_of_t sexp_of_a t = Transactional_store.Ref.sexp_of_t (sexp_of_node sexp_of_a) t
 
 let invariant _ t =
   let rec loop t height =

@@ -49,9 +49,9 @@ let include_list =
 
 let include_option =
   {|
-    type 'a option = 
-      | None 
-      | Some of 'a 
+    type 'a option =
+      | None
+      | Some of 'a
     ;;
   |}
 ;;
@@ -60,10 +60,10 @@ let%expect_test "" =
   let str =
     include_fix
     ^ {|
-      let power = fix (fun power x n -> 
-          if n = 0 
+      let power = fix (fun power x n ->
+          if n = 0
             then 1
-            else x * power x (n - 1) 
+            else x * power x (n - 1)
         )
       ;;
     |}
@@ -81,13 +81,13 @@ let%expect_test "" =
       let even = fun n -> mod n 2 = 0;;
 
       let power = fix (fun power x n ->
-          if n = 1 
+          if n = 1
             then x
-            else if even n 
+            else if even n
               then power (x * x)  (n / 2)
               else x * power (x * x) (n / 2)
         )
-      ;; 
+      ;;
     |}
   in
   type_check_and_print str;
@@ -98,9 +98,9 @@ let%expect_test "" =
   let str =
     include_fix
     ^ {|
-      let sum = 
-        fix (fun sum n -> 
-          if n = 0 then 0 
+      let sum =
+        fix (fun sum n ->
+          if n = 0 then 0
           else n + sum (n - 1))
       ;;
     |}
@@ -133,9 +133,9 @@ let%expect_test "" =
       let mem = fix (fun mem t x equal ->
         match t with
         ( Nil -> false
-        | Cons (y, t) -> 
-          if equal x y then true 
-          else mem t x equal 
+        | Cons (y, t) ->
+          if equal x y then true
+          else mem t x equal
         ))
       ;;
     |}
@@ -149,12 +149,12 @@ let%expect_test "" =
     include_fix
     ^ include_list
     ^ {|
-      let zip = 
+      let zip =
         fix (fun zip t1 t2 ->
           match (t1, t2) with
           ( (Cons (x1, t1), Cons (x2, t2)) ->
-              Cons ((x1, x2), zip t1 t2) 
-          | _ -> Nil  
+              Cons ((x1, x2), zip t1 t2)
+          | _ -> Nil
           ))
       ;;
     |}
@@ -168,7 +168,7 @@ let%expect_test "" =
     include_fix
     ^ include_list
     ^ {|
-      let unzip = 
+      let unzip =
         fix (fun unzip t ->
           match t with
           ( Nil -> (Nil, Nil)
@@ -176,7 +176,7 @@ let%expect_test "" =
             let t1t2 = unzip t in
             match t1t2 with (
               (t1, t2) -> (Cons (x1, t1), Cons (x2, t2))
-            )   
+            )
           )
         )
       ;;
@@ -191,16 +191,16 @@ let%expect_test "" =
     include_fix
     ^ include_list
     ^ {|
-      external raise_no_more_coins : 'a. unit -> 'a;; 
-      
-      let change = 
+      external raise_no_more_coins : 'a. unit -> 'a;;
+
+      let change =
         fix (fun change till amt ->
           match (till, amt) with
           ( (_, 0) -> Nil
           | (Nil, _) -> raise_no_more_coins ()
           | (Cons (c, till), amt) ->
             if amt < c then change till amt
-            else Cons (c, change (Cons (c, till)) (amt - c) )     
+            else Cons (c, change (Cons (c, till)) (amt - c) )
           )
         )
       ;;
@@ -217,24 +217,24 @@ let%expect_test "" =
     ^ {|
       external append : 'a. 'a list -> 'a list -> 'a list;;
 
-      let change = 
+      let change =
         fix (fun change till amt ->
           match (till, amt) with
           ( (_, 0) -> Cons (Nil, Nil)
           | (Nil, _) -> Nil
           | (Cons (c, till), amt) ->
             if amt < c then change till amt
-            else 
-              let loop = fix (fun loop t -> 
+            else
+              let loop = fix (fun loop t ->
                   match t with
                   ( Nil -> Nil
                   | Cons (cs, css) -> Cons (Cons (c, cs), loop css)
                   )
                 )
               in
-                append 
+                append
                   (loop (change (Cons (c, till)) (amt - c)))
-                  (change till amt)  
+                  (change till amt)
           )
         )
       ;;
@@ -249,9 +249,9 @@ let%expect_test "" =
     include_fix
     ^ include_list
     ^ {|
-      let change = 
+      let change =
         fix (fun change till amt ->
-          let loop = fix 
+          let loop = fix
             (fun loop till amt chg chgs ->
               match (till, amt) with
               ( (_, 0) -> Cons (chg, chgs)
@@ -259,7 +259,7 @@ let%expect_test "" =
               | (Cons (c, till), amt) ->
                   if amt < 0 then chgs
                   else
-                    loop (Cons (c, till)) (amt - c) (Cons (c, chg)) (loop till amt chg chgs) 
+                    loop (Cons (c, till)) (amt - c) (Cons (c, chg)) (loop till amt chg chgs)
               )
             )
           in loop till amt Nil Nil
@@ -274,7 +274,7 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      type vehicle = 
+      type vehicle =
         | Bike
         | Motorbike
         | Car
@@ -283,8 +283,8 @@ let%expect_test "" =
 
       let m = Motorbike;;
 
-      let wheels = 
-        fun t -> 
+      let wheels =
+        fun t ->
           match t with
           ( Bike -> 2
           | Motorbike -> 2
@@ -301,14 +301,14 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      type vehicle = 
+      type vehicle =
         | Bike
         | Motorbike of int (* engine size in CCs *)
         | Car of bool (* true if a Reliant Robin *)
         | Lorry of int (* number of wheels *)
       ;;
 
-      let wheels = 
+      let wheels =
         fun t ->
           match t with
           ( Bike -> 2
@@ -341,18 +341,18 @@ let%expect_test "" =
     include_fix
     ^ include_list
     ^ {|
-      external raise_no_change : 'a. int -> 'a;; 
+      external raise_no_change : 'a. int -> 'a;;
       external try_with_no_change : 'a. (unit -> 'a) -> (int -> 'a) -> 'a;;
 
-      let change = 
+      let change =
         fix (fun change till amt ->
           match (till, amt) with
           ( (_, 0) -> Nil
           | (Nil, amt) -> raise_no_change amt
           | (Cons (c, till), amt) ->
-              if amt < c 
+              if amt < c
                 then raise_no_change amt
-                else try_with_no_change 
+                else try_with_no_change
                       (fun () -> Cons (c, change (Cons (c, till)) (amt - c)))
                       (fun _ -> change till amt)
           )
@@ -367,7 +367,7 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      type shape = 
+      type shape =
         | Null
         | Circle of int (* radius *)
         | Join of shape * shape
@@ -383,25 +383,25 @@ let%expect_test "" =
     include_fix
     ^ include_list
     ^ {|
-      type 'a tree = 
+      type 'a tree =
         | Lf
         | Br of 'a tree * 'a * 'a tree
       ;;
 
       external append : 'a. 'a list -> 'a list -> 'a list;;
 
-      let pre_order = 
+      let pre_order =
         fix (fun pre_order t ->
           match t with
           ( Lf -> Nil
           | Br (l, x, r) ->
-            append (Cons (x, Nil)) 
+            append (Cons (x, Nil))
               (append (pre_order l) (pre_order r))
           )
         )
       ;;
 
-      let in_order = 
+      let in_order =
         fix (fun in_order t ->
           match t with
           ( Lf -> Nil
@@ -412,23 +412,23 @@ let%expect_test "" =
         )
       ;;
 
-      let post_order = 
+      let post_order =
         fix (fun post_order t ->
           match t with
           ( Lf -> Nil
           | Br (l, x, r) ->
             append (post_order l)
-              ( append (post_order r) (Cons (x, Nil)) )  
+              ( append (post_order r) (Cons (x, Nil)) )
           )
         )
       ;;
 
       let in_order = fun t ->
-        let loop = 
+        let loop =
           fix (fun loop t acc ->
             match t with
             ( Lf -> acc
-            | Br (l, x, r) -> 
+            | Br (l, x, r) ->
               loop l (Cons (x, loop r acc))
             )
           )
@@ -436,7 +436,7 @@ let%expect_test "" =
       ;;
 
       let pre_order = fun t ->
-        let loop = 
+        let loop =
           fix (fun loop t acc ->
             match t with
             ( Lf -> acc
@@ -448,12 +448,12 @@ let%expect_test "" =
       ;;
 
       let post_order = fun t ->
-        let loop = 
+        let loop =
           fix (fun loop t acc ->
             match t with
             ( Lf -> acc
             | Br (l, x, r) ->
-              loop l (loop r (Cons (x, acc)))  
+              loop l (loop r (Cons (x, acc)))
             )
           )
         in loop t
@@ -468,25 +468,25 @@ let%expect_test "" =
   let str =
     include_list
     ^ {|
-      let a1 = 
+      let a1 =
         Cons (fun n -> n * 2, Cons (fun n -> n * 3, Cons (fun n -> n + 1, Nil)))
       ;;
 
-      let a2 = 
+      let a2 =
         fun n -> n * 2
       ;;
 
-      let a3 = 
+      let a3 =
         (fun n -> n * 2) 17
       ;;
 
       let double = fun n -> n * 2;;
 
-      let a4 = 
+      let a4 =
         fun x -> match x with (0 -> true | _ -> false)
       ;;
 
-      let is_zero = 
+      let is_zero =
         fun x -> match x with (0 -> true | _ -> false)
       ;;
     |}
@@ -504,7 +504,7 @@ let%expect_test "" =
       external hd : 'a. 'a list -> 'a;;
       external tl : 'a. 'a list -> 'a list;;
 
-      let transpose = 
+      let transpose =
         fix (fun transpose t ->
           match t with
           ( Cons (Nil, _) -> Nil
@@ -514,7 +514,7 @@ let%expect_test "" =
         )
       ;;
 
-      let dot_product = 
+      let dot_product =
         fix (fun dot_product xs ys ->
           match (xs, ys) with
           ( (Nil, Nil) -> 0
@@ -525,7 +525,7 @@ let%expect_test "" =
       ;;
 
 
-      let product = 
+      let product =
         fun a b ->
           let c = transpose b in
           map (fun rows -> map (dot_product rows) c) a
@@ -540,25 +540,25 @@ let%expect_test "" =
   let str =
     include_fix
     ^ {|
-      type 'a tree = 
+      type 'a tree =
         | Lf
         | Br of 'a tree * 'a * 'a tree
       ;;
 
-      let cons = 
+      let cons =
         fix (fun cons t x ->
           match t with
           ( Lf -> Br (Lf, x, Lf)
           | Br (l, y, r) ->
-              Br (cons l y, x, r)  
+              Br (cons l y, x, r)
           )
         )
       ;;
-      
+
       external invalid_arg : 'a. unit -> 'a;;
 
       let uncons =
-        fix (fun uncons t -> 
+        fix (fun uncons t ->
           match t with
           ( Lf -> invalid_arg ()
           | Br (Lf, x, Lf) -> (x, Lf)
@@ -582,7 +582,7 @@ let%expect_test "" =
 
       let even = fun n -> mod n 2 = 0;;
 
-      let nth = 
+      let nth =
         fix (fun nth t n ->
           match (t, n) with
           ( (Lf, _) -> invalid_arg ()
@@ -604,7 +604,7 @@ let%expect_test "" =
     include_fix
     ^ include_list
     ^ {|
-      type 'a tree = 
+      type 'a tree =
         | Lf
         | Br of 'a tree * 'a * 'a tree
       ;;
@@ -644,14 +644,14 @@ let%expect_test "" =
         )
       ;;
 
-      let bfs = 
-        fix (fun bfs q -> 
+      let bfs =
+        fix (fun bfs q ->
           if is_empty q then Nil
           else
             match hd q with
             ( Lf -> bfs (dequeue q)
             | Br (l, x, r) ->
-              Cons (x, bfs (enqueue (enqueue (dequeue q) l) r) ) 
+              Cons (x, bfs (enqueue (enqueue (dequeue q) l) r) )
             )
         )
       ;;
@@ -666,7 +666,7 @@ let%expect_test "" =
     include_fix
     ^ include_list
     ^ {|
-      type 'a seq = 
+      type 'a seq =
         | Seq_nil
         | Seq_cons of 'a * (unit -> 'a seq)
       ;;
@@ -696,16 +696,16 @@ let%expect_test "" =
         )
       ;;
 
-      let map = 
+      let map =
         fix (fun map f t ->
           match t with
           ( Seq_nil -> Seq_nil
           | Seq_cons (x, tf) -> Seq_cons (f x, fun () -> map f (tf ()))
-          ) 
+          )
         )
       ;;
 
-      let filter = 
+      let filter =
         fix (fun filter f t ->
           match t with
           ( Seq_nil -> Seq_nil
@@ -713,34 +713,34 @@ let%expect_test "" =
               if f x then
                 Seq_cons (x, fun () -> filter f (tf ()))
               else
-                filter f (tf ())   
+                filter f (tf ())
           )
         )
       ;;
 
-      let append = 
+      let append =
         fix (fun append t1 t2 ->
           match t1 with
           ( Seq_nil -> t2
           | Seq_cons (x, t1f) ->
-              Seq_cons (x, fun () -> append (t1f ()) t2)  
-          ) 
-        )
-      ;;
-
-      let interleave = 
-        fix (fun interleave t1 t2 ->
-          match t1 with
-          ( Seq_nil -> t2
-          | Seq_cons (x, t1f) ->
-              Seq_cons (x, fun () -> interleave t2 (t1f ()))  
+              Seq_cons (x, fun () -> append (t1f ()) t2)
           )
         )
       ;;
 
-      let binary_string = 
+      let interleave =
+        fix (fun interleave t1 t2 ->
+          match t1 with
+          ( Seq_nil -> t2
+          | Seq_cons (x, t1f) ->
+              Seq_cons (x, fun () -> interleave t2 (t1f ()))
+          )
+        )
+      ;;
+
+      let binary_string =
         fix (fun binary_string bits ->
-          Seq_cons (bits, fun () -> 
+          Seq_cons (bits, fun () ->
             interleave
               (binary_string (Cons (0, bits)))
               (binary_string (Cons (1, bits))))
@@ -820,13 +820,13 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      type t = 
+      type t =
         | A
-      ;; 
+      ;;
 
-      type u = 
+      type u =
         | A
-      ;; 
+      ;;
 
       let x = (A : t) ;;
       let y = (A : u) ;;
@@ -839,13 +839,13 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      type t = 
+      type t =
         | A
-      ;; 
+      ;;
 
-      type u = 
+      type u =
         | A
-      ;; 
+      ;;
 
       let z = A ;;
   |}
@@ -856,16 +856,16 @@ let%expect_test "" =
 
 let%expect_test "" =
   let str =
-    {|    
-      type r = 
-        | K of int 
-      ;; 
+    {|
+      type r =
+        | K of int
+      ;;
 
-      type s = 
-        | K of int 
-      ;; 
+      type s =
+        | K of int
+      ;;
 
-      let a = 
+      let a =
         fun old ->
           let g = fun x -> 1 + old (K x) in
           (g 0, (old : r -> int))
@@ -878,16 +878,16 @@ let%expect_test "" =
 
 let%expect_test "" =
   let str =
-    {|    
-      type m = 
-        | L 
-      ;; 
+    {|
+      type m =
+        | L
+      ;;
 
-      type n = 
-        | L 
-      ;; 
+      type n =
+        | L
+      ;;
 
-      let x1 = (fun (z : m) -> 1) L ;; 
+      let x1 = (fun (z : m) -> 1) L ;;
 
       let y1 = fun z -> (z : m -> int) L ;;
 
@@ -901,18 +901,18 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      type m = 
-        | L 
+      type m =
+        | L
       ;;
 
-      type n = 
-        | L 
-      ;; 
+      type n =
+        | L
+      ;;
 
-      let good = 
-        let f = fun x -> match x with (L -> 1) in 
+      let good =
+        let f = fun x -> match x with (L -> 1) in
         f (L : m)
-      ;; 
+      ;;
     |}
   in
   type_check_and_print str;
@@ -922,7 +922,7 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      let id = fun x -> x ;; 
+      let id = fun x -> x ;;
     |}
   in
   (* Show that stdlib is not added to generated constraint *)
@@ -950,28 +950,28 @@ let%expect_test "" =
                 ((start 25) (stop 26)
                  (source
                   (Reader
-                   ((id 0) (name (expect_test.ml)) (length 35)
+                   ((id 0) (name (expect_test.ml)) (length 34)
                     (unsafe_get <fun>))))))))
              ((start 20) (stop 21)
               (source
                (Reader
-                ((id 0) (name (expect_test.ml)) (length 35) (unsafe_get <fun>)))))))))
+                ((id 0) (name (expect_test.ml)) (length 34) (unsafe_get <fun>)))))))))
          ((start 16) (stop 26)
           (source
            (Reader
-            ((id 0) (name (expect_test.ml)) (length 35) (unsafe_get <fun>)))))))
+            ((id 0) (name (expect_test.ml)) (length 34) (unsafe_get <fun>)))))))
        (type_ (Var ((id 0) (name Type.Var)))))
       True)
      ((start 7) (stop 26)
       (source
-       (Reader ((id 0) (name (expect_test.ml)) (length 35) (unsafe_get <fun>))))))
+       (Reader ((id 0) (name (expect_test.ml)) (length 34) (unsafe_get <fun>))))))
     Well typed :)
     |}]
 ;;
 
 let include_mr_ms_records =
   {|
-    type mr = { lbl : int };; 
+    type mr = { lbl : int };;
     type ms = { lbl : bool };;
   |}
 ;;
@@ -979,10 +979,10 @@ let include_mr_ms_records =
 let%expect_test "" =
   let str =
     {|
-      let magic = 
-        forall (type 'a 'b) -> 
+      let magic =
+        forall (type 'a 'b) ->
           (fun x -> x : 'a -> 'b)
-      ;; 
+      ;;
     |}
   in
   type_check_and_print str;
@@ -998,10 +998,10 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      let escape = fun f -> 
-        forall (type 'a) -> 
+      let escape = fun f ->
+        forall (type 'a) ->
           (f : 'a -> 'a)
-      ;; 
+      ;;
     |}
     |> Dedent.string
   in
@@ -1026,7 +1026,7 @@ let%expect_test "" =
   let str =
     {|
       let escape = fun x ->
-        forall (type 'a) -> 
+        forall (type 'a) ->
           (x : 'a)
       ;;
     |}
@@ -1052,9 +1052,9 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      let x = 
+      let x =
         (forall (type 'a) -> fun (x : 'a) -> (x : 'a)) ()
-      ;; 
+      ;;
     |}
   in
   type_check_and_print str;
@@ -1065,14 +1065,14 @@ let%expect_test "" =
   let str =
     include_mr_ms_records
     ^ {|
-      let before_a = ({ lbl = 3 } : mr);; 
-      
-      let a = 
-        let x = ({ lbl = 3 } : mr) in 
-        x.lbl 
-      ;; 
+      let before_a = ({ lbl = 3 } : mr);;
 
-      let after_a = 
+      let a =
+        let x = ({ lbl = 3 } : mr) in
+        x.lbl
+      ;;
+
+      let after_a =
         let x = ({ lbl = 3 } : mr) in
         ({ lbl = x.lbl } : mr)
       ;;
@@ -1085,9 +1085,9 @@ let%expect_test "" =
 let%expect_test "" =
   let str =
     {|
-      let x = 
+      let x =
         (forall (type 'a) -> ((fun x -> fun y -> y) (fun x -> x) : 'a -> 'a))
-      ;; 
+      ;;
     |}
   in
   type_check_and_print str;
@@ -1099,17 +1099,17 @@ let%expect_test "" =
     include_mr_ms_records
     ^ include_ref
     ^ {|
-      let b = 
-        let x = (create_ref { lbl = 3 } : mr ref) in 
+      let b =
+        let x = (create_ref { lbl = 3 } : mr ref) in
         set_ref x { lbl = 4 }
-      ;; 
+      ;;
 
-      let c = 
-        let x = (create_ref { lbl = 3 } : mr ref) in 
+      let c =
+        let x = (create_ref { lbl = 3 } : mr ref) in
         (get_ref x).lbl
-      ;; 
+      ;;
 
-      let f = 
+      let f =
         let x = (create_ref { lbl = 3 } : mr ref) in
         (ref_repr x).contents.lbl
       ;;
@@ -1124,26 +1124,26 @@ let%expect_test "" =
     include_mr_ms_records
     ^ include_ref
     ^ {|
-      let g = fun (x : mr) -> 
+      let g = fun (x : mr) ->
         match x with ( { lbl = 1 } -> () )
-      ;; 
+      ;;
 
-      let h = fun x -> 
+      let h = fun x ->
         match x with (
-        | (_ : mr) -> () 
+        | (_ : mr) -> ()
         | { lbl = 1 } -> ()
         )
-      ;; 
+      ;;
 
       let i = fun x ->
         match x with (
-        | { lbl = 1 } -> () 
+        | { lbl = 1 } -> ()
         | (_ : mr) -> ()
         )
       ;;
 
-      let l = fun (x : mr ref) -> 
-        match (ref_repr x) with 
+      let l = fun (x : mr ref) ->
+        match (ref_repr x) with
         ( { contents = { lbl = 1 } } -> () )
       ;;
     |}
@@ -1157,10 +1157,10 @@ let%expect_test "" =
     include_mr_ms_records
     ^ include_ref
     ^ {|
-      let m = fun x -> 
-        match x with 
+      let m = fun x ->
+        match x with
         ( { contents = { lbl = _ } } -> () )
-      ;; 
+      ;;
     |}
   in
   type_check_and_print str;
@@ -1172,27 +1172,10 @@ let%expect_test "" =
     include_mr_ms_records
     ^ include_ref
     ^ {|
-      let n = fun x -> 
-        match x with 
+      let n = fun x ->
+        match x with
         ( (_ : mr ref_repr) -> ()
-        | { contents = { lbl = _ } } -> () 
-        )
-      ;; 
-    |}
-  in
-  type_check_and_print str;
-  [%expect {| Well typed :) |}]
-;;
-
-let%expect_test "" =
-  let str =
-    include_mr_ms_records
-    ^ include_ref
-    ^ {|
-      let o = fun x -> 
-        match x with 
-        ( (_ : mr ref_repr) -> ()
-        | { contents = { lbl = _ } } -> () 
+        | { contents = { lbl = _ } } -> ()
         )
       ;;
     |}
@@ -1206,26 +1189,43 @@ let%expect_test "" =
     include_mr_ms_records
     ^ include_ref
     ^ {|
-      let r = fun arg -> 
-        match arg with ( (x : mr ref) -> (get_ref x).lbl )
-      ;; 
+      let o = fun x ->
+        match x with
+        ( (_ : mr ref_repr) -> ()
+        | { contents = { lbl = _ } } -> ()
+        )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
 
-      let s = fun arg -> 
-        match arg with ( 
+let%expect_test "" =
+  let str =
+    include_mr_ms_records
+    ^ include_ref
+    ^ {|
+      let r = fun arg ->
+        match arg with ( (x : mr ref) -> (get_ref x).lbl )
+      ;;
+
+      let s = fun arg ->
+        match arg with (
           (x : mr ref) -> set_ref x { lbl = 4 }
         )
-      ;; 
+      ;;
 
-      let t = fun arg -> 
-        match (ref_repr arg) with 
-        ( ({ contents = { lbl = _ } } : mr ref_repr) -> 
-            set_ref arg { lbl = 4 } 
+      let t = fun arg ->
+        match (ref_repr arg) with
+        ( ({ contents = { lbl = _ } } : mr ref_repr) ->
+            set_ref arg { lbl = 4 }
         )
       ;;
 
-      let u = fun arg -> 
-        match (ref_repr arg) with 
-        ( ({ contents = { lbl = _ } } : mr ref_repr) -> 
+      let u = fun arg ->
+        match (ref_repr arg) with
+        ( ({ contents = { lbl = _ } } : mr ref_repr) ->
             (get_ref arg).lbl
         )
       ;;
@@ -1237,14 +1237,14 @@ let%expect_test "" =
 
 let include_mr_ms_constrs =
   {|
-    type mr = 
-      | A 
-      | B 
-    ;; 
+    type mr =
+      | A
+      | B
+    ;;
 
-    type ms = 
-      | A 
-      | B 
+    type ms =
+      | A
+      | B
     ;;
   |}
 ;;
@@ -1254,14 +1254,14 @@ let%expect_test "" =
     include_mr_ms_constrs
     ^ include_ref
     ^ {|
-      let before_a = (A : mr);; 
-      
-      let a = 
-        let x = (A : mr) in 
-        x
-      ;; 
+      let before_a = (A : mr);;
 
-      let b = 
+      let a =
+        let x = (A : mr) in
+        x
+      ;;
+
+      let b =
         let x = (create_ref A : mr ref) in
         set_ref x B
       ;;
@@ -1276,23 +1276,23 @@ let%expect_test "" =
     include_mr_ms_constrs
     ^ include_ref
     ^ {|
-      let g = fun (x : mr) -> 
-        match x with 
-        ( A -> () 
+      let g = fun (x : mr) ->
+        match x with
+        ( A -> ()
         | B -> ()
         )
       ;;
 
-      let h = fun x -> 
-        match x with 
-        ( (A : mr) -> () 
+      let h = fun x ->
+        match x with
+        ( (A : mr) -> ()
         | B -> ()
         )
       ;;
 
-      let i = fun x -> 
-        match x with 
-        ( A -> () 
+      let i = fun x ->
+        match x with
+        ( A -> ()
         | (B : mr) -> ()
         )
       ;;
@@ -1307,9 +1307,9 @@ let%expect_test "" =
     include_mr_ms_constrs
     ^ include_ref
     ^ {|
-      let l = fun (x : mr ref) -> 
-        match (ref_repr x) with 
-        ( { contents = A } -> () 
+      let l = fun (x : mr ref) ->
+        match (ref_repr x) with
+        ( { contents = A } -> ()
         | { contents = B } -> ()
         )
       ;;
@@ -1324,9 +1324,9 @@ let%expect_test "" =
     include_mr_ms_constrs
     ^ include_ref
     ^ {|
-      let m = fun x -> 
-        match (ref_repr x) with 
-        ( { contents = A } -> () 
+      let m = fun x ->
+        match (ref_repr x) with
+        ( { contents = A } -> ()
         | { contents = B } -> ()
         )
       ;;
@@ -1341,16 +1341,16 @@ let%expect_test "" =
     include_mr_ms_constrs
     ^ include_ref
     ^ {|
-      let n = fun x -> 
-        match (ref_repr x) with 
-        ( (_ : mr ref_repr) -> () 
+      let n = fun x ->
+        match (ref_repr x) with
+        ( (_ : mr ref_repr) -> ()
         | { contents = A } -> ()
         )
       ;;
 
-      let o = fun x -> 
-        match (ref_repr x) with 
-        ( (_ : mr ref_repr) -> () 
+      let o = fun x ->
+        match (ref_repr x) with
+        ( (_ : mr ref_repr) -> ()
         | { contents = A } -> ()
         )
       ;;
@@ -1365,8 +1365,8 @@ let%expect_test "" =
     include_mr_ms_constrs
     ^ include_ref
     ^ {|
-      let s = fun arg -> 
-        match arg with 
+      let s = fun arg ->
+        match arg with
         ( (_ : mr ref) -> set_ref arg A )
       ;;
     |}
@@ -1380,11 +1380,52 @@ let%expect_test "" =
     include_mr_ms_constrs
     ^ include_ref
     ^ {|
-      let t = fun arg -> 
-        match (ref_repr arg) with 
-        ( ({ contents = A } : mr ref_repr) -> 
+      let t = fun arg ->
+        match (ref_repr arg) with
+        ( ({ contents = A } : mr ref_repr) ->
             set_ref arg B
         )
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let xs = (1, 2, 3);;
+
+      let x3 = xs.3;;
+
+      let x3' = (1, 2, 3).3;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let f = fun x ->
+        let result = x.2 in
+        let useless = (x : int * int) in
+        result
+      ;;
+    |}
+  in
+  type_check_and_print str;
+  [%expect {| Well typed :) |}]
+;;
+
+let%expect_test "" =
+  let str =
+    {|
+      let g =
+        let f = fun x -> x.1 in
+        f (1, 2)
       ;;
     |}
   in

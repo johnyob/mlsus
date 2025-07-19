@@ -562,6 +562,36 @@ module Expression = struct
       infer_exps ~env exps
       @@ fun (exp_types, c) ->
       Type.(var exp_type =~ tuple (List.map ~f:var exp_types)) &~ c
+    | Exp_proj (exp', index) ->
+      exists' ~id_source
+      @@ fun tuple_type ->
+      let c1 = infer_exp ~env exp' tuple_type in
+      c1
+      &~ match_
+           tuple_type
+           ~closure:[ `Type tuple_type; `Type exp_type ]
+           ~with_:(function
+             | Tuple comp_types ->
+               (match List.nth comp_types (index - 1) with
+                | None ->
+                  let arity = List.length comp_types in
+                  ff (Mlsus_error.projection_out_of_bounds ~range:exp.range ~index ~arity)
+                | Some comp_type -> Type.(var exp_type =~ var comp_type))
+             | (Arrow _ | Constr _) as matchee ->
+               let type_head =
+                 match matchee with
+                 | Arrow _ -> `Arrow
+                 | Constr _ -> `Constr
+                 | _ -> assert false
+               in
+               ff
+                 (Mlsus_error.disambiguation_tuple_mismatched_type
+                    ~range:exp.range
+                    ~type_head))
+           ~else_:(fun () ->
+             exists_many' ~id_source index
+             @@ fun comp_types ->
+             Type.(var tuple_type =~ tuple (List.map ~f:var comp_types)))
     | Exp_if_then_else (if_exp, then_exp, else_exp) ->
       exists' ~id_source
       @@ fun if_type ->
