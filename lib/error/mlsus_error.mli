@@ -11,9 +11,9 @@ val raise : t -> 'a
 include Pretty_printer.S with type t := t
 
 (** [handle_uncaught ~exit f] catches [T err] escaping [f] and prints the error
-    message to stderr. 
-    
-    Exits with return code 1 if [exit] is [true] and [f] is not running 
+    message to stderr.
+
+    Exits with return code 1 if [exit] is [true] and [f] is not running
     in an expect test, and returns unit otherwise. *)
 val handle_uncaught : exit:bool -> (unit -> unit) -> unit
 
@@ -62,6 +62,12 @@ val disambiguation_mismatched_type
   -> type_head:[ `Tuple | `Arrow | `Rigid_var ]
   -> t
 
+val disambiguation_tuple_mismatched_type
+  :  range:Range.t
+  -> type_head:[ `Constr | `Arrow | `Rigid_var ]
+  -> t
+
+val projection_out_of_bounds : range:Range.t -> arity:int -> index:int -> t
 val ambiguous_label : range:Range.t -> t
 val rigid_variable_escape : range:Range.t -> t
 

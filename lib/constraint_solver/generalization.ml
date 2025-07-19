@@ -428,6 +428,7 @@ module S = struct
   let fold t ~init ~f = Inner.fold t.inner ~init ~f
 
   let merge ~ctx ~create:create_type ~unify ~type1 ~type2 t1 t2 =
+    [%log.global.debug "Merging" (t1.id : Identifier.t) (t2.id : Identifier.t)];
     let create inner =
       let region_node = ctx.curr_region in
       let type_ = create_type (create ~id_source:ctx.id_source ~region_node inner) in
@@ -606,7 +607,10 @@ module Generalization_tree : sig
   val num_partially_generalized_regions : t -> int
 end = struct
   type t =
-    { entered_map : (Identifier.t, (Identifier.t, Type.region_node) Hashtbl.t) Hashtbl.t
+    { entered_map :
+        ( Identifier.t
+          , (Identifier.t, Type.sexp_identifier_region_node) Hashtbl.t )
+          Hashtbl.t
       (** Maps node identifiers to immediate entered descendants *)
     ; mutable num_partially_generalized_regions : int
       (** Tracks the partially generalized regions. If there are remaining
@@ -814,8 +818,8 @@ module Unify = Type.Make_unify (S)
 
 module Young_region = struct
   type t =
-    { region : Type.region
-    ; node : Type.region_node
+    { node : Type.region_node
+    ; region : (Type.region[@sexp.opaque])
     ; mem : Type.t -> bool
       (** Returns [true] if given type is a member of the current region *)
     }

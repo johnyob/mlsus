@@ -41,6 +41,8 @@ let create_node ~id_source ~parent value =
 ;;
 
 let rec nearest_common_ancestor t1 t2 =
+  [%log.global.debug
+    "nearest common ancestor" (t1.id : Identifier.t) (t2.id : Identifier.t)];
   if Identifier.(t1.id = t2.id)
   then t1
   else if Level.(t1.level < t2.level)

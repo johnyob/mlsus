@@ -19,6 +19,7 @@ module Code = struct
     | Type_mismatch
     | Rigid_variable_escape
     | Ambiguous_label
+    | Projection_out_of_bounds
     | Unknown
   [@@deriving sexp]
 
@@ -36,6 +37,7 @@ module Code = struct
     | Type_mismatch -> "E011"
     | Rigid_variable_escape -> "E012"
     | Ambiguous_label -> "E013"
+    | Projection_out_of_bounds -> "E014"
     | Unknown -> "E???"
   ;;
 end
@@ -265,6 +267,33 @@ let disambiguation_mismatched_type ~range ~type_head =
   in
   Diagnostic.createf
     ~labels:[ Label.primaryf ~range "expected a type constructor, found a %s" head_name ]
+    ~code:Code.Type_mismatch
+    Error
+    "mismatched type"
+;;
+
+let projection_out_of_bounds ~range ~arity ~index =
+  let open Diagnostic in
+  Diagnostic.createf
+    ~labels:[ Label.primaryf ~range "unknown field" ]
+    ~code:Code.Projection_out_of_bounds
+    Error
+    "no field %a in tuple of arity %d"
+    (pp_quoted Fmt.int)
+    index
+    arity
+;;
+
+let disambiguation_tuple_mismatched_type ~range ~type_head =
+  let open Diagnostic in
+  let head_name =
+    match type_head with
+    | `Constr -> "type constructor"
+    | `Arrow -> "function type"
+    | `Rigid_var -> "polymorphic variable"
+  in
+  Diagnostic.createf
+    ~labels:[ Label.primaryf ~range "expected a tuple, found a %s" head_name ]
     ~code:Code.Type_mismatch
     Error
     "mismatched type"

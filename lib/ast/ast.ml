@@ -48,6 +48,7 @@ and expression_desc =
   | Exp_constr of Constructor_name.With_range.t * expression option
   | Exp_record of (Label_name.With_range.t * expression) list
   | Exp_field of expression * Label_name.With_range.t
+  | Exp_proj of expression * int
   | Exp_tuple of expression list
   | Exp_match of expression * case list
   | Exp_if_then_else of expression * expression * expression

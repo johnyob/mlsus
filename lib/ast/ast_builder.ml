@@ -61,6 +61,7 @@ module type S = sig
     val record : ((Label_name.With_range.t * expression) list -> expression) with_range_fn
     val field : (expression -> Label_name.With_range.t -> expression) with_range_fn
     val tuple : (expression list -> expression) with_range_fn
+    val proj : (expression -> int -> expression) with_range_fn
     val match_ : (expression -> with_:case list -> expression) with_range_fn
 
     val if_
@@ -160,6 +161,7 @@ module Default : S with type 'a with_range_fn := range:Range.t -> 'a = struct
     let record ~range label_exps = With_range.create ~range @@ Exp_record label_exps
     let field ~range exp label = With_range.create ~range @@ Exp_field (exp, label)
     let tuple ~range exps = With_range.create ~range @@ Exp_tuple exps
+    let proj ~range exp index = With_range.create ~range @@ Exp_proj (exp, index)
     let match_ ~range exp ~with_ = With_range.create ~range @@ Exp_match (exp, with_)
 
     let if_ ~range exp ~then_ ~else_ =
@@ -238,6 +240,7 @@ module Make (R : Range) : S with type 'a with_range_fn := 'a = struct
     let record = Expression.record ~range:R.v
     let field = Expression.field ~range:R.v
     let tuple = Expression.tuple ~range:R.v
+    let proj = Expression.proj ~range:R.v
     let match_ = Expression.match_ ~range:R.v
     let if_ = Expression.if_ ~range:R.v
     let sequence = Expression.sequence ~range:R.v
