@@ -20,7 +20,7 @@ To build `mlsus` from source, follow these steps:
 ❯ make
 ```
 
-We strongly recommend using Nix. Nevertheless, `mlsus` can be built using `opam` and `dune` directly. 
+We strongly recommend using Nix. Nevertheless, `mlsus` can be built using `opam` and `dune` directly.
 Proceed by creating a fresh opam switch by running the following:
 ```sh
 # Clone the repository
@@ -46,7 +46,7 @@ To get started with type checking some examples, run the command below:
 For an overview of commands, run:
 ```
 ❯ dune exec mlsus -- help
-mlsus                                 
+mlsus
 
   mlsus SUBCOMMAND
 
@@ -62,32 +62,6 @@ mlsus
   help                       . explain a given subcommand (perhaps recursively)
 ```
 
-## Building the Specification
-
-To build the `mlsus` specification from source using Nix, follow 
-these steps:
-```sh
-❯ nix develop
-❯ make -C report
-```
-
-We strongly recommend using Nix. Nevertheless, the `mlsus` report can be built using `typst` directly. 
-See the [Typst docs](https://github.com/typst/typst?tab=readme-ov-file#installation) for instructions 
-for your system. After installing `typst`, simply run:
-```sh
-❯ make -C report
-``` 
-
-### Contributing to the Specification
-
-> [!TIP]
-> Use [Tinymist](https://github.com/Myriad-Dreamin/tinymist), an integrated language server for Typst. See the [Tinymist Docs](https://github.com/Myriad-Dreamin/tinymist?tab=readme-ov-file#installation) for instructions for your editor.
-
-To get started with writing / modifying the `mlsus` specification, run the command below:
-```sh
-❯ make -C report watch
-```
-
-## License 
+## License
 
 This project is licensed under the GNU GPL v3.0 license.
