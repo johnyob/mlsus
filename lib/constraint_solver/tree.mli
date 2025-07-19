@@ -34,19 +34,5 @@ val create_node : id_source:Identifier.source -> parent:'a node -> 'a -> 'a node
 (** [nearest_common_ancestor n1 n2] returns the nearest common ancestor of two nodes in a tree *)
 val nearest_common_ancestor : 'a node -> 'a node -> 'a node
 
-module Path : sig
-  (** A (linear) path in the tree from the root to a given node *)
-  type 'a t [@@deriving sexp_of]
-
-  (** [of_node n] returns a path from the tree root to the node [n] *)
-  val of_node : 'a node -> 'a t
-
-  (** [compare_node_by_level p] is a total ordering on nodes in the path [p] *)
-  val compare_node_by_level : 'a t -> 'a node -> 'a node -> int
-
-  (** [mem p n] returns whether the node [n] is in the path [p] *)
-  val mem : 'a t -> 'a node -> bool
-
-  (** [dst p] returns the destination node of the path [p] *)
-  val dst : 'a t -> 'a node
-end
+(** [compare_node_by_level n1 n2] is [Level.compare n1.level n2.level]. *)
+val compare_node_by_level : 'a node -> 'a node -> int

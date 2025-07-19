@@ -54,36 +54,4 @@ let rec nearest_common_ancestor t1 t2 =
       (Option.value_exn ~here:[%here] t2.parent))
 ;;
 
-module Path = struct
-  type 'a t =
-    { dst : 'a node
-    ; compare_node_by_level : 'a node -> 'a node -> int
-    ; mem : 'a node -> bool
-    }
-  [@@deriving sexp_of]
-
-  let of_node dst =
-    let node_by_level = Hashtbl.create (module Level) in
-    let rec populate_levels node =
-      Hashtbl.set node_by_level ~key:node.level ~data:node;
-      match node.parent with
-      | None -> ()
-      | Some parent_node -> populate_levels parent_node
-    in
-    populate_levels dst;
-    let mem node =
-      match Hashtbl.find_exn node_by_level node.level with
-      | exception Not_found_s _ -> false
-      | node' -> Identifier.(node.id = node'.id)
-    in
-    let compare_node_by_level n1 n2 =
-      assert (mem n1 && mem n2);
-      Level.compare n1.level n2.level
-    in
-    { dst; mem; compare_node_by_level }
-  ;;
-
-  let compare_node_by_level t n1 n2 = t.compare_node_by_level n1 n2 [@@inline]
-  let mem t n = t.mem n [@@inline]
-  let dst t = t.dst [@@inline]
-end
+let compare_node_by_level n1 n2 = Level.compare n1.level n2.level [@@inline]
