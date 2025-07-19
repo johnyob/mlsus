@@ -58,8 +58,7 @@
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
         "ocaml-overlay": "ocaml-overlay",
-        "treefmt": "treefmt",
-        "typix": "typix"
+        "treefmt": "treefmt"
       }
     },
     "systems": {
@@ -94,27 +93,6 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "type": "github"
-      }
-    },
-    "typix": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1742833242,
-        "narHash": "sha256-RtnmyS5E98wsdCIWozpplcyYOGsjg1WP0bSAuwSTkc0=",
-        "owner": "johnyob",
-        "repo": "typix",
-        "rev": "c5b3c41fc25a5b231df51f626cbafde979d9cbee",
-        "type": "github"
-      },
-      "original": {
-        "owner": "johnyob",
-        "ref": "ajob410@add-support-for-packages",
-        "repo": "typix",
         "type": "github"
       }
     }
