@@ -27,20 +27,21 @@
 
 We propose a new concept of \emph{omnidirectional} type inference: the
 ability to resolve \ML-style typing constraints in disorder. In contrast,
-all known existing implementations which typically infer the types of
+all known existing implementations typically infer the types of
 let-bound expressions before typechecking their use sites.
 %
-This relies on two technical devices: \emph{suspended match constraints}, which
-suspend the resolution of some constraints until the context has more
-information about a type variable; and \emph{partial type schemes}, which allow
-taking instances of a partially solved type scheme containing suspended
-constraints, with a
-mechanism to incrementally update instances as the scheme is refined.
-
-The benefits of omnidirectional type inference are striking for several
-advanced \ML extensions, typically those that rely on optional type
-annotations where principality is fragile. We illustrate them with \OCaml's
-static overloading of record labels and datatype constructors, semi-explicit
+This relies on two technical devices: \emph{suspended match constraints},
+which suspend the resolution of some constraints until the context has more
+information about a type variable; and \emph{partial type schemes}, which
+allow taking instances of a partially solved type scheme containing
+suspended constraints, with a mechanism to incrementally update instances as
+the scheme is refined.
+%
+While the benefits of omnidirectional type inference are minor for core \ML,
+which truly enjoy principal types, they are striking for several advanced
+\ML extensions, typically those that rely on optional type annotations where
+principality is fragile.  We illustrate them with \OCaml's static
+overloading of record labels and datatype constructors, semi-explicit
 first-class polymorphism, and tuple projections \ala \SML.
 \end{abstract}
 \maketitle
@@ -50,21 +51,23 @@ first-class polymorphism, and tuple projections \ala \SML.
 
 \parcomment {Introduction (ML, principality)}
 
-The Damas-Hindley-Milner (\HM) \citep*{Damas-Milner/W@popl82} type system has
-long occupied a sweet spot in the design space of strongly typed programming
-languages, as it enjoys the \emph{principal types property}: every well-typed
-expression $\e$ has a most general type $\ts$ from which all other valid
-types for $\e$ are instances of $\ts$. For example, the identity function
+The Damas-Hindley-Milner (\HM) \citep*{Damas-Milner/W@popl82} type system
+has long occupied a sweet spot in the design space of strongly typed
+programming languages, as it enjoys the \emph{principal types property}:
+every well-typed expression $\e$ has a most general type $\ts$.
+%% , \ie from which all other valid types for $\e$ are instances of $\ts$.
+For example, the identity function
 $\efun \x \x$ has the principal type $\tfor \tv \tv \to \tv$, generalizing
 types like $\tint \to \tint$ and $\tbool \to \tbool$.
 
 \parcomment {Benefits of principality}
 
 This property ensures predictable and efficient inference. Local typing
-decisions are always optimal, yielding most general types without guessing or
-backtracking. As a result, inference of subexpressions can proceed in any
-order, and well-typedness is preserved under common program transformations
-such as let-contraction and argument reordering.
+decisions are always optimal, yielding most general types without guessing
+or backtracking. As a result, inference of subexpressions can proceed in any
+order, with one exception: let-bound expressions are typically inferred
+before their use. Still, well-typedness is preserved under common program
+transformations such as let-contraction and argument reordering.
 
 \parcomment {Extensions often break pincipality}
 
@@ -151,68 +154,94 @@ types are considered not-yet-known and cannot be relied on for disambiguation.
 \parcomment{What is it, and what does it solve}
 
 We call this \textbf{\geninst}-directional (read as
-``\textbf{pi}-directional'') type inference, to mean that \textbf{p}olymorphic
-expressions must be typed before their \textbf{i}nstances. This strategy
-ensures principality for fragile constructs, but can lead to counter-intuitive
-behavior.
+``\textbf{pi}-directional'') type inference, to mean that
+\textbf{p}olymorphic expressions must be typed before their
+\textbf{i}nstances. This strategy, first introduced
+by~\citet*{Garrigue-Remy/poly-ml} for polytypes, has later been reused for other
+\OCaml fragile constructs.
 
-\parcomment{An instance of the problem (implementation directionality in inference)}
+\parcomment{An instance of the problem (implementation directionality in
+inference)}
 
-To illustrate the problem, consider the following two record types
-with overlapping field names:
+\XDR
+  [This strategy ensures principality for fragile constructs, but can lead
+  to counter-intuitive behavior.]  {I changed it to} Although it ensures
+  principality, it may sometimes be unintuitive for the user.
+
+\XDR
+  {Still, I dislike the huge rewriting of this part, which starts by to saying
+  that \Geninst-directional type inference is counter-intuitive! I just
+  \emph{fully} disagree. We discussed it during one and I
+  agreed to say it mindly, but the new rewrite make is look like a bad
+  feature. I think this is denying the true, and misleading.
+  The good of the paper is not to kill \geninst-directional type inference,
+  to sell omni-directional type inference... }
+
+For instance, consider the following two record types with overlapping
+field names:
 \begin{program}[input]
 type 'a one = {x : 'a; y : int}
 type two = {x : int; z : int}
 \end{program}
 In \OCaml, both definitions are in scope, and the compiler must
-statically disambiguate field usage. The expression \ocaml!{x = 1; z = 1}! can
-only be \code{two}, and \code{r.y} necessarily infers \code{one} for \code{r}.
-But field accesses such as \code{r.x} are ambiguous unless the type of \code{r} is
+statically disambiguate field usage.
+\begin{program}[input,check]
+let one = { x = 1; y = 1; }                               °\ocamlflags 00°
+\end{program}
+The expression \ocaml!one! can only be \code{int one}.
+Similarly, \code{r.y} necessarily infers \code{one} for the type of \code{r}.
+But field accesses such as \code{r.x} are ambiguous unless the type of
+\code{r} is
 \emph{known}. Consider:
-\begin{program}[input]
-let ex_1 r = r.x                         	°\ocamlflags 21°
-let ex_2 = let r = {x = 1; y = 1} in r.x        °\ocamlflags 00°
-let ex_3 = (fun r -> r.x) {x = 1; y = 1}        °\ocamlflags 10°
+\begin{program}[input,check]
+let ex_1 r = r.x                                           °\ocamlflags 21°
+let ex_2 = let r = one in r.x                              °\ocamlflags 00°
+let ex_3 = (fun r -> r.x) one                              °\ocamlflags 10°
 \end{program}
 In \ocaml{ex_1}, the type of \code{r} is unconstrained, so disambiguation
-fails\footnote {In fact, \OCaml uses a default
+fails.\footnote {In fact, \OCaml uses a default
 resolution strategy instead of failing when the type is ambiguous,
   which is to emit a warning and use the last definition in scope. To
   check these examples, you should use the options
   \texttt{-principal -w +41}, which enforce principality checks and enables
-  the warning on default resolution.}.
+  the warning on default resolution.  Warnings are shown in
+  \smashcolorbox{orange!20}{\strut orange} and should be treated as failures in
+  \smashcolorbox{red!20}{red}.}
 \relax
 At first glance, \code{ex_2} and \code{ex_3} appear equivalent: in both,
 the expression \code{r.x} can only refer to the field from type \code{int one}.
-Yet \OCaml accepts \code{ex_2} and rejects \code{ex_3}.
+Yet, \OCaml accepts \code{ex_2} and rejects \code{ex_3}.
 This is because the \code{let}-binding in \code{ex_2} allows \code{r} to be
 treated polymorphically, and thus its type is considered \emph{known}--enabling
 disambiguation. In \code{ex_3}, by contrast, \code{r} is monomorphic at the point of
 projection, and disambiguation is therefore forbidden.
 
-To emphasize that this behavior is specification-drive and not an
+To emphasize that this behavior is specification-driven and not an
 artifact of \OCaml's inference algorithm, consider two equivalent versions of
-\ocaml{ex_3}, where \texttt{@@} and \ocaml{|>} are the application and reverse application
-functions:
-\begin{program}[input]
-let ex_3_2 = (fun r -> r.x) @@ {x = 1; y = 1}   °\ocamlflags 10°
-let ex_3_3 = {x = 1; y = 1} |> (fun r -> r.x)   °\ocamlflags 20°
+\ocaml{ex_3}, where \texttt{@@} and \ocaml{|>} are the application and
+reverse application functions:
+\begin{program}[input,check]
+let ex_3_2 = (fun r -> r.x) @@ one                         °\ocamlflags 10°
+let ex_3_3 = one |> (fun r -> r.x)                         °\ocamlflags 20°
 \end{program}
-While these terms are semantically equivalent, they highlight a potential hazard:
-their typability would vary under a directionally biased inference algorithm,
-depending on whether the function or argument is typed first.
-To avoid such implementation-dependent behavior, \OCaml chooses to infer
-all subexpressions \emph{simultaneously}, until they are \code{let}-bound.
+While these terms are semantically equivalent, they highlight a potential
+hazard: their typability may vary under a directionally biased inference
+algorithm, depending on whether the function or argument is typed first.
+To limit such implementation-dependent behavior, \OCaml infers
+all subexpressions until they are \code{let}-bound, and warns
+when using disambiguation before the expression is let-bond.
+Consequently, \OCaml does not makes little difference between
+\ocaml[indices]{ex_3}, \ocaml[indices]{ex_3_2}, or \ocaml[indices]{ex_3_3},
+just warning instead of failing on \ocaml[indices]{ex_3_3}, which could all
+be considered as ill-typed.
 
-Consequently, \OCaml does not make any difference between \ocaml[indices]{ex_3},
-\ocaml[indices]{ex_3_2}, or \ocaml[indices]{ex_3_3}; in all cases, disambiguation
-is disallowed, and they are ill-typed.
-%
-This criterion also
-warns on the following example, where \code{r} has a monomorphic type:
-\begin{program}[input]
-let ex_4 p r = if p then r.x else (r : 'a one).x °\ocamlflags 20°
+This criterion also warns on example \ocaml[indices]{ex_4_1} below, where
+\code{r} has a monomorphic type and indeed.
+\begin{program}[input,check]
+let ex_4_1 p r = if p then (r : 'a one).x else r.x         °\ocamlflags 20°
+let ex_4_2 p r = if p then r.x else (r : 'a one).x         °\ocamlflags 10°
 \end{program}
+Indeed, its variant \ocaml[indices]{ex_4_2} fails to typecheck.
 Warning here is preferable to silently accepting or rejecting the program based
 on the inference order between the \code{if} branches.
 
@@ -230,10 +259,10 @@ information.
 \paragraph{Bidirectional type inference}
 
 Bidirectional type inference is a standard alternative to unification for
-propagating type information. It is typically formulated by splitting
-typing rules into two modes: \emph{checking mode}, which typechecks a term
-$\e$ against a \emph{known} type $\t$ in a given context, and \emph{inference mode}
-which infers $\e$ from the context alone.
+propagating type information. It is typically formulated by splitting typing
+rules into two modes: \emph{checking mode}, which typechecks a term $\e$
+against a \emph{known} type $\t$ in a given context, and \emph{inference
+mode} which infers $\e$ from the context alone.
 
 For example, the type system designer can decide to typecheck function
 applications $\eapp \ea \eb$ by first \emph{inferring} that $\ea$ has some
@@ -265,26 +294,26 @@ On the other hand, \emph{\Geninst-directional} type inference appears better
 suited for \ML, relying on polymorphism, the essence of \ML. But it remains
 surprisingly weak in some cases: it does not even allow the propagation of
 user-provided type annotations from a function to its argument! For example,
-the following would be rejected as ambiguous with \geninst-directional type
-inference alone:
-\begin{program}[input]
-let g (f : two -> int) : int = f {x = 1; z = 1} in g (fun r -> r.x)$
+the following would be rejected as ambiguous with \geninst-directional
+type---but is accepted by \OCaml:
+\begin{program}[input,check]
+let ex_5 = let g (f : 'a one -> int) = f one in g (fun r -> r.x)$
 $ °\ocamlflags 00°
 \end{program}
-
-\OCaml uses \geninst-directional type inference as its primary mechanism, alongside
-a weak form of bidirectional propagation. In this example the type
+\OCaml uses \geninst-directional type inference as its primary mechanism,
+alongside a weak form of bidirectional propagation. In this example the type
 of the argument of \code{g} is known \Geninst-directionally, but \OCaml then
-propagates this expected type within the function definition in bidirectional
-fashion, so that this example may be considered non-ambiguous.
+propagates this expected type within the function definition
+\ocaml{(fun r -> r.x)} in bidirectional fashion, which would otherwise be
+considered ambiguous.
 
 Besides, the implementation of \geninst-directional type inference has an
-algorithmic cost. For technical reasons, type annotations must unshare
-types (from acyclic graphs as naturally produced by unification to trees),
-which may increase the size of types and the cost of type inference. For
-that reason, the implementation of \OCaml cheats and is incomplete by
-default. The user must explicitly pass the \texttt{\small -principal} flag to
-require the more expensive computation when desired.
+algorithmic cost. For technical reasons, type annotations must unshare types
+(from acyclic graphs as naturally produced by unification to trees), which
+may increase the size of types and the cost of type inference. For that
+reason, the implementation of \OCaml cheats and is incomplete by
+default. The user must explicitly pass the \texttt{\small -principal} flag
+to require the more expensive computation when desired.
 
 \subsection{Omnidirectional type inference}
 
@@ -358,12 +387,12 @@ further examples that illustrate such failures:
 %
 \locallabelreset
 %
-\begin{program}[input]
-let ex_6 r = (r.x, r.y)                          	°\ocamlflags 10°
-let ex_7 r = let x = r.x in x + r.y              	°\ocamlflags 10°
-let ex_8 = let getx r = r.x in getx {x = 1; y = 1}      °\ocamlflags 10°
-let ex_9 r = (r.x : bool)                        	°\ocamlflags 11°
-let ex_1_0 r = r.x.x                              	°\ocamlflags 11°
+\begin{program}[input,check]
+let ex_6 r = (r.x, r.y)                          	   °\ocamlflags 10°
+let ex_7 r = let x = r.x in x + r.y              	   °\ocamlflags 10°
+let ex_8 = let getx r = r.x in getx {x = 1; y = 1}         °\ocamlflags 10°
+let ex_9 r = (r.x : bool)                        	   °\ocamlflags 11°
+let ex_1_0 r = r.x.x                              	   °\ocamlflags 11°
 \end{program}
 All are arguably unambiguous; \OCaml accepts none of them, \OML accepts the first three.
 
@@ -796,7 +825,7 @@ formal account has been given.
 
 Beyond propagation, \OCaml also exploits \emph{closed-world reasoning} to
 resolve ambiguities in record types. For instance:
-\begin{program}[input]
+\begin{program}[input,check]
 let ex_1_1 = {x = 42; z = 1337} °\ocamlflags 00°
 \end{program}
 Here, \code{x} and \code{y} appear together only in the type \code{two},
@@ -806,7 +835,7 @@ allowing the type checker to unambiguously infer the type of \ocaml{e$_{11}$} as
 If local type information and closed-world reasoning are insufficient,
 \OCaml falls back to a syntactic default: it selects the most recently
 defined compatible type. For example:
-\begin{program}[input]
+\begin{program}[input,check]
 let getx r = r.x         °\ocamlflags 21°
 \end{program}
 The expression is compatible with both \code{one} and \code{two},
@@ -2148,7 +2177,7 @@ the \mgu of $\ueqs$. This optimization underlies efficient implementations of
 However, this approach \emph{does not} extend to suspended constraints. To illustrate
 this, let us examine \ocaml{ex_7} (from \cref{sec/introduction}):
 \begin{program}[input]
-  let ex_7 r = let x = r.x in x + r.y °\ocamlflags10°
+let ex_7 r = let x = r.x in x + r.y °\ocamlflags10°
 \end{program}
 The generated typing constraint contains:
 \begin{mathpar}
@@ -3067,6 +3096,8 @@ Each fragile extensions $\e^i$ comes with a robust explicit associated
 construct.  We first present the typing of explicit constructs $\e^x$ on
 \cref {fig/typing/X}, namely structural tuples, polytypes, and nominal
 records.  Their typing is unsurprising and part of folklore knowledge.
+Still, we leave defer the presentation of nomimal records to the next
+section (\cref {app/typing/X/records}), as they are longer to explain.
 
 \parcomment{Structural tuples}
 
@@ -3085,6 +3116,9 @@ $\tpoly \ts$ into one of type scheme $\ts$ that can then be freely
 instantiated.  Both rules also allow the polytype annotation to be partial,
 that is to inferred monotypes $\tys$ for the variables $\tvs$ that appear
 free in $\tys$.
+
+\subsection {Typing rules for robust, explicit nominal records}
+\label {app/typing/X/records}
 
 \parcomment{Nominal records}
 
@@ -3222,7 +3256,7 @@ They just ensures that this is actually no real overloading involved.
      \G \th \E\where{\exinst \e \tvcs \ts} : \t}
     {\G \th \E\where{\einst \e} : \t}
 \\
-  \inferrule[Labs-I]
+  \inferrule[Lab-I]
     {\Lshape \Lab \elab \T \\
       \G \th \Lab[\elab / \T] : \t}
     {\G \th \Lab[\elab] : \t}

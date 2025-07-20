@@ -131,6 +131,9 @@
      {_9}{\ensuremath{_9}}1
      }}}
 
+\define@key{lst}{check}[]{}
+\define@cmdkey{lst}{check}{}
+
 \define@key{lst}{greek}[]{}
 \define@cmdkey{lst}{greek}
   {\lstset{moreliterate={%
@@ -178,11 +181,12 @@
 \lstdefinestyle{algo}
     {}
 
+\newcommand\smashcolorbox[2] {\smash{\fboxsep 1pt\colorbox{#1}{#2}}}
 \newcommand \ocamlFlag[2]
   {\ifcase #2\relax
-     \smash{\fboxsep 1pt\colorbox{green!20}{#1}}\or
-     \smash{\fboxsep 1pt\colorbox{red!20}{#1}}\or
-    \smash{\fboxsep 1pt\colorbox{orange!20}{#1}}\else
+     \smashcolorbox{green!20}{#1}\or
+     \smashcolorbox{red!20}{#1}\or
+     \smashcolorbox{orange!20}{#1}\else
    \fi}
 %% \newcommand \ocamlFlag[2]
 %%   {\ifcase #2\relax

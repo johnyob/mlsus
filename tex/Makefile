@@ -24,6 +24,9 @@ all: $(addsuffix .pdf,${PRJ})
 %.view: %.pdf
 	open $< &
 
+check: ocaml-examples/suspended.ok suspended.tex
+	make -C ocaml-examples suspended.ok
+
 clean:
 	rm -rf _build
 
