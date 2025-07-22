@@ -333,13 +333,15 @@ follow this strategy, to the best of our knowledge.\relax
 \footnote
   {In fact, \citet* {Pottier-Remy/emlti} present general rewriting rules
   that allow to copy the constraints of a let-bound expression into the
-  constraint of the body before they are fully sovled, but this duplicates
-  the work of the constraint resolution. Indeed, they lack a mechanism to
-  incrementally and efficiently instantiate partially type schemes.
+  constraint of the body before they are fully sovled, but this copies the
+  whole constraint, including unsolve parts and duplicates the work of the
+  constraint resolution. That is, they still lack a mechanism to
+  incrementally and efficiently instantiate partial type schemes.
 %%
-  Unsurprisingly, their actual implementations described in
-  \url{https://pauillac.inria.fr/~remy/attapl/} all
+  Unsurprisingly, both implementations based on their framework, described in
+  \url{https://pauillac.inria.fr/~remy/attapl/},
   follow a \Geninst-directional strategy.}
+\XDR{This footnote could be inlined}
 \relax
 However, this state of affairs is not a necessity.
 
@@ -2915,18 +2917,24 @@ formal claims in the article. They are typically written tersely.
 
 \end{local}
 
+
 \section{The \OML calculus: typing rules and constraint generation}
 \label{app/oml}
 
 The \OML calculus is an extension of \ML with three fragile constructs:
-nominal records, structual tuples, and polytypes.
-We present is typing rules in \cref {app/onml/typing},
-and illustrate them on examples in \cref {app/oml/examples}.
-Finally, we show constraint generations that implements the typing rules
-in \cref {sec/oml/constraints}. The metatheretical resuls for \OML
-are presented in \cref {sec/oml/metatheory} and provewd in
-\cref {app/oml/proofs}.
-
+structural tuples, polytypes, and nominal records.  Each fragile construct
+$e^i$ come with a robust associated construct $e^x$ with more explicit type
+information and obvious typing rules.  Typing rules for core \ML and robust
+versions of structural tuples and polytypes are presented in \cref
+{app/oml/typing/X}.  Robust typing of nominal records, which is more
+involved but still folklore knowledge, is presented separately in \cref
+{app/typing/X/records}.
+The crux of our work is the novel typing of all three fragile constructs,
+presented in~\cref {app/oml/typing/I} and illustrated on examples in \cref
+{app/oml/examples}.  Finally, we show constraint generation that implements
+the typing rules in~\cref {app/oml/constraints}. The metatheoretical results
+for \OML are presented in~\cref {sec/oml/metatheory} and proved in~\cref
+{app/oml/proofs}.
 
 \subsection{Typing rules for robust, explicit constructs}
 \label{app/oml/typing/X}
@@ -2988,18 +2996,14 @@ are presented in \cref {sec/oml/metatheory} and provewd in
 
 As usual, the main typing judgment $\G \th \e : \ts$ states that in
 context~$\G$, expression~$\e$ has type scheme~$\ts$.
-\OML extends \ML with new features. Hence, core \OML typing rules,
-given on \cref {fig/typing/core}, are just \ML typing rules.  We then
-present then first, followed by rules for explicit version of fragile
-construts, which are part of folklore knowledge.  Typing rule for implicits
-fragile constructs, which are the crux of our work, are deferred to the next
-section.
 
 \paragraph {\ML typing rules}
 
-
 \parcomment {Simple typing rules explained}
 
+Core \OML typing rules are just \ML typing rules, reminded on \cref
+{fig/typing/core}.
+%
 Rule \Rule{Var} retrieves the type scheme $\x : \ts$ from the context $\G$.
 Function types are introduced via lambda abstractions: in \Rule{Fun}, the
 system guesses a well-formed type $\ta$ for the type of $\x$, typechecks the
@@ -3119,12 +3123,10 @@ the term $(\efun \x \x + 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv
 
 \paragraph {Typing rules for robust, explicit features}
 
-Each fragile extensions $\e^i$ comes with a robust explicit associated
-construct.  We first present the typing of explicit constructs $\e^x$ on
-\cref {fig/typing/X}, namely structural tuples, polytypes, and nominal
-records.  Their typing is unsurprising and part of folklore knowledge.
-Still, we leave defer the presentation of nomimal records to the next
-section (\cref {app/typing/X/records}), as they are longer to explain.
+Typing rules for explicit constructs are given on \cref {fig/typing/X}.
+Their typing is unsurprising and part of folklore knowledge.  Still, defer
+the presentation of nominal records to the next section (\cref
+{app/typing/X/records}), as they are longer to explain.
 
 \parcomment{Structural tuples}
 
@@ -3135,7 +3137,7 @@ size $n$ and is thus obvious.
 \parcomment{Polytypes}
 %
 The creation and use of polytypes with explicit annotations are as expected:
-when the annotation is a closed type schems $\ts$, Rule \Rule {Poly-X} just
+when the annotation is a closed type schemes $\ts$, Rule \Rule {Poly-X} just
 requires the expression to be as polymorphic as specified by the type scheme
 $\ts$ and turn the result into a first-class polytype $\tpoly \ts$.
 Conversely, Rule \Rule {Use-X} turns an expression of a first-class polytype
@@ -3166,7 +3168,7 @@ technical.  They use an auxiliary typing judgment $\G \th \el : \all \tv \t
 \to \tp$ for the typing of labels.
 Label expressions $\el$ extend labels with explicit labels $\elab/\T$
 and annotated label expressions $\el : \exi \tvs \t$ (where the annotation
-the shape of the record type they belong to).
+determines the shape of the record type they belong to).
 \begin{version}{}
 \begin{mathpar}
 \begin{bnfgrammar}
@@ -3177,22 +3179,22 @@ the shape of the record type they belong to).
 \end{version}
 
 We assume that record types have been previously defined, building a global
-environment $\labenv$ that maps labels to their projection type, \ie of the
-form $\all \tv \T \tys \to \t$.\XDR{I propose to invert the convention.} For
-a given record type $\T$, we assume each label associated with it is
-unique, while labels may belong to several record types.
-
-We write $\Labenv$ for the restriction $\set {\elab : \all \tvs \T \tys
-\to \t \in \labenv}$ of $\labenv$ to labels of type $\T$. Hence, $\dom
-(\Labenv)$ is the set of labels belonging type $\T$.
-%% We write $\Labenv{} (\elab/\T)$ for $\Labenv \elab$---
-Hence, $\labtyp \elab$ is the (unique) type scheme $\ts$ associated to
-$\elab$ in type $\T$.
+environment $\labenv$ that maps labels to their projection type, \ie types
+of the form $\all \tv \T \tys \to \t$.\XDR{I inverted the convention, since
+a projection type makes sense, but an injection type does not for record
+fields.} A label $\elab$ may belong to several record types, but is unique
+within a given record type $\T$ (that defines $\elab$).
 %
-We write $\lab \el$ the label underlying $\el$, \ie $\elab$ when $\el$ is
-either $\elab$ or $\elab/\T$ and $\lab \el$ when $\el$ is $\elp : \exi \tvs
-\t$.  We define $\el \labin \Labenv$ as a generalisation of
-$\elab \in \dom(\Labenv)$ as follows:
+We write $\Labenv$ for the restriction $\set {\elab : \all \tvs \T \tys
+\to \t \in \labenv}$ of $\labenv$ to labels of type~$\T$. Hence, $\dom
+(\Labenv)$ is the set of labels belonging to type $\T$,  and $\labtyp
+\elab$, also abbreviated as $\labenv (\ell/\T)$, is (when defined) the
+unique type scheme $\ts$ associated to $\elab$ in type $\T$.
+
+We write $\lab \el$ the label underlying $\el$, defined as $\elab$ when $\el$ is
+either $\elab$ or $\elab/\T$ or $\lab \el$ when $\el$ is $\parens {\elp :
+\exi \tvs \t}$.  We write $\parens {\el \labin \Labenv}$ for a generalization of
+$\elab \in \dom(\Labenv)$, defined as follows:
 \begin{mathpar}
 \infer {\elab \in \dom (\Labenv)}{\elab \labin \Labenv}
 
@@ -3201,62 +3203,75 @@ $\elab \in \dom(\Labenv)$ as follows:
 \infer {\el \labin \Labenv}
        {\elannot \el \tvs {\T\tys} \labin \Labenv[\T]}
 \end{mathpar}
-We write $\els \labof \Labenv$ the generalisation of
+Similarly, we write $\parens {\els \labof \Labenv}$ the generalization of
 $\bar \elab = \dom (\Labenv)$ defined as
 \begin{mathpar}
-\els \labof \Labenv \Wide \eqdef
+{\els \labof \Labenv} \Wide \eqdef
         \lab \els = \dom (\Labenv) \wide\wedge
         \forall \el \in \els,\; \el \labin \Labenv
 \end{mathpar}
-Rule \Rule {Lab} extracts the type sheme of a label $\elab$ from
+Rule \Rule {Lab} extracts the type scheme of a label $\elab$ from
 $\labenv$. Rule \Rule {Lab-X} does the same but for an explicit label
-$\elab/\T$. Rule \Rule {Lab-Inst} allow instantiation of the type of label
+$\elab/\T$. Rule \Rule {Lab-Inst} allows instantiation of the type of label
 expressions. Rule \Rule {Lab-Annot} is an alternative to the use of explicit
-labels $\elab/\T$ that allows to constaint the type of a label expression.
+labels $\elab/\T$ that allows to constraint the type of a label expression.
 Notice that the type annotation only constraint the domain of the
 label-expression type.
 
 The projection rule \Rule {Rcd-Proj} checks that the label-expression can be
 applied to the type of its argument and returns the result out of the
-projection. In addition, the premise $\el \uni \t$ checks that the label
-underlying $\el$ is uniquely determined by the type $\t$ of the record.
+projection; the premise $\el \uni \t$ also checks that the label
+underlying $\el$ is uniquely determined by the type $\t$ of the record
+we project from.
+%
 Rule \Rule {Rcd} is typed similarly, but using the predicate $\els \uni \t$
-to check that both labels $\el$ contains all labels of type $\T$ and can
-altogether only belong to type $\T$.
+to check that labels $\el$ contains all labels of the record type $\t$ and
+are altogether uniquely determined by type $\t$, as explained next.
 
-In the explicit case, this could just require that $\els$ contains an
-explicit label expression $\elab/\T$. However, we wish uniqueness to also be
-determined by annotations and support \emph{closed-world} reasoning, based
-on the available definitions available in the global environment $\labenv$:
-\begin{enumerate*}
-\item
-  in a record projection $\efield \e \elab$, if the label $\elab$ is not
-  overloaded, then the global record typing context $\labenv$ assigns a
-  unique record type $\T$ to $\elab$, and we should have $\elab \uni \T$;
-
-\item
+In the explicit case, $\els \uni \T$ could just require that $\els$ contains
+at least one explicit label expression~$\elab/\T$.
+%
+However, uniqueness could also be determined by label annotations.  More
+importantly, we also wish uniqueness to support \emph{closed-world}
+reasoning, based on the available definitions available in the global
+environment $\labenv$:
+\relax
   in a record expression $\erecord {\ela = \ea; \ldots; \el_n =
   \en}$, if the set of labels ${ \ela, \ldots, \el_n }$ uniquely
   identifies a record type $\T$ in the typing context $\labenv$, then
-  we can assign this type to the record expression.
-\end{enumerate*}
-Thus, we define:
-\begin{mathpar}%
-  \el \uni \T \Wide\eqdef
-  \el \labin \Labenv \wide\wedge
-  {\forall \Tp, \uad \el \labin \Labenv[\Tp] \implies \T' = \T}
+  $\els \uni \T$.
+\relax
+  Similarly, if the label $\elab$ is not overloaded, then the global record
+  typing context $\labenv$ assigns a unique record type $\T$ to $\elab$, and
+  we should have $\elab \uni \T$.
 
-\el \uni {\T \tys} \wide\iff \el \uni \T
-
+We first uniqueness with respect to first record type \emph{names}, then
+to record types of such names.
+\begin{mathpar}
+\def \Wide#1{&#1&}
+\begin{tabular}{R;;C;;L}
 \els \uni \T \Wide\eqdef
   \els \labof \Labenv \wide\wedge
   \forall \Tp, \; \els \labof \Labenv[\Tp] \implies \Tp = \T
+\\
+\el \uni \T \Wide\eqdef
+  \el \labin \Labenv \wide\wedge
+  {\forall \Tp, \uad \el \labin \Labenv[\Tp] \implies \T' = \T}
+\end{tabular}
 
+\def \wide #1{&#1&}
+\begin{tabular}{R;C;L}
   \els \uni {\T \tys} \wide\iff
   \els \uni \T
+\\
+  \el \uni {\T \tys} \wide\iff \el \uni \T
+\end{tabular}
 \end{mathpar}
-These predicates only depend on the global environment $\labenv$.
-They just ensures that this is actually no real overloading involved.
+Notice that these predicates only depend on the global environment
+$\labenv$, and require no contextual information. They are used in the
+typing rules in the two robust typing rules to ensure that there is actually
+no overloading involved.
+
 
 \subsection {Typing rules for fragile, implicit constructs}
 \label{app/oml/typing/I}
@@ -3313,14 +3328,15 @@ They just ensures that this is actually no real overloading involved.
 \end{mathparfig}
 
 We now turn to the typing of fragile implicit constructs, given in
-\cref{fig/typing/I}. While the typing
-rules for fully annotated terms ($\e^x$) are unsurprising, and part of
-folklore knowledge, the typing rules for terms with omitted type annotations
-are quite new and non-compositional.
+\cref{fig/typing/I}. While typing
+rules for fully annotated terms ($\e^x$) are standard and unsurprising,
+%% part of folklore knowledge,
+typing rules for terms  with omitted type annotations ($\e^i$)
+are new---and non-compositional.
 %
-They all share a common framework that ensures that some types are uniquely
-determined from the context. Still each construct requires a specific
-instantiation of the framework.
+They all share a common framework that ensures that some omitted type
+annotations are uniquely determined from the context. Still each construct
+requires a specific instantiation of the framework.
 %
 We first describe the framework, then present each feature separately,
 starting with the easiest case---structural tuples.
@@ -3391,7 +3407,7 @@ in the term that have not yet been elaborated, written $\eerase \e$
 \paragraph{Overloaded tuples and polytypes}
 
 The implicit rule \Rule{Proj-I} types the projection $\eproj \e j$ provided the
-context $\E$ \emph{infers} that the shape of $\e$ must be a tuple with arity $n$.
+context $\E$ \emph{infers} that the shape of $\e$ must be a tuple of arity $n$.
 Similarly, \Rule{Use-I} permits instantiating a polytype in $\einst e$ if
 the context $\E$ infers that the type of $\e$ must be a polytype with shape
 $\any \tvcs \tpoly \ts$.  The rule \Rule{Poly-I} types the implicit boxing
@@ -3405,8 +3421,6 @@ within the context as opposed to the inferred type of $\e$.
 We adopt a similar non-compositional approach for elaborating overloaded
 labels, whether in record projection ($\efield e \elab$) or record
 construction ($\erecord {\overline{\elab = \e}}$).
-%% , although the definitions
-%% are slightly more involved.
 Here, a one-hole label context $\Lab$ provides the
 surrounding context in which a label $\elab$ may appear:
 \begin{mathpar}
@@ -3420,20 +3434,19 @@ surrounding context in which a label $\elab$ may appear:
 }
 \end{bnfgrammar}
 \end{mathpar}
-As with our contextual rules for expressions,
-we define two rules for labels.
-%% \Rule{Lab-X} handles explicitly annotated labels $\elab / \T$ by instantiating
-%% the type scheme $\tfor \tvs \t \to \T \tvs$ associated with $\elab$ in label
-%% environment $\labenv$.
-we introduce a rule \Rule{Lab-I} that handles unannotated labels by elaborating
-$\elab$ to $\elab / \T$ if the context $\Lab$ uniquely infers the record type
-$\T$ for $\elab$ and the resulting elaboration is well-typed.
+Similar to the hole expression $\emagic e$, we introduce
+a new hole label expression $\elmagic \elab$ and its typing rule
+\Rule{Lab-Hole}.
+%
+We consistently extend  $\el$ to also contain $\elmagic \elab$, and
+define $\lab {\elmagic \elab}$ as $\elab$ and
+$\parens{\elmagic \elab \labin \Labenv}$ as $\parens {\elab \labin \Labenv}$.
 
-The unicity of (the shape of) the inferred record type is captured by the
-judgment $\Lshape \Lab \elab \T$. The definition fits into the framework we
-established for expressions above by introducing a hole construct for labels
-(whose typing rule \Rule {Lab-Hole} is reminded below) and a definition of
-uniqueness analogous to the ones for expressions:
+Then, typechecking implicit nominal records requires just an additional
+typing rule \Rule {Lab-I} that allows to replace an explicit label
+$\elab/\T$ by an implicit label $\elab$ in any label context $\Lab$ where
+$\elab \uni \t$ holds, that is, where $\elab$ is uniquely determined by
+$\T$. This is defined as follows:
 \begin{mathpar}
   \infer[Lab-Hole]
     { }
@@ -3444,9 +3457,21 @@ uniqueness analogous to the ones for expressions:
      \G \th \eerase {\Lab[\elannot {\elmagic \elab} {} \gt]} : \t
 	\implies \shape \gt= \any \tvcs {\tvcs \T}
 \end{mathpar}
-Since we extended  $\el$ to also contain $\elmagic \elab$, we
-define $\lab {\elmagic \elab}$ as $\elab$ and
-$\elmagic \elab \labin \Labenv$ as $\elab \labin \Labenv$.
+
+\begin{version}{}
+As with our contextual rules for expressions, we introduce we define two
+rules for labels.  We introduce a rule \Rule{Lab-I} that handles unannotated
+labels by elaborating $\elab$ to $\elab / \T$ if the context $\Lab$ uniquely
+infers the record type $\T$ for $\elab$ and the resulting elaboration is
+well-typed.
+
+The unicity of (the shape of) the inferred record type is captured by the
+judgment $\Lshape \Lab \elab \T$. The definition fits into the framework we
+established for expressions above by introducing a hole construct for labels
+(whose typing rule \Rule {Lab-Hole} is reminded below) and a definition of
+uniqueness analogous to the ones for expressions:
+\end{version}
+
 
 
 % Closed world reasoning
@@ -3476,7 +3501,7 @@ available definitions available in the global environment $\Omega$:
   we can assign this type to the record expression.
 \end{enumerate*}
 
-For that purpose we generalize the defintion of $\el \uni \T$ and $\els \uni
+For that purpose we generalize the definition of $\el \uni \T$ and $\els \uni
 \T$ with the two following rules:
 \begin{mathpar}
 \infer[Lab-One-I]
@@ -3502,7 +3527,7 @@ either:
   \item imposes no constraint on $\t$ in the ambiguous case
     (\Rule{Lab-?}).
 
-\XDR{I don't undertand the second case, as this would allow to type
+\XDR{I don't understand the second case, as this would allow to type
      ambiguous records}
 \XDR{\Rule {Rcd} was missing the fact that $\els \uni \T$ should enforce
 $\els$ to include all fields of $\T$ not just a subset.}
@@ -3545,7 +3570,7 @@ set.
 
 The following lemma shows that we can always take a larger context
 $\E$ or $\Lab$ for implicit rules \Rule {Proj-I}, \Rule {Use-I}, \Rule {Poly-I}
-and \Rule{Lab-I}.
+and \Rule{Lab-I}.\XDR{Not illustration of \Rule{Lab-I}...}
 That is, there is always a derivation using only toplevel contexts.
 \begin{lemma}
 \label{lem/context/largest}
@@ -3669,7 +3694,7 @@ determined and this case cannot occur.
 %
 The derivation must end with:
 \begin{mathpar}
-\infer*[Right=Proj-X]{
+\infer*[Right=Use-X]{
 		  \eshape \E \x {\tpoly \tyid} \\
                 \eset \th \E \where {\einst[\tyid] \x} : \t
 }{%             -------------------------------------------
@@ -7919,4 +7944,4 @@ TODO: extend the magic rule and the disambiguation rule, and also provide the un
 % LocalWords:  mutli cheatsheet inI ProjX PolyX UseX unifier Gc Defn sw iw
 % LocalWords:  InstLeft InstRight mergable tw uw RRCL eqs priori multiset
 % LocalWords:  reflexitivity metatheoretic lexicographically Unifiers TODO
-% LocalWords:  rcl env
+% LocalWords:  rcl env Pcd
