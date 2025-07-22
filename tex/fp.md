@@ -2,7 +2,7 @@
 
 > abstract: "which typically infer" → "typically infer"
 
-- [x] fixe.
+- [x] fixed.
 
 > p.1, "from which all other valid types for e are instances of σ" :
 > unclear/redundant construction
@@ -51,28 +51,29 @@
 > introduced. Your comment about "unsharing types" should also be accompanied
 > with a citation.
 
-There is already a dictation
+- [x]
 
-- [ ]
+Added a citation.
+
 
 > p.3, "in bidirectional fashion" → "in a bidirectional fashion"?
 
-- [ ]
+- [x]
 
 > p.4, "The user must explicitly pass the -principal flag to require the more
 > expensive computation when desired". So, when you write "OCaml" in a box,
 > do you mean `ocaml` or `ocaml -principal`? Or are your examples insensitive
 > to the difference?
 
-- [ ]
+- [x] pointing to the previsous footnote.
 
 > p.4, "In absence" → "In the absence"?
 
-- [ ]
+- [x]
 
 > p.4, "one of its variant" → "one of its variants"
 
-- [ ]
+- [x]
 
 > p.4, "all follow this strategy, to the best of our knowledge". Well, EMLTI
 > allows you to work on the right-hand side of a `let` constraint before
@@ -84,116 +85,36 @@ There is already a dictation
 > so unless `C1` is already fully simplified, you are duplicating work.
 > The connection between the two copies of `C1` is lost.
 > My guess at this point in the paper is that you want to introduce a more
-- [ ]
-
-> p.ecise constraint language where you can keep track of this connection,
+> precise constraint language where you can keep track of this connection,
 > so as to avoid the duplication of work (?).
 > That said the existing language in EMLTI also allows this -- it suffices
 > to *not* take this rewriting step. But then you lose the ability to
 > deduce anything out of x(τ).
+
 > So, my guess is that you want the best of both forms at once?
 > i.e. the ability to extract useful information out of x(τ)
 > *and* to not duplicate the work of further simplifying C1.
 
-- [ ]
+- [ ] Added a footnote:
+
+  {In fact, \citet* {Pottier-Remy/emlti} present general rewriting rules
+  that allow to copy the constraints of a let-bound expression into the
+  constraint of the body before they are fully sovled, but this duplicates
+  the work of the constraint resolution. Indeed, they lack a mechanism to
+  incrementally and efficiently instantiate partially type schemes.
+%%
+  Unrusprisingly, the implementations described in
+  \url{https://pauillac.inria.fr/~remy/attapl/} all
+  follow a \Geninst-directional strategy.}
+
 
 > p.4, "from context" → "from the context"?
 
-- [ ]
+- [x]
 
 > p.5, "implementing partial types schemes is also hard" : in what sense?
-> abstract: "which typically infer"   "typically infer"
 
-- [ ]
+- [x] Changed to
 
-> p.1, "from which all other valid types for e are instances of  " :
-> unclear/redundant construction
-
-- [ ]
-
-> p.1, "As a result, inference of subexpressions can proceed in any order":
-> c'est un peu le contraire de ce que dit l'abstract...
-
-- [ ]
-
-> p.2, "specification-drive"   "specification-driven"?
-
-- [ ]
-
-> p.2, "OCaml does not make any difference between ex3, ex32, or ex33": yet
-> we get orange in ex33 and red in the other two.
-
-- [ ]
-
-> p.2, "polymorphic types are treated as known and may guide disambiguation,
-> whereas monomorphic types are considered not-yet-known and cannot be relied on
-> for disambiguation". I am not sure what you mean. Do you mean that if a
-> variable has been let-bound then its type is considered known, whereas if it
-> has been bound by lambda then it is considered not-yet-known? (The other
-> interpretation that I can think of is that you want to test whether a type is
-- [ ]
-
-> p.lymorphic, by counting the number of its quantifiers. But this does not seem
-> to make sense.) If it is a matter of "let" versus "lambda", then it has
-> nothing to do with polymorphism.
-
-- [ ]
-
-> p.3, "For example, the following would be rejected as ambiguous with
->  -directional type inference alone": why? Explain. Not clear to me.
-
-- [ ]
-
-> p.3, "Besides, the implementation of  -directional type inference has an
-> algorithmic cost. For technical reasons, type annotations must unshare type".
-> This comment suggests that I have not understood what you mean by
-> " -directional type inference". Your first mention of this concept (p.2, line
-> 66) should be accompanied by a citation that explains where this concept was
-> introduced. Your comment about "unsharing types" should also be accompanied
-> with a citation.
-
-- [ ]
-
-> p.3, "in bidirectional fashion"   "in a bidirectional fashion"?
-
-- [ ]
-
-> p.4, "The user must explicitly pass the -principal flag to require the more
-> expensive computation when desired". So, when you write "OCaml" in a box,
-> do you mean `ocaml` or `ocaml -principal`? Or are your examples insensitive
-> to the difference?
-
-- [ ]
-
-> p.4, "In absence"   "In the absence"?
-
-- [ ]
-
-> p.4, "one of its variant"   "one of its variants"
-
-- [ ]
-
-> p.4, "all follow this strategy, to the best of our knowledge". Well, EMLTI
-> allows you to work on the right-hand side of a `let` constraint before
-> working on the left-hand side, if you wish, or even to work alternately
-> on both sides. Its main limitation is that if you decide to rewrite
-> `let x =   .C1 in ...x( )...` into
-> `let x =   .C1 in ...(  .C1)( )`
-> then you duplicate `C1`,
-> so unless `C1` is already fully simplified, you are duplicating work.
-> The connection between the two copies of `C1` is lost.
-> My guess at this point in the paper is that you want to introduce a more
-- [ ]
-
-> p.ecise constraint language where you can keep track of this connection,
-> so as to avoid the duplication of work (?).
-> That said the existing language in EMLTI also allows this -- it suffices
-> to *not* take this rewriting step. But then you lose the ability to
-> deduce anything out of x( ).
-> So, my guess is that you want the best of both forms at once?
-i.e. the ability to extract useful information out of x( )
-*and* to not duplicate the work of further simplifying C1.
-
-p.4, "from context"   "from the context"?
-
-p.5, "implementing partial types schemes is also hard" : in what sense?
+    Implementing partial types schemes efficiently, to avoid duplication of
+    work and trigger reinstantiation on changes, is also hard.

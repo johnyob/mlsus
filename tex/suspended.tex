@@ -55,7 +55,6 @@ The Damas-Hindley-Milner (\HM) \citep*{Damas-Milner/W@popl82} type system
 has long occupied a sweet spot in the design space of strongly typed
 programming languages, as it enjoys the \emph{principal types property}:
 every well-typed expression $\e$ has a most general type $\ts$.
-%% , \ie from which all other valid types for $\e$ are instances of $\ts$.
 For example, the identity function
 $\efun \x \x$ has the principal type $\tfor \tv \tv \to \tv$, generalizing
 types like $\tint \to \tint$ and $\tbool \to \tbool$.
@@ -177,8 +176,8 @@ inference)}
   The good of the paper is not to kill \geninst-directional type inference,
   to sell omni-directional type inference... }
 
-For instance, consider the following two record types with overlapping
-field names:
+For instance, consider the following two record types with overlapping field
+names:
 \begin{program}[input]
 type 'a one = {x : 'a; y : int}
 type two = {x : int; z : int}
@@ -202,11 +201,11 @@ In \ocaml{ex_1}, the type of \code{r} is unconstrained, so disambiguation
 fails.\footnote {In fact, \OCaml uses a default
 resolution strategy instead of failing when the type is ambiguous,
   which is to emit a warning and use the last definition in scope. To
-  check these examples, you should use the options
-  \texttt{-principal -w +41}, which enforce principality checks and enables
+  check all examples, you should use the options \texttt{-principal -w +41},
+  which enforce principality checks and enables
   the warning on default resolution.  Warnings are shown in
   \smashcolorbox{orange!20}{\strut orange} and should be treated as failures in
-  \smashcolorbox{red!20}{red}.}
+  \smashcolorbox{red!20}{red}.}\saveFN\principalFN
 \relax
 At first glance, \code{ex_2} and \code{ex_3} appear equivalent: in both,
 the expression \code{r.x} can only refer to the field from type \code{int one}.
@@ -218,11 +217,12 @@ projection, and disambiguation is therefore forbidden.
 
 To emphasize that this behavior is specification-driven and not an
 artifact of \OCaml's inference algorithm, consider two equivalent versions of
-\ocaml{ex_3}, where \texttt{@@} and \ocaml{|>} are the application and
-reverse application functions:
+\ocaml{ex_3}:\footnote {\ocaml{app} and \ocaml{rev_app} are the application
+function $\efun f \efun \x \eapp f \x$ and the reverse application function
+$\efun \x \efun f \eapp f \x$, respectively.}
 \begin{program}[input,check]
-let ex_3_2 = (fun r -> r.x) @@ one                         °\ocamlflags 10°
-let ex_3_3 = one |> (fun r -> r.x)                         °\ocamlflags 20°
+let ex_3_2 = app (fun r -> r.x) one                        °\ocamlflags 10°
+let ex_3_3 = rev_app one (fun r -> r.x)                    °\ocamlflags 20°
 \end{program}
 While these terms are semantically equivalent, they highlight a potential
 hazard: their typability may vary under a directionally biased inference
@@ -304,7 +304,7 @@ $ °\ocamlflags 00°
 alongside a weak form of bidirectional propagation. In this example the type
 of the argument of \code{g} is known \Geninst-directionally, but \OCaml then
 propagates this expected type within the function definition
-\ocaml{(fun r -> r.x)} in bidirectional fashion, which would otherwise be
+\ocaml{(fun r -> r.x)} in a bidirectional fashion, which would otherwise be
 considered ambiguous.
 
 Besides, the implementation of \geninst-directional type inference has an
@@ -312,25 +312,38 @@ algorithmic cost. For technical reasons, type annotations must unshare types
 (from acyclic graphs as naturally produced by unification to trees), which
 may increase the size of types and the cost of type inference. For that
 reason, the implementation of \OCaml cheats and is incomplete by
-default. The user must explicitly pass the \texttt{\small -principal} flag
-to require the more expensive computation when desired.
+default. The user must explicitly pass the \texttt{\small -principal}
+flag\useFN\principalFN to require the more expensive computation when
+desired.
 
 \subsection{Omnidirectional type inference}
 
-In absence of \emph{implicit} polymorphism, type inference is solely based
-on unification constraints which can be solved in any order;
+In the absence of \emph{implicit} polymorphism, type inference is solely
+based on unification constraints which can be solved in any order;
 omnidirectional inference is then natural and easy to implement.  The
-difficulty originates from \ML \emph{implicit} let-polymorphism for which all known
-implementations follow the \geninst-order: first typing the binding,
-generalizing it into a type scheme, and finally typing the body under the extended
-typing environment that binds the generalized scheme.
-The Hindley-Milner algorithm $\mathcal{J}$, one of
-its variant $\mathcal{W}$ or $\mathcal{M}$~\citep*
-{Lee_Yi/algoM@toplas1998}, or more flexible constraint-based type
-inference implementations~\citep* {Remy/mleth,Remy/thesis,
-Odersky-Sulzmann-Wehr@tpos, Pottier-Remy/emlti} all follow this strategy, to
-the best of our knowledge. However, this state of affairs is not a
-necessity.
+difficulty originates from \ML \emph{implicit} let-polymorphism for which
+all known implementations follow the \geninst-order: first typing the
+binding, generalizing it into a type scheme, and finally typing the body
+under the extended typing environment that binds the generalized scheme.
+The Hindley-Milner algorithm $\mathcal{J}$, one of its variants
+$\mathcal{W}$ or $\mathcal{M}$~\citep* {Lee_Yi/algoM@toplas1998}, or more
+flexible constraint-based type inference implementations~\citep*
+{Remy/mleth,Remy/thesis, Odersky-Sulzmann-Wehr@tpos, Pottier-Remy/emlti} all
+follow this strategy, to the best of our knowledge.\relax
+\footnote
+  {In fact, \citet* {Pottier-Remy/emlti} present general rewriting rules
+  that allow to copy the constraints of a let-bound expression into the
+  constraint of the body before they are fully sovled, but this duplicates
+  the work of the constraint resolution. Indeed, they lack a mechanism to
+  incrementally and efficiently instantiate partially type schemes.
+%%
+  Unsurprisingly, their actual implementations described in
+  \url{https://pauillac.inria.fr/~remy/attapl/} all
+  follow a \Geninst-directional strategy.}
+\relax
+However, this state of affairs is not a necessity.
+
+
 
 To efficiently achieve omnidirectional type inference for fragile \ML
 extensions:
@@ -338,7 +351,7 @@ extensions:
 
 \item
   We introduce \emph{suspended match constraints} as a way to suspend
-  ambiguity resolution until sufficient information has been found from
+  ambiguity resolution until sufficient information has been found from the
   context so that they can be discharged.
 
 \item
@@ -364,7 +377,8 @@ a cost, which is that everything is hard:
   \emph{known} rather than \emph{guessed}.
 
 \item
-  Implementing partial types schemes is also hard.
+  Implementing partial types schemes efficiently, to avoid duplication of
+  work and trigger reinstantiation on changes, is also hard.
 
 \end{enumerate}
 In return, the techniques we developed for the semantics
@@ -390,7 +404,7 @@ further examples that illustrate such failures:
 \begin{program}[input,check]
 let ex_6 r = (r.x, r.y)                          	   °\ocamlflags 10°
 let ex_7 r = let x = r.x in x + r.y              	   °\ocamlflags 10°
-let ex_8 = let getx r = r.x in getx {x = 1; y = 1}         °\ocamlflags 10°
+let ex_8 = let getx r = r.x in getx one                    °\ocamlflags 10°
 let ex_9 r = (r.x : bool)                        	   °\ocamlflags 11°
 let ex_1_0 r = r.x.x                              	   °\ocamlflags 11°
 \end{program}
@@ -849,11 +863,13 @@ This fallback mechanism highlights the directionality of \OCaml inference.
 Once the compiler selects a type, it commits to it---even if that choice
 causes errors downstream. Consider \code{ex_7} from \cref{sec/introduction}:
 \begin{program}[input]
-let ex_7 r = let x (* infers [two] *) = r.x in x + r.y °\ocamlflags 10°
+let ex_7 r = let x = r.x in x + r.y                    °\ocamlflags 10°
 \end{program}
-Here, \OCaml defaults to \code{two} for \code{r} when typing \code{r.x},
-but then fails to type \code{r.y}, as this default choice is fixed---even
-though \code{one} would have satisfied both projections.
+Here, \OCaml defaults to \code{two}\footnote {While warning the user that
+this default choice is ambiguous.} for \code{r} when typing \code{r.x} , but
+then fails to type \code{r.y}, as this default choice is f ixed---even
+though
+\code{one} would have satisfied both projections.
 
 \parcomment {Record field disambiguation in suspended constraints}
 
@@ -1876,10 +1892,14 @@ The expressions $\eappp f \ea \eb$ and $\eappp {\eswap f} \eb \ea$ are
 equitypable where $\eswap$ is
 $\efun f {\efun \xa {\efun \xb {\eappp f \xb \ea}}}$. We also have
 that $\eapp f \e$ and $\eappp {\mathsf{app}} f \e$ and
-$\eappp {\mathsf{rev\_app}} \e f$ are equitypable, where
-$\mathsf{app}$ and $\mathsf{rev\_app}$ are the application function
-$\efun f \efun \x \eapp f \x$ and the reverse application function
-$\efun \x \efun f \eapp f \x$, respectively. It is well-known that
+$\eappp {\mathsf{rev\_app}} \e f$ are equitypable.
+\begin{version}{}
+\XDR{Definition already made in the intro as a footnote.}
+, where $\mathsf{app}$ and $\mathsf{rev\_app}$ are the application function
+$\efun f \efun \x \eapp f \x$ and the reverse application function $\efun \x
+\efun f \eapp f \x$, respectively.
+\end{version}
+It is well-known that
 bidirectional types inference breaks application
 equitypability. Both \Geninst-directional and omnidirectional
 type inference preserve it.
@@ -1893,12 +1913,12 @@ $\e_0$, and if they are incompatible the factored form may not typecheck.
 
 \paragraph{Inlining does not hold} If $\G \th \elet \x \ez \e : \t$, we do
 not necessarily have $\G \th \e \where {\x \is {\e_0}} : \t$. This is
-specific to our support for \emph{backpropagation}: the $\Let$-form will
-use information from all occurrences of $\x$ in $\e$ to resolve fragile
+specific to our support for \emph{backpropagation}: the $\Let$-form will use
+information from all occurrences of $\x$ in $\e$ to resolve fragile
 constructs in $e_0$, but in the inlined form each copy of $\e$ must resolve
-its implicit constructs independently, and it has access to less information to
-establish unicity. As a result, the implicit \OML calculus does not preserve typability
-in its operational semantics.
+its implicit constructs independently, and it has access to less information
+to establish unicity. As a result, the implicit \OML calculus does not
+preserve typability in its operational semantics.
 
 \section{Solving constraints}
 \label{sec:solving}
@@ -2512,15 +2532,16 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
 
 We have two working prototypes implementing the \OML language with suspended
 match constraints and partial type schemes, in which we have reproduced the
-various type-system features and examples presented in this work.  One closely
-follows the constraint-based presentation described here\footnote{The other
-prototype is a direct implementation of type inference based on
-semi-unification. We mention it here only it indicate that we have explored
-multiple implementation strategies leading to the same results.}. It is public
-and open-source (link omitted for anonymity). Its implementation is inspired by
-previous work such as \Inferno~\citep {Pottier/inferno@icfp2014,
-Pottier/inferno@opam}.  It uses state-of-the-art implementation techniques for
-efficiency, such as a Tarjan's union-find data structure for unification
+various type-system features and examples presented in this work.  One
+closely follows the constraint-based presentation described
+here\footnote{The other prototype is a direct implementation of type
+inference based on semi-unification. We mention it here only it indicate
+that we have explored multiple implementation strategies leading to the same
+results.}. It is public and open-source\footnote {Link omitted for
+anonymity.}. Its implementation is inspired by previous work such as
+\Inferno~\citep {Pottier/inferno@icfp2014, Pottier/inferno@opam}.  It uses
+state-of-the-art implementation techniques for efficiency, such as a
+Tarjan's union-find data structure for unification
 \citep*{journals/jacm/Tarjan75} and \emph{ranks} (or \emph{levels}) for
 efficient generalization \citep*{Remy/mleth}. Let us discuss a few salient
 points.
@@ -2621,6 +2642,12 @@ we re-generalize the stale descendants of the region in the region tree.
 \section{Related work}
 \label{sec:related-work}
 
+\paragraph{The essence of \ML}
+
+Typing constraints in~\cite* {Pottier-Remy/emlti} allow
+let-constaints to be copied
+
+
 \paragraph{Principality tracking in \OCaml}
 
 \citet*{Garrigue-Remy/poly-ml} introduced an approach to principality tracking
@@ -2704,8 +2731,8 @@ but unmanageable, both in theory and implementation. Their proposed fix
 is to abandon local let-generalization altogether. We believe that we
 have solved the troubling interactions between let-generalization and
 suspended constraints in this work, and would be interested in
-studying applications to GADT typing, which was also one of our
-original motivations.
+studying applications to GADT typing\XDR[, which was also one of our
+original motivations]{Does not bring much to the reader}.
 
 \section{Conclusions and future work}
 \label{sec:discussion}

@@ -7,7 +7,8 @@ OCAMLFLAGS = -principal -w +41
 default: suspended.ok
 all: suspended.err
 
-
+types.mli: types.ml
+	ocamlc -i $< > $@
 
 types.cmi: types.mli
 	ocamlc -c types.mli
