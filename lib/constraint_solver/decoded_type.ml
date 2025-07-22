@@ -6,11 +6,11 @@ module Var = Var.Make (struct
   end)
 
 module Ident = Constraint.Type.Ident
-module Head = Constraint.Type.Head
+module Shape = Structure.Shape
 
 type t =
   | Var of Var.t
-  | Head of Head.t
+  | Shape of Shape.t
   | Spine of t list
   | App of t * t
   | Mu of Var.t * t
@@ -32,17 +32,19 @@ let pp ppf t =
     | t -> pp_arrow ppf t
   and pp_arrow ppf t =
     match t with
-    | App (Spine [ t1; t2 ], Head Arrow) ->
+    | App (Spine [ t1; t2 ], Shape Arrow) ->
       Fmt.pf ppf "@[%a ->@ %a@]" pp_tuple t1 pp_arrow t2
     | t -> pp_tuple ppf t
   and pp_tuple ppf t =
     match t with
-    | App (Spine ts, Head (Tuple _)) ->
+    | App (Spine ts, Shape (Tuple _)) ->
       Fmt.(pf ppf "@[<0>%a@]" (list ~sep:(any " *@ ") pp_atom) ts)
     | t -> pp_app ppf t
   and pp_app ppf t =
     match t with
-    | App (_, Head (Arrow | Tuple _)) -> Fmt.(parens pp_mu ppf t)
+    | App (_, Shape (Arrow | Tuple _)) -> Fmt.(parens pp_mu ppf t)
+    | App (t, Shape (Constr (_arity, constr))) ->
+      Fmt.(pf ppf "@[%a%s@]" (pp_spine ~in_app:true) t (ident_to_name constr))
     | App (t1, t2) -> Fmt.(pf ppf "@[%a%a@]" (pp_spine ~in_app:true) t1 pp_atom t2)
     | t -> pp_spine ~in_app:false ppf t
   and pp_spine ~in_app ppf t =
@@ -52,7 +54,7 @@ let pp ppf t =
   and pp_atom ppf t =
     match t with
     | Var var -> pp_var ppf var
-    | Head hd -> pp_head ppf hd
+    | Shape sh -> pp_shape ppf sh
     | App _ | Mu _ | Spine _ -> Fmt.(parens pp_mu ppf t)
   and pp_var ppf (var : Var.t) = Fmt.pf ppf "'%s" (var_to_name var)
   and pp_args ~in_app ppf ts =
@@ -63,11 +65,11 @@ let pp ppf t =
       | [ t ] -> Fmt.pf ppf "%a@ " pp_atom t
       | ts -> Fmt.(pf ppf "@[(%a)@ @]" (list ~sep:comma pp_mu) ts))
     else Fmt.(pf ppf "@[(%a)@]" (list ~sep:comma pp_mu) ts)
-  and pp_head ppf hd =
-    match hd with
+  and pp_shape ppf sh =
+    match sh with
     | Arrow -> Fmt.string ppf "(->)"
     | Tuple n -> Fmt.pf ppf "Pi^%d" n
-    | Constr constr -> Fmt.pf ppf "%s" (ident_to_name constr)
+    | Constr (n, constr) -> Fmt.pf ppf "%s(%d)" (ident_to_name constr) n
   in
   pp_mu ppf t
 ;;
@@ -143,13 +145,13 @@ module Decoder = struct
       and decode_former former =
         match former with
         | App (gtype1, gtype2) ->
-          (* The let bindings here are to ensure evaluation order, 
+          (* The let bindings here are to ensure evaluation order,
              which corresponds to allocating fresh variables from left to right *)
           let dtype1 = decode gtype1 in
           let dtype2 = decode gtype2 in
           App (dtype1, dtype2)
         | Spine gtypes -> Spine (List.map gtypes ~f:decode)
-        | Head hd -> Head hd
+        | Shape sh -> Shape sh
       in
       decode gtype
   ;;

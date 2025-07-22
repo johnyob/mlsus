@@ -210,6 +210,9 @@ module Make_adt_inst (X : sig
     val unbound : range:Range.t -> name -> Mlsus_error.t
     val ident : def -> Type.Ident.t
 
+    (** [def_ret_shape d] returns the shape of the return type of the definition [d]. *)
+    val def_ret_shape : def -> Type_var_name.t list * Adt.type_expr
+
     val infer
       :  def
       -> id_source:Identifier.source
@@ -228,6 +231,7 @@ struct
       (* The definition is unambiguous. Just infer immediately *)
       X.infer def ~id_source:(Env.id_source env) ~ctx:infer_ctx ~arg ~ret
     | defs ->
+      let id_source = Env.id_source env in
       (* Type-based disambiguation, filter the constructor definition in the environment with
          the type identifiers. *)
       let disambiguate_defs_by_type_ident type_ident =
@@ -256,36 +260,37 @@ struct
       in
       let disambiguate_and_infer type_ident =
         let def = disambiguate_defs_by_type_ident type_ident in
-        X.infer def ~id_source:(Env.id_source env) ~ctx:infer_ctx ~arg ~ret
+        X.infer def ~id_source ~ctx:infer_ctx ~arg ~ret
       in
-      let hd_type = Type.Var.create ~id_source:(Env.id_source env) () in
-      let spine_type = Type.Var.create ~id_source:(Env.id_source env) () in
-      exists_many [ hd_type; spine_type ]
-      @@ (Type.(var ret =~ var spine_type @% var hd_type)
-          &~ lower hd_type
-          &~ match_
-               hd_type
-               ~closure:
-                 ([ ret; hd_type ] @ X.arg_closure arg
-                  |> List.map ~f:(fun type_var -> `Type type_var))
-               ~with_:(function
-                 | App _ | Spine _ -> assert false
-                 | (Head (Arrow | Tuple _) | Rigid_var) as matchee ->
-                   let type_head =
-                     match matchee with
-                     | Head Arrow -> `Arrow
-                     | Head (Tuple _) -> `Tuple
-                     | Rigid_var -> `Rigid_var
-                     | _ -> assert false
-                   in
-                   ff
-                     (Mlsus_error.disambiguation_mismatched_type
-                        ~range:name.range
-                        ~type_head)
-                 | Head (Constr type_ident) -> disambiguate_and_infer type_ident)
-               ~else_:(fun () ->
-                 let default_type_ident = X.ident (List.hd_exn defs) in
-                 Type.(var hd_type =~ hd (Constr default_type_ident))))
+      (* Unifies [ret] with the return shape of [def] *)
+      let infer_ret_shape def ret =
+        let ret_alphas, ret_type = X.def_ret_shape def in
+        let env, vars =
+          List.fold_map ret_alphas ~init:(Env.empty ~id_source ()) ~f:(fun env type_var ->
+            Env.rename_type_var env ~type_var ~in_:(fun env cvar -> env, cvar))
+        in
+        let ret_type = Convert.type_expr ~env ret_type in
+        exists_many vars @@ Type.(var ret =~ ret_type)
+      in
+      (* Matches on [ret], if its a constructor then we can disambiguate it. 
+         If [ret] is never unified, it is unified with the default shape (the 
+         lexically closest matching definition) *)
+      match_
+        ret
+        ~closure:(ret :: X.arg_closure arg |> List.map ~f:(fun v -> `Type v))
+        ~with_:(function
+          | (Arrow (_, _) | Tuple _) as matchee ->
+            let type_head =
+              match matchee with
+              | Arrow (_, _) -> `Arrow
+              | Tuple _ -> `Tuple
+              | _ -> assert false
+            in
+            ff (Mlsus_error.disambiguation_mismatched_type ~range:name.range ~type_head)
+          | Constr (_args, type_ident) -> disambiguate_and_infer type_ident)
+        ~else_:(fun () ->
+          let default_type_def = List.hd_exn defs in
+          infer_ret_shape default_type_def ret)
   ;;
 end
 
@@ -298,6 +303,7 @@ module Constructor_inst = Make_adt_inst (struct
     let find env name = Env.find_constr env name
     let unbound ~range name = Mlsus_error.unbound_constructor ~range name
     let ident def = def.Adt.constructor_type_ident
+    let def_ret_shape (def : def) = def.constructor_alphas, def.constructor_type
 
     let infer def ~id_source ~ctx:(constr_name, constr_arg_range) ~arg ~ret =
       infer_constructor ~id_source ~constr_name ~constr_arg_range def arg ret
@@ -319,6 +325,7 @@ module Label_inst = Make_adt_inst (struct
     let find env name = Env.find_label env name
     let unbound ~range name = Mlsus_error.unbound_label ~range name
     let ident def = def.Adt.label_type_ident
+    let def_ret_shape (def : def) = def.label_alphas, def.label_type
 
     let infer def ~id_source ~ctx:() ~arg ~ret =
       infer_label ~id_source ~label_def:def arg ret
