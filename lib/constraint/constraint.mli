@@ -1,4 +1,3 @@
-open Core
 open Mlsus_std
 open Grace
 
@@ -8,42 +7,27 @@ module Type : sig
   module Ident : Var.S
   module Var : Var.S
 
-  module Head : sig
-    (** [t] is the head of a type *)
-    type t =
-      | Arrow
-      | Tuple of int
-      | Constr of Ident.t
-    [@@deriving sexp]
-
-    include Comparable.S with type t := t
-  end
-
-  module Matchee : sig
-    (** [t] is a matchee, a partial (shallow) type that is matched on. *)
-    type t =
-      | App of Var.t * Var.t
-      | Head of Head.t
-      | Spine of Var.t list
-      | Rigid_var
-    [@@deriving sexp]
-  end
-
   (** [t] represents the type [tau]. *)
   type t =
-    | Head of Head.t (** [F] *)
-    | App of t * t (** [tau1 tau2] where [tau1] is a spine and [tau2] is a head *)
-    | Spine of t list (** [(tau1, ..., taun)] is a spine *)
-    | Var of Var.t (** [ɑ] *)
+    | Var of Var.t (** Type variable [ɑ] *)
+    | Arrow of t * t (** Function types [t1 -> t2] *)
+    | Tuple of t list (** Tuple types [t1 * ... * tn] *)
+    | Constr of t list * Ident.t (** Nominal types [(t1, ..., tn) T] *)
   [@@deriving sexp]
 
   val var : Var.t -> t
   val ( @-> ) : t -> t -> t
   val constr : t list -> Ident.t -> t
   val tuple : t list -> t
-  val spine : t list -> t
-  val ( @% ) : t -> t -> t
-  val hd : Head.t -> t
+
+  module Matchee : sig
+    (** [t] is a matchee, a principal shape of the type being matched. *)
+    type t =
+      | Arrow of Var.t * Var.t
+      | Tuple of Var.t list
+      | Constr of Var.t list * Ident.t
+    [@@deriving sexp]
+  end
 end
 
 module Var : Var.S
@@ -63,7 +47,6 @@ type t =
   | Conj of t * t (** [C1 /\ C2] *)
   | Eq of Type.t * Type.t (** [tau1 = tau2] *)
   | Exists of Type.Var.t * t (** [exists overline(a). C]*)
-  | Lower of Type.Var.t (** [lower(a)] *)
   | Let of Var.t * scheme * t (** [let x = sigma in C] *)
   | Instance of Var.t * Type.t (** [x <= tau] *)
   | Match of
@@ -93,7 +76,6 @@ val all : t list -> t
 val ( =~ ) : Type.t -> Type.t -> t
 val exists : Type.Var.t -> t -> t
 val exists_many : Type.Var.t list -> t -> t
-val lower : Type.Var.t -> t
 val ( #= ) : Var.t -> scheme -> Var.t * scheme
 
 type unquantified_scheme := t * Type.t

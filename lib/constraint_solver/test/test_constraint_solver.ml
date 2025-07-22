@@ -109,14 +109,7 @@ let%expect_test "Can unsuspend determined (pre)" =
              a1
              ~closure:[]
              ~with_:(function
-               | App (_, constr) ->
-                 match_
-                   constr
-                   ~closure:[]
-                   ~with_:(function
-                     | Head (Constr constr) when T.Ident.(constr = tint_ident) -> tt
-                     | _ -> ff unsat_err)
-                   ~else_:else_unsat_err
+               | Constr (_, constr) when T.Ident.(constr = tint_ident) -> tt
                | _ -> ff unsat_err)
              ~else_:else_unsat_err)
   in
@@ -126,9 +119,7 @@ let%expect_test "Can unsuspend determined (pre)" =
     ("Constraint is satisfiable"
      (cst
       (Exists ((id 0) (name Type.Var))
-       (Conj
-        (Eq (Var ((id 0) (name Type.Var)))
-         (App (Spine ()) (Head (Constr ((id 0) (name int))))))
+       (Conj (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))
         (Match (matchee ((id 0) (name Type.Var)))
          (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>))))))
     |}]
@@ -144,14 +135,7 @@ let%expect_test "Can unsuspend determined (post)" =
           a1
           ~closure:[]
           ~with_:(function
-            | App (_, constr) ->
-              match_
-                constr
-                ~closure:[]
-                ~with_:(function
-                  | Head (Constr constr) when T.Ident.(constr = tint_ident) -> tt
-                  | _ -> ff unsat_err)
-                ~else_:else_unsat_err
+            | Constr (_, constr) when T.Ident.(constr = tint_ident) -> tt
             | _ -> ff unsat_err)
           ~else_:else_unsat_err
         &~ T.(var a1 =~ tint))
@@ -165,8 +149,7 @@ let%expect_test "Can unsuspend determined (post)" =
        (Conj
         (Match (matchee ((id 0) (name Type.Var)))
          (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>))
-        (Eq (Var ((id 0) (name Type.Var)))
-         (App (Spine ()) (Head (Constr ((id 0) (name int))))))))))
+        (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))))))
     |}]
 ;;
 
@@ -239,8 +222,7 @@ let%expect_test "Can unsuspend topological dependencies" =
        (Exists ((id 1) (name Type.Var))
         (Conj
          (Conj
-          (Eq (Var ((id 0) (name Type.Var)))
-           (App (Spine ()) (Head (Constr ((id 0) (name int))))))
+          (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))
           (Match (matchee ((id 0) (name Type.Var)))
            (closure ((type_vars (((id 1) (name Type.Var)))) (vars ())))
            (case <fun>) (else_ <fun>)))
@@ -295,10 +277,8 @@ let%expect_test "No suspended matches results in normal generalization" =
            (Exists ((id 3) (name Type.Var))
             (Conj
              (Eq (Var ((id 1) (name Type.Var)))
-              (App
-               (Spine
-                ((Var ((id 2) (name Type.Var))) (Var ((id 3) (name Type.Var)))))
-               (Head Arrow)))
+              (Arrow (Var ((id 2) (name Type.Var)))
+               (Var ((id 3) (name Type.Var)))))
              (Let ((id 7) (name Constraint.Var))
               ((type_vars ()) (in_ True) (type_ (Var ((id 2) (name Type.Var)))))
               (Instance ((id 7) (name Constraint.Var))
@@ -311,12 +291,9 @@ let%expect_test "No suspended matches results in normal generalization" =
             (Instance ((id 6) (name Constraint.Var))
              (Var ((id 4) (name Type.Var))))
             (Eq (Var ((id 4) (name Type.Var)))
-             (App
-              (Spine
-               ((Var ((id 5) (name Type.Var))) (Var ((id 0) (name Type.Var)))))
-              (Head Arrow))))
-           (Eq (Var ((id 5) (name Type.Var)))
-            (App (Spine ()) (Head (Constr ((id 0) (name int)))))))))))))
+             (Arrow (Var ((id 5) (name Type.Var)))
+              (Var ((id 0) (name Type.Var))))))
+           (Eq (Var ((id 5) (name Type.Var))) (Constr () ((id 0) (name int)))))))))))
     |}]
 ;;
 
@@ -359,9 +336,8 @@ let%expect_test "Partial generic becomes instance" =
           (type_ (Var ((id 2) (name Type.Var)))))
          (Conj
           (Instance ((id 3) (name Constraint.Var))
-           (App (Spine ()) (Head (Constr ((id 0) (name int))))))
-          (Eq (Var ((id 0) (name Type.Var)))
-           (App (Spine ()) (Head (Constr ((id 1) (name string))))))))))))
+           (Constr () ((id 0) (name int))))
+          (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 1) (name string))))))))))
     |}]
 ;;
 
@@ -404,19 +380,12 @@ let%expect_test "Partial generic becomes generic" =
         (Conj
          (Conj
           (Instance ((id 3) (name Constraint.Var))
-           (App
-            (Spine
-             ((App (Spine ()) (Head (Constr ((id 0) (name int)))))
-              (App (Spine ()) (Head (Constr ((id 0) (name int)))))))
-            (Head Arrow)))
+           (Arrow (Constr () ((id 0) (name int)))
+            (Constr () ((id 0) (name int)))))
           (Instance ((id 3) (name Constraint.Var))
-           (App
-            (Spine
-             ((App (Spine ()) (Head (Constr ((id 1) (name string)))))
-              (App (Spine ()) (Head (Constr ((id 1) (name string)))))))
-            (Head Arrow))))
-         (Eq (Var ((id 0) (name Type.Var)))
-          (App (Spine ()) (Head (Constr ((id 0) (name int)))))))))))
+           (Arrow (Constr () ((id 1) (name string)))
+            (Constr () ((id 1) (name string))))))
+         (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int)))))))))
     |}]
 ;;
 
@@ -482,8 +451,7 @@ let%expect_test "Propagating changes during partial generalization" =
            (Conj
             (Instance ((id 4) (name Constraint.Var))
              (Var ((id 3) (name Type.Var))))
-            (Eq (Var ((id 1) (name Type.Var)))
-             (App (Spine ()) (Head (Constr ((id 0) (name int)))))))
+            (Eq (Var ((id 1) (name Type.Var))) (Constr () ((id 0) (name int)))))
            (Match (matchee ((id 3) (name Type.Var)))
             (closure ((type_vars (((id 0) (name Type.Var)))) (vars ())))
             (case <fun>) (else_ <fun>)))))))))
@@ -501,22 +469,8 @@ let%expect_test "loop" =
       alpha
       ~closure:[]
       ~with_:(function
-        | App (spine, constr) ->
-          match_
-            spine
-            ~closure:[ `Type constr ]
-            ~with_:(function
-              | Spine [ t1; t2 ] ->
-                match_
-                  constr
-                  ~closure:[ `Type t1; `Type t2 ]
-                  ~with_:(function
-                    | Head (Constr constr) when T.Ident.(constr = tapp_ident) ->
-                      T.(var t1 =~ tapp (var t1) (var t2))
-                    | _ -> ff unsat_err)
-                  ~else_:else_unsat_err
-              | _ -> ff unsat_err)
-            ~else_:else_unsat_err
+        | Constr ([ t1; t2 ], constr) when T.Ident.(constr = tapp_ident) ->
+          T.(var t1 =~ tapp (var t1) (var t2))
         | _ -> ff unsat_err)
       ~else_:else_unsat_err
   in
@@ -544,10 +498,9 @@ let%expect_test "loop" =
            (Match (matchee ((id 2) (name Type.Var)))
             (closure ((type_vars ()) (vars ()))) (case <fun>) (else_ <fun>)))
           (Eq (Var ((id 1) (name Type.Var)))
-           (App
-            (Spine
-             ((Var ((id 2) (name Type.Var))) (Var ((id 0) (name Type.Var)))))
-            (Head (Constr ((id 2) (name app))))))))))))
+           (Constr
+            ((Var ((id 2) (name Type.Var))) (Var ((id 0) (name Type.Var))))
+            ((id 2) (name app))))))))))
     |}]
 ;;
 
@@ -591,15 +544,13 @@ let%expect_test "Partial ungeneralization (Partial<>Instance)" =
          (Conj
           (Conj
            (Instance ((id 3) (name Constraint.Var))
-            (App (Spine ()) (Head (Constr ((id 0) (name int))))))
-           (Eq (Var ((id 1) (name Type.Var)))
-            (App (Spine ()) (Head (Constr ((id 1) (name string)))))))
-          (Eq (Var ((id 0) (name Type.Var)))
-           (App (Spine ()) (Head (Constr ((id 0) (name int)))))))))))
+            (Constr () ((id 0) (name int))))
+           (Eq (Var ((id 1) (name Type.Var))) (Constr () ((id 1) (name string)))))
+          (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int)))))))))
      (err
       ((it
         (Cannot_unify (Var ((id 0) (name Decoded_type.Var)))
-         (App (Spine ()) (Head (Constr ((id 1) (name string)))))))
+         (App (Spine ()) (Shape (Constr 0 ((id 1) (name string)))))))
        (range ()))))
     |}]
 ;;
@@ -653,12 +604,11 @@ let%expect_test "Partial ungeneralization (Partial<>Partial)" =
              (type_ (Var ((id 3) (name Type.Var)))))
             (Conj
              (Instance ((id 5) (name Constraint.Var))
-              (App (Spine ()) (Head (Constr ((id 0) (name int))))))
+              (Constr () ((id 0) (name int))))
              (Instance ((id 5) (name Constraint.Var))
-              (App (Spine ()) (Head (Constr ((id 1) (name string)))))))))
+              (Constr () ((id 1) (name string)))))))
           (type_ (Var ((id 2) (name Type.Var)))))
-         (Eq (Var ((id 0) (name Type.Var)))
-          (App (Spine ()) (Head (Constr ((id 1) (name string))))))))))
+         (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 1) (name string))))))))
      (err
       ((it
         (Cannot_unify (Var ((id 0) (name Decoded_type.Var)))
@@ -711,26 +661,19 @@ let%expect_test "Partials propagate to same instance group" =
              (vars ())))
            (case <fun>) (else_ <fun>)))
          (type_
-          (App
-           (Spine
-            ((Var ((id 2) (name Type.Var))) (Var ((id 1) (name Type.Var)))))
-           (Head Arrow))))
+          (Arrow (Var ((id 2) (name Type.Var))) (Var ((id 1) (name Type.Var))))))
         (Exists ((id 3) (name Type.Var))
          (Exists ((id 4) (name Type.Var))
           (Conj
            (Conj
             (Conj
              (Instance ((id 5) (name Constraint.Var))
-              (App
-               (Spine
-                ((Var ((id 3) (name Type.Var))) (Var ((id 4) (name Type.Var)))))
-               (Head Arrow)))
-             (Eq (Var ((id 3) (name Type.Var)))
-              (App (Spine ()) (Head (Constr ((id 0) (name int)))))))
+              (Arrow (Var ((id 3) (name Type.Var)))
+               (Var ((id 4) (name Type.Var)))))
+             (Eq (Var ((id 3) (name Type.Var))) (Constr () ((id 0) (name int)))))
             (Eq (Var ((id 4) (name Type.Var)))
-             (App (Spine ()) (Head (Constr ((id 1) (name string)))))))
-           (Eq (Var ((id 0) (name Type.Var)))
-            (App (Spine ()) (Head (Constr ((id 0) (name int))))))))))))
+             (Constr () ((id 1) (name string)))))
+           (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))))))))
      (err
       ((it
         (Cannot_unify (Var ((id 0) (name Decoded_type.Var)))
@@ -786,10 +729,7 @@ let%expect_test "Detect SCC cycle accross regions" =
              (case <fun>) (else_ <fun>)))
            (Eq (Var ((id 1) (name Type.Var))) (Var ((id 0) (name Type.Var))))))
          (type_
-          (App
-           (Spine
-            ((Var ((id 1) (name Type.Var))) (Var ((id 2) (name Type.Var)))))
-           (Head Arrow))))
+          (Arrow (Var ((id 1) (name Type.Var))) (Var ((id 2) (name Type.Var))))))
         True)))
      (err
       ((it
@@ -873,12 +813,10 @@ let%expect_test "" =
              (Conj
               (Instance ((id 7) (name Constraint.Var))
                (Var ((id 5) (name Type.Var))))
-              (Eq (Var ((id 0) (name Type.Var)))
-               (App (Spine ()) (Head (Constr ((id 0) (name int)))))))
+              (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int)))))
              (Instance ((id 7) (name Constraint.Var))
               (Var ((id 6) (name Type.Var)))))
-            (Eq (Var ((id 4) (name Type.Var)))
-             (App (Spine ()) (Head (Constr ((id 0) (name int))))))))))))))
+            (Eq (Var ((id 4) (name Type.Var))) (Constr () ((id 0) (name int))))))))))))
     |}]
 ;;
 
@@ -909,10 +847,7 @@ let%expect_test "" =
        (Let ((id 2) (name Constraint.Var))
         ((type_vars ((Flexible ((id 1) (name Type.Var))))) (in_ True)
          (type_
-          (App
-           (Spine
-            ((Var ((id 1) (name Type.Var))) (Var ((id 1) (name Type.Var)))))
-           (Head Arrow))))
+          (Arrow (Var ((id 1) (name Type.Var))) (Var ((id 1) (name Type.Var))))))
         (Conj
          (Match (matchee ((id 0) (name Type.Var)))
           (closure
@@ -920,11 +855,7 @@ let%expect_test "" =
             (vars (((id 2) (name Constraint.Var))))))
           (case <fun>) (else_ <fun>))
          (Eq (Var ((id 0) (name Type.Var)))
-          (App
-           (Spine
-            ((App (Spine ()) (Head (Constr ((id 0) (name int)))))
-             (App (Spine ()) (Head (Constr ((id 0) (name int)))))))
-           (Head Arrow))))))))
+          (Arrow (Constr () ((id 0) (name int))) (Constr () ((id 0) (name int))))))))))
     |}]
 ;;
 
@@ -966,8 +897,7 @@ let%expect_test "" =
             (closure ((type_vars ()) (vars (((id 3) (name Constraint.Var))))))
             (case <fun>) (else_ <fun>))))
          (type_ (Var ((id 1) (name Type.Var)))))
-        (Eq (Var ((id 0) (name Type.Var)))
-         (App (Spine ()) (Head (Constr ((id 0) (name int))))))))))
+        (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))))))
     |}]
 ;;
 
@@ -1009,15 +939,13 @@ let%expect_test "" =
             (closure ((type_vars ()) (vars (((id 3) (name Constraint.Var))))))
             (case <fun>) (else_ <fun>))))
          (type_ (Var ((id 1) (name Type.Var)))))
-        (Conj
-         (Eq (Var ((id 0) (name Type.Var)))
-          (App (Spine ()) (Head (Constr ((id 0) (name int))))))
+        (Conj (Eq (Var ((id 0) (name Type.Var))) (Constr () ((id 0) (name int))))
          (Instance ((id 2) (name Constraint.Var))
-          (App (Spine ()) (Head (Constr ((id 1) (name string))))))))))
+          (Constr () ((id 1) (name string))))))))
      (err
       ((it
-        (Cannot_unify (App (Spine ()) (Head (Constr ((id 0) (name int)))))
-         (App (Spine ()) (Head (Constr ((id 1) (name string)))))))
+        (Cannot_unify (App (Spine ()) (Shape (Constr 0 ((id 0) (name int)))))
+         (App (Spine ()) (Shape (Constr 0 ((id 1) (name string)))))))
        (range ()))))
     |}]
 ;;

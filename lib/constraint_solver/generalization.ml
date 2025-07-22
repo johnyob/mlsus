@@ -284,7 +284,7 @@ module Status = struct
     | Instance rn1, Instance rn2 ->
       (* Computing the nearest common ancestor is indeed necessary here.
 
-         Consider three regions arrangled like this:
+         Consider three regions arranged like this:
 
              R0
             /  \
@@ -940,6 +940,18 @@ let create_former ~state ~curr_region former =
   create_type ~state ~curr_region (Structure (Structure former))
 ;;
 
+let create_spine ~state ~curr_region types =
+  create_former ~state ~curr_region (Spine types)
+;;
+
+let create_shape ~state ~curr_region shape =
+  create_former ~state ~curr_region (Shape shape)
+;;
+
+let create_app ~state ~curr_region type1 type2 =
+  create_former ~state ~curr_region (App (type1, type2))
+;;
+
 let copy ~state ~curr_region ~when_ ~instance_id t =
   let copies = Hashtbl.create (module Identifier) in
   let rec loop type_ =
@@ -1303,6 +1315,7 @@ let instantiate ~state ~curr_region ({ root; region_node } : Scheme.t) =
 module Suspended_match = struct
   type t =
     { matchee : Type.t
+    ; shape_matchee : Type.t
     ; closure : closure
     ; case : curr_region:Type.region_node -> Type.t R.t -> unit
     ; else_ : curr_region:Type.region_node -> unit
@@ -1315,45 +1328,47 @@ module Suspended_match = struct
     }
   [@@deriving sexp_of]
 
-  let closure_add_guard ~state { variables; schemes } ~guard ~data =
+  let closure_add_guard ~state ~matchee { variables; schemes } ~guard ~data =
     let visit_and_add_guard type_ =
       visit_region ~state (Type.region_exn ~here:[%here] type_);
       Type.add_guard type_ ~guard ~data
     in
+    visit_and_add_guard matchee;
     List.iter variables ~f:visit_and_add_guard;
     List.iter schemes ~f:(fun scheme ->
       Scheme.iter_instances_and_partial_generics scheme ~f:visit_and_add_guard)
   ;;
 
-  let closure_remove_guard ~state { variables; schemes } guard =
+  let closure_remove_guard ~state ~matchee { variables; schemes } guard =
     let visit_and_remove_guard type_ =
       visit_region ~state (Type.region_exn ~here:[%here] type_);
       Type.remove_guard type_ guard
     in
+    visit_and_remove_guard matchee;
     List.iter variables ~f:visit_and_remove_guard;
     List.iter schemes ~f:(fun scheme ->
       Scheme.iter_instances_and_partial_generics scheme ~f:visit_and_remove_guard)
   ;;
 
-  let match_or_yield ~state ~curr_region { matchee; case; closure; else_ } =
-    match Type.inner matchee with
+  let match_or_yield ~state ~curr_region { matchee; shape_matchee; case; closure; else_ } =
+    match Type.inner shape_matchee with
     | Var _ ->
       let guard = Guard.Match (Match_identifier.create state.id_source) in
-      let data = Guard.Map.Data.Match matchee in
+      let data = Guard.Map.Data.Match shape_matchee in
       [%log.global.debug "Suspended match guard" (guard : Guard.Match.t Guard.t)];
       let curr_region_of_closure () =
         visit_region ~state curr_region;
         curr_region
       in
       Type.add_handler
-        matchee
+        shape_matchee
         { run =
-            (fun s ->
+            (fun shape_structure ->
               let curr_region = curr_region_of_closure () in
               (* Remove guard from closure *)
-              closure_remove_guard ~state closure guard;
+              closure_remove_guard ~state ~matchee closure guard;
               (* Solve case *)
-              case ~curr_region s;
+              case ~curr_region shape_structure;
               [%log.global.debug
                 "Generalization tree after solving case"
                   (state.generalization_tree : Generalization_tree.t)])
@@ -1366,9 +1381,9 @@ module Suspended_match = struct
                   (state.generalization_tree : Generalization_tree.t)])
         };
       (* Add guard to closure *)
-      closure_add_guard ~state closure ~guard ~data
-    | Structure s ->
+      closure_add_guard ~state ~matchee closure ~guard ~data
+    | Structure shape_structure ->
       (* Optimisation: Immediately solve the case *)
-      case ~curr_region s
+      case ~curr_region shape_structure
   ;;
 end

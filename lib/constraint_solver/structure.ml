@@ -2,11 +2,32 @@ open! Import
 
 module type S = Mlsus_unifier.Structure.S
 
+module Shape = struct
+  module T = struct
+    type t =
+      | Arrow (** [Arrow] is the shape ['c1 'c2. 'c1 -> 'c2] *)
+      | Tuple of int (** [Tuple n] is the shape ['c1, ..., 'cn. 'c1 * ... * 'cn] *)
+      | Constr of int * Type_ident.t
+      (** [Constr (n, T)] is the shape ['c1, ..., 'cn. ('c1, ..., 'cn) T] *)
+    [@@deriving sexp, equal, compare, hash]
+  end
+
+  include T
+  include Comparable.Make (T)
+
+  let arity t =
+    match t with
+    | Arrow -> 2
+    | Tuple n -> n
+    | Constr (n, _ident) -> n
+  ;;
+end
+
 module Former = struct
   type 'a t =
     | App of 'a * 'a
     | Spine of 'a list
-    | Head of Type_head.t
+    | Shape of Shape.t
   [@@deriving sexp]
 
   type 'a ctx = unit
@@ -19,14 +40,14 @@ module Former = struct
       f t1;
       f t2
     | Spine ts -> List.iter ts ~f
-    | Head _ -> ()
+    | Shape _ -> ()
   ;;
 
   let map t ~f =
     match t with
     | App (t1, t2) -> App (f t1, f t2)
     | Spine ts -> Spine (List.map ts ~f)
-    | Head hd -> Head hd
+    | Shape sh -> Shape sh
   ;;
 
   let copy t ~f = map t ~f
@@ -35,7 +56,7 @@ module Former = struct
     match t with
     | App (t1, t2) -> f t2 (f t1 init)
     | Spine ts -> List.fold_right ts ~f ~init
-    | Head _ -> init
+    | Shape _ -> init
   ;;
 
   let merge ~ctx:() ~create:_ ~unify ~type1:_ ~type2:_ t1 t2 =
@@ -48,7 +69,7 @@ module Former = struct
       (match List.iter2 ts1 ts2 ~f:unify with
        | Ok () -> t1
        | Unequal_lengths -> raise Cannot_merge)
-    | Head hd1, Head hd2 when Type_head.(hd1 = hd2) -> t1
+    | Shape sh1, Shape sh2 when Shape.(sh1 = sh2) -> t1
     | _ -> raise Cannot_merge
   ;;
 end
