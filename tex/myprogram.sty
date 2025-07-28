@@ -131,8 +131,12 @@
      {_9}{\ensuremath{_9}}1
      }}}
 
-\define@key{lst}{check}[]{}
-\define@cmdkey{lst}{check}{}
+%% \define@key{lst}{check}[]{}
+%% \define@cmdkey{lst}{check}{}
+\lst@Key{check}{false}[f]{\lstKV@SetIf{#1}\ifocamlwarnings}
+\colorlet{welltyped}{green!20}
+\colorlet{warning}{orange!20}
+\colorlet{illtyped}{red!20}
 
 \define@key{lst}{greek}[]{}
 \define@cmdkey{lst}{greek}
@@ -182,12 +186,15 @@
     {}
 
 \newcommand\smashcolorbox[2] {\smash{\fboxsep 1pt\colorbox{#1}{#2}}}
+\newif \ifocamlwarnings
 \newcommand \ocamlFlag[2]
   {\ifcase #2\relax
-     \smashcolorbox{green!20}{#1}\or
-     \smashcolorbox{red!20}{#1}\or
-     \smashcolorbox{orange!20}{#1}\else
-   \fi}
+     \smashcolorbox{welltyped}{#1}\or
+     \smashcolorbox{illtyped}{#1}\or
+     \ifocamlwarnings
+       \smashcolorbox{warning}{#1}\else
+       \smashcolorbox{illtyped}{#1}\fi
+   \else \fi}
 %% \newcommand \ocamlFlag[2]
 %%   {\ifcase #2\relax
 %%      \textcolor{green!50!black}{#1}\or

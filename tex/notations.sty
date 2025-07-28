@@ -188,6 +188,7 @@
 
 \defmetavar {\ts} {\sigma}
 \newcommand{\tfor}[2]{\forall {#1}.\,{#2}}
+\newcommand{\tlab}[3][]{\ifempty{#1}{}{\forall{#1}.\,}#2 \to #3}
 \newcommand{\sigmaone}{\ts_1}
 \newcommand{\sigmatwo}{\ts_2}
 \newcommand{\sigmai}{\ts_i}
@@ -250,7 +251,7 @@
    %% {\ifempty{#2}{\labenv/#1}{(\labenv/#1)(#2)}}
 \newcommand \labto [2]{#2 \to #1}
 \newcommand \labin {\mathinfix {in}}
-\newcommand \labsof {\mathprefix {labs}}
+\newcommand \labsof {\mathprefix {Labs}}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

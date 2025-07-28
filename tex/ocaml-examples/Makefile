@@ -1,6 +1,11 @@
 SRC := $(wildcard *.ml)
 SRC_OUT := $(SRC:.ml=.out)
 
+# We could run
+# OCAMLFLAGS = -principal -w +41 -warn-error +41
+# However, we keep the warning information in the source
+# and ignore it while producing the PDF.
+
 OCAMLFLAGS = -principal -w +41
 
 
