@@ -204,7 +204,7 @@ fails.\footnote
   \texttt{-principal -w +41 -warn-error +41}, which enforces principality
   enables the warning and turn it into an error when the default resolution
   is  used. Well-typedness is shown in
-  \smashcolorbox{welltyped}{\strut green} and ill-typednes (warnings and errors)
+  \smashcolorbox{welltyped}{\strut green} and ill-typedness (warnings and errors)
   is show in \smashcolorbox{illtyped}{red}.\label{fn/principal}}
 \relax
 At first glance, \code{ex_2} and \code{ex_3} appear equivalent: in both,
@@ -289,7 +289,7 @@ the downsides of bidirectional type inference.
 
 \paragraph{Limitations of directional type inference}
 
-While both stategies for directional type inference have some virtues, and
+While both strategies for directional type inference have some virtues, and
 have proved quite useful in the past, they also have some limitations.
 
 Bidirectional type inference is lightweight, practical, and well-suited for
@@ -302,7 +302,7 @@ On the other hand, \emph{\Geninst-directional} type inference appears better
 suited for \ML, relying on polymorphism, the essence of \ML. But it remains
 surprisingly weak in some cases: it does not even allow the propagation of
 user-provided type annotations from a function to its argument!
-This somtimes makes them counter intuitive.
+This sometimes makes them counter intuitive.
 For example,
 the following would be rejected as ambiguous with \geninst-directional
 type---but is accepted by \OCaml:
@@ -340,19 +340,8 @@ $\mathcal{W}$ or $\mathcal{M}$~\citep* {Lee_Yi/algoM@toplas1998}, or more
 flexible constraint-based type inference implementations~\citep*
 {Remy/mleth,Remy/thesis, Odersky-Sulzmann-Wehr@tpos, Pottier-Remy/emlti} all
 follow this strategy, to the best of our knowledge.\relax
-\footnote
-  {In fact, \citet* {Pottier-Remy/emlti} present general rewriting rules
-  that allow to copy the constraints of a let-bound expression into the
-  constraint of the body before they are fully sovled, but this copies the
-  whole constraint, including unsolve parts and duplicates the work of the
-  constraint resolution. That is, they still lack a mechanism to
-  incrementally and efficiently instantiate partial type schemes.
-%%
-  Unsurprisingly, both implementations based on their framework, described in
-  \url{https://pauillac.inria.fr/~remy/attapl/},
-  follow a \Geninst-directional strategy.}
-\XDR{This footnote could be inlined}
-\relax
+\footnote {See \cref{sec:related-work} for a closer comparison with
+\cite* {Pottier-Remy/emlti}.}
 However, this state of affairs is not a necessity.
 
 
@@ -390,7 +379,7 @@ a cost, which is that everything is hard:
 
 \item
   Implementing partial types schemes efficiently, to avoid duplication of
-  work and trigger reinstantiation on changes, is also hard.
+  work and trigger re-instantiation on changes, is also hard.
 
 \end{enumerate}
 In return, the techniques we developed for the semantics
@@ -652,7 +641,7 @@ More precisely:
 \end{enumerate}
 
 We keep the grammar of shapes and patterns abstract in this section,
-to explain the general framework of suspended constraints. For now, it sufficies to
+to explain the general framework of suspended constraints. For now, it suffices to
 think of shapes as top-level constructors like function arrows $\cdot \to \cdot$.
 This will be made more precise in \cref{sec:semantics}.
 
@@ -2662,8 +2651,19 @@ we re-generalize the stale descendants of the region in the region tree.
 
 \paragraph{The essence of \ML}
 
-Typing constraints in~\cite* {Pottier-Remy/emlti} allow
-let-constaints to be copied
+In fact, \citet* {Pottier-Remy/emlti} already allow let-constraints to be
+copied before being fully solved. However, this copies the whole constraint
+including unsolved parts, and duplicates the work of the constraint
+resolution.  That is, they still lack a mechanism to incrementally and
+efficiently instantiate partial type schemes.  Besides, this is only allowed
+in their rewriting rules.  In their resolution strategy, they require that
+let-constraints be fully solved before inlining them, as in the accompanying
+prototype.
+
+%% Unsurprisingly, both implementations based on their framework, described in
+%% \url{https://pauillac.inria.fr/~remy/attapl/},
+%% follow a \Geninst-directional strategy.
+
 
 
 \paragraph{Principality tracking in \OCaml}
@@ -3058,7 +3058,7 @@ the term $(\efun \x \x + 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv
 
 
 \begin{mathparfig}[t]{fig/typing/X}
-        {Typing rules of \OML---robust, explicity typed extensions.}
+        {Typing rules of \OML---robust, explicitly typed extensions.}
   \inferrule[Tuple]
     {\parens{\G \th \ei : \ti}\iton}
     {\G \th (\ea, \ldots, \en) : \Pi\iton \ti}
@@ -3270,7 +3270,7 @@ $\labenv$, and require no contextual information. They are used in the
 typing rules in the two robust typing rules to ensure that there is actually
 no overloading involved.
 \XDR{There is some overloading in the notation when $\T$ is nullary. I don't
-think it is a problem, as the two definitiosn coincide.}
+think it is a problem, as the two definitions coincide.}
 \XDR{Alistair: check if this is what you wanted. I am not sure I fully
 understood the problem you mentioned with the previous formulation.}
 \XDR{The submission version contained another axiom
@@ -7951,4 +7951,4 @@ TODO: extend the magic rule and the disambiguation rule, and also provide the un
 % LocalWords:  mutli cheatsheet inI ProjX PolyX UseX unifier Gc Defn sw iw
 % LocalWords:  InstLeft InstRight mergable tw uw RRCL eqs priori multiset
 % LocalWords:  reflexitivity metatheoretic lexicographically Unifiers TODO
-% LocalWords:  rcl env Pcd
+% LocalWords:  rcl env Pcd illtyped inHole Ui unfoldings
