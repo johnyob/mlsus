@@ -101,9 +101,14 @@ let rec gtype_of_type : state:State.t -> env:Env.t -> C.Type.t -> G.Type.t =
   in
   match type_ with
   | Var type_var -> Env.find_type_var env type_var
-  | Arrow (t1, t2) -> gapp ~env [ self t1; self t2 ] Arrow
-  | Tuple ts -> gapp ~env (List.map ~f:self ts) (Tuple (List.length ts))
-  | Constr (ts, ident) -> gapp ~env (List.map ~f:self ts) (Constr (List.length ts, ident))
+  | Arrow (t1, t2) -> gapp ~env [ self t1; self t2 ] Sh_arrow
+  | Tuple ts -> gapp ~env (List.map ~f:self ts) (Sh_tuple (List.length ts))
+  | Constr (ts, ident) ->
+    gapp ~env (List.map ~f:self ts) (Sh_constr (List.length ts, ident))
+  | Shape (ts, shape) -> gapp ~env (List.map ~f:self ts) shape
+  | Poly scheme ->
+    let ts, poly_shape = Principal_shape.poly_shape_decomposition_of_scheme scheme in
+    gapp ~env (List.map ~f:self ts) (Sh_poly poly_shape)
 ;;
 
 let unify ~(state : State.t) ~(env : Env.t) gtype1 gtype2 =
@@ -141,28 +146,18 @@ let match_type
   :  state:State.t
   -> env:Env.t
   -> G.Type.t
-  -> Structure.Shape.t
+  -> Principal_shape.t
   -> Env.t * C.Type.Matchee.t
   =
   fun ~state ~env gtype sh ->
   let curr_region = env.curr_region in
-  let create_spine ~env n =
-    let rec loop ~(env : Env.t) vars spine n =
-      match n with
-      | 0 -> env, List.rev vars, List.rev spine
-      | n ->
-        assert (n > 0);
-        let type_var = C.Type.Var.create ~id_source:state.id_source () in
-        let gvar = G.create_var ~state ~curr_region () in
-        loop
-          ~env:(Env.bind_type_var env ~var:type_var ~type_:gvar)
-          (type_var :: vars)
-          (gvar :: spine)
-          (n - 1)
-    in
-    loop ~env [] [] n
+  let shape_quantifiers = Principal_shape.quantifiers sh in
+  let env, spine =
+    List.fold_map shape_quantifiers ~init:env ~f:(fun env quantifier ->
+      let gvar = G.create_var ~state ~curr_region () in
+      let env = Env.bind_type_var env ~var:quantifier ~type_:gvar in
+      env, gvar)
   in
-  let env, vars, spine = create_spine ~env (Structure.Shape.arity sh) in
   unify
     ~state
     ~env
@@ -173,12 +168,13 @@ let match_type
        (G.create_spine ~state ~curr_region spine)
        (G.create_shape ~state ~curr_region sh));
   match sh with
-  | Arrow ->
-    (match vars with
+  | Sh_arrow ->
+    (match shape_quantifiers with
      | [ var1; var2 ] -> env, Arrow (var1, var2)
      | _ -> assert false)
-  | Tuple _n -> env, Tuple vars
-  | Constr (_n, ident) -> env, Constr (vars, ident)
+  | Sh_tuple _n -> env, Tuple shape_quantifiers
+  | Sh_constr (_n, ident) -> env, Constr (shape_quantifiers, ident)
+  | Sh_poly poly_shape -> env, Poly poly_shape.scheme
 ;;
 
 let rec solve : state:State.t -> env:Env.t -> C.t -> unit =

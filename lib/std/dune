@@ -1,6 +1,6 @@
 (library
  (name mlsus_std)
  (public_name mlsus.std)
- (libraries core)
+ (libraries core base_quickcheck base_quickcheck.ppx_quickcheck.runtime)
  (preprocess
   (pps ppx_jane)))

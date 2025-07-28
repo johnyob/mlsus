@@ -1,6 +1,6 @@
 (library
  (name mlsus_constraint)
  (public_name mlsus.constraint)
- (libraries core mlsus.std mlsus.error grace)
+ (libraries core mlsus.std mlsus.error grace base_quickcheck)
  (preprocess
   (pps ppx_jane)))

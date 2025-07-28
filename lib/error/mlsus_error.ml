@@ -263,7 +263,7 @@ let disambiguation_mismatched_type ~range ~type_head =
     match type_head with
     | `Tuple -> "tuple"
     | `Arrow -> "function type"
-    | `Rigid_var -> "polymorphic variable"
+    | `Poly -> "polymorphic type"
   in
   Diagnostic.createf
     ~labels:[ Label.primaryf ~range "expected a type constructor, found a %s" head_name ]
@@ -290,7 +290,7 @@ let disambiguation_tuple_mismatched_type ~range ~type_head =
     match type_head with
     | `Constr -> "type constructor"
     | `Arrow -> "function type"
-    | `Rigid_var -> "polymorphic variable"
+    | `Poly -> "polymorphic type"
   in
   Diagnostic.createf
     ~labels:[ Label.primaryf ~range "expected a tuple, found a %s" head_name ]

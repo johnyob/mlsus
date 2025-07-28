@@ -1,78 +1,152 @@
 open! Import
-module Type = Generalization.Type
+module C = Constraint
+module G = Generalization
 
 module Var = Var.Make (struct
     let module_name = "Decoded_type.Var"
   end)
 
-module Ident = Constraint.Type.Ident
-module Shape = Structure.Shape
-
 type t =
   | Var of Var.t
-  | Shape of Shape.t
+  | Shape of Principal_shape.t
   | Spine of t list
   | App of t * t
   | Mu of Var.t * t
 [@@deriving sexp]
 
-let pp ppf t =
-  let var_to_name (var : Var.t) =
-    let id = (var.id :> int) in
+module Pretter_printer = struct
+  let id_to_var_name (id : Identifier.t) =
+    let id = (id :> int) in
     let char = String.make 1 (Char.of_int_exn (Char.to_int 'a' + (id mod 26))) in
     let suffix = id / 26 in
     if suffix = 0 then char else char ^ Int.to_string suffix
-  in
-  let ident_to_name (ident : Ident.t) =
-    String.split_on_chars ~on:[ '.' ] ident.name |> List.last_exn
-  in
-  let rec pp_mu ppf t =
-    match t with
-    | Mu (var, t) -> Fmt.pf ppf "@[%a@ as %a@]" pp_mu t pp_var var
-    | t -> pp_arrow ppf t
-  and pp_arrow ppf t =
-    match t with
-    | App (Spine [ t1; t2 ], Shape Arrow) ->
-      Fmt.pf ppf "@[%a ->@ %a@]" pp_tuple t1 pp_arrow t2
-    | t -> pp_tuple ppf t
-  and pp_tuple ppf t =
-    match t with
-    | App (Spine ts, Shape (Tuple _)) ->
-      Fmt.(pf ppf "@[<0>%a@]" (list ~sep:(any " *@ ") pp_atom) ts)
-    | t -> pp_app ppf t
-  and pp_app ppf t =
-    match t with
-    | App (_, Shape (Arrow | Tuple _)) -> Fmt.(parens pp_mu ppf t)
-    | App (t, Shape (Constr (_arity, constr))) ->
-      Fmt.(pf ppf "@[%a%s@]" (pp_spine ~in_app:true) t (ident_to_name constr))
-    | App (t1, t2) -> Fmt.(pf ppf "@[%a%a@]" (pp_spine ~in_app:true) t1 pp_atom t2)
-    | t -> pp_spine ~in_app:false ppf t
-  and pp_spine ~in_app ppf t =
-    match t with
-    | Spine ts -> pp_args ~in_app ppf ts
-    | t -> pp_atom ppf t
-  and pp_atom ppf t =
-    match t with
-    | Var var -> pp_var ppf var
-    | Shape sh -> pp_shape ppf sh
-    | App _ | Mu _ | Spine _ -> Fmt.(parens pp_mu ppf t)
-  and pp_var ppf (var : Var.t) = Fmt.pf ppf "'%s" (var_to_name var)
-  and pp_args ~in_app ppf ts =
+  ;;
+
+  let[@inline] pp_ident ppf (ident : C.Type.Ident.t) =
+    Fmt.string ppf (String.split_on_chars ~on:[ '.' ] ident.name |> List.last_exn)
+  ;;
+
+  let[@inline] pp_arrow pp_lhs pp_rhs ppf (lhs, rhs) =
+    Fmt.pf ppf "@[%a ->@ %a@]" pp_lhs lhs pp_rhs rhs
+  ;;
+
+  let[@inline] pp_tuple pp_type ppf types =
+    Fmt.(pf ppf "@[<0>%a@]" (list ~sep:(any " *@ ") pp_type) types)
+  ;;
+
+  let[@inline] pp_constr pp_args ppf (types, ident) =
+    Fmt.(pf ppf "@[%a%a@]") pp_args types pp_ident ident
+  ;;
+
+  let[@inline] pp_applied_shape pp_args pp_shape ppf (types, shape) =
+    Fmt.(pf ppf "@[%a%a@]") pp_args types pp_shape shape
+  ;;
+
+  let pp_args ~in_app ~pp_atom ~pp ppf ts =
     if in_app
     then (
       match ts with
       | [] -> ()
       | [ t ] -> Fmt.pf ppf "%a@ " pp_atom t
-      | ts -> Fmt.(pf ppf "@[(%a)@ @]" (list ~sep:comma pp_mu) ts))
-    else Fmt.(pf ppf "@[(%a)@]" (list ~sep:comma pp_mu) ts)
-  and pp_shape ppf sh =
-    match sh with
-    | Arrow -> Fmt.string ppf "(->)"
-    | Tuple n -> Fmt.pf ppf "Pi^%d" n
-    | Constr (n, constr) -> Fmt.pf ppf "%s(%d)" (ident_to_name constr) n
-  in
-  pp_mu ppf t
-;;
+      | ts -> Fmt.(pf ppf "@[(%a)@ @]" (list ~sep:comma pp) ts))
+    else Fmt.(pf ppf "@[(%a)@]" (list ~sep:comma pp) ts)
+  ;;
+
+  module Constraint_type = struct
+    let[@inline] pp_var ppf (var : C.Type.Var.t) =
+      let name = id_to_var_name var.id in
+      Fmt.pf ppf "'%s" name
+    ;;
+
+    let rec pp ppf (t : C.Type.t) =
+      let rec pp_lvl_arrow ppf (t : C.Type.t) =
+        match t with
+        | Arrow (t1, t2) | Shape ([ t1; t2 ], Sh_arrow) ->
+          pp_arrow pp_lvl_tuple pp_lvl_arrow ppf (t1, t2)
+        | t -> pp_lvl_tuple ppf t
+      and pp_lvl_tuple ppf (t : C.Type.t) =
+        match t with
+        | Tuple ts | Shape (ts, Sh_tuple _) -> pp_tuple pp_lvl_app ppf ts
+        | t -> pp_lvl_app ppf t
+      and pp_lvl_app ppf (t : C.Type.t) =
+        match t with
+        | Constr (ts, constr) | Shape (ts, Sh_constr (_, constr)) ->
+          pp_constr pp_lvl_args ppf (ts, constr)
+        | Shape (ts, shape) -> pp_applied_shape pp_lvl_args pp_shape ppf (ts, shape)
+        | t -> pp_lvl_atom ppf t
+      and pp_lvl_args ppf ts =
+        pp_args ~in_app:true ~pp_atom:pp_lvl_atom ~pp:pp_lvl_arrow ppf ts
+      and pp_lvl_atom ppf t =
+        match t with
+        | Var var -> pp_var ppf var
+        | Poly scheme -> Fmt.pf ppf "@[[%a]@]" pp_scheme scheme
+        | t -> Fmt.parens pp_lvl_arrow ppf t
+      in
+      pp_lvl_arrow ppf t
+
+    and pp_shape ppf (shape : Principal_shape.t) =
+      match shape with
+      | Sh_arrow -> Fmt.string ppf "(->)"
+      | Sh_tuple n -> Fmt.pf ppf "Pi^%d" n
+      | Sh_constr (n, constr) -> Fmt.pf ppf "%a(%d)" pp_ident constr n
+      | Sh_poly { quantifiers; scheme } ->
+        Fmt.pf
+          ppf
+          "@[(@[<hov 2>ν%a.@ %a@])@]"
+          Fmt.(list ~sep:comma pp_var)
+          quantifiers
+          pp_scheme
+          scheme
+
+    and pp_scheme ppf scheme =
+      let { C.Type_scheme.quantifiers; body } = scheme in
+      Fmt.pf ppf "@[<hov 2>%a.@ %a@]" Fmt.(list ~sep:comma pp_var) quantifiers pp body
+    ;;
+  end
+
+  module Decoded_type = struct
+    let[@inline] pp_var ppf (var : Var.t) =
+      let name = id_to_var_name var.id in
+      Fmt.pf ppf "'%s" name
+    ;;
+
+    let pp ppf t =
+      let rec pp_lvl_mu ppf t =
+        match t with
+        | Mu (var, t) -> Fmt.pf ppf "@[%a@ as %a@]" pp_lvl_mu t pp_var var
+        | t -> pp_lvl_arrow ppf t
+      and pp_lvl_arrow ppf t =
+        match t with
+        | App (Spine [ t1; t2 ], Shape Sh_arrow) ->
+          pp_arrow pp_lvl_tuple pp_lvl_arrow ppf (t1, t2)
+        | t -> pp_lvl_tuple ppf t
+      and pp_lvl_tuple ppf t =
+        match t with
+        | App (Spine ts, Shape (Sh_tuple _)) -> pp_tuple pp_lvl_app ppf ts
+        | t -> pp_lvl_app ppf t
+      and pp_lvl_app ppf t =
+        match t with
+        | App (t, Shape (Sh_constr (_, constr))) ->
+          pp_constr (pp_lvl_spine ~in_app:true) ppf (t, constr)
+        | App (t1, t2) ->
+          pp_applied_shape (pp_lvl_spine ~in_app:true) pp_lvl_atom ppf (t1, t2)
+        | t -> pp_lvl_spine ~in_app:false ppf t
+      and pp_lvl_spine ~in_app ppf t =
+        match t with
+        | Spine ts -> pp_args ~in_app ~pp_atom:pp_lvl_atom ~pp:pp_lvl_mu ppf ts
+        | t -> pp_lvl_atom ppf t
+      and pp_lvl_atom ppf t =
+        match t with
+        | Var var -> pp_var ppf var
+        | Shape sh -> Constraint_type.pp_shape ppf sh
+        | App _ | Mu _ | Spine _ -> Fmt.(parens pp_lvl_mu ppf t)
+      in
+      pp_lvl_mu ppf t
+    ;;
+  end
+end
+
+let pp = Pretter_printer.Decoded_type.pp
 
 module Decoder = struct
   module State = struct
@@ -96,7 +170,7 @@ module Decoder = struct
     ;;
   end
 
-  type nonrec t = Type.t -> t
+  type nonrec t = G.Type.t -> t
 
   type status =
     | Active (** A node is actively being visited. *)
@@ -110,7 +184,7 @@ module Decoder = struct
       let visited_table = Hashtbl.create (module Identifier) in
       (* Recursive loop that traverses the graphical type *)
       let rec decode type_ =
-        let structure = Type.structure type_ in
+        let structure = G.Type.structure type_ in
         let id = structure.id in
         match Hashtbl.find visited_table id with
         | Some (Cyclical var) ->

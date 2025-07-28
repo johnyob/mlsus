@@ -1,7 +1,7 @@
 open Core
 
 (** A unique identifier represented as a 63-bit integer *)
-type t = private int [@@deriving equal, compare, sexp, hash, bin_io]
+type t = private int [@@deriving equal, compare, sexp, hash, bin_io, quickcheck]
 
 include Comparable.S with type t := t
 
