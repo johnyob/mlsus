@@ -2875,7 +2875,7 @@ cycles, this no longer holds---but we do not anticipate any fundamental issues.
 \newpage
 \appendix
 
-\section*{\Large Organization of our appendices}
+\section*{\Large Organization of appendices}
 \label{app:outline}
 
 \begin{local}
@@ -3070,7 +3070,8 @@ the term $(\efun \x \x + 1 : \exi \tv \tv \to \tv)$ is well-typed with $\tv
   \inferrule[Rcd]
     {\parens{\G \th \ei : \ti}\iton \\
      \parens{\G \th \eli : \t \to \ti}\iton \\
-     \bar \el \uni \t}
+     \els = \labsof \t \\
+     \els \uni \t}
     {\G \th \erecord {\ela = \ea; \ldots; \el_n = \en} : \t}
 
   \inferrule[Rcd-Proj]
@@ -3151,22 +3152,13 @@ free in $\tys$.
 
 \parcomment{Nominal records}
 
-\XDR
-  {I find rules for records a bit messy. Rules for explicit records should
-  be obvious to write/read.  We should not need the intermediate rule \Rule
-  {Rcd-Assn}, just $\parens{\G \th \ei : \ti}\iton$ and changing Rule \Rule
-  {Rcd} to have $\iparens{\eli : \ti \to \t}$ and $\bar \el \uni \t$ for
-  premises.  They is also an abuse of notations with $\el/\T \in \Omega$
-  where $\in$ is both interpreted as math membership and an inductively
-  define predicate with math membership as an implicit axiom}
-
-\XDR
-  {I propose to get read of \Rule {Rcd=Assn}}
+\TODO {I inverted the convention, for label types, which are types of
+projections. Still, need to be propagated elsewhere.}
 
 Rules for nominal records with explicit annotations are a bit more
 technical.  They use an auxiliary typing judgment $\G \th \el : \all \tv \t
-\to \tp$ for the typing of labels.
-Label expressions $\el$ extend labels with explicit labels $\elab/\T$
+\to \tp$ for the typing of label expressions.
+Label expressions $\el$ extend labels $\elab$ with explicit labels $\elab/\T$
 and annotated label expressions $\el : \exi \tvs \t$ (where the annotation
 determines the shape of the record type they belong to).
 \begin{version}{}
@@ -3180,9 +3172,7 @@ determines the shape of the record type they belong to).
 
 We assume that record types have been previously defined, building a global
 environment $\labenv$ that maps labels to their projection type, \ie types
-of the form $\all \tv \T \tys \to \t$.\XDR{I inverted the convention, since
-a projection type makes sense, but an injection type does not for record
-fields.} A label $\elab$ may belong to several record types, but is unique
+of the form $\all \tv \T \tys \to \t$. A label $\elab$ may belong to several record types, but is unique
 within a given record type $\T$ (that defines $\elab$).
 %
 We write $\Labenv$ for the restriction $\set {\elab : \all \tvs \T \tys
@@ -3192,8 +3182,8 @@ We write $\Labenv$ for the restriction $\set {\elab : \all \tvs \T \tys
 unique type scheme $\ts$ associated to $\elab$ in type $\T$.
 
 We write $\lab \el$ the label underlying $\el$, defined as $\elab$ when $\el$ is
-either $\elab$ or $\elab/\T$ or $\lab \el$ when $\el$ is $\parens {\elp :
-\exi \tvs \t}$.  We write $\parens {\el \labin \Labenv}$ for a generalization of
+either $\elab$ or $\elab/\T$ and $\lab \elp$ when $\el$ is $\parens {\elp :
+\exi \tvs \t}$.  We write $\parens {\els \labin \Labenv}$ for a generalization of
 $\elab \in \dom(\Labenv)$, defined as follows:
 \begin{mathpar}
 \infer {\elab \in \dom (\Labenv)}{\elab \labin \Labenv}
@@ -3203,13 +3193,13 @@ $\elab \in \dom(\Labenv)$, defined as follows:
 \infer {\el \labin \Labenv}
        {\elannot \el \tvs {\T\tys} \labin \Labenv[\T]}
 \end{mathpar}
-Similarly, we write $\parens {\els \labof \Labenv}$ the generalization of
-$\bar \elab = \dom (\Labenv)$ defined as
-\begin{mathpar}
-{\els \labof \Labenv} \Wide \eqdef
-        \lab \els = \dom (\Labenv) \wide\wedge
-        \forall \el \in \els,\; \el \labin \Labenv
-\end{mathpar}
+We extend the notation to a sequence of labels $\els \labin \Labenv$ to mean
+$\el \labin \Labenv$ for all $\el$ in $\els$.
+
+We write $\labsof \T$ the labels of type $\T$, \ie. the domain
+of $\Omega/\T$. We extend this to types so that $\labsof \t$
+is equal to $\labsof \T$ when $\t$ is a record type $\T$.
+
 Rule \Rule {Lab} extracts the type scheme of a label $\elab$ from
 $\labenv$. Rule \Rule {Lab-X} does the same but for an explicit label
 $\elab/\T$. Rule \Rule {Lab-Inst} allows instantiation of the type of label
@@ -3225,15 +3215,16 @@ underlying $\el$ is uniquely determined by the type $\t$ of the record
 we project from.
 %
 Rule \Rule {Rcd} is typed similarly, but using the predicate $\els \uni \t$
-to check that labels $\el$ contains all labels of the record type $\t$ and
-are altogether uniquely determined by type $\t$, as explained next.
+to check that labels $\els$ taken altogether uniquely determined by type
+$\t$. In addition, the premise $\els = \labsof \t$ ensures that the sequence
+of labels underlying $\els$ are exactly the labels of the record type $\t$.
 
 In the explicit case, $\els \uni \T$ could just require that $\els$ contains
 at least one explicit label expression~$\elab/\T$.
 %
 However, uniqueness could also be determined by label annotations.  More
 importantly, we also wish uniqueness to support \emph{closed-world}
-reasoning, based on the available definitions available in the global
+reasoning, based on the definitions available in the global
 environment $\labenv$:
 \relax
   in a record expression $\erecord {\ela = \ea; \ldots; \el_n =
@@ -3244,33 +3235,33 @@ environment $\labenv$:
   Similarly, if the label $\elab$ is not overloaded, then the global record
   typing context $\labenv$ assigns a unique record type $\T$ to $\elab$, and
   we should have $\elab \uni \T$.
-
-We first uniqueness with respect to first record type \emph{names}, then
-to record types of such names.
+\relax
+Formally, we first define uniqueness with respect to first record type
+\emph{names}, then we extend it to record types of such names.
 \begin{mathpar}
-\def \Wide#1{&#1&}
-\begin{tabular}{R;;C;;L}
 \els \uni \T \Wide\eqdef
-  \els \labof \Labenv \wide\wedge
-  \forall \Tp, \; \els \labof \Labenv[\Tp] \implies \Tp = \T
-\\
-\el \uni \T \Wide\eqdef
-  \el \labin \Labenv \wide\wedge
-  {\forall \Tp, \uad \el \labin \Labenv[\Tp] \implies \T' = \T}
-\end{tabular}
+  \els \labin \Labenv \wide\wedge
+  \forall \Tp, \; \els \labin \Labenv[\Tp] \implies \Tp = \T
 
-\def \wide #1{&#1&}
-\begin{tabular}{R;C;L}
-  \els \uni {\T \tys} \wide\iff
-  \els \uni \T
-\\
-  \el \uni {\T \tys} \wide\iff \el \uni \T
-\end{tabular}
+\infer {
+    \els \uni \T
+}{% -----------------------------
+    \els \uni {\T \tys}
+}
 \end{mathpar}
 Notice that these predicates only depend on the global environment
 $\labenv$, and require no contextual information. They are used in the
 typing rules in the two robust typing rules to ensure that there is actually
 no overloading involved.
+\XDR{There is some overloading in the notation when $\T$ is nullary. I don't
+think it is a problem, as the two definitiosn coincide.}
+\XDR{Alistair: check if this is what you wanted. I am not sure I fully
+understood the problem you mentioned with the previous formulation.}
+\XDR{The submission version contained another axiom
+\Rule{Lab-?} that asserted $\infer {}{\els \uni \t}$, unconditionally.
+This does not make sense, as it defines $\els \uni \t$ as the always true
+predicate, making rule \Rule{Lab-!} above useless}
+
 
 
 \subsection {Typing rules for fragile, implicit constructs}
