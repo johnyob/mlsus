@@ -2,32 +2,11 @@ open! Import
 
 module type S = Mlsus_unifier.Structure.S
 
-module Shape = struct
-  module T = struct
-    type t =
-      | Arrow (** [Arrow] is the shape ['c1 'c2. 'c1 -> 'c2] *)
-      | Tuple of int (** [Tuple n] is the shape ['c1, ..., 'cn. 'c1 * ... * 'cn] *)
-      | Constr of int * Type_ident.t
-      (** [Constr (n, T)] is the shape ['c1, ..., 'cn. ('c1, ..., 'cn) T] *)
-    [@@deriving sexp, equal, compare, hash]
-  end
-
-  include T
-  include Comparable.Make (T)
-
-  let arity t =
-    match t with
-    | Arrow -> 2
-    | Tuple n -> n
-    | Constr (n, _ident) -> n
-  ;;
-end
-
 module Former = struct
   type 'a t =
     | App of 'a * 'a
     | Spine of 'a list
-    | Shape of Shape.t
+    | Shape of Principal_shape.t
   [@@deriving sexp]
 
   type 'a ctx = unit
@@ -69,7 +48,7 @@ module Former = struct
       (match List.iter2 ts1 ts2 ~f:unify with
        | Ok () -> t1
        | Unequal_lengths -> raise Cannot_merge)
-    | Shape sh1, Shape sh2 when Shape.(sh1 = sh2) -> t1
+    | Shape sh1, Shape sh2 when Principal_shape.(sh1 = sh2) -> t1
     | _ -> raise Cannot_merge
   ;;
 end

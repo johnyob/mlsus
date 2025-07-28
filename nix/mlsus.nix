@@ -16,10 +16,12 @@ with ocamlPackages;
     propagatedBuildInputs = [
       core
       core_unix
+      base_quickcheck
       async
       ppx_jane
       grace
       fmt
       menhir
+      ppx_quick_test
     ];
   }

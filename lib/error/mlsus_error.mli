@@ -59,12 +59,12 @@ val ambiguous_constructor : range:Range.t -> t
 
 val disambiguation_mismatched_type
   :  range:Range.t
-  -> type_head:[ `Tuple | `Arrow | `Rigid_var ]
+  -> type_head:[ `Tuple | `Arrow | `Poly ]
   -> t
 
 val disambiguation_tuple_mismatched_type
   :  range:Range.t
-  -> type_head:[ `Constr | `Arrow | `Rigid_var ]
+  -> type_head:[ `Constr | `Arrow | `Poly ]
   -> t
 
 val projection_out_of_bounds : range:Range.t -> arity:int -> index:int -> t

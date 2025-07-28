@@ -2,7 +2,10 @@ open Core
 open Incr
 
 module T = struct
-  type t = int [@@deriving equal, compare, sexp, hash, bin_io]
+  open Base_quickcheck
+
+  type t = (int[@quickcheck.generator Generator.int_inclusive 0 999])
+  [@@deriving equal, compare, sexp, hash, bin_io, quickcheck]
 end
 
 include T

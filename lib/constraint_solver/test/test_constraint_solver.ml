@@ -550,7 +550,7 @@ let%expect_test "Partial ungeneralization (Partial<>Instance)" =
      (err
       ((it
         (Cannot_unify (Var ((id 0) (name Decoded_type.Var)))
-         (App (Spine ()) (Shape (Constr 0 ((id 1) (name string)))))))
+         (App (Spine ()) (Shape (Sh_constr 0 ((id 1) (name string)))))))
        (range ()))))
     |}]
 ;;
@@ -944,8 +944,227 @@ let%expect_test "" =
           (Constr () ((id 1) (name string))))))))
      (err
       ((it
-        (Cannot_unify (App (Spine ()) (Shape (Constr 0 ((id 0) (name int)))))
-         (App (Spine ()) (Shape (Constr 0 ((id 1) (name string)))))))
+        (Cannot_unify (App (Spine ()) (Shape (Sh_constr 0 ((id 0) (name int)))))
+         (App (Spine ()) (Shape (Sh_constr 0 ((id 1) (name string)))))))
+       (range ()))))
+    |}]
+;;
+
+let%expect_test "" =
+  (* Basic alpha renaming *)
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let q2 = T.Var.create ~id_source () in
+  let q3 = T.Var.create ~id_source () in
+  let cst =
+    exists a1
+    @@ T.(
+         var a1
+         =~ poly (Type_scheme.create ~quantifiers:[ q2 ] (var q2))
+         &~ (var a1 =~ poly (Type_scheme.create ~quantifiers:[ q3 ] (var q3))))
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is satisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Conj
+        (Eq (Var ((id 0) (name Type.Var)))
+         (Poly
+          ((quantifiers (((id 1) (name Type.Var))))
+           (body (Var ((id 1) (name Type.Var)))))))
+        (Eq (Var ((id 0) (name Type.Var)))
+         (Poly
+          ((quantifiers (((id 2) (name Type.Var))))
+           (body (Var ((id 2) (name Type.Var)))))))))))
+    |}]
+;;
+
+let%expect_test "" =
+  (* Ignoring useless polymorphism *)
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let q2 = T.Var.create ~id_source () in
+  let q3 = T.Var.create ~id_source () in
+  let q4 = T.Var.create ~id_source () in
+  let cst =
+    exists a1
+    @@ T.(
+         var a1
+         =~ poly (Type_scheme.create ~quantifiers:[ q2 ] (var q2))
+         &~ (var a1 =~ poly (Type_scheme.create ~quantifiers:[ q3; q4 ] (var q3))))
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is satisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Conj
+        (Eq (Var ((id 0) (name Type.Var)))
+         (Poly
+          ((quantifiers (((id 1) (name Type.Var))))
+           (body (Var ((id 1) (name Type.Var)))))))
+        (Eq (Var ((id 0) (name Type.Var)))
+         (Poly
+          ((quantifiers (((id 2) (name Type.Var)) ((id 3) (name Type.Var))))
+           (body (Var ((id 2) (name Type.Var)))))))))))
+    |}]
+;;
+
+let%expect_test "" =
+  (* 'a. 'a  and 'b.'b -> 'b should fail *)
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let q1 = T.Var.create ~id_source () in
+  let q2 = T.Var.create ~id_source () in
+  let cst =
+    exists a1
+    @@ T.(
+         var a1
+         =~ poly (Type_scheme.create ~quantifiers:[ q1 ] (var q1))
+         &~ (var a1 =~ poly (Type_scheme.create ~quantifiers:[ q2 ] (var q2 @-> var q2))))
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is unsatisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Conj
+        (Eq (Var ((id 0) (name Type.Var)))
+         (Poly
+          ((quantifiers (((id 1) (name Type.Var))))
+           (body (Var ((id 1) (name Type.Var)))))))
+        (Eq (Var ((id 0) (name Type.Var)))
+         (Poly
+          ((quantifiers (((id 2) (name Type.Var))))
+           (body
+            (Arrow (Var ((id 2) (name Type.Var))) (Var ((id 2) (name Type.Var)))))))))))
+     (err
+      ((it
+        (Cannot_unify
+         (App (Spine ())
+          (Shape
+           (Sh_poly
+            ((quantifiers ())
+             (scheme
+              ((quantifiers (((id 0) (name Principal_shape.Var))))
+               (body (Var ((id 0) (name Principal_shape.Var))))))))))
+         (App (Spine ())
+          (Shape
+           (Sh_poly
+            ((quantifiers ())
+             (scheme
+              ((quantifiers (((id 0) (name Principal_shape.Var))))
+               (body
+                (Arrow (Var ((id 0) (name Principal_shape.Var)))
+                 (Var ((id 0) (name Principal_shape.Var)))))))))))))
+       (range ()))))
+    |}]
+;;
+
+let%expect_test "" =
+  (* nested polytypes *)
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let q1 = T.Var.create ~id_source () in
+  let q2 = T.Var.create ~id_source () in
+  let q3 = T.Var.create ~id_source () in
+  let q4 = T.Var.create ~id_source () in
+  let poly1 =
+    Type_scheme.create
+      ~quantifiers:[ q1 ]
+      T.(
+        tuple
+          [ var q1; poly (Type_scheme.create ~quantifiers:[ q2 ] (var q1 @-> var q2)) ])
+  in
+  let poly2 =
+    Type_scheme.create
+      ~quantifiers:[ q3 ]
+      T.(
+        tuple
+          [ var q3; poly (Type_scheme.create ~quantifiers:[ q4 ] (var q3 @-> var q4)) ])
+  in
+  let cst = exists a1 @@ T.(var a1 =~ poly poly1 &~ (var a1 =~ poly poly2)) in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is satisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Conj
+        (Eq (Var ((id 0) (name Type.Var)))
+         (Poly
+          ((quantifiers (((id 1) (name Type.Var))))
+           (body
+            (Tuple
+             ((Var ((id 1) (name Type.Var)))
+              (Poly
+               ((quantifiers (((id 2) (name Type.Var))))
+                (body
+                 (Arrow (Var ((id 1) (name Type.Var)))
+                  (Var ((id 2) (name Type.Var)))))))))))))
+        (Eq (Var ((id 0) (name Type.Var)))
+         (Poly
+          ((quantifiers (((id 3) (name Type.Var))))
+           (body
+            (Tuple
+             ((Var ((id 3) (name Type.Var)))
+              (Poly
+               ((quantifiers (((id 4) (name Type.Var))))
+                (body
+                 (Arrow (Var ((id 3) (name Type.Var)))
+                  (Var ((id 4) (name Type.Var)))))))))))))))))
+    |}]
+;;
+
+let%expect_test "" =
+  (* monomorphism in polytypes *)
+  let open C in
+  let id_source = Identifier.create_source () in
+  let a1 = T.Var.create ~id_source () in
+  let a2 = T.Var.create ~id_source () in
+  let q1 = T.Var.create ~id_source () in
+  let cst =
+    exists_many [ a1; a2 ]
+    @@ T.(
+         var a1
+         =~ poly (Type_scheme.create ~quantifiers:[ q1 ] (tint @-> var q1))
+         &~ (var a1 =~ poly (Type_scheme.create ~quantifiers:[ q1 ] (var a2 @-> var q1)))
+         &~ (var a2 =~ tstring))
+  in
+  print_solve_result cst;
+  [%expect
+    {|
+    ("Constraint is unsatisfiable"
+     (cst
+      (Exists ((id 0) (name Type.Var))
+       (Exists ((id 1) (name Type.Var))
+        (Conj
+         (Conj
+          (Eq (Var ((id 0) (name Type.Var)))
+           (Poly
+            ((quantifiers (((id 2) (name Type.Var))))
+             (body
+              (Arrow (Constr () ((id 0) (name int)))
+               (Var ((id 2) (name Type.Var))))))))
+          (Eq (Var ((id 0) (name Type.Var)))
+           (Poly
+            ((quantifiers (((id 2) (name Type.Var))))
+             (body
+              (Arrow (Var ((id 1) (name Type.Var)))
+               (Var ((id 2) (name Type.Var)))))))))
+         (Eq (Var ((id 1) (name Type.Var))) (Constr () ((id 1) (name string))))))))
+     (err
+      ((it
+        (Cannot_unify (App (Spine ()) (Shape (Sh_constr 0 ((id 0) (name int)))))
+         (App (Spine ()) (Shape (Sh_constr 0 ((id 1) (name string)))))))
        (range ()))))
     |}]
 ;;

@@ -5,6 +5,7 @@ module type S = sig
     { id : Identifier.t
     ; name : string
     }
+  [@@deriving quickcheck]
 
   val create : id_source:Identifier.source -> ?name:string -> unit -> t
 
@@ -19,7 +20,7 @@ module Make (X : sig
       { id : Identifier.t
       ; name : string
       }
-    [@@deriving equal, compare, hash, bin_io, sexp]
+    [@@deriving equal, compare, hash, bin_io, sexp, quickcheck]
 
     let create ~id_source ?(name = X.module_name) () =
       { id = Identifier.create id_source; name }

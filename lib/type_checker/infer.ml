@@ -279,11 +279,12 @@ struct
         ret
         ~closure:(ret :: X.arg_closure arg |> List.map ~f:(fun v -> `Type v))
         ~with_:(function
-          | (Arrow (_, _) | Tuple _) as matchee ->
+          | (Arrow (_, _) | Tuple _ | Poly _) as matchee ->
             let type_head =
               match matchee with
               | Arrow (_, _) -> `Arrow
               | Tuple _ -> `Tuple
+              | Poly _ -> `Poly
               | _ -> assert false
             in
             ff (Mlsus_error.disambiguation_mismatched_type ~range:name.range ~type_head)
@@ -577,11 +578,12 @@ module Expression = struct
                   let arity = List.length comp_types in
                   ff (Mlsus_error.projection_out_of_bounds ~range:exp.range ~index ~arity)
                 | Some comp_type -> Type.(var exp_type =~ var comp_type))
-             | (Arrow _ | Constr _) as matchee ->
+             | (Arrow _ | Constr _ | Poly _) as matchee ->
                let type_head =
                  match matchee with
                  | Arrow _ -> `Arrow
                  | Constr _ -> `Constr
+                 | Poly _ -> `Poly
                  | _ -> assert false
                in
                ff
