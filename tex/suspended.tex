@@ -2651,14 +2651,14 @@ we re-generalize the stale descendants of the region in the region tree.
 
 \paragraph{The essence of \ML}
 
-In fact, \citet* {Pottier-Remy/emlti} already allow let-constraints to be
-copied before being fully solved. However, this copies the whole constraint
-including unsolved parts, and duplicates the work of the constraint
+\citet* {Pottier-Remy/emlti} already allow let-constraints to be
+copied before being fully solved. However, they copy the whole constraint
+including unsolved parts, which duplicates the work of the constraint
 resolution.  That is, they still lack a mechanism to incrementally and
 efficiently instantiate partial type schemes.  Besides, this is only allowed
-in their rewriting rules.  In their resolution strategy, they require that
-let-constraints be fully solved before inlining them, as in the accompanying
-prototype.
+in their rewriting rules.  The resolution strategy imposed on top of their
+rewriting rules requires that let-constraints be fully solved before being
+inlined---and similarly in their accompanying prototype.
 
 %% Unsurprisingly, both implementations based on their framework, described in
 %% \url{https://pauillac.inria.fr/~remy/attapl/},
