@@ -159,18 +159,13 @@ We call this \textbf{\geninst}-directional (read as
 \textbf{p}olymorphic expressions must be typed before their
 \textbf{i}nstances.
 
-It has later been reused for other \OCaml fragile constructs.
-
 \parcomment{An instance of the problem (implementation directionality in
 inference)}
 
-\XDR [was]
+\XDR [The following idea has been moved further down after we explain
+      the basic examples.]
   {This strategy ensures principality for fragile constructs, but can lead
   to counter-intuitive behavior.}
-
-\XDR
-  [should be moved somewhere else and weekend] {Although it ensures
-  principality, it may sometimes be unintuitive for the user.}
 
 
 For instance, consider the following two record types with overlapping field
@@ -1716,7 +1711,7 @@ construct into the robust, explicit counterpart:
 \\
 \entry[Labels]{l}{
   \elab \and \elab / \T
-\Xdidier{was commented....}
+\Xdidier{was commented out, but should be kept visible}
 }
 \\[1ex]
 \entry[Types]{\t}{
@@ -2408,7 +2403,7 @@ There are three cases in which an instantiation constraint is eliminated:
        {\cletr \x \tv {\tvs} {\Ca\where{\cmatch \tvp \cbrs}}
                            {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
     {\tvp \in \reg \tv \tvs \\
-     \cunif {\tvp} {\cunif \t \ueq} \in \C\where\Cb \\
+     \cunif {\tvp\XDR{$\tvc$?}} {\cunif \t \ueq} \in \C\where\Cb \\
      \x \disjoint \bvs \Cb}
     {\C\where{\cletr \x \tv {\tvs} {\Ca\where{\cmatched \tvp {\shape \t} \cbrs}}
 		      {\Cb\where{\cpapp \x \tvp \tvc \inst}}}}
@@ -2488,7 +2483,9 @@ illustrated in \cref{ex:backprop}. In particular, the shape of a regional
 variable can sometimes be determined from its instantiations. If an abstraction
 contains a suspended match constraint on a regional variable $\tvp$, and the
 constraint context includes a partial instantiation $\cpapp \x \tvp \tvc \inst$
-together with a multi-equation constraining the copy of $\tvp$ ($\tvc$)
+together with a multi-equation constraining the copy of $\tvp$
+($\tvc$)\XDR{should be \emph{the copy $\tvc$ of $\tvp$}---if this is what
+you mean. See comment in Rule \Rule{S-BackProp}}
 to a non-variable type $\t$, then $\shape \t$ must be the unique shape of
 $\tvp$. Any other shape would render the instantiation unsatisfiable.
 
@@ -2514,7 +2511,7 @@ $\tvp$. Any other shape would render the instantiation unsatisfiable.
         $\c$, $\Cshape {\hat\C} \tv \sh$ does not hold for any $\sh$.
 
       \end{enumerate*}
-     Here, $\hat\C$ is a normal context \ie such that no other
+     Here, $\hat\C$ is a normal context, \ie such that no other
      rewrites can be applied.
   \end{enumerate}
 \end{restatable}
@@ -2650,6 +2647,9 @@ we re-generalize the stale descendants of the region in the region tree.
 \label{sec:related-work}
 
 \paragraph{The essence of \ML}
+
+\XDR{Should perhaps be inlined in \cref {sec:solving} or
+\cref {sec:semantics}.}
 
 \citet* {Pottier-Remy/emlti} already allow let-constraints to be
 copied before being fully solved. However, they copy the whole constraint
@@ -2836,16 +2836,22 @@ literals~\citep*[Section 5.8]{rossberg-hamlet}.
 \parcomment {We tried, but failed}
 
 We explored adding such \emph{default rules} to suspended match constraints,
-allowing unresolved constraints to discharge with a default shape rather than
-fail. While pragmatic, such rules are inherently non-principal and difficult to
-reconcile with our framework.
+allowing unresolved constraints to discharge with a default shape rather
+than fail. Using default shapes rather that defauilt types ensures that at
+least the default behavior could have been obtained by adding an extra
+shape annotation in the code.
 
-\parcomment {Why did we fail}
+While pragmatic, such rules are inherently non-principal and difficult to
+reconcile with our framework.  In particular, they introduce subtle semantic
+complexities: if two suspended constraints could unlock each other, then
+defaulting one over the other may force an unsatisfiable branch to be taken.
 
-In particular, they introduce subtle semantic complexities: if two suspended
-constraints could unlock each other, then defaulting one over the other
-may force an unsatisfiable branch to be taken.
-% But we have a nifty prototype
+%% Still, we can formulzate some good propeties that a strategy for firing
+%% defaulting rules should satisfy.  It appears that under some reasonable
+%% blackbox asumptions (the stategy cannot explore the suspended constraints,
+%% but only know type variables they may contraint), there is actually an
+%% optimal strategy.
+
 The optimal or principled strategy for applying defaults in such cases
 remains unclear.
 Should we fire all default rules of all suspended constraints
@@ -2886,7 +2892,11 @@ cycles, this no longer holds---but we do not anticipate any fundamental issues.
 % \end{acks}
 
 %% \bibliographystyle{ACM-Reference-Format}
+\begin{local}
+\let \t \latext \let \c \latexc
+
 \bibliography{suspended}
+\end{local}
 
 \newpage
 \appendix
