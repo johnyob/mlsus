@@ -79,16 +79,17 @@ type annotations. The return type of overloaded datatype constructors may
 be annotated; polymorphic expressions can be annotated with a type
 scheme; and for GADTs, the type of the \texttt{match} scrutinee and return
 type can be annotated to a rigid type which will be refined by type
-equalities in each branch. Those type annotations may sometimes---but
+equalities in each branch.
+Those type annotations may sometimes---but
 not always---be omitted.
 
-Consider impredicative higher-rank polymorphism for instance:
+For instance, consider impredicative higher-rank polymorphism :
 \begin{program}[input]
 let self f = f f
 \end{program}
-With higher-rank types, one could \emph{guess} the type of \code{f} to be
+One could \emph{guess} the (higher-rank) type of \code{f} to be
 either $\tfor \tv \tv \to \tv$ or $\tfor \tv \tv \to \tv \to \tv$ in order
-to typecheck \code{self}---neither of which is more general than the other,
+to typecheck \code{self}, while neither of them is more general than the other,
 violating principality.
 
 \parcomment {Current approaches are kinda bad}
@@ -134,7 +135,7 @@ that is sufficiently expressive, principled, intuitive for the user,
 and for which we have a complete and effective elaboration algorithm.
 
 The solutions proposed so far all enforce some ordering in which type
-inference is performed, which can then be used to propagate both inferred
+inference is performed, which can be used to propagate both inferred
 types and user-provided type annotations as \emph{known} types that can be
 used for disambiguation and enable the omission of some annotations.
 They are two main strategies, \emph{\geninst-directional} and
@@ -239,7 +240,7 @@ let ex_4_1 p r = if p then (r : 'a one).x else r.x         °\ocamlflags 20°
 let ex_4_2 p r = if p then r.x else (r : 'a one).x         °\ocamlflags 10°
 \end{program}
 While treating both examples in the same way is a benefit , it is also a
-limitation of $\pi$-directional type inference that user-defined type
+limitation of $\pi$-directional inference that type
 annotations must dominate their use, $\pi$-directionally,
 to be effective.
 
@@ -271,13 +272,14 @@ This is not the only possible choice: bidirectional type inference is a
 framework that must be instantiated by assigning modes---checking or
 inference---to each language construct. There is usually no optimal assignment
 of modes: for any choice of modes, some programs will typecheck successfully,
-while others will fail unnecessarily. Yet the typing rules must irrevocably
-commit to a fixed set of modes. After which, principal types often exist, but
-only with respect to a specification that made non-principal choices to begin with.
-
+while others will fail unnecessarily. Yet, the typing rules must irrevocably
+commit to a fixed set of modes, after which, principal types often exist, but
+only with respect to a specification that made non-principal choices to
+begin with.
+%
 Bidirectional type inference has been largely used for languages with
 higher-rank polymorphism, dependent types, or subtyping.  Still, both \OCaml
-and \Haskell only use a limited form of bidirectional type checking with an
+and \Haskell only use a limited form of bidirectional typing with an
 underlying first-order unification-based type inference engine, that limits
 the downsides of bidirectional type inference.
 
@@ -404,23 +406,24 @@ let ex_8 = let getx r = r.x in getx one                    °\ocamlflags 10°
 let ex_9 r = (r.x : bool)                        	   °\ocamlflags 11°
 let ex_1_0 r = r.x.x                              	   °\ocamlflags 11°
 \end{program}
-All are arguably unambiguous; \OCaml accepts none of them, \OML accepts the first three.
+All are arguably unambiguous; \OCaml accepts none of them, \OML accepts the
+first three.
 
 In \ocaml{ex_6}, \ocaml{r} can only be of type \ocaml{'a one}. Indeed,
 considering the second projection first, we should learn that
 \ocaml{r} is of type \ocaml{'a one} and since it is $\lambda$-bound, this
-should then make the first projection unambiguous. Disambiguating this example is a matter
-of solving the typing constraints in the right order.
-
+should then make the first projection unambiguous. Disambiguating this
+example is a matter of solving the typing constraints in the right order.
+%
 A similar failure occurs in \ocaml{ex_7}, where the type of the
 $\lambda$-bound variable \code{r} is initially ambiguous and
 unknown. It is only upon typing the projection \code{r.y} that
 \code{r} is forced to have the type \ocaml{'a one}; this requires
 inferring the $\Let$-body to disambiguate the $\Let$-definition.
 %
-In \code{ex_8}, disambiguation information flows from an instance to
-back the definition, opposite to the \Geninst-order; we call this
-\emph{backpropagation}.
+In \code{ex_8}, disambiguation information flows from an instance back
+to the definition, opposite to the \Geninst-order; we call this
+%% \emph{backpropagation}.
 
 The example \ocaml{ex_9} can be disambiguated from the return type of
 the projection, rather than from the type of \code{r}. The typing rules for
@@ -457,12 +460,13 @@ The paper is organized as follows:
   In \cref{sec:semantics}, we describe suspended match constraints and their semantics.
 
 \item
-  In \cref{sec:language}, we define \OML, an extension of \ML featuring static
-    overloading of record labels, overloaded tuple projections, and
-    semi-explicit first-class polymorphism. We sketch its typing rules and
-    state the theorems of soundness and completeness for constraint generation,
-    as well as principality. By lack of space, detailed typing rules and constraint
-    generation are postponed to \cref {app:oml-calculus}.
+  In \cref{sec:language}, we define \OML, an extension of \ML featuring
+  static overloading of record labels, overloaded tuple projections, and
+  semi-explicit first-class polymorphism. We sketch its typing rules and
+  state the theorems of soundness and completeness for constraint
+  generation, as well as principality.
+  \Long {By lack of space, detailed typing
+  rules and constraint generation are postponed to \cref {app/oml}.}{}
 
 \item
   In \cref{sec:solving}, we provide a formal definition of our constraint
@@ -479,9 +483,11 @@ The paper is organized as follows:
   including prototyped extensions whose theory is less clear.
 
 \end{enumerate*}
-Appendix \cref{appendix:figures} contains a complete technical reference,
-collecting key definitions and figures for convenient lookup. All proofs are
-postponed to appendices.
+\Long
+  {Appendix \cref{appendix:figures} contains a complete technical reference,
+  collecting key definitions and figures for convenient lookup. All proofs
+  are postponed to appendices.}  {By lack of space, detailed typing rules,
+  constraint generation, and all proofs are postponed to \cref {app/oml}.}
 
 \subsubsection* {Our contributions}
 
@@ -541,7 +547,7 @@ Our contributions are:
   \nextline
   \and  \clet \x \tv \ca \cb
   \and  \capp \x \t
-  \nextline
+  %% \nextline
   \and  \cmatch \t \cbrs
 }\\[1ex]
 \entry[Branches]{\cbr}{\cbranch \cpat \c} \\
@@ -615,7 +621,7 @@ and its associated constraint has to be solved. A match constraint
 that is never discharged is considered unsatisfiable.
 
 More precisely:
-\begin{enumerate}
+\begin{enumerate*}
 
 \item
   The matchee $\t$ is a type. The constraint remains suspended
@@ -633,7 +639,7 @@ More precisely:
   \emph{disjoint}---that is, no shape may be matched by more
   than one pattern in the list.
 
-\end{enumerate}
+\end{enumerate*}
 
 We keep the grammar of shapes and patterns abstract in this section,
 to explain the general framework of suspended constraints. For now, it suffices to
@@ -657,10 +663,16 @@ The remainder of this section illustrates the role of suspended constraints
 in supporting \emph{fragile} language features as defined above.
 In particular:
 \begin{enumerate}
-  \item[(\cref{sec/constraints/polytypes})] Semi-explicit first-class polymorphism;
-  \item[(\cref{sec:constraints:overloading})] Constructor and record label overloading for nominal algebraic
-  datatypes;
-\item[(\cref{sec:constraints:tuples})] Overloaded tuple projection in the style of \SML.
+
+\item[(\cref{sec/constraints/polytypes})]
+   Semi-explicit first-class polymorphism;
+
+\item[(\cref{sec:constraints:overloading})]
+   Constructor and record label overloading for nominal algebraic datatypes;
+
+\item[(\cref{sec:constraints:tuples})]
+  Overloaded tuple projection in the style of \SML.
+
 \end{enumerate}
 We demonstrate how the typability of each of these features can be elaborated
 into constraints, formalized using a constraint generation function of the
@@ -670,6 +682,7 @@ well-typed.
 %
 
 \parcomment{Why our solution makes things easier?}
+
 As we will see, once we adopt the suspended constraint machinery developed in
 this paper, much of the complexity of these typing fragile constructs
 vanishes---suspended constraints do most of the heavy lifting.
@@ -1761,7 +1774,9 @@ explicit counterpart.
 
 We have detailed typing rules for the full \OML calculus, but unfortunately
 they do not fit in the margins of the 25 pages of this document. We moved them
-all, along with detailed examples, in Appendix \cref{app:oml-calculus}.
+all\relax
+%% , along with detailed examples,
+in Appendix \cref{app/oml}.
 
 Our typing rules $\G \th \e : \ts$ are mostly standard, except for
 the rules governing implicit (or fragile) constructs $\e^i$. These
@@ -1795,7 +1810,7 @@ $\e^i$ in $\e$ with typed holes around their subterms. This ensures the
 subterms---such as type annotations---remain present, so that any constraints
 they introduce can still contribute to unicity.
 For example, $\eerase {\efield \e j}$ is $\emagic {\cerase \e}$.
-The full definition is given in Appendix \cref{appendix:figures}.
+The full definition is given in Appendix \cref{app:full-reference}.
 
 We can now formalize the two unicity conditions:
 \begin{mathpar}
@@ -1874,8 +1889,9 @@ $\cunif \tv \t \centails \csem {\e : \tv}$.
 
 \begin{restatable}[Principal types]{theorem}{principalTypes}
 \label{thm:principal-types}
-For any well-typed closed term $\e$, there exists a type $\t$, which we call
-principal, such that:
+For any well-typed closed term $\e$, there exists a type $\t$\relax
+%% , which we call principal,
+such that:
 \begin{enumerate*}[(\roman*)]
 \item
   $\th \e : \t$.
@@ -1944,13 +1960,13 @@ solver becomes stuck, indicating that $\c$ is unsatisfiable.
 \end{definition}
 
 \subsection{Unification}
-%
+
 Our constraints ultimately reduce to equations between types, which we solve
 using first-order unification. Like our solver, we specify unification as a
 non-deterministic rewriting relation between \emph{unification problems} $\upa
 \unif \upb$, that eventually reduces to a solved form $\hat\up$ or to $\cfalse$.
 
-\begin{mathparfig}[htpb!]
+\begin{mathparfig}[t!]%htpb!
   {fig:unification-syntax-and-semantics}
   {Syntax and semantics of unification problems.
    %Constraints are also extended with the administrative multi-equation construct.
@@ -2011,7 +2027,7 @@ A constraint $\c$ is satisfiable if it rewrites to a solved form
 $\hat\up$ (\cref{def:solved-form}); otherwise it gets
 stuck.
 
-\begin{mathparfig}[htpb!]
+\begin{mathparfig}[t!]%htpb
   {fig:solver-basic}
   {Basic rewriting rules $\ca \csolve \cb$}
   \rewrite[S-Unif]
@@ -2063,14 +2079,16 @@ stuck.
 current unification problem. The unification algorithm itself is treated as a
 black box by the solver, so the system could be extended with any
 equational theory of types implemented by the unification algorithm.
-\begin{mathparfig}[htpb!]
+\begin{mathparfig}[t!]%htpb
   {fig:constraint-let-regions}
   {Syntax and semantics of region-based $\Let$ constraints.}
+  [mprset=lessskip]
  \begin{bnfgrammar}
   \entry[Constraints]{\c}{
      \dots \and \cletr \x \tv \tvs \ca \cb
    }
- \end{bnfgrammar}\\
+ \end{bnfgrammar}
+ \vadjust{\vskip -1.2ex}\\
 \begin{tabular}{R;;C;;L}
 %%\c &::=& \ldots \mid \cletr \x \tv \tvs \ca \cb \\
 \semenv(\cabsr \tv \tvs \c) &\eqdef&
@@ -2106,12 +2124,12 @@ abstraction with a region, written $\semenv(\cabsr \tv \tvs \c)$, is a set of
 interpretation for the region $\semenvp$ with a designated \emph{root} variable
 $\tv$, written $\greg \tv \semenvp$. Regional $\Let$-constraints strictly
 generalize ordinary constraint abstractions, as captured by the equivalence:
-\begin{mathline}
+\begin{mathpar}
   \clet \x \tv \ca \cb \Wide\cequiv \cletr \x \tv \eset \ca \cb
-\end{mathline}
-
+\end{mathpar}
+%
 \parcomment{Explanation of rules}
-
+%
 Rule \Rule{S-Let} rewrites let constraints into regional form.
 %
 \Rule{S-Exists-Conj} lifts existentials across conjunctions;
@@ -2137,7 +2155,7 @@ constraints already handled by the solver.
 
 \paragraph{Suspended match constraints}
 
-\begin{mathparfig}[htpb!]
+\begin{mathparfig}[t!]%htpb
   {fig:solver-susp}
   {Rewriting rules for suspended match constraints.}
   \rewrite[S-Match-Type]
@@ -2156,17 +2174,15 @@ constraints already handled by the solver.
 \Rule{S-Match-Type} solves suspended match constraints whose scrutinee is
 a non-variable type $\t$ by rewriting them using the sugar $(\cmatched \t
 {\shape \t} \cbrs)$, introduced in \cref{sec:constraints}.
-
 \parcomment {S-Match-Var}
-
-\Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and
-the context $\C$ proves that $\tv$ is equal to some non-variable type
+Rule \Rule{S-Match-Var} applies when the scrutinee is a variable $\tv$ and
+the context~$\C$ proves that $\tv$ is equal to some non-variable type
 $\t$, which establishes the unicity property
 $\Cshape \C \t {~\shape \t}$.
 %
 To check whether a context $\C$ proves an equality---or more generally,
-a multi-equation $\ueq$---we search for a decomposition $\C = \Ca\where{\ueq \cand \Cb}$
-where $\fvs \ueq$ is disjoint from the binders of $\Cb$.
+a multi-equation $\ueq$---we search for a decomposition $\C = \Ca\where{\ueq
+\cand \Cb}$ where $\fvs \ueq$ is disjoint from the binders of $\Cb$.
 
 \paragraph{Let constraints}
 
@@ -2176,14 +2192,17 @@ where $\fvs \ueq$ is disjoint from the binders of $\Cb$.
 
 Application constraints can be solved by copying constraints:
 \begin{mathpar}
-  \rewrite[S-Let-App-Beta]
+\hfil
+\rewrite
     {\cletr \x \tv \tvs \ca {\C\where{\capp \x \t}}}
     {\tv, \tvs \disjoint \t \\ x \disjoint \bvs \C}
     {\clet \x \tv \ca {\C\where{\cexists {\tv, \tvs} \cunif \tv \t \cand \ca}}}
+\eqno
+{\DefTirName{S-Let-App-Beta}}
 \end{mathpar}
 This resembles $\beta$-reduction, except that the original abstraction is
-retained. While correct for \emph{simple} constraints, it may duplicate solving work
-across applications of the same abstraction.
+retained. While correct for \emph{simple} constraints, it may duplicate
+solving work across applications of the same abstraction.
 %
 A more efficient approach first solves the abstraction once---\eg reducing it
 to $\cabsr \tv \tvs \ueqs$, where $\tvs$ are generalizable variables---and then
@@ -2196,8 +2215,8 @@ the \mgu of $\ueqs$. This optimization underlies efficient implementations of
 
 \parcomment{Generalization with suspended constraints is hard}
 
-However, this approach \emph{does not} extend to suspended constraints. To illustrate
-this, let us examine \ocaml{ex_7} (from \cref{sec/introduction}):
+However, this approach \emph{does not} extend to suspended constraints. To
+illustrate this, let us reexamine \ocaml{ex_7} from \cref{sec/introduction}:
 \begin{program}[input]
 let ex_7 r = let x = r.x in x + r.y °\ocamlflags10°
 \end{program}
@@ -2422,7 +2441,7 @@ instantiation constraints, written as the substitution $\where{\x.\tvb \is
 
 \parcomment{Lowering}
 
-\Rule{S-Exists-Lower} implements the non-trivial case of lowering
+Rule \Rule{S-Exists-Lower} implements the non-trivial case of lowering
 existentials across $\Let$-binders. It identifies a subset of variables in
 the region of a $\Let$ constraint that are unified with variables from
 outside the region. Such variables are considered monomorphic and thus
@@ -2604,18 +2623,18 @@ into four categories:
   %% \let \\ \relax
   \let \Item \item
   \renewcommand \item [1][]{\Item[(\textbf{#1})]}
-  \item[I] Variables are yet to be generalized. \\
+  \item[I] Variables are yet to be generalized.
     \emph{Introduced by instantiations or source types in constraints}
 
-  \item[G] Variables that are generalized. \\
-    \emph{Not accessible from any instance type. Treated polymorphically.}
+  \item[G] Variables that are generalized.
+    \emph{Not accessible from any instance type; treated polymorphically.}
 
-  \item[PG] Variables that are partially generalizable. \\
+  \item[PG] Variables that are partially generalizable. %\\
     \emph{Generalizable variables mentioned by suspended match constraint or partial
     instantiations.}
 
   \item[PI] Variables that were previously partially generalized
-    but have since been updated.  \\
+    but have since been updated.  %\\
     \emph{Awaiting re-generalization. Introduced by the unification of partial
     generics.}
 \end{itemize}
@@ -2669,12 +2688,15 @@ inlined---and similarly in their accompanying prototype.
 \paragraph{Principality tracking in \OCaml}
 
 \citet*{Garrigue-Remy/poly-ml} introduced an approach to principality tracking
-for polytypes---what we now call \geninst-directional inference---in which
+for polytypes (which we called \geninst-directional inference) in which
 generalization and instantiation govern the flow of known type information.
-This approach has since been extended to other features of the \OCaml language:
+Their approach has since been extended to other features of the \OCaml language:
 whenever the typechecker need to know if a type is known in a robust way, it
-checks whether the type is generalizable. We compared their approach to ours in
-\cref{sec/introduction} and \cref{sec/constraints/polytypes}.
+checks whether the type is generalizable.
+%% We compared their approach to ours in
+It is compared to ours in
+%% \cref{sec/introduction} and
+\unskip~\cref{sec/constraints/polytypes}.
 
 \paragraph{Bidirectional type inference}
 
@@ -2695,6 +2717,14 @@ On the other hand, bidirectional typing is known to scale to powerful
 systems such as fully-implicit predicative
 polymorphism~\citep*{dunfield-krishnaswami-bidirectional-poly} and we
 have not considered scaling our approach to those systems yet.
+
+Contextual typing \cite {Xue-Oliveira/contextual-typing@icfp2024} is a
+recent improvement of bidirectional typing that captures more complex flows
+of \emph{known} type information, but still suffers from directionality. It
+has not been combinded with ML-style type inference yet, but this would be
+interesting to explore.
+
+
 
 
 \paragraph{Qualified types}
@@ -2756,7 +2786,8 @@ original motivations]{Does not bring much to the reader}.
 \label{sec:discussion}
 \label{sec:future-work}
 
-In this work, we developed a constraint-based framework for omnidirectional
+%% In this work,
+We developed a constraint-based framework for omnidirectional
 type inference, capable of supporting fragile features that would otherwise
 break principality.
 %
@@ -2837,15 +2868,15 @@ literals~\citep*[Section 5.8]{rossberg-hamlet}.
 
 We explored adding such \emph{default rules} to suspended match constraints,
 allowing unresolved constraints to discharge with a default shape rather
-than fail. Using default shapes rather that defauilt types ensures that at
-least the default behavior could have been obtained by adding an extra
-shape annotation in the code.
-
+than fail. Using default shapes rather that default types ensures that the
+default behavior could also have been obtained by adding an extra shape
+annotation in the code.
+%
 While pragmatic, such rules are inherently non-principal and difficult to
 reconcile with our framework.  In particular, they introduce subtle semantic
 complexities: if two suspended constraints could unlock each other, then
 defaulting one over the other may force an unsatisfiable branch to be taken.
-
+%
 %% Still, we can formulzate some good propeties that a strategy for firing
 %% defaulting rules should satisfy.  It appears that under some reasonable
 %% blackbox asumptions (the stategy cannot explore the suspended constraints,
@@ -2853,11 +2884,11 @@ defaulting one over the other may force an unsatisfiable branch to be taken.
 %% optimal strategy.
 
 The optimal or principled strategy for applying defaults in such cases
-remains unclear.
-Should we fire all default rules of all suspended constraints
-that remain after the solver terminates, or in batches, restricted to connected
-components of mutually dependent suspended constraints?
-Our prototype opts for the latter, but this warrants further study.
+remains unclear.  Should we fire all default rules of all suspended
+constraints that remain after the solver terminates simultaneously, or in
+batches, \eg. restricted to connected components of mutually dependent suspended
+constraints?  Our prototype opts for the latter, but this warrants further
+study.
 
 %%\paragraph{Behavior of default rules} Giving priority to most recent
 %%definitions is a possible default behavior for field and constructor
@@ -2875,8 +2906,8 @@ Our prototype opts for the latter, but this warrants further study.
 \OCaml allows equi-recursive types to express recursive polymorphic variants
 and objects types. Supporting such types is a necessary step towards integrating
 our approach into \OCaml's typechecker.
-
-In this work, for the sake of simplicity, we treat ground types as finite
+%% In this work,
+For the sake of simplicity, we treated ground types as finite
 trees. Supporting equi-recursive types amounts to using regular trees instead
 \citep*{Pottier-Remy/emlti}. Our prototype already supports them,
 but the formalization of our solver relies on acyclicity to ensure
@@ -2911,12 +2942,14 @@ cycles, this no longer holds---but we do not anticipate any fundamental issues.
 readable prose in the style of the rest of the paper.
 
 \begin{itemize}
-\item \cref{app:oml-calculus} presents and explains the typing rules for \OML;
+\item
+  \cref{app/oml} presents and explains the typing rules for \OML;
   this is the long version of \cref{sec:language}.
-\item \cref{app:unification} presents a relatively standard part of our constraint solver (\cref{sec:solving}),
-  namely the unification rules.
+\item
+  \cref{app:unification} presents a relatively standard part of our
+  constraint solver (\cref{sec:solving}), namely the unification rules.
 %%\item \cref{app:more-discussion} contains topics of discussion that we
- %% did not have the space to include in \cref{sec:discussion}.
+%% did not have the space to include in \cref{sec:discussion}.
 \end{itemize}
 
 \paragraph{Reference appendix}
@@ -5540,7 +5573,13 @@ constraints.
   \end{proof}
 \end{lemma}
 
-\paragraph{Composability} The composability result below is an important test of our definition of the unicity condition $\Cshape \C \t \sh$, which is in part engineered for this lemma to be simple to prove. In the past we used a definition of unicity that also required $\C \where \ctrue$ to be satisfiable, which broke the composability property.
+\paragraph{Composability}
+
+The composability result below is an important test of our definition of the
+unicity condition $\Cshape \C \t \sh$, which is in part engineered for this
+lemma to be simple to prove. In the past we used a definition of unicity
+that also required $\C \where \ctrue$ to be satisfiable, which broke the
+composability property.
 \begin{lemma}[Composability of unicity]
   \label{lem:compose-unicity}
   If $\Cshape \Ca \t \sh$, then $\Cshape {\Cb\where\Ca} \t \sh$.
@@ -7961,4 +8000,5 @@ TODO: extend the magic rule and the disambiguation rule, and also provide the un
 % LocalWords:  mutli cheatsheet inI ProjX PolyX UseX unifier Gc Defn sw iw
 % LocalWords:  InstLeft InstRight mergable tw uw RRCL eqs priori multiset
 % LocalWords:  reflexitivity metatheoretic lexicographically Unifiers TODO
-% LocalWords:  rcl env Pcd illtyped inHole Ui unfoldings
+% LocalWords:  rcl env Pcd illtyped inHole Ui unfoldings welltyped mprset
+% LocalWords:  lessskip Xbla Ybla explicitating Composability composability

@@ -1,5 +1,10 @@
 \RequirePackage{boolean}
 \newcommand{\Not}{\BNot}
+\providecommand{\Draft}{\True}
+\providecommand{\Final}{\False}
+\providecommand{\Long}{\True}
+\newcommand \Short {\Not\Long}
+
 \RequirePackage{reversion}
 \RequirePackage[utf8]{inputenc}
 \RequirePackage{locallabel}
@@ -7,6 +12,7 @@
 %% Enumerations
 
 \RequirePackage[inline,shortlabels]{enumitem}
+%% \setlist[enumerate]{label*=\textbf{(\arabic*)}}
 \newlist{Enumerate}{enumerate}{1}
 \setlist[Enumerate]{label*=\textbf{(\arabic*)}}
 
