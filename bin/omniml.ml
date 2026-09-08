@@ -56,11 +56,15 @@ module Params = struct
       match ffcp, fno_fcp with
       | true, true ->
         (* When both flags are passed, the last flag wins *)
-        List.fold args ~init:true ~f:(fun with_fcp -> function
+        List.fold args ~init:false ~f:(fun with_fcp -> function
           | "-ffcp" -> true
           | "-fno-fcp" -> false
           | _ -> with_fcp)
-      | ffcp, fno_fcp -> ffcp && not fno_fcp)
+      | true, false -> true
+      | false, true -> false
+      | false, false ->
+        (* Enabled by default *)
+        true)
   ;;
 
   let defaulting =
