@@ -12,39 +12,29 @@ let bool = Type.(constr [] bool_ident)
 let unit = Type.(constr [] unit_ident)
 
 module Env = struct
-  let arg_type ~with_poly_params:_ type_ = type_
-  let ret_type ~with_poly_params:_ type_ = type_
+  let arg_type ~with_fcp:_ type_ = type_
+  let ret_type ~with_fcp:_ type_ = type_
 
-  let bool_bop ~with_poly_params =
+  let bool_bop ~with_fcp =
     Type.(
-      arg_type ~with_poly_params bool
-      @-> ret_type
-            ~with_poly_params
-            (arg_type ~with_poly_params bool @-> ret_type ~with_poly_params bool))
+      arg_type ~with_fcp bool
+      @-> ret_type ~with_fcp (arg_type ~with_fcp bool @-> ret_type ~with_fcp bool))
   ;;
 
-  let bool_uop ~with_poly_params =
-    Type.(arg_type ~with_poly_params bool @-> ret_type ~with_poly_params bool)
-  ;;
+  let bool_uop ~with_fcp = Type.(arg_type ~with_fcp bool @-> ret_type ~with_fcp bool)
 
-  let int_bop ~with_poly_params =
+  let int_bop ~with_fcp =
     Type.(
-      arg_type ~with_poly_params int
-      @-> ret_type
-            ~with_poly_params
-            (arg_type ~with_poly_params int @-> ret_type ~with_poly_params int))
+      arg_type ~with_fcp int
+      @-> ret_type ~with_fcp (arg_type ~with_fcp int @-> ret_type ~with_fcp int))
   ;;
 
-  let int_uop ~with_poly_params =
-    Type.(arg_type ~with_poly_params int @-> ret_type ~with_poly_params int)
-  ;;
+  let int_uop ~with_fcp = Type.(arg_type ~with_fcp int @-> ret_type ~with_fcp int)
 
-  let int_comparator ~with_poly_params =
+  let int_comparator ~with_fcp =
     Type.(
-      arg_type ~with_poly_params int
-      @-> ret_type
-            ~with_poly_params
-            (arg_type ~with_poly_params int @-> ret_type ~with_poly_params bool))
+      arg_type ~with_fcp int
+      @-> ret_type ~with_fcp (arg_type ~with_fcp int @-> ret_type ~with_fcp bool))
   ;;
 
   let type_def name arity ident =
@@ -57,21 +47,21 @@ module Env = struct
 
   let t = [ "int", 0, int_ident; "bool", 0, bool_ident; "unit", 0, unit_ident ]
 
-  let v ~with_poly_params =
-    [ "( || )", bool_bop ~with_poly_params
-    ; "( && )", bool_bop ~with_poly_params
-    ; "not", bool_uop ~with_poly_params
-    ; "( = )", int_comparator ~with_poly_params
-    ; "( <> )", int_comparator ~with_poly_params
-    ; "( < )", int_comparator ~with_poly_params
-    ; "( > )", int_comparator ~with_poly_params
-    ; "( <= )", int_comparator ~with_poly_params
-    ; "( >= )", int_comparator ~with_poly_params
-    ; "( + )", int_bop ~with_poly_params
-    ; "( - )", int_bop ~with_poly_params
-    ; "( * )", int_bop ~with_poly_params
-    ; "( / )", int_bop ~with_poly_params
-    ; "unary( - )", int_uop ~with_poly_params
+  let v ~with_fcp =
+    [ "( || )", bool_bop ~with_fcp
+    ; "( && )", bool_bop ~with_fcp
+    ; "not", bool_uop ~with_fcp
+    ; "( = )", int_comparator ~with_fcp
+    ; "( <> )", int_comparator ~with_fcp
+    ; "( < )", int_comparator ~with_fcp
+    ; "( > )", int_comparator ~with_fcp
+    ; "( <= )", int_comparator ~with_fcp
+    ; "( >= )", int_comparator ~with_fcp
+    ; "( + )", int_bop ~with_fcp
+    ; "( - )", int_bop ~with_fcp
+    ; "( * )", int_bop ~with_fcp
+    ; "( / )", int_bop ~with_fcp
+    ; "unary( - )", int_uop ~with_fcp
     ]
   ;;
 
@@ -84,10 +74,10 @@ module Env = struct
     env
   ;;
 
-  let wrap ~with_poly_params k =
+  let wrap ~with_fcp k =
     let env = init () in
     let env, bindings =
-      List.fold_map (v ~with_poly_params) ~init:env ~f:(fun env (var_str, type_) ->
+      List.fold_map (v ~with_fcp) ~init:env ~f:(fun env (var_str, type_) ->
         Env.rename_var env ~var:(Var_name.create var_str) ~in_:(fun env cvar ->
           env, (cvar, type_)))
     in

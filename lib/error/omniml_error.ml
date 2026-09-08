@@ -23,7 +23,7 @@ module Code = struct
     | Unbound_label
     | File_not_found
     | Non_linear_pattern
-    | Poly_params_disabled
+    | Fcp_disabled
     | Unknown
   [@@deriving sexp]
 
@@ -47,7 +47,7 @@ module Code = struct
     | Unbound_label -> "E017"
     | File_not_found -> "E018"
     | Non_linear_pattern -> "E019"
-    | Poly_params_disabled -> "E020"
+    | Fcp_disabled -> "E020"
     | Unknown -> "E???"
   ;;
 end
@@ -448,13 +448,13 @@ let non_linear_pattern (var_name : Var_name.t) ~fst_range ~snd_range =
        var_name
 ;;
 
-let poly_params_disabled ~range =
+let fcp_disabled ~range =
   let open Diagnostic in
   singleton
   @@ Diagnostic.createf
-       ~labels:[ Label.primaryf ~range "requires polymorphic parameters" ]
-       ~notes:[ Message.create "hint: enable this feature with `-fpoly-params`" ]
-       ~code:Code.Poly_params_disabled
+       ~labels:[ Label.primaryf ~range "requires first-class polymorphism" ]
+       ~notes:[ Message.create "hint: enable this feature with `-ffcp`" ]
+       ~code:Code.Fcp_disabled
        Error
-       "polymorphic parameters are disabled"
+       "first-class polymorphism is disabled"
 ;;

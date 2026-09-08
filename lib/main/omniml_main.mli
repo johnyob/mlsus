@@ -19,7 +19,7 @@ val constraint_gen_and_print
   -> Lexing.lexbuf
   -> dump_ast:bool
   -> with_stdlib:bool
-  -> with_poly_params:bool
+  -> with_fcp:bool
   -> unit
 
 (** [type_check_and_print lexbuf ~dump_ast ~dump_constraint] parses the [lexbuf] as a structure,
@@ -35,6 +35,6 @@ val type_check_and_print
   -> dump_ast:bool
   -> dump_constraint:bool
   -> with_stdlib:bool
-  -> with_poly_params:bool
+  -> with_fcp:bool
   -> defaulting:Options.Defaulting.t
   -> unit

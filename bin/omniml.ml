@@ -35,15 +35,39 @@ module Params = struct
     flag "-disable-stdlib" no_arg ~doc:"Disables the inclusion of the standard library"
   ;;
 
-  let fpoly_params =
-    flag "-fpoly-params" no_arg ~doc:"Enables the polymorphic parameters feature."
+  let ffcp =
+    flag
+      ~full_flag_required:()
+      "-ffcp"
+      no_arg
+      ~doc:"Enables the first class polymorphism feature. Enabled by default."
+  ;;
+
+  let fno_fcp =
+    flag
+      ~full_flag_required:()
+      "-fno-fcp"
+      no_arg
+      ~doc:"Disables the first class polymorphism feature."
+  ;;
+
+  let fcp =
+    Command.Param.map3 ffcp fno_fcp args ~f:(fun ffcp fno_fcp args ->
+      match ffcp, fno_fcp with
+      | true, true ->
+        (* When both flags are passed, the last flag wins *)
+        List.fold args ~init:true ~f:(fun with_fcp -> function
+          | "-ffcp" -> true
+          | "-fno-fcp" -> false
+          | _ -> with_fcp)
+      | ffcp, fno_fcp -> ffcp && not fno_fcp)
   ;;
 
   let defaulting =
     flag
       "-defaulting"
       (optional Omniml_main.Options.Defaulting.arg_type)
-      ~doc:"STRATEGY Defaulting strategy. Disabled by default, enabled with -fpoly-params"
+      ~doc:"STRATEGY Defaulting strategy. Disabled by default, enabled with -ffcp"
   ;;
 end
 
@@ -71,14 +95,14 @@ module Command = struct
         +> anon ("filename" %: string)
         +> Params.dump_ast
         +> Params.disable_stdlib
-        +> Params.fpoly_params)
-      (fun filename dump_ast without_stdlib with_poly_params ->
+        +> Params.fcp)
+      (fun filename dump_ast without_stdlib with_fcp ->
          open_with_lexbuf
            ~f:
              (constraint_gen_and_print
                 ~dump_ast
                 ~with_stdlib:(not without_stdlib)
-                ~with_poly_params)
+                ~with_fcp)
            filename)
   ;;
 
@@ -91,20 +115,13 @@ module Command = struct
         +> Params.dump_ast
         +> Params.dump_constraint
         +> Params.disable_stdlib
-        +> Params.fpoly_params
+        +> Params.fcp
         +> Params.defaulting
         +> Global.set_level_via_param ()
         +> Global.set_trace_file_via_param ())
-      (fun filename
-        dump_ast
-        dump_constraint
-        without_stdlib
-        with_poly_params
-        defaulting
-        ()
-        () ->
+      (fun filename dump_ast dump_constraint without_stdlib with_fcp defaulting () () ->
          let defaulting =
-           Option.value defaulting ~default:(if with_poly_params then Unary else Disabled)
+           Option.value defaulting ~default:(if with_fcp then Unary else Disabled)
          in
          open_with_lexbuf filename ~f:(fun lexbuf ->
            let source = `File filename in
@@ -113,7 +130,7 @@ module Command = struct
              ~dump_ast
              ~dump_constraint
              ~with_stdlib:(not without_stdlib)
-             ~with_poly_params
+             ~with_fcp
              ~defaulting
              lexbuf))
   ;;
