@@ -86,4 +86,4 @@ val polytype_mismatched_type
 val ambiguous_tuple : range:Range.t -> t
 val ambiguous_polytype : range:Range.t -> t
 val non_linear_pattern : Var_name.t -> fst_range:Range.t -> snd_range:Range.t -> t
-val poly_params_disabled : range:Range.t -> t
+val fcp_disabled : range:Range.t -> t

@@ -25,8 +25,8 @@ let constraint_gen ?source lexbuf ~dump_ast ~with_stdlib =
 
 let pp_constraint ppf cst = Fmt.pf ppf "@[%a@]" Sexp.pp_hum ([%sexp_of: Constraint.t] cst)
 
-let constraint_gen_and_print ?source lexbuf ~dump_ast ~with_stdlib ~with_poly_params =
-  let cst = constraint_gen ?source lexbuf ~dump_ast ~with_stdlib ~with_poly_params in
+let constraint_gen_and_print ?source lexbuf ~dump_ast ~with_stdlib ~with_fcp =
+  let cst = constraint_gen ?source lexbuf ~dump_ast ~with_stdlib ~with_fcp in
   Fmt.pr "%a@." pp_constraint cst
 ;;
 
@@ -36,10 +36,10 @@ let type_check_and_print
       ~dump_ast
       ~dump_constraint
       ~with_stdlib
-      ~with_poly_params
+      ~with_fcp
       ~defaulting
   =
-  let cst = constraint_gen ?source lexbuf ~dump_ast ~with_stdlib ~with_poly_params in
+  let cst = constraint_gen ?source lexbuf ~dump_ast ~with_stdlib ~with_fcp in
   if dump_constraint then Fmt.pr "Generated constraint:@.%a@." pp_constraint cst;
   let range =
     let open Grace in
