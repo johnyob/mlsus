@@ -8,9 +8,14 @@ let () =
   For_testing.use_test_output ()
 ;;
 
-let solve ?(defaulting = false) ?(log_level = `Info) cst =
+let solve ?(defaulting = false) ?(rec_types = true) ?(log_level = `Info) cst =
   Omniml_log.Global.set_level log_level;
-  let options = Omniml_options.(empty |> with_ ~option:Defaulting ~enabled:defaulting) in
+  let options =
+    Omniml_options.(
+      empty
+      |> with_ ~option:Defaulting ~enabled:defaulting
+      |> with_ ~option:Recursive_types ~enabled:rec_types)
+  in
   Omniml_constraint_solver.solve ~options cst
 ;;
 

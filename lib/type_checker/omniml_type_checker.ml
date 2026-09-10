@@ -68,5 +68,8 @@ let check ~options ?range cst =
               type1
               type2)
      | Rigid_variable_escape ->
-       Omniml_error.(raise @@ rigid_variable_escape ~range:(get_range range)))
+       Omniml_error.(raise @@ rigid_variable_escape ~range:(get_range range))
+     | Cycle type_ ->
+       Omniml_error.(
+         raise @@ cycle ~range:(get_range range) ~pp_type:Typed_ast.Type.pp type_))
 ;;

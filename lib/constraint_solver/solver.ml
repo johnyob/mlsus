@@ -14,7 +14,9 @@ module State = struct
   [@@deriving sexp_of]
 
   let create options =
-    { gstate = G.State.create ()
+    { gstate =
+        G.State.create
+          ~recursive_types:(Omniml_options.is_enabled options Recursive_types)
     ; sstate = S.State.create ()
     ; scheduler = Scheduler.create ()
     ; error_on_default = not (Omniml_options.is_enabled options Defaulting)
@@ -53,6 +55,7 @@ module Error = struct
     | Rigid_variable_escape
     | Cannot_unify of Decoded_type.t * Decoded_type.t
     | Cannot_discharge_match_constraints of Omniml_error.t list
+    | Cycle of Decoded_type.t
   [@@deriving sexp]
 
   exception T of t
@@ -100,11 +103,7 @@ module Env = struct
   ;;
 
   let enter_new_region ~(state : State.t) t =
-    { t with
-      curr_region =
-        G.new_region ~state:state.gstate t.curr_region ~raise_scope_escape:(fun _type ->
-          raise t @@ Rigid_variable_escape)
-    }
+    { t with curr_region = G.new_region ~state:state.gstate ?range:t.range t.curr_region }
   ;;
 
   let create_scheme t root = G.create_scheme ~curr_region:t.curr_region root
@@ -168,7 +167,7 @@ let unify ~(state : State.t) ~(env : Env.t) gtype1 gtype2 =
         (state.scheduler : Scheduler.t)];
     Scheduler.run state.scheduler
   with
-  | G.Unify.Unify (gtype1, gtype2) ->
+  | G.Unify (gtype1, gtype2) ->
     let decoder = Decoded_type.Decoder.create () in
     (* The let bindings here are to used to ensure order.
        The first type will have the 'newest' allocated variables *)
@@ -435,12 +434,18 @@ let solve
     Ok (Elaboration.run value)
   with
   (* Catch solver exceptions *)
-  | G.Unify.Unify (gtype1, gtype2) ->
+  | G.Unify (gtype1, gtype2) ->
     let decoder = Decoded_type.Decoder.create () in
     (* The let bindings here are to used to ensure order.
        The first type will have the 'newest' allocated variables *)
     let dtype1 = decoder gtype1 in
     let dtype2 = decoder gtype2 in
     Error (Error.create ~range (Cannot_unify (dtype1, dtype2)))
+  | G.Rigid_variable_escape (range, _type) ->
+    Error (Error.create ~range Rigid_variable_escape)
+  | G.Cycle (range, gtype) ->
+    let decoder = Decoded_type.Decoder.create () in
+    let dtype = decoder gtype in
+    Error (Error.create ~range (Cycle dtype))
   | Error.T err -> Error err
 ;;

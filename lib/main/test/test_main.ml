@@ -9,6 +9,7 @@ let type_check_and_print
       ?(dump_constraint = false)
       ?(with_stdlib = true)
       ?(with_fcp = false)
+      ?(rec_types = true)
       ?defaulting
       ?(log_level = `Info)
       str
@@ -25,6 +26,7 @@ let type_check_and_print
       |> with_ ~option:Dump_constraint ~enabled:dump_constraint
       |> with_ ~option:Include_stdlib ~enabled:with_stdlib
       |> with_ ~option:First_class_polymorphism ~enabled:with_fcp
+      |> with_ ~option:Recursive_types ~enabled:rec_types
       |> with_ ~option:Defaulting ~enabled:defaulting)
   in
   Omniml_main.type_check_and_print

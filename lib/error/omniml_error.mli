@@ -87,3 +87,4 @@ val ambiguous_tuple : range:Range.t -> t
 val ambiguous_polytype : range:Range.t -> t
 val non_linear_pattern : Var_name.t -> fst_range:Range.t -> snd_range:Range.t -> t
 val fcp_disabled : range:Range.t -> t
+val cycle : range:Range.t -> pp_type:'a Fmt.t -> 'a -> t
