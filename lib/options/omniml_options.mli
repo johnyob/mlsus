@@ -4,6 +4,7 @@ module Option : sig
   type t =
     | First_class_polymorphism
     | Defaulting
+    | Recursive_types
     | Include_stdlib
     | Dump_ast
     | Dump_constraint

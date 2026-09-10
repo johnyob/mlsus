@@ -334,6 +334,9 @@ module Error : sig
         the given types [ty1] and [ty2]. *)
     | Cannot_discharge_match_constraints of Omniml_error.t list
     (** Some match constraints could not be discharged. *)
+    | Cycle of Decoded_type.t
+    (** [Cycle ty] occurs when a cyclic type [ty] occurs when the [Recursive_types] 
+        option is disabled. *)
   [@@deriving sexp]
 end
 

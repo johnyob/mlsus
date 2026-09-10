@@ -71,6 +71,7 @@ module Params = struct
   ;;
 
   let ffcp = fflag ~name:"fcp" ~feature:"first class polymorphism" ~default:true
+  let frec_types = fflag ~name:"rec-types" ~feature:"recursive types" ~default:false
   let fdefaulting = fflag ~name:"defaulting" ~feature:"defaulting" ~default:false
 end
 
@@ -120,10 +121,19 @@ module Command = struct
         +> Params.dump_constraint
         +> Params.include_stdlib
         +> Params.ffcp
+        +> Params.frec_types
         +> Params.fdefaulting
         +> Global.set_level_via_param ()
         +> Global.set_trace_file_via_param ())
-      (fun filename dump_ast dump_constraint include_stdlib ffcp fdefaulting () () ->
+      (fun filename
+        dump_ast
+        dump_constraint
+        include_stdlib
+        ffcp
+        frec_types
+        fdefaulting
+        ()
+        () ->
          let options =
            let fdefaulting = fdefaulting || ffcp in
            Omniml_options.(
@@ -132,6 +142,7 @@ module Command = struct
              |> with_ ~option:Dump_constraint ~enabled:dump_constraint
              |> with_ ~option:Include_stdlib ~enabled:include_stdlib
              |> with_ ~option:First_class_polymorphism ~enabled:ffcp
+             |> with_ ~option:Recursive_types ~enabled:frec_types
              |> with_ ~option:Defaulting ~enabled:fdefaulting)
          in
          open_with_lexbuf filename ~f:(fun lexbuf ->

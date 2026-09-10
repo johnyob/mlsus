@@ -7,11 +7,11 @@ module I = Structure.First_order (M)
 module Pool = struct
   type 'node t =
     { mutable rigid_vars : 'node list
-    ; raise_scope_escape : ('node -> unit[@sexp.opaque])
+    ; range : Range.t option
     }
   [@@deriving sexp_of]
 
-  let create ~raise_scope_escape () = { rigid_vars = []; raise_scope_escape }
+  let create ?range () = { rigid_vars = []; range }
   let register_rigid_var t rigid_var = t.rigid_vars <- rigid_var :: t.rigid_vars
 end
 
@@ -101,21 +101,15 @@ module State = struct
   type t =
     { id_source : (Identifier.source[@sexp.opaque])
     ; type_state : G.State.t
+    ; recursive_types : bool
     }
   [@@deriving sexp_of]
 
-  let create () =
+  let create ~recursive_types =
     let id_source = Identifier.create_source () in
-    let root_pool =
-      Pool.create
-        ~raise_scope_escape:(fun _ ->
-          raise_bug_s
-            ~here:[%here]
-            [%message "The root region should not bind any rigid variables"])
-        ()
-    in
+    let root_pool = Pool.create () in
     let type_state = G.State.create ~id_source ~root:root_pool in
-    { id_source; type_state }
+    { id_source; type_state; recursive_types }
   ;;
 
   let root_region t = G.State.root_region t.type_state
@@ -188,9 +182,7 @@ module Type = struct
   end
 end
 
-module Unify = struct
-  exception Unify = G.Node.Unify
-end
+exception Unify = G.Node.Unify
 
 module Scheme = struct
   type t =
@@ -361,20 +353,53 @@ and unify_var ~state ~curr_region var type_ =
   assert (Scheduler.is_empty dummy_scheduler)
 ;;
 
-let new_region ~(state : State.t) ~raise_scope_escape curr_region =
-  let pool = Pool.create ~raise_scope_escape () in
+let new_region ~(state : State.t) ?range curr_region =
+  let pool = Pool.create ?range () in
   G.Region.create ~state:state.type_state ~parent:curr_region pool
 ;;
 
 let create_scheme ~curr_region root : Scheme.t = { root; region = curr_region }
 
+exception Rigid_variable_escape of Range.t option * Type.t
+
 let rigid_scope_check region =
   let pool = Region.pool region in
-  match
-    List.find pool.rigid_vars ~f:(fun var -> Type.level var < Region.level region)
-  with
+  let region_level = Region.level region in
+  match List.find pool.rigid_vars ~f:(fun var -> Type.level var < region_level) with
   | None -> ()
-  | Some var -> pool.raise_scope_escape var
+  | Some var -> raise (Rigid_variable_escape (pool.range, var))
+;;
+
+exception Cycle of Range.t option * Type.t
+
+let occurs_check region =
+  let region_level = Region.level region in
+  (* The [visited_tbl] table records the types that are being visited 
+     (mapped to [false]) and the types that have been visited 
+     (mapped to [true]).  *)
+  let visited_tbl : (Identifier.t, bool) Hashtbl.t = Hashtbl.create (module Identifier) in
+  (* A cycle occurs when we reach a type that is mapped to [false]. *)
+  let rec visit type_ =
+    (* The occurs check solely looks for cycles in generalized types. *)
+    if Type.level type_ = region_level
+    then (
+      let id = Type.id type_ in
+      match Hashtbl.find_exn visited_tbl id with
+      | visited -> if not visited then raise (Cycle ((Region.pool region).range, type_))
+      | exception _ ->
+        (* Mark this type as being visited *)
+        Hashtbl.set visited_tbl ~key:id ~data:false;
+        (* Visit its children *)
+        I.iter (Type.inner type_) ~f:visit;
+        (* Mark this type as visited *)
+        Hashtbl.set visited_tbl ~key:id ~data:true)
+  in
+  G.Region.nodes region |> List.iter ~f:visit
+;;
+
+let before_generalize ~(state : State.t) region =
+  rigid_scope_check region;
+  if not state.recursive_types then occurs_check region
 ;;
 
 let finalize ~state type_ =
@@ -397,7 +422,7 @@ let generalize_region ~(state : State.t) ~scheduler region =
   G.collect_region
     ~state:state.type_state
     ~before_mark:(fun () -> Scheduler.run scheduler)
-    ~before_sweep:rigid_scope_check
+    ~before_sweep:(before_generalize ~state)
     ~promote:(promote ~state ~scheduler)
     ~finalize:(finalize ~state)
     ~after_sweep:(fun () -> Scheduler.run scheduler)
@@ -408,7 +433,7 @@ let generalize_all_regions ~(state : State.t) ~scheduler () =
   G.collect_all_regions
     ~state:state.type_state
     ~before_mark:(fun () -> Scheduler.run scheduler)
-    ~before_sweep:rigid_scope_check
+    ~before_sweep:(before_generalize ~state)
     ~promote:(promote ~state ~scheduler)
     ~finalize:(finalize ~state)
     ~after_sweep:(fun () -> Scheduler.run scheduler)
@@ -425,67 +450,3 @@ let instantiate ~state ~scheduler ~curr_region ({ root; region = src_region } : 
     ~instance_id
     root
 ;;
-
-(*
-   let force_root_generalization_and_return_unsolved_shape_var_errors ~(state : State.t) =
-  let generalize_roots () =
-    run_scheduler state ();
-    G.collect_all_regions
-      ~state:state.type_state
-      ~before_mark:(run_scheduler_maintenance state)
-      ~before_sweep:rigid_scope_check
-      ~promote:(promote ~state)
-      ~finalize:(finalize ~state)
-      ~after_sweep:(run_scheduler_maintenance state)
-      ()
-  in
-  let rec generalize_types_until_quiet () =
-    generalize_roots ();
-    if not (Scheduler.is_empty state.scheduler)
-    then (
-      run_scheduler state ();
-      generalize_types_until_quiet ())
-    else if not (G.State.is_quiescent state.type_state)
-    then generalize_types_until_quiet ()
-  in
-  let collected_errors =
-    match state.defaulting with
-    | Disabled ->
-      generalize_types_until_quiet ();
-      let errors = ref [] in
-      Principal_shape.Var.generalize_all
-        ~state:state.shape_var_state
-        ~on_generalize:(Principal_shape.Var.cancel_on_generalize ~errors)
-        ();
-      !errors
-    | Unary ->
-      let rec default_until_quiet () =
-        (* Finish ordinary solver and collector work first. Then rebuild shape
-           guards from direct type roots alone. The global trace follows
-           instance edges, so instance pins may conservatively keep types live
-           without becoming independent reasons to block defaulting. *)
-        generalize_types_until_quiet ();
-        G.trace_direct_roots ~state:state.type_state ~ctx:(rooting_ctx state);
-        Principal_shape.Var.generalize_all
-          ~state:state.shape_var_state
-          ~on_generalize:
-            (Principal_shape.Var.default_on_generalize
-               ~state:state.shape_var_state
-               ~scheduler:state.scheduler)
-          ();
-        if not (Scheduler.is_empty state.scheduler)
-        then (
-          run_scheduler state ();
-          default_until_quiet ())
-        else if not (G.State.is_quiescent state.type_state)
-        then default_until_quiet ()
-      in
-      default_until_quiet ();
-      []
-  in
-  let remaining_errors = ref [] in
-  Principal_shape.Var.State.shape_vars state.shape_var_state
-  |> List.iter ~f:(Principal_shape.Var.cancel_on_generalize ~errors:remaining_errors);
-  collected_errors @ !remaining_errors
-;;
-*)

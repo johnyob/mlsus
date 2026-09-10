@@ -24,6 +24,7 @@ module Code = struct
     | File_not_found
     | Non_linear_pattern
     | Fcp_disabled
+    | Cyclic_type
     | Unknown
   [@@deriving sexp]
 
@@ -48,6 +49,7 @@ module Code = struct
     | File_not_found -> "E018"
     | Non_linear_pattern -> "E019"
     | Fcp_disabled -> "E020"
+    | Cyclic_type -> "E021"
     | Unknown -> "E???"
   ;;
 end
@@ -457,4 +459,15 @@ let fcp_disabled ~range =
        ~code:Code.Fcp_disabled
        Error
        "first-class polymorphism is disabled"
+;;
+
+let cycle ~range ~pp_type type_ =
+  let open Diagnostic in
+  singleton
+  @@ Diagnostic.createf
+       ~labels:[ Label.primaryf ~range "has cyclic type %a" (pp_quoted pp_type) type_ ]
+       ~notes:[ Message.create "hint: enable recursive types with `-frec-types`" ]
+       ~code:Code.Cyclic_type
+       Error
+       "cyclic type"
 ;;
