@@ -139,7 +139,7 @@ let%expect_test "Cannot resume suspended generic" =
         (Cannot_discharge_match_constraints
          ((((severity Bug)
             (message
-             "lib/constraint_solver/test/test_constraint_solver.ml:20:27: \"Cannot resume due to generic/cycle\"")
+             "lib/constraint_solver/test/test_constraint_solver.ml:25:27: \"Cannot resume due to generic/cycle\"")
             (code (Unknown)) (labels ()) (notes ()))))))
        (range ()))))
     |}]
@@ -172,7 +172,7 @@ let%expect_test "Cannot unsuspend undetermined" =
         (Cannot_discharge_match_constraints
          ((((severity Bug)
             (message
-             "lib/constraint_solver/test/test_constraint_solver.ml:20:27: \"Cannot resume due to generic/cycle\"")
+             "lib/constraint_solver/test/test_constraint_solver.ml:25:27: \"Cannot resume due to generic/cycle\"")
             (code (Unknown)) (labels ()) (notes ()))))))
        (range ()))))
     |}]
@@ -277,11 +277,11 @@ let%expect_test "Cannot unsuspend circular dependencies" =
         (Cannot_discharge_match_constraints
          ((((severity Bug)
             (message
-             "lib/constraint_solver/test/test_constraint_solver.ml:20:27: \"Cannot resume due to generic/cycle\"")
+             "lib/constraint_solver/test/test_constraint_solver.ml:25:27: \"Cannot resume due to generic/cycle\"")
             (code (Unknown)) (labels ()) (notes ())))
           (((severity Bug)
             (message
-             "lib/constraint_solver/test/test_constraint_solver.ml:20:27: \"Cannot resume due to generic/cycle\"")
+             "lib/constraint_solver/test/test_constraint_solver.ml:25:27: \"Cannot resume due to generic/cycle\"")
             (code (Unknown)) (labels ()) (notes ()))))))
        (range ()))))
     |}]
@@ -356,11 +356,11 @@ let%expect_test "a non-trivial defaulting cycle prevents defaulting" =
         (Cannot_discharge_match_constraints
          ((((severity Bug)
             (message
-             "lib/constraint_solver/test/test_constraint_solver.ml:20:27: \"Cannot resume due to generic/cycle\"")
+             "lib/constraint_solver/test/test_constraint_solver.ml:25:27: \"Cannot resume due to generic/cycle\"")
             (code (Unknown)) (labels ()) (notes ())))
           (((severity Bug)
             (message
-             "lib/constraint_solver/test/test_constraint_solver.ml:20:27: \"Cannot resume due to generic/cycle\"")
+             "lib/constraint_solver/test/test_constraint_solver.ml:25:27: \"Cannot resume due to generic/cycle\"")
             (code (Unknown)) (labels ()) (notes ()))))))
        (range ()))))
     |}]
@@ -948,11 +948,11 @@ let%expect_test "Detect SCC cycle accross regions" =
         (Cannot_discharge_match_constraints
          ((((severity Bug)
             (message
-             "lib/constraint_solver/test/test_constraint_solver.ml:20:27: \"Cannot resume due to generic/cycle\"")
+             "lib/constraint_solver/test/test_constraint_solver.ml:25:27: \"Cannot resume due to generic/cycle\"")
             (code (Unknown)) (labels ()) (notes ())))
           (((severity Bug)
             (message
-             "lib/constraint_solver/test/test_constraint_solver.ml:20:27: \"Cannot resume due to generic/cycle\"")
+             "lib/constraint_solver/test/test_constraint_solver.ml:25:27: \"Cannot resume due to generic/cycle\"")
             (code (Unknown)) (labels ()) (notes ()))))))
        (range ()))))
     |}]
