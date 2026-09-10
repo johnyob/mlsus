@@ -2,8 +2,22 @@ open Core
 open Omniml_main
 open Omniml_log
 
-let open_with_lexbuf ~f filename () =
-  Omniml_error.handle_uncaught ~exit:true
+module Color = struct
+  type t =
+    | Always
+    | Auto
+    | Never
+  [@@deriving sexp, enumerate]
+end
+
+let open_with_lexbuf ~color ~f filename () =
+  let use_ansi =
+    match color with
+    | Color.Always -> Some true
+    | Never -> Some false
+    | Auto -> None
+  in
+  Omniml_error.handle_uncaught ?use_ansi ~exit:true
   @@ fun () ->
   let in_ =
     try In_channel.create filename with
@@ -73,21 +87,30 @@ module Params = struct
   let ffcp = fflag ~name:"fcp" ~feature:"first class polymorphism" ~default:true
   let frec_types = fflag ~name:"rec-types" ~feature:"recursive types" ~default:false
   let fdefaulting = fflag ~name:"defaulting" ~feature:"defaulting" ~default:false
+
+  let color =
+    flag
+      "-color"
+      ~doc:"WHEN Coloring"
+      (optional_with_default
+         Color.Auto
+         (Arg_type.enumerated_sexpable ~case_sensitive:false (module Color)))
+  ;;
 end
 
 module Command = struct
   let lex =
     Command.basic_spec
       ~summary:"Lexes [filename] and prints the tokens."
-      Command.Spec.(empty +> anon ("filename" %: string))
-      (open_with_lexbuf ~f:lex_and_print)
+      Command.Spec.(empty +> anon ("filename" %: string) +> Params.color)
+      (fun filename color -> open_with_lexbuf ~color ~f:lex_and_print filename)
   ;;
 
   let parse =
     Command.basic_spec
       ~summary:"Parses [filename] and prints the program (formatted as a sexp)."
-      Command.Spec.(empty +> anon ("filename" %: string))
-      (open_with_lexbuf ~f:parse_and_print)
+      Command.Spec.(empty +> anon ("filename" %: string) +> Params.color)
+      (fun filename color -> open_with_lexbuf ~color ~f:parse_and_print filename)
   ;;
 
   let constraint_gen =
@@ -99,8 +122,9 @@ module Command = struct
         +> anon ("filename" %: string)
         +> Params.dump_ast
         +> Params.include_stdlib
-        +> Params.ffcp)
-      (fun filename dump_ast include_stdlib ffcp ->
+        +> Params.ffcp
+        +> Params.color)
+      (fun filename dump_ast include_stdlib ffcp color ->
          let options =
            Omniml_options.(
              empty
@@ -108,7 +132,7 @@ module Command = struct
              |> with_ ~option:Include_stdlib ~enabled:include_stdlib
              |> with_ ~option:First_class_polymorphism ~enabled:ffcp)
          in
-         open_with_lexbuf ~f:(constraint_gen_and_print ~options) filename)
+         open_with_lexbuf ~color ~f:(constraint_gen_and_print ~options) filename)
   ;;
 
   let type_check =
@@ -123,6 +147,7 @@ module Command = struct
         +> Params.ffcp
         +> Params.frec_types
         +> Params.fdefaulting
+        +> Params.color
         +> Global.set_level_via_param ()
         +> Global.set_trace_file_via_param ())
       (fun filename
@@ -132,6 +157,7 @@ module Command = struct
         ffcp
         frec_types
         fdefaulting
+        color
         ()
         () ->
          let options =
@@ -145,7 +171,7 @@ module Command = struct
              |> with_ ~option:Recursive_types ~enabled:frec_types
              |> with_ ~option:Defaulting ~enabled:fdefaulting)
          in
-         open_with_lexbuf filename ~f:(fun lexbuf ->
+         open_with_lexbuf ~color filename ~f:(fun lexbuf ->
            let source = `File filename in
            type_check_and_print ~source ~options lexbuf))
   ;;
