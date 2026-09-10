@@ -9,7 +9,7 @@ let type_check_and_print
       ?(dump_constraint = false)
       ?(with_stdlib = true)
       ?(with_fcp = false)
-      ?(rec_types = true)
+      ?(rec_types = false)
       ?defaulting
       ?(log_level = `Info)
       str
@@ -1225,8 +1225,32 @@ let%expect_test "" =
     |}
   in
   type_check_and_print str;
+  [%expect
+    {|
+    error[E021]: cyclic type
+        ┌─ expect_test.ml:3:7
+      2 │          (* val id : ('a -> 'a as 'a) -> 'a -> 'a *)
+      3 │ ╭        let id = exists (type 'a) ->
+      4 │ │          (fun x -> x : 'a -> 'a -> 'a)
+        │ ╰──────────────────────────────────────^ has cyclic type `'a -> 'a as 'a`
+      5 │          ;;
+        = hint: enable recursive types with `-frec-types`
+    |}];
+  type_check_and_print ~rec_types:true str;
   [%expect {| val id : ('a -> 'a as 'a) -> ('b -> 'b as 'b) |}];
   type_check_and_print ~with_fcp:true str;
+  [%expect
+    {|
+    error[E021]: cyclic type
+        ┌─ expect_test.ml:3:7
+      2 │          (* val id : ('a -> 'a as 'a) -> 'a -> 'a *)
+      3 │ ╭        let id = exists (type 'a) ->
+      4 │ │          (fun x -> x : 'a -> 'a -> 'a)
+        │ ╰──────────────────────────────────────^ has cyclic type `'a -> 'a as 'a`
+      5 │          ;;
+        = hint: enable recursive types with `-frec-types`
+    |}];
+  type_check_and_print ~with_fcp:true ~rec_types:true str;
   [%expect {| val id : ('a -> 'a as 'a) -> ('b -> 'b as 'b) -> ('c -> 'c as 'c) |}]
 ;;
 
@@ -4450,10 +4474,82 @@ let%expect_test "" =
   (* rectypes can cause defaulting to fail for polyparams *)
   let str =
     {|
+      let _ = fun (f, g) -> (f g, g f);;
+    |}
+  in
+  type_check_and_print ~with_fcp:true str;
+  [%expect
+    {|
+    error[E016]: unknown polytype
+        ┌─ expect_test.ml:2:35
+      2 │        let _ = fun (f, g) -> (f g, g f);;
+        │                                    ^^^
+        = hint: add a type annotation
+
+    error[E016]: unknown polytype
+        ┌─ expect_test.ml:2:30
+      2 │        let _ = fun (f, g) -> (f g, g f);;
+        │                               ^^^
+        = hint: add a type annotation
+
+    error[E016]: unknown polytype
+        ┌─ expect_test.ml:2:37
+      2 │        let _ = fun (f, g) -> (f g, g f);;
+        │                                      ^
+        = hint: add a type annotation
+
+    error[E016]: unknown polytype
+        ┌─ expect_test.ml:2:32
+      2 │        let _ = fun (f, g) -> (f g, g f);;
+        │                                 ^
+        = hint: add a type annotation
+    |}];
+  type_check_and_print ~with_fcp:true ~rec_types:true str;
+  [%expect
+    {|
+    error[E016]: unknown polytype
+        ┌─ expect_test.ml:2:35
+      2 │        let _ = fun (f, g) -> (f g, g f);;
+        │                                    ^^^
+        = hint: add a type annotation
+
+    error[E016]: unknown polytype
+        ┌─ expect_test.ml:2:30
+      2 │        let _ = fun (f, g) -> (f g, g f);;
+        │                               ^^^
+        = hint: add a type annotation
+
+    error[E016]: unknown polytype
+        ┌─ expect_test.ml:2:37
+      2 │        let _ = fun (f, g) -> (f g, g f);;
+        │                                      ^
+        = hint: add a type annotation
+
+    error[E016]: unknown polytype
+        ┌─ expect_test.ml:2:32
+      2 │        let _ = fun (f, g) -> (f g, g f);;
+        │                                 ^
+        = hint: add a type annotation
+    |}]
+;;
+
+let%expect_test "" =
+  (* trivial rectypes doesn't cause fcp to fail *)
+  let str =
+    {|
       let _ = fun f -> f f;;
     |}
   in
   type_check_and_print ~with_fcp:true str;
+  [%expect
+    {|
+    error[E021]: cyclic type
+        ┌─ expect_test.ml:2:7
+      2 │        let _ = fun f -> f f;;
+        │        ^^^^^^^^^^^^^^^^^^^^ has cyclic type `'a -> 'b as 'a`
+        = hint: enable recursive types with `-frec-types`
+    |}];
+  type_check_and_print ~with_fcp:true ~rec_types:true str;
   [%expect {| |}]
 ;;
 
