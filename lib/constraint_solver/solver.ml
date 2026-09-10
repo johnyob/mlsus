@@ -4,35 +4,25 @@ module G = Generalization
 module S = Suspended
 
 module State = struct
-  module Defaulting = struct
-    type t =
-      | Disabled of { mutable errors : Omniml_error.t list }
-      | Unary
-    [@@deriving sexp_of]
-
-    let disabled () = Disabled { errors = [] }
-    let unary = Unary
-  end
-
   type t =
     { gstate : G.State.t
     ; sstate : S.State.t
     ; scheduler : Scheduler.t
-    ; mutable defaulting : Omniml_options.Defaulting.t
+    ; mutable error_on_default : bool
     ; mutable suspended_match_errors : Omniml_error.t list
     }
   [@@deriving sexp_of]
 
-  let create ?(defaulting = Omniml_options.Defaulting.default) () =
+  let create options =
     { gstate = G.State.create ()
     ; sstate = S.State.create ()
     ; scheduler = Scheduler.create ()
-    ; defaulting
+    ; error_on_default = not (Omniml_options.is_enabled options Defaulting)
     ; suspended_match_errors = []
     }
   ;;
 
-  let disable_defaulting t = t.defaulting <- Disabled
+  let disable_defaulting t = t.error_on_default <- true
 end
 
 module Elaboration = struct
@@ -330,24 +320,23 @@ and solve_body : type a. state:State.t -> env:Env.t -> a Constraint.t -> a Elabo
       [%log.global.debug "Exiting case region"]
     in
     let default () =
-      match state.defaulting with
-      | Disabled ->
-        state.suspended_match_errors <- error () :: state.suspended_match_errors
-      | Unary ->
-        (match default () with
-         | Shape shape ->
-           let args =
-             S.get_or_alloc_shape_args
-               ~gstate:state.gstate
-               ~scheduler:state.scheduler
-               ~curr_region
-               ~shape
-               gmatchee
-           in
-           with_ ~shape ~args
-         | Constraint cst ->
-           let env = env_of_sclosure () in
-           ignore (solve ~state ~env cst : unit Elaboration.t))
+      if state.error_on_default
+      then state.suspended_match_errors <- error () :: state.suspended_match_errors
+      else (
+        match default () with
+        | Shape shape ->
+          let args =
+            S.get_or_alloc_shape_args
+              ~gstate:state.gstate
+              ~scheduler:state.scheduler
+              ~curr_region
+              ~shape
+              gmatchee
+          in
+          with_ ~shape ~args
+        | Constraint cst ->
+          let env = env_of_sclosure () in
+          ignore (solve ~state ~env cst : unit Elaboration.t))
     in
     [%log.global.debug "Suspending match..."];
     S.match_
@@ -416,26 +405,23 @@ let default_all ~(state : State.t) =
 
 let solve
   : type a.
-    ?range:Range.t
-    -> ?defaulting:Omniml_options.Defaulting.t
-    -> a Constraint.t
-    -> (a, Error.t) result
+    ?range:Range.t -> options:Omniml_options.t -> a Constraint.t -> (a, Error.t) result
   =
-  fun ?range ?defaulting cst ->
+  fun ?range ~options cst ->
   try
-    let state = State.create ?defaulting () in
+    let state = State.create options in
     let root_region = G.State.root_region state.gstate in
     let env = Env.empty ~curr_region:root_region ~range in
     [%log.global.debug "Initial env and state" (state : State.t) (env : Env.t)];
     let value = solve ~state ~env cst in
     [%log.global.debug "State" (state : State.t)];
     [%log.global.debug "Generalizing root region" (env.curr_region : G.Region.t)];
-    (match state.defaulting with
-     | Disabled -> default_all ~state
-     | Unary ->
-       default_unary ~state;
-       State.disable_defaulting state;
-       default_all ~state);
+    if Omniml_options.is_enabled options Defaulting
+    then (
+      default_unary ~state;
+      State.disable_defaulting state;
+      default_all ~state)
+    else default_all ~state;
     [%log.global.debug "Generalized root region" (env.curr_region : G.Region.t)];
     if not (Scheduler.is_empty state.scheduler)
     then raise_bug_s ~here:[%here] [%message "Scheduler not flushed"];

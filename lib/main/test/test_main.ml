@@ -9,7 +9,7 @@ let type_check_and_print
       ?(dump_constraint = false)
       ?(with_stdlib = true)
       ?(with_fcp = false)
-      ?(defaulting = Omniml_main.Options.Defaulting.default)
+      ?defaulting
       ?(log_level = `Info)
       str
   =
@@ -17,13 +17,19 @@ let type_check_and_print
   @@ fun () ->
   Global.set_level log_level;
   let source = Omniml_source.For_testing.expect_test_source str in
+  let options =
+    let defaulting = Option.value defaulting ~default:with_fcp in
+    Omniml_options.(
+      empty
+      |> with_ ~option:Dump_ast ~enabled:dump_ast
+      |> with_ ~option:Dump_constraint ~enabled:dump_constraint
+      |> with_ ~option:Include_stdlib ~enabled:with_stdlib
+      |> with_ ~option:First_class_polymorphism ~enabled:with_fcp
+      |> with_ ~option:Defaulting ~enabled:defaulting)
+  in
   Omniml_main.type_check_and_print
     ~source
-    ~dump_ast
-    ~dump_constraint
-    ~with_stdlib
-    ~with_fcp
-    ~defaulting
+    ~options
     (Lexing.from_string ~with_positions:true str)
 ;;
 
@@ -77,7 +83,7 @@ let%expect_test "" =
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
     val power : int -> int -> int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -111,7 +117,7 @@ let%expect_test "" =
     val even : int -> bool
     val power : int -> int -> int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -138,7 +144,7 @@ let%expect_test "" =
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
     val sum : int -> int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -164,7 +170,7 @@ let%expect_test "" =
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
     val sum : int -> int -> int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -196,7 +202,7 @@ let%expect_test "" =
       | Cons of 'a * 'a list
     val mem : 'c list -> 'd -> ('d -> 'c -> bool) -> bool
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -231,7 +237,7 @@ let%expect_test "" =
       | Cons of 'a * 'a list
     val zip : 'c list -> 'd list -> ('c * 'd) list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -270,7 +276,7 @@ let%expect_test "" =
       | Cons of 'a * 'a list
     val unzip : ('c * 'd) list -> 'c list * 'd list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -311,7 +317,7 @@ let%expect_test "" =
     external raise_no_more_coins : unit -> 'c
     val change : int list -> int -> int list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -363,7 +369,7 @@ let%expect_test "" =
     external append : 'c list -> 'c list -> 'c list
     val change : int list -> int -> int list list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -407,7 +413,7 @@ let%expect_test "" =
       | Cons of 'a * 'a list
     val change : int list -> int -> int list list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -452,7 +458,7 @@ let%expect_test "" =
     val m : vehicle
     val wheels : vehicle -> int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type vehicle =
@@ -496,7 +502,7 @@ let%expect_test "" =
       | Lorry of int
     val wheels : vehicle -> int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type vehicle =
@@ -526,7 +532,7 @@ let%expect_test "" =
     val x : int option
     val y : 'a option
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type 'a option =
@@ -572,7 +578,7 @@ let%expect_test "" =
     external try_with_no_change : (unit -> 'd) -> (int -> 'd) -> 'd
     val change : int list -> int -> int list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -603,7 +609,7 @@ let%expect_test "" =
       | Circle of int
       | Join of shape * shape
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type shape =
@@ -713,7 +719,7 @@ let%expect_test "" =
     val pre_order : 'j tree -> 'j list -> 'j list
     val post_order : 'l tree -> 'l list -> 'l list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -773,7 +779,7 @@ let%expect_test "" =
     val a4 : int -> bool
     val is_zero : int -> bool
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type 'a list =
@@ -839,7 +845,7 @@ let%expect_test "" =
     val dot_product : int list -> int list -> int
     val product : int list list -> int list list -> int list list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -930,7 +936,7 @@ let%expect_test "" =
     val even : int -> bool
     val nth : 'h tree -> int -> 'h
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -1028,7 +1034,7 @@ let%expect_test "" =
     val hd : 'j queue -> 'j
     val bfs : 'k tree queue -> 'k list
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -1160,7 +1166,7 @@ let%expect_test "" =
     val interleave : 'l seq -> 'l seq -> 'l seq
     val binary_string : int list -> int list seq
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
@@ -1197,7 +1203,7 @@ let%expect_test "" =
       2 │        let id = fun x -> y ;;
         │                          ^ not found in this scope
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E004]: cannot find value `y` in this scope
@@ -1218,7 +1224,7 @@ let%expect_test "" =
   in
   type_check_and_print str;
   [%expect {| val id : ('a -> 'a as 'a) -> ('b -> 'b as 'b) |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect {| val id : ('a -> 'a as 'a) -> ('b -> 'b as 'b) -> ('c -> 'c as 'c) |}]
 ;;
 
@@ -1240,7 +1246,7 @@ let%expect_test "" =
         │                   is not equal to
         │                 `'b -> 'c`
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E011]: mismatched type
@@ -1270,7 +1276,7 @@ let%expect_test "" =
         │                                is not equal to
         │                              `unit`
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E011]: mismatched type
@@ -1307,7 +1313,7 @@ let%expect_test "" =
     val x : t
     val y : u
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type t =
@@ -1342,7 +1348,7 @@ let%expect_test "" =
         │                ^
         = hint: add a type annotation
     |}];
-  type_check_and_print ~defaulting:Unary str;
+  type_check_and_print ~defaulting:true str;
   [%expect
     {|
     type t =
@@ -1380,7 +1386,7 @@ let%expect_test "" =
       | K of int
     val a : (r -> int) -> int * (r -> int)
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type r =
@@ -1420,7 +1426,7 @@ let%expect_test "" =
     val y1 : (m -> int) -> int
     val z1 : int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type m =
@@ -1459,7 +1465,7 @@ let%expect_test "" =
       | L
     val good : int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type m =
@@ -1534,7 +1540,7 @@ let%expect_test "" =
        (Reader ((id 0) (name (expect_test.ml)) (length 34) (unsafe_get <fun>))))))
     val id : 'a -> 'a
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect {| val id : 'a -> 'a |}]
 ;;
 
@@ -1564,7 +1570,7 @@ let%expect_test "" =
         │                          is not equal to
         │                        `'b`
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E011]: mismatched type
@@ -1642,7 +1648,7 @@ let%expect_test "" =
   in
   type_check_and_print str;
   [%expect {| val x : unit |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect {| val x : unit |}]
 ;;
 
@@ -1674,7 +1680,7 @@ let%expect_test "" =
     val a : int
     val after_a : mr
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -1697,7 +1703,7 @@ let%expect_test "" =
   in
   type_check_and_print str;
   [%expect {| val x : 'a -> 'a |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect {| val x : 'a -> 'a |}]
 ;;
 
@@ -1740,7 +1746,7 @@ let%expect_test "" =
     val c : int
     val f : int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -1808,7 +1814,7 @@ let%expect_test "" =
     val i : mr -> unit
     val l : mr ref -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -1849,7 +1855,7 @@ let%expect_test "" =
         │                           ^^^
         = hint: add a type annotation
     |}];
-  type_check_and_print ~defaulting:Unary str;
+  type_check_and_print ~defaulting:true str;
   [%expect
     {|
     type mr =
@@ -1896,7 +1902,7 @@ let%expect_test "" =
     external ref_repr : 'd ref -> 'd ref_repr
     val n : mr ref_repr -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -1943,7 +1949,7 @@ let%expect_test "" =
     external ref_repr : 'd ref -> 'd ref_repr
     val o : mr ref_repr -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2010,7 +2016,7 @@ let%expect_test "" =
     val t : mr ref -> unit
     val u : mr ref -> int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2083,7 +2089,7 @@ let%expect_test "" =
     val a : mr
     val b : unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2152,7 +2158,7 @@ let%expect_test "" =
     val h : mr -> unit
     val i : mr -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2205,7 +2211,7 @@ let%expect_test "" =
     external ref_repr : 'd ref -> 'd ref_repr
     val l : mr ref -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2253,7 +2259,7 @@ let%expect_test "" =
         │                         ^
         = hint: add a type annotation
     |}];
-  type_check_and_print ~defaulting:Unary str;
+  type_check_and_print ~defaulting:true str;
   [%expect
     {|
     type mr =
@@ -2271,7 +2277,7 @@ let%expect_test "" =
     external ref_repr : 'd ref -> 'd ref_repr
     val m : ms ref -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2330,7 +2336,7 @@ let%expect_test "" =
     val n : mr ref -> unit
     val o : mr ref -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2380,7 +2386,7 @@ let%expect_test "" =
     external ref_repr : 'd ref -> 'd ref_repr
     val s : mr ref -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2431,7 +2437,7 @@ let%expect_test "" =
     external ref_repr : 'd ref -> 'd ref_repr
     val t : mr ref -> unit
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type mr =
@@ -2468,7 +2474,7 @@ let%expect_test "" =
     val x3 : int
     val x3' : int
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val xs : int * int * int
@@ -2489,7 +2495,7 @@ let%expect_test "" =
   in
   type_check_and_print str;
   [%expect {| val f : int * int -> int |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect {| val f : int * int -> int |}]
 ;;
 
@@ -2504,7 +2510,7 @@ let%expect_test "" =
   in
   type_check_and_print str;
   [%expect {| val g : int |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect {| val g : int |}]
 ;;
 
@@ -2525,7 +2531,7 @@ let%expect_test "" =
     val see_pid : ('c -> 'c) * ('d -> 'd)
     val see_pid_type : ('e -> 'e) * ('f -> 'f)
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val id : 'a -> 'a
@@ -2552,7 +2558,7 @@ let%expect_test "" =
     val see_pid1 : ('d * 'e -> 'd * 'e) * ('f * 'e -> 'f * 'e)
     val see_pid1_type : ('g * 'h -> 'g * 'h) * ('i * 'h -> 'i * 'h)
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val id : 'a * 'b -> 'a * 'b
@@ -2584,7 +2590,7 @@ let%expect_test "" =
         │                                                                         `('d * 'e -> 'd * 'e) *
         │                                                                          ('f * 'g -> 'f * 'g)`
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E011]: mismatched type
@@ -2613,7 +2619,7 @@ let%expect_test "" =
     val see_pid2 : ('d * 'e -> 'd * 'e) * ('f * 'g -> 'f * 'g)
     val see_pid2_type : ('h * 'i -> 'h * 'i) * ('j * 'k -> 'j * 'k)
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val id : 'a * 'b -> 'a * 'b
@@ -2645,7 +2651,7 @@ let%expect_test "" =
     val pqid : ['e. 'e -> 'e]
     val pqid_type : ['f. 'f -> 'f]
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     external combine : 'a -> 'a -> 'a
@@ -2681,7 +2687,7 @@ let%expect_test "" =
         │                                                 ^^^
         = hint: add a type annotation
     |}];
-  type_check_and_print ~defaulting:Unary str;
+  type_check_and_print ~defaulting:true str;
   [%expect
     {|
     val id : 'a -> 'a
@@ -2689,7 +2695,7 @@ let%expect_test "" =
     val succ : int -> int
     val mono_use_pid_app_succ : [(int -> int) -> 'c] -> 'c
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val id : 'a -> 'a
@@ -2714,7 +2720,7 @@ let%expect_test "" =
     val pid : ['b. 'b -> 'b]
     val use_id_pid : 'c -> 'c
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val id : 'a -> 'a
@@ -2740,7 +2746,7 @@ let%expect_test "" =
         │                         is not equal to
         │                       `'b`
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E011]: mismatched type
@@ -2769,7 +2775,7 @@ let%expect_test "" =
         │                           is not equal to
         │                         `'a -> 'a`
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E011]: mismatched type
@@ -2802,7 +2808,7 @@ let%expect_test "" =
     val idide : ['h. 'h -> 'h] -> ('i -> 'i) * ('j -> 'j)
     val idide_pid : ('k -> 'k) * ('l -> 'l)
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val id : 'a -> 'a
@@ -2836,13 +2842,13 @@ let%expect_test "" =
         │                                                              ^
         = hint: add a type annotation
     |}];
-  type_check_and_print ~defaulting:Unary str;
+  type_check_and_print ~defaulting:true str;
   [%expect
     {|
     val id : 'a -> 'a
     val use_poly_mono : 'c -> ('d -> 'd) * 'c
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val id : 'a -> 'a
@@ -2866,7 +2872,7 @@ let%expect_test "" =
         │                                               ^^^^^^^
         = hint: add a type annotation
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     val id : 'a -> 'a
@@ -2912,7 +2918,7 @@ let%expect_test "" =
   let test =
     Incremental_test.create
       ~initial:(include_fix ^ include_ref ^ include_option ^ include_list)
-      (type_check_and_print ~defaulting:Unary)
+      (type_check_and_print ~defaulting:true)
   in
   [%expect
     {|
@@ -3257,7 +3263,7 @@ let%expect_test "" =
   let test =
     Incremental_test.create
       ~initial:(include_fix ^ include_ref ^ include_option ^ include_list)
-      (type_check_and_print ~with_fcp:true ~defaulting:Unary)
+      (type_check_and_print ~with_fcp:true)
   in
   [%expect
     {|
@@ -3949,7 +3955,7 @@ let%expect_test "" =
       ;;
     |}
   in
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect {| val poly_pattern : (forall 'a 'b. ('a -> 'a) * ('b -> 'b)) -> unit |}]
 ;;
 
@@ -4179,7 +4185,7 @@ let%expect_test "" =
     val e5a : ['h2. 'h2 -> 'h2] list -> int * bool
     val e5b : ['i2. 'i2 -> 'i2] list -> int * bool
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type 'a list =
@@ -4262,7 +4268,7 @@ let%expect_test "" =
       ;;
     |}
   in
-  type_check_and_print ~defaulting:Unary str;
+  type_check_and_print ~defaulting:true str;
   [%expect
     {|
     error[E010]: ambiguous constructor
@@ -4277,7 +4283,7 @@ let%expect_test "" =
         │                     ^^^
         = hint: add a type annotation
     |}];
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E010]: ambiguous constructor
@@ -4300,7 +4306,7 @@ let%expect_test "" =
       let non_trivial_cycle = fun (f, g) -> (f g, g f);;
     |}
   in
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E016]: unknown polytype
@@ -4445,7 +4451,7 @@ let%expect_test "" =
       let _ = fun f -> f f;;
     |}
   in
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect {| |}]
 ;;
 
@@ -4466,7 +4472,7 @@ let%expect_test "polyparam schemes are distinct from first-class polymorphism" =
       let explicit_poly_result = use_poly poly_id;;
     |}
   in
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     type 'a list =
@@ -4493,7 +4499,7 @@ let%expect_test "a scheme is not an implicitly first-class polymorphic value" =
       let invalid_poly = use_poly id;;
     |}
   in
-  type_check_and_print ~with_fcp:true ~defaulting:Unary str;
+  type_check_and_print ~with_fcp:true str;
   [%expect
     {|
     error[E011]: mismatched type
@@ -4544,7 +4550,7 @@ let%expect_test "" =
               external compose : 'a 'b 'c. ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c;;
            |}
         )
-      (type_check_and_print ~with_fcp:true ~defaulting:Unary)
+      (type_check_and_print ~with_fcp:true)
   in
   [%expect
     {|
@@ -5159,7 +5165,7 @@ let%expect_test "church-encoded lists for FCP" =
           external arg_st : 's. ('s, int) st;;
           external compose : 'a 'b 'c. ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c;;
          |}
-      (type_check_and_print ~with_fcp:true ~defaulting:Unary)
+      (type_check_and_print ~with_fcp:true)
   in
   [%expect
     {|

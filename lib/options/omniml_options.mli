@@ -1,22 +1,19 @@
 open Core
 
-module type S = sig
-  type t [@@deriving sexp]
-
-  val arg_type : t Command.Arg_type.t
-end
-
-module type S_with_default = sig
-  include S
-
-  val default : t
-end
-
-module Defaulting : sig
+module Option : sig
   type t =
-    | Disabled
-    | Unary
+    | First_class_polymorphism
+    | Defaulting
+    | Include_stdlib
+    | Dump_ast
+    | Dump_constraint
   [@@deriving sexp]
 
-  include S_with_default with type t := t
+  include Comparable.S with type t := t
 end
+
+type t
+
+val empty : t
+val is_enabled : t -> Option.t -> bool
+val with_ : t -> option:Option.t -> enabled:bool -> t

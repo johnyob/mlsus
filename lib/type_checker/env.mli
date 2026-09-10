@@ -4,14 +4,20 @@ open Adt
 
 type t
 
-(** [empty ?id_source ()] returns an empty environment.
+(** [empty ?id_source ~options ()] returns an empty environment.
 
     If provided, [id_source] permits re-using an existing source instead of
     creating a new one. *)
-val empty : ?id_source:Identifier.source -> unit -> t
+val empty : ?id_source:Identifier.source -> options:Omniml_options.t -> unit -> t
+
+(** [local t] returns an empty (or local) environment using the [id_source] and [options] of [t]. *)
+val local : t -> t
 
 (** [id_source t] returns the identifier source associated with the environment [t] *)
 val id_source : t -> Identifier.source
+
+(** [options t] returns the typechecker options associated with the environment [t] *)
+val options : t -> Omniml_options.t
 
 (** [define_type t ~type_name ~type_arity ~in_] declares [type_name] with arity
     [type_arity] and a fresh [type_ident] in [in_]. *)

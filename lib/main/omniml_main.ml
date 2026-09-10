@@ -17,30 +17,24 @@ let lex_and_print ?source lexbuf =
 let parse ?source lexbuf = Parser.parse_structure ?source lexbuf
 let parse_and_print ?source lexbuf = Fmt.pr "%a@." pp_structure (parse ?source lexbuf)
 
-let constraint_gen ?source lexbuf ~dump_ast ~with_stdlib =
+let constraint_gen ?source ~options lexbuf =
   let structure = parse ?source lexbuf in
-  if dump_ast then Fmt.pr "Parsed structure:@.%a.@." pp_structure structure;
-  Omniml_type_checker.infer_str ~with_stdlib structure
+  if Omniml_options.is_enabled options Dump_ast
+  then Fmt.pr "Parsed structure:@.%a.@." pp_structure structure;
+  Omniml_type_checker.infer_str ~options structure
 ;;
 
 let pp_constraint ppf cst = Fmt.pf ppf "@[%a@]" Sexp.pp_hum ([%sexp_of: Constraint.t] cst)
 
-let constraint_gen_and_print ?source lexbuf ~dump_ast ~with_stdlib ~with_fcp =
-  let cst = constraint_gen ?source lexbuf ~dump_ast ~with_stdlib ~with_fcp in
+let constraint_gen_and_print ?source ~options lexbuf =
+  let cst = constraint_gen ?source ~options lexbuf in
   Fmt.pr "%a@." pp_constraint cst
 ;;
 
-let type_check_and_print
-      ?source
-      lexbuf
-      ~dump_ast
-      ~dump_constraint
-      ~with_stdlib
-      ~with_fcp
-      ~defaulting
-  =
-  let cst = constraint_gen ?source lexbuf ~dump_ast ~with_stdlib ~with_fcp in
-  if dump_constraint then Fmt.pr "Generated constraint:@.%a@." pp_constraint cst;
+let type_check_and_print ?source ~options lexbuf =
+  let cst = constraint_gen ?source ~options lexbuf in
+  if Omniml_options.is_enabled options Dump_constraint
+  then Fmt.pr "Generated constraint:@.%a@." pp_constraint cst;
   let range =
     let open Grace in
     Option.(
@@ -48,6 +42,6 @@ let type_check_and_print
       >>| fun source ->
       Range.create ~source Byte_index.initial (Byte_index.of_int @@ Source.length source))
   in
-  let signature = Omniml_type_checker.check ~defaulting ?range cst in
+  let signature = Omniml_type_checker.check ?range ~options cst in
   Fmt.pr "%a@." Typed_ast.pp signature
 ;;
