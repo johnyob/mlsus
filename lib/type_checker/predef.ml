@@ -12,30 +12,11 @@ let bool = Type.(constr [] bool_ident)
 let unit = Type.(constr [] unit_ident)
 
 module Env = struct
-  let arg_type ~with_fcp:_ type_ = type_
-  let ret_type ~with_fcp:_ type_ = type_
-
-  let bool_bop ~with_fcp =
-    Type.(
-      arg_type ~with_fcp bool
-      @-> ret_type ~with_fcp (arg_type ~with_fcp bool @-> ret_type ~with_fcp bool))
-  ;;
-
-  let bool_uop ~with_fcp = Type.(arg_type ~with_fcp bool @-> ret_type ~with_fcp bool)
-
-  let int_bop ~with_fcp =
-    Type.(
-      arg_type ~with_fcp int
-      @-> ret_type ~with_fcp (arg_type ~with_fcp int @-> ret_type ~with_fcp int))
-  ;;
-
-  let int_uop ~with_fcp = Type.(arg_type ~with_fcp int @-> ret_type ~with_fcp int)
-
-  let int_comparator ~with_fcp =
-    Type.(
-      arg_type ~with_fcp int
-      @-> ret_type ~with_fcp (arg_type ~with_fcp int @-> ret_type ~with_fcp bool))
-  ;;
+  let bool_bop = Type.(bool @-> bool @-> bool)
+  let bool_uop = Type.(bool @-> bool)
+  let int_bop = Type.(int @-> int @-> int)
+  let int_uop = Type.(int @-> int)
+  let int_comparator = Type.(int @-> int @-> bool)
 
   let type_def name arity ident =
     { Adt.type_name = Type_name.create name
@@ -47,26 +28,26 @@ module Env = struct
 
   let t = [ "int", 0, int_ident; "bool", 0, bool_ident; "unit", 0, unit_ident ]
 
-  let v ~with_fcp =
-    [ "( || )", bool_bop ~with_fcp
-    ; "( && )", bool_bop ~with_fcp
-    ; "not", bool_uop ~with_fcp
-    ; "( = )", int_comparator ~with_fcp
-    ; "( <> )", int_comparator ~with_fcp
-    ; "( < )", int_comparator ~with_fcp
-    ; "( > )", int_comparator ~with_fcp
-    ; "( <= )", int_comparator ~with_fcp
-    ; "( >= )", int_comparator ~with_fcp
-    ; "( + )", int_bop ~with_fcp
-    ; "( - )", int_bop ~with_fcp
-    ; "( * )", int_bop ~with_fcp
-    ; "( / )", int_bop ~with_fcp
-    ; "unary( - )", int_uop ~with_fcp
+  let v =
+    [ "( || )", bool_bop
+    ; "( && )", bool_bop
+    ; "not", bool_uop
+    ; "( = )", int_comparator
+    ; "( <> )", int_comparator
+    ; "( < )", int_comparator
+    ; "( > )", int_comparator
+    ; "( <= )", int_comparator
+    ; "( >= )", int_comparator
+    ; "( + )", int_bop
+    ; "( - )", int_bop
+    ; "( * )", int_bop
+    ; "( / )", int_bop
+    ; "unary( - )", int_uop
     ]
   ;;
 
-  let init () =
-    let env = Env.empty () in
+  let init ~options =
+    let env = Env.empty ~options () in
     let env =
       List.fold t ~init:env ~f:(fun env (type_str, type_arity, type_ident) ->
         Env.add_type_def env (type_def type_str type_arity type_ident))
@@ -74,10 +55,10 @@ module Env = struct
     env
   ;;
 
-  let wrap ~with_fcp k =
-    let env = init () in
+  let wrap ~options k =
+    let env = init ~options in
     let env, bindings =
-      List.fold_map (v ~with_fcp) ~init:env ~f:(fun env (var_str, type_) ->
+      List.fold_map v ~init:env ~f:(fun env (var_str, type_) ->
         Env.rename_var env ~var:(Var_name.create var_str) ~in_:(fun env cvar ->
           env, (cvar, type_)))
     in

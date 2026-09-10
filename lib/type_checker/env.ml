@@ -19,19 +19,23 @@ type t =
   ; vars : Constraint.Var.t Var_name.Map.t
     (** [vars] is a renaming from (user-defined) variable names to
       constraint variables (unique). *)
+  ; options : Omniml_options.t (** [options] used during constraint generation *)
   }
 
-let empty ?(id_source = Identifier.create_source ()) () =
+let empty ?(id_source = Identifier.create_source ()) ~options () =
   { id_source
   ; constrs = Constructor_name.Map.empty
   ; labels = Label_name.Map.empty
   ; type_vars = Type_var_name.Map.empty
   ; types = Type_name.Map.empty
   ; vars = Var_name.Map.empty
+  ; options
   }
 ;;
 
+let local t = empty ~id_source:t.id_source ~options:t.options ()
 let id_source t = t.id_source [@@inline]
+let options t = t.options [@@inline]
 
 let add_constr_def t (constr_def : constructor_definition) =
   { t with

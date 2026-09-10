@@ -346,6 +346,6 @@ end
      via {!Constraint.with_range}. *)
 val solve
   :  ?range:Range.t
-  -> ?defaulting:Omniml_options.Defaulting.t
+  -> options:Omniml_options.t
   -> 'a Constraint.t
   -> ('a, Error.t) result

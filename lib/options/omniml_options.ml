@@ -1,27 +1,51 @@
 open Core
 
-module type S = sig
-  type t [@@deriving sexp]
-
-  val arg_type : t Command.Arg_type.t
-end
-
-module type S_with_default = sig
-  include S
-
-  val default : t
-end
-
-module Defaulting = struct
+module Option = struct
   module T = struct
     type t =
-      | Disabled
-      | Unary
-    [@@deriving sexp, enumerate]
+      | First_class_polymorphism
+      | Defaulting
+      | Include_stdlib
+      | Dump_ast
+      | Dump_constraint
+    [@@deriving compare, sexp]
   end
 
   include T
-
-  let default = Disabled
-  let arg_type = Command.Arg_type.enumerated_sexpable (module T)
+  include Comparable.Make (T)
 end
+
+type t =
+  { first_class_polymorphism : bool
+  ; defaulting : bool
+  ; include_stdlib : bool
+  ; dump_ast : bool
+  ; dump_constraint : bool
+  }
+
+let empty =
+  { first_class_polymorphism = false
+  ; defaulting = false
+  ; include_stdlib = false
+  ; dump_ast = false
+  ; dump_constraint = false
+  }
+;;
+
+let is_enabled t option =
+  match option with
+  | Option.First_class_polymorphism -> t.first_class_polymorphism
+  | Defaulting -> t.defaulting
+  | Include_stdlib -> t.include_stdlib
+  | Dump_ast -> t.dump_ast
+  | Dump_constraint -> t.dump_constraint
+;;
+
+let with_ t ~option ~enabled =
+  match option with
+  | Option.First_class_polymorphism -> { t with first_class_polymorphism = enabled }
+  | Defaulting -> { t with defaulting = enabled }
+  | Include_stdlib -> { t with include_stdlib = enabled }
+  | Dump_ast -> { t with dump_ast = enabled }
+  | Dump_constraint -> { t with dump_constraint = enabled }
+;;

@@ -31,48 +31,47 @@ module Params = struct
       ~doc:"Dumps the generated constraint (formatted as a sexp)."
   ;;
 
-  let disable_stdlib =
-    flag "-disable-stdlib" no_arg ~doc:"Disables the inclusion of the standard library"
+  let no_stdlib =
+    flag "-no-stdlib" no_arg ~doc:"Disables the inclusion of the standard library"
   ;;
 
-  let ffcp =
-    flag
-      ~full_flag_required:()
-      "-ffcp"
-      no_arg
-      ~doc:"Enables the first class polymorphism feature. Enabled by default."
-  ;;
+  let include_stdlib = Command.Param.(no_stdlib >>| fun no_stdlib -> not no_stdlib)
 
-  let fno_fcp =
-    flag
-      ~full_flag_required:()
-      "-fno-fcp"
-      no_arg
-      ~doc:"Disables the first class polymorphism feature."
-  ;;
-
-  let fcp =
-    Command.Param.map3 ffcp fno_fcp args ~f:(fun ffcp fno_fcp args ->
-      match ffcp, fno_fcp with
+  let fflag ~name ~feature ~default =
+    let fname = "-f" ^ name in
+    let fno_name = "-fno-" ^ name in
+    let default_doc = if default then "Enabled" else "Disabled" in
+    let f =
+      flag
+        ~full_flag_required:()
+        fname
+        no_arg
+        ~doc:(Fmt.str "Enables the %s feature. %s by default." feature default_doc)
+    in
+    let fno =
+      flag
+        ~full_flag_required:()
+        fno_name
+        no_arg
+        ~doc:(Fmt.str "Disables the %s feature. %s by default." feature default_doc)
+    in
+    Command.Param.map3 f fno args ~f:(fun f fno args ->
+      match f, fno with
       | true, true ->
         (* When both flags are passed, the last flag wins *)
-        List.fold args ~init:false ~f:(fun with_fcp -> function
-          | "-ffcp" -> true
-          | "-fno-fcp" -> false
-          | _ -> with_fcp)
+        List.fold args ~init:false ~f:(fun result -> function
+          | name when String.(fname = name) -> true
+          | name when String.(fno_name = name) -> false
+          | _ -> result)
       | true, false -> true
       | false, true -> false
       | false, false ->
         (* Enabled by default *)
-        true)
+        default)
   ;;
 
-  let defaulting =
-    flag
-      "-defaulting"
-      (optional Omniml_main.Options.Defaulting.arg_type)
-      ~doc:"STRATEGY Defaulting strategy. Disabled by default, enabled with -ffcp"
-  ;;
+  let ffcp = fflag ~name:"fcp" ~feature:"first class polymorphism" ~default:true
+  let fdefaulting = fflag ~name:"defaulting" ~feature:"defaulting" ~default:false
 end
 
 module Command = struct
@@ -98,16 +97,17 @@ module Command = struct
         empty
         +> anon ("filename" %: string)
         +> Params.dump_ast
-        +> Params.disable_stdlib
-        +> Params.fcp)
-      (fun filename dump_ast without_stdlib with_fcp ->
-         open_with_lexbuf
-           ~f:
-             (constraint_gen_and_print
-                ~dump_ast
-                ~with_stdlib:(not without_stdlib)
-                ~with_fcp)
-           filename)
+        +> Params.include_stdlib
+        +> Params.ffcp)
+      (fun filename dump_ast include_stdlib ffcp ->
+         let options =
+           Omniml_options.(
+             empty
+             |> with_ ~option:Dump_ast ~enabled:dump_ast
+             |> with_ ~option:Include_stdlib ~enabled:include_stdlib
+             |> with_ ~option:First_class_polymorphism ~enabled:ffcp)
+         in
+         open_with_lexbuf ~f:(constraint_gen_and_print ~options) filename)
   ;;
 
   let type_check =
@@ -118,25 +118,25 @@ module Command = struct
         +> anon ("filename" %: string)
         +> Params.dump_ast
         +> Params.dump_constraint
-        +> Params.disable_stdlib
-        +> Params.fcp
-        +> Params.defaulting
+        +> Params.include_stdlib
+        +> Params.ffcp
+        +> Params.fdefaulting
         +> Global.set_level_via_param ()
         +> Global.set_trace_file_via_param ())
-      (fun filename dump_ast dump_constraint without_stdlib with_fcp defaulting () () ->
-         let defaulting =
-           Option.value defaulting ~default:(if with_fcp then Unary else Disabled)
+      (fun filename dump_ast dump_constraint include_stdlib ffcp fdefaulting () () ->
+         let options =
+           let fdefaulting = fdefaulting || ffcp in
+           Omniml_options.(
+             empty
+             |> with_ ~option:Dump_ast ~enabled:dump_ast
+             |> with_ ~option:Dump_constraint ~enabled:dump_constraint
+             |> with_ ~option:Include_stdlib ~enabled:include_stdlib
+             |> with_ ~option:First_class_polymorphism ~enabled:ffcp
+             |> with_ ~option:Defaulting ~enabled:fdefaulting)
          in
          open_with_lexbuf filename ~f:(fun lexbuf ->
            let source = `File filename in
-           type_check_and_print
-             ~source
-             ~dump_ast
-             ~dump_constraint
-             ~with_stdlib:(not without_stdlib)
-             ~with_fcp
-             ~defaulting
-             lexbuf))
+           type_check_and_print ~source ~options lexbuf))
   ;;
 
   let v =

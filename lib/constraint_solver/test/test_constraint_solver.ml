@@ -8,6 +8,12 @@ let () =
   For_testing.use_test_output ()
 ;;
 
+let solve ?(defaulting = false) ?(log_level = `Info) cst =
+  Omniml_log.Global.set_level log_level;
+  let options = Omniml_options.(empty |> with_ ~option:Defaulting ~enabled:defaulting) in
+  Omniml_constraint_solver.solve ~options cst
+;;
+
 let unsat_err = Omniml_error.bug_s ~here:[%here] [%message "Constraint is unsatisfiable"]
 
 let match_err _ =
@@ -16,10 +22,9 @@ let match_err _ =
 
 let default_match_err () = C.(Constraint (ff (match_err ())))
 
-let print_solve_result ?defaulting ?(log_level = `Info) cst =
-  Omniml_log.Global.set_level log_level;
+let print_solve_result ?defaulting ?log_level cst =
   let cst = C.map cst ~f:(fun _ -> ()) in
-  let result = Omniml_constraint_solver.solve ?defaulting cst in
+  let result = solve ?defaulting ?log_level cst in
   match result with
   | Ok () -> print_s [%message "Constraint is satisfiable" (cst : C.t)]
   | Error err ->
@@ -65,7 +70,7 @@ let%expect_test "Applicative constraints return values" =
     and rhs = C.return 22 in
     lhs + rhs
   in
-  print_s [%sexp (Omniml_constraint_solver.solve cst : (int, _) Result.t)];
+  print_s [%sexp (solve cst : (int, _) Result.t)];
   [%expect {| (Ok 42) |}]
 ;;
 
@@ -81,7 +86,7 @@ let%expect_test "Decode observes the final solution" =
     and decoded = decode (T.var type_var) in
     decoded
   in
-  (match Omniml_constraint_solver.solve cst with
+  (match solve cst with
    | Ok decoded -> Fmt.pr "%a@." Omniml_typed_ast.Typed_ast.Type.pp decoded
    | Error _ -> print_endline "error");
   [%expect {| int |}]
@@ -90,7 +95,7 @@ let%expect_test "Decode observes the final solution" =
 let%expect_test "Semantic actions do not run after failure" =
   let ran = ref false in
   let cst = C.map (C.ff unsat_err) ~f:(fun () -> ran := true) in
-  ignore (Omniml_constraint_solver.solve cst : (unit, _) Result.t);
+  ignore (solve cst : (unit, _) Result.t);
   print_s [%sexp (!ran : bool)];
   [%expect {| false |}]
 ;;
@@ -98,10 +103,7 @@ let%expect_test "Semantic actions do not run after failure" =
 let%expect_test "Let constraints preserve both values" =
   let open C in
   let binding = poly_binding ([] @. return 20 @=> []) in
-  print_s
-    [%sexp
-      (Omniml_constraint_solver.solve (let_ binding ~in_:(return 22))
-       : (int * int, _) Result.t)];
+  print_s [%sexp (solve (let_ binding ~in_:(return 22)) : (int * int, _) Result.t)];
   [%expect {| (Ok (20 22)) |}]
 ;;
 
@@ -297,7 +299,7 @@ let%expect_test "a trivial defaulting dependency does not prevent defaulting" =
          ~default:default_int_shape
          ~error:match_err
   in
-  print_solve_result ~defaulting:Unary cst;
+  print_solve_result ~defaulting:true cst;
   [%expect
     {|
     ("Constraint is satisfiable"
@@ -330,7 +332,7 @@ let%expect_test "a non-trivial defaulting cycle prevents defaulting" =
              ~default:default_int_shape
              ~error:match_err)
   in
-  print_solve_result ~defaulting:Unary cst;
+  print_solve_result ~defaulting:true cst;
   [%expect
     {|
     ("Constraint is unsatisfiable"

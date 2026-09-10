@@ -1,27 +1,28 @@
 open! Import
 open Constraint
 
-let empty_env_wrapper f = f (Predef.Env.init ())
+let empty_env_wrapper ~options f = f (Predef.Env.init ~options)
 
-let stdlib_wrapper ?(with_stdlib = true) ~with_fcp f =
-  if with_stdlib then Predef.Env.wrap ~with_fcp f else empty_env_wrapper f
+let stdlib_wrapper ~options f =
+  if Omniml_options.is_enabled options Include_stdlib
+  then Predef.Env.wrap ~options f
+  else empty_env_wrapper ~options f
 ;;
 
-let infer_exp ?with_stdlib ~with_fcp exp =
-  stdlib_wrapper ?with_stdlib ~with_fcp
+let infer_exp ~options exp =
+  stdlib_wrapper ~options
   @@ fun env ->
   let exp_type = Type.Var.create ~id_source:(Env.id_source env) ~name:"exp_type0" () in
-  let c = Infer.Expression.infer_exp ~with_fcp ~env exp exp_type in
+  let c = Infer.Expression.infer_exp ~env exp exp_type in
   exists exp_type c
 ;;
 
-let infer_str ?with_stdlib ~with_fcp str =
-  stdlib_wrapper ?with_stdlib ~with_fcp
-  @@ fun env -> Infer.Structure.infer_str ~with_fcp ~env str
+let infer_str ~options str =
+  stdlib_wrapper ~options @@ fun env -> Infer.Structure.infer_str ~env str
 ;;
 
-let check ?defaulting ?range cst =
-  match Omniml_constraint_solver.(solve ?range ?defaulting cst) with
+let check ~options ?range cst =
+  match Omniml_constraint_solver.(solve ~options ?range cst) with
   | Ok value -> value
   | Error { range; it } ->
     let get_range range =

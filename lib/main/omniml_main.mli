@@ -16,10 +16,8 @@ val parse_and_print : ?source:Source.t -> Lexing.lexbuf -> unit
     Any errors are additionally printed. *)
 val constraint_gen_and_print
   :  ?source:Source.t
+  -> options:Omniml_options.t
   -> Lexing.lexbuf
-  -> dump_ast:bool
-  -> with_stdlib:bool
-  -> with_fcp:bool
   -> unit
 
 (** [type_check_and_print lexbuf ~dump_ast ~dump_constraint] parses the [lexbuf] as a structure,
@@ -31,10 +29,6 @@ val constraint_gen_and_print
     Any errors are additionally printed. *)
 val type_check_and_print
   :  ?source:Source.t
+  -> options:Omniml_options.t
   -> Lexing.lexbuf
-  -> dump_ast:bool
-  -> dump_constraint:bool
-  -> with_stdlib:bool
-  -> with_fcp:bool
-  -> defaulting:Options.Defaulting.t
   -> unit
