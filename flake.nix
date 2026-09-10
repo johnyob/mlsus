@@ -73,6 +73,10 @@
             ocamlPackages.ocaml
             ocamlPackages.dune
           ];
+
+          shellHook = ''
+            alias omniml='dune exec omniml --'
+          '';
         };
       });
 }
