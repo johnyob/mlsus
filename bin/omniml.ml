@@ -182,13 +182,13 @@ module Command = struct
       [ "lex", lex
       ; "parse", parse
       ; "constraint-gen", constraint_gen
-      ; "type-check", type_check
+      ; "typecheck", type_check
       ]
   ;;
 
   let is_command = function
     (* OmniML commands *)
-    | "lex" | "parse" | "constraint-gen" | "type-check" -> true
+    | "lex" | "parse" | "constraint-gen" | "typecheck" -> true
     (* Built-in commands from [Command] *)
     | "help"
     | "-help"
@@ -206,7 +206,7 @@ let () =
   let argv =
     match Sys.get_argv () |> Array.to_list with
     | program :: (arg :: _ as args) when Command.is_command arg -> program :: args
-    | program :: args -> program :: "type-check" :: args
+    | program :: args -> program :: "typecheck" :: args
     | [] -> assert false
   in
   Command_unix.run ~argv Command.v
